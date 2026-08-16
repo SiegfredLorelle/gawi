@@ -11,9 +11,12 @@ Android SDK; neither lives in the repo.
 sdkmanager "platform-tools" "platforms;android-37.0" "build-tools;37.0.0"
 
 # Generate the wrapper once with a downloaded Gradle distribution; commit it.
-# After this, every command goes through ./gradlew and nothing else needs a
-# local Gradle install.
-gradle wrapper --gradle-version 9.7.0 --distribution-type bin
+# Pin the distribution checksum (from
+# services.gradle.org/distributions/gradle-<version>-bin.zip.sha256) —
+# validateDistributionUrl alone checks the URL, not the bytes. After this,
+# every command goes through ./gradlew and nothing else needs a local Gradle.
+gradle wrapper --gradle-version 9.7.0 --distribution-type bin \
+  --gradle-distribution-sha256-sum 84fbba45c7f4c64abc77460e1c00f541e9f960e3c7ed2538f1ede19eacd873ae
 ```
 
 ## 1. Makefile
