@@ -1,19 +1,19 @@
-<!-- Setting this repo up for the first time? Start with TEMPLATE.md. -->
+# Gawi
 
-# TODO: project name
-
-TODO: one sentence describing what this does and who it is for.
+Offline-first habit tracker for Android — no account, no network permission,
+your data never leaves the device. For what and why, read
+[the PRD](docs/prd.md); for how, [the architecture](docs/architecture.md).
 
 ## Requirements
 
-- TODO: language runtime and version
+- JDK 17 and an Android SDK (platform 37) — setup notes in
+  [docs/stacks/kotlin-android.md](docs/stacks/kotlin-android.md)
 - [pre-commit](https://pre-commit.com) for git hooks
 - `make`
 
 ## Getting started
 
 ```sh
-cp .env.example .env   # then fill it in
 make setup
 ```
 
@@ -33,7 +33,10 @@ linter; this happens once per machine.
 
 ## Usage
 
-TODO: the shortest example that shows this working.
+```sh
+make test                      # unit tests (pure-JVM domain + Android modules)
+./gradlew :app:assembleDebug   # APK at app/build/outputs/apk/debug/
+```
 
 ## Contributing
 

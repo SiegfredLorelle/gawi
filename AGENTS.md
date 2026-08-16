@@ -8,7 +8,10 @@ this file rather than duplicating it, and any other tool's config file
 `.windsurfrules`) should be a one-line pointer here. Do not copy content out
 of this file — it will drift.
 
-<!-- TODO: replace this line with what the project actually is. -->
+The project: **Gawi**, an offline-first, event-sourced habit tracker for
+Android (Kotlin, Jetpack Compose, Hilt, Room). `docs/prd.md` says what and
+why; `docs/architecture.md` fixes how — read it before writing code, it is
+the contract.
 
 ## Commands
 
@@ -45,13 +48,24 @@ Full guide with examples: `.github/COMMIT_CONVENTION.md`
 
 ## Conventions
 
-<!-- TODO: fill in per project. Suggestions:
-     - Directory layout and where new code belongs
-     - Naming patterns to follow
-     - Error handling and logging approach
-     - What must never be edited by hand (generated files, lockfiles)
-     - Testing expectations for new code
--->
+- **Modules** (docs/architecture.md §2): `:app` (wiring, navigation),
+  `:core:domain` (pure Kotlin/JVM), `:core:data` (Room, DataStore,
+  repositories). Feature modules and `:core:ui` are created when their first
+  screen is built.
+- **The dependency rule is non-negotiable**: `:core:domain` depends only on
+  the Kotlin stdlib and kotlinx-serialization. Domain logic never lands in a
+  module that can import Android.
+- **Versions live only in `gradle/libs.versions.toml`.** Convention plugins
+  in `build-logic/` own build configuration; module build files only apply
+  `gawi.*` plugin ids and declare dependencies.
+- **AGP 9 has built-in Kotlin**: never apply `org.jetbrains.kotlin.android`,
+  never use kapt (KSP only).
+- **Never edit by hand**: `gradle/wrapper/`, `gradlew`, `gradlew.bat`.
+- **Testing** (docs/architecture.md §8): new `:core:domain` logic ships with
+  JVM unit tests; CI runs unit tests only — instrumented tests are a manual,
+  on-device activity.
+- Run `make fmt` before committing; `make lint` and `make test` before
+  considering any change complete.
 
 ## Secrets
 

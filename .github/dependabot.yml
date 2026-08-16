@@ -15,17 +15,15 @@ updates:
       actions:
         update-types: [minor, patch]
 
-  # TEMPLATE.md step 8: uncomment the block for your stack.
-  #
-  # - package-ecosystem: uv          # or pip
-  # - package-ecosystem: npm         # pnpm and yarn both use this value
-  # - package-ecosystem: composer
-  # - package-ecosystem: gomod
-  #   directory: /
-  #   schedule:
-  #     interval: weekly
-  #   commit-message:
-  #     prefix: "build(deps)"
-  #   groups:
-  #     minor-patch:
-  #       update-types: [minor, patch]
+  # Reads gradle/libs.versions.toml, so this one entry covers the main build
+  # and build-logic.
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "build(deps)"
+    groups:
+      minor-patch:
+        update-types: [minor, patch]
