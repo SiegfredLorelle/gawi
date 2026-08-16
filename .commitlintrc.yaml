@@ -42,6 +42,10 @@ rules:
   # Put long links and trailers in the footer, not the body.
   footer-leading-blank: [2, always]
   footer-max-line-length: [0]
-# scope-enum is intentionally omitted: valid scopes are per-project.
-# TEMPLATE.md step 4 covers filling it in, e.g.
-#   scope-enum: [2, always, [auth, api, db, ui, ci, deps]]
+
+  # This project's real areas. Module scopes (today, habits, widget) get
+  # added when those modules are born (docs/architecture.md §2).
+  scope-enum:
+    - 2
+    - always
+    - [app, domain, data, ui, gradle, quality, make, ci, deps, docs, stacks, repo, claude, arch, prd]
