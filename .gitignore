@@ -32,3 +32,13 @@ coverage/
 
 # Claude Code local overrides (shared settings.json IS committed)
 .claude/settings.local.json
+
+# Android / Gradle
+.gradle/
+.kotlin/
+local.properties
+captures/
+*.apk
+*.aab
+*.hprof
+.cxx/
