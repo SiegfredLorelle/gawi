@@ -33,8 +33,9 @@ Enforced by a `commit-msg` hook and by CI. Commits that break these rules are
 rejected, so get them right the first time:
 
 - Format `type(scope): subject`, header **50 characters maximum**
-- Scope is **required**, kebab-case, **12 characters maximum** — prefer one
-  short word (`auth`, `api`, `db`, `ui`, `ci`, `deps`)
+- Scope is **required** and must be one of the values in `scope-enum` in
+  `.commitlintrc.yaml` (e.g. `app`, `domain`, `data`, `gradle`, `ci`,
+  `docs`); add a new scope there first if a module is born
 - Types: `feat` `fix` `docs` `style` `refactor` `perf` `test` `build` `ci`
   `chore` `revert`
 - Subject: lowercase first word, imperative mood, no trailing period
