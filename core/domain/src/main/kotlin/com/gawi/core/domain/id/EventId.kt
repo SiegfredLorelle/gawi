@@ -11,15 +11,10 @@ package com.gawi.core.domain.id
 value class EventId(val value: String) : Comparable<EventId> {
 
     init {
-        require(CANONICAL.matches(value)) { "not a canonical UUID string: $value" }
+        require(CanonicalUuid.matches(value)) { "not a canonical UUID string: $value" }
     }
 
     override fun compareTo(other: EventId): Int = value.compareTo(other.value)
 
     override fun toString(): String = value
-
-    companion object {
-        private val CANONICAL =
-            Regex("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
-    }
 }
