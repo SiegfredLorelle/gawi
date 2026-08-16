@@ -1,12 +1,12 @@
 package com.gawi.core.data
 
-import com.gawi.core.domain.DomainMarker
+import com.gawi.core.domain.id.EventId
 
 /**
  * Placeholder proving the module wiring: an Android library that sees
  * `:core:domain`. Replaced by the event store and repositories in the
- * domain-core step (architecture §4).
+ * data-layer step (architecture §4).
  */
 object DataMarker {
-    fun describe(marker: DomainMarker): String = "data sees domain: ${marker.name}"
+    fun describe(id: EventId): String = "data sees domain: $id"
 }
