@@ -21,7 +21,10 @@ indent_style = tab
 # ktlint (via Spotless) reads this file; Kotlin's convention is 4 spaces.
 indent_size = 4
 max_line_length = 140
-# Composables are PascalCase by Compose convention.
+# Composables are PascalCase by Compose convention. Spotless cannot read
+# ktlint_* properties from this file, so the root build.gradle.kts repeats
+# this as an editorConfigOverride — change both together. This copy is for
+# IDE ktlint integrations.
 ktlint_function_naming_ignore_when_annotated_with = Composable
 
 [Makefile]

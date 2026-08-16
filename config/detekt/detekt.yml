@@ -8,6 +8,9 @@ naming:
     ignoreAnnotated: ["Composable"]
 
 style:
+  # Match ktlint's max_line_length in .editorconfig — one limit, two tools.
+  MaxLineLength:
+    maxLineLength: 140
   # @Preview composables exist for the IDE, not for callers.
   UnusedPrivateMember:
     ignoreAnnotated: ["Preview"]
