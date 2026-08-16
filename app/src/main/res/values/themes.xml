@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Compose draws everything; this only styles the window before
+         setContent. No appcompat on purpose. -->
+    <style name="Theme.Gawi" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>
