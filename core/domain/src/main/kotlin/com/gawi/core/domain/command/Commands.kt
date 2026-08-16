@@ -83,20 +83,22 @@ object Commands {
      */
     fun undoCompletion(state: ProjectedState, habitId: HabitId, logicalDate: LocalDate): CommandResult<List<CompletionTombstoned>> {
         val liveIds = state.liveAddIds(habitId, logicalDate)
-        return if (liveIds.isEmpty()) {
-            CommandResult.Rejected(CommandError.CompletionNotFound)
-        } else {
-            CommandResult.Accepted(liveIds.sorted().map(::CompletionTombstoned))
+        return when {
+            state.habit(habitId)?.archived == true -> CommandResult.Rejected(CommandError.HabitIsArchived)
+            liveIds.isEmpty() -> CommandResult.Rejected(CommandError.CompletionNotFound)
+            else -> CommandResult.Accepted(liveIds.sorted().map(::CompletionTombstoned))
         }
     }
 
     /** [text] may be empty — that is a clear, a valid write that wins LWW like any other. */
     fun updateCompletionNote(state: ProjectedState, completionEventId: EventId, text: String): CommandResult<CompletionNoteUpdated> {
-        val cell = state.addIdToKey[completionEventId]?.let { state.completions.getValue(it) }
-        return if (cell == null || completionEventId !in cell.liveAddIds) {
-            CommandResult.Rejected(CommandError.CompletionNotFound)
-        } else {
-            CommandResult.Accepted(CompletionNoteUpdated(completionEventId, text))
+        val key = state.addIdToKey[completionEventId]
+            ?: return CommandResult.Rejected(CommandError.CompletionNotFound)
+        val cell = state.completions.getValue(key)
+        return when {
+            completionEventId !in cell.liveAddIds -> CommandResult.Rejected(CommandError.CompletionNotFound)
+            state.habit(key.habitId)?.archived == true -> CommandResult.Rejected(CommandError.HabitIsArchived)
+            else -> CommandResult.Accepted(CompletionNoteUpdated(completionEventId, text))
         }
     }
 

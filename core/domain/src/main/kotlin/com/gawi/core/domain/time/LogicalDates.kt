@@ -16,6 +16,12 @@ import java.time.ZoneId
  * total and deterministic through DST gaps and overlaps: a cutoff that does
  * not exist on a given day still partitions it, and both occurrences of a
  * repeated wall time land on the same logical date.
+ *
+ * Accepted anomaly: a cutoff strictly inside a DST fall-back's repeated
+ * hour makes "today" regress to "yesterday" for the rewound stretch (wall
+ * clock passes the cutoff, then falls back below it). It is deterministic,
+ * affects at most one hour a year for cutoffs inside the shift window, and
+ * is pinned by a test rather than special-cased.
  */
 fun logicalDate(instant: Instant, cutoff: LocalTime, zone: ZoneId): LocalDate {
     val local = instant.atZone(zone)

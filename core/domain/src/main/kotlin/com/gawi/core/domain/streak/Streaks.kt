@@ -38,12 +38,15 @@ object Streaks {
     /**
      * Consecutive calendar weeks with at least [timesPerWeek] distinct
      * completed dates, ending at the current week (if it already hit) or
-     * the previous one. Weeks are keyed by their start date via
+     * the previous one. Dates after [today] are ignored — replay accepts
+     * future-dated completions (fast device clocks, imports) and they must
+     * not pre-fill a week. Weeks are keyed by their start date via
      * [weekStart] arithmetic — never by week-of-year numbers, which
      * misbucket the days around New Year.
      */
     fun weekStreak(completedDates: Set<LocalDate>, timesPerWeek: Int, today: LocalDate, weekStart: DayOfWeek = DayOfWeek.MONDAY): Int {
         val hitWeeks = completedDates
+            .filter { !it.isAfter(today) }
             .groupingBy { it.with(TemporalAdjusters.previousOrSame(weekStart)) }
             .eachCount()
             .filterValues { it >= timesPerWeek }

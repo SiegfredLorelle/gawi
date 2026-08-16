@@ -8,15 +8,17 @@ import com.gawi.core.domain.event.HabitArchived
 import com.gawi.core.domain.event.HabitCreated
 import com.gawi.core.domain.event.HabitUnarchived
 import com.gawi.core.domain.event.HabitUpdated
+import java.time.DateTimeException
 
 /**
  * The single entry point between domain payloads and their persisted form.
  * The API is strings and domain types only — no serialization library
  * leaks out of this package.
  *
- * Decoding an unknown type or schema version throws [EventCodecException]:
- * the MVP log has a single writer, so an unknown shape is corruption, not
- * forward compatibility, and must fail loudly.
+ * Every decode failure — unknown type, unknown schema version, or a corrupt
+ * body — surfaces as [EventCodecException], so callers have one exception
+ * to catch. The MVP log has a single writer, so an unknown shape is
+ * corruption, not forward compatibility, and must fail loudly.
  */
 class EventCodec {
 
@@ -32,7 +34,17 @@ class EventCodec {
 
     fun decode(type: String, schemaVersion: Int, json: String): EventPayload {
         val codec = codecs[type] ?: throw EventCodecException("unknown event type: $type")
-        return codec.decode(schemaVersion, json)
+        return decodeWith(codec, type, schemaVersion, json)
+    }
+
+    // SerializationException is an IllegalArgumentException, as are the
+    // canonical-form and schedule-kind require()s; dates throw DateTimeException.
+    private fun decodeWith(codec: PayloadCodec<out EventPayload>, type: String, schemaVersion: Int, json: String): EventPayload = try {
+        codec.decode(schemaVersion, json)
+    } catch (cause: IllegalArgumentException) {
+        throw EventCodecException("corrupt $type v$schemaVersion payload", cause)
+    } catch (cause: DateTimeException) {
+        throw EventCodecException("corrupt $type v$schemaVersion payload", cause)
     }
 
     private companion object {

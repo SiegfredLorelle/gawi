@@ -54,6 +54,35 @@ class EventUpcastTest {
     }
 
     @Test
+    fun `a corrupt payload body surfaces as the codec exception`() {
+        assertThrows(EventCodecException::class.java) {
+            codec.decode("HabitCreated", 1, """not json at all""")
+        }
+        assertThrows(EventCodecException::class.java) {
+            codec.decode(
+                "HabitCreated",
+                1,
+                """{"habit_id":"0190163d-8694-7abc-8def-0123456789ab","name":"Read",""" +
+                    """"icon":"book","color":"#aabbcc","schedule":{"kind":"biweekly"}}""",
+            )
+        }
+        assertThrows(EventCodecException::class.java) {
+            codec.decode(
+                "CompletionAdded",
+                1,
+                """{"habit_id":"0190163d-8694-7abc-8def-0123456789ab","logical_date":"not-a-date"}""",
+            )
+        }
+        assertThrows(EventCodecException::class.java) {
+            codec.decode(
+                "CompletionTombstoned",
+                1,
+                """{"completion_event_id":"NOT-CANONICAL"}""",
+            )
+        }
+    }
+
+    @Test
     fun `an unknown event type fails loudly`() {
         val error = assertThrows(EventCodecException::class.java) {
             codec.decode("HabitPetted", 1, """{}""")
