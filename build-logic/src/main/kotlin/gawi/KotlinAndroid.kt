@@ -24,5 +24,12 @@ internal fun Project.configureAndroid(extension: CommonExtension) {
         val jdk = JavaVersion.toVersion(catalogVersion("jdk"))
         compileOptions.sourceCompatibility = jdk
         compileOptions.targetCompatibility = jdk
+        // One lint policy for app and library modules. warningsAsErrors is
+        // the actual hard gate (abortOnError is AGP's default, kept
+        // explicit). GradleDependency is noise here: Dependabot owns update
+        // nudges, and a third-party release must not redden CI.
+        lint.abortOnError = true
+        lint.warningsAsErrors = true
+        lint.disable += "GradleDependency"
     }
 }

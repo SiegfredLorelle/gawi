@@ -18,11 +18,12 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
                 }
                 buildTypes {
                     getByName("release") {
+                        // Deliberate scaffold default, deferred: enabling R8
+                        // belongs with release signing, when the keep rules
+                        // for Room/Hilt/kotlinx-serialization can be tested
+                        // against a real release build.
                         isMinifyEnabled = false
                     }
-                }
-                lint {
-                    abortOnError = true
                 }
             }
         }
