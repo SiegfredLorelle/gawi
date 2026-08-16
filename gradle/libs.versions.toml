@@ -13,10 +13,12 @@ spotless = "8.9.0"
 # Consumed by the Spotless config in the root build file, not a plugin.
 ktlint = "1.8.0"
 junit = "4.13.2"
-# SDK levels, read by the convention plugins in build-logic.
+# SDK levels and JDK, read by the convention plugins in build-logic.
+# ci.yml's setup-java pins the same JDK by hand — keep them in step.
 minSdk = "29"
 compileSdk = "37"
 targetSdk = "37"
+jdk = "17"
 
 [libraries]
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }

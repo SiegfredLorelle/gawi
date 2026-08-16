@@ -21,7 +21,8 @@ internal fun Project.configureAndroid(extension: CommonExtension) {
     extension.apply {
         compileSdk = catalogVersion("compileSdk").toInt()
         defaultConfig.minSdk = catalogVersion("minSdk").toInt()
-        compileOptions.sourceCompatibility = JavaVersion.VERSION_17
-        compileOptions.targetCompatibility = JavaVersion.VERSION_17
+        val jdk = JavaVersion.toVersion(catalogVersion("jdk"))
+        compileOptions.sourceCompatibility = jdk
+        compileOptions.targetCompatibility = jdk
     }
 }

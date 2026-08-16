@@ -4,6 +4,15 @@ plugins {
     id("gawi.hilt")
 }
 
+android {
+    namespace = "com.gawi.app"
+    defaultConfig {
+        applicationId = "com.gawi.app"
+        versionCode = 1
+        versionName = "0.1.0"
+    }
+}
+
 dependencies {
     implementation(project(":core:data"))
 

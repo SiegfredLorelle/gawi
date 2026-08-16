@@ -11,12 +11,10 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
             pluginManager.apply("com.android.application")
             extensions.configure<ApplicationExtension> {
                 configureAndroid(this)
-                namespace = "com.gawi.app"
+                // App identity (namespace, applicationId, versionCode/Name)
+                // belongs in the module's own build file.
                 defaultConfig {
-                    applicationId = "com.gawi.app"
                     targetSdk = catalogVersion("targetSdk").toInt()
-                    versionCode = 1
-                    versionName = "0.1.0"
                 }
                 buildTypes {
                     getByName("release") {
