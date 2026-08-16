@@ -59,6 +59,10 @@ jobs:
           java-version: 17
 
       - uses: gradle/actions/setup-gradle@v5
+        with:
+          # GitHub cache storage is not encrypted, so the action only saves
+          # Gradle's configuration cache when given a key to encrypt it with.
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
       - name: setup
         run: make setup
