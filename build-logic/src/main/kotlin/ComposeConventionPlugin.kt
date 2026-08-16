@@ -9,8 +9,13 @@ class ComposeConventionPlugin : Plugin<Project> {
         with(target) {
             pluginManager.apply("org.jetbrains.kotlin.plugin.compose")
 
-            val android = extensions.getByName("android") as CommonExtension
-            android.buildFeatures.compose = true
+            // Deferred so plugin declaration order in the module file cannot
+            // break configuration: the "android" extension only exists once
+            // an Android plugin (application or library) has been applied.
+            pluginManager.withPlugin("com.android.base") {
+                val android = extensions.getByName("android") as CommonExtension
+                android.buildFeatures.compose = true
+            }
 
             dependencies {
                 val bom = libs.findLibrary("androidx-compose-bom").get()

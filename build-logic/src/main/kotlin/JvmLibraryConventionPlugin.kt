@@ -1,3 +1,4 @@
+import gawi.catalogVersion
 import org.gradle.api.JavaVersion
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -11,13 +12,14 @@ class JvmLibraryConventionPlugin : Plugin<Project> {
         with(target) {
             pluginManager.apply("org.jetbrains.kotlin.jvm")
             pluginManager.apply("java-library")
+            val jdk = catalogVersion("jdk")
             extensions.configure<JavaPluginExtension> {
-                sourceCompatibility = JavaVersion.VERSION_17
-                targetCompatibility = JavaVersion.VERSION_17
+                sourceCompatibility = JavaVersion.toVersion(jdk)
+                targetCompatibility = JavaVersion.toVersion(jdk)
             }
             extensions.configure<KotlinJvmProjectExtension> {
                 compilerOptions {
-                    jvmTarget.set(JvmTarget.JVM_17)
+                    jvmTarget.set(JvmTarget.fromTarget(jdk))
                 }
             }
         }
