@@ -1,0 +1,43 @@
+# Local git hooks for every language. Install with `make setup`.
+#
+# These hooks are fast feedback, not enforcement — `git commit --no-verify`
+# bypasses all of them. The real gates are in .github/workflows/, which re-runs
+# commitlint and gitleaks on every pull request.
+#
+# NOTE: the commitlint hook is `language: node`, so the first run downloads an
+# isolated Node toolchain into ~/.cache/pre-commit even in a pure Python, PHP
+# or Go repo. Your repo tree stays free of node_modules, but expect a one-time
+# pause on the first commit on a new machine.
+
+# Without this, `pre-commit install` wires only the pre-commit hook and
+# commitlint never runs. This is the single most common setup bug.
+default_install_hook_types: [pre-commit, commit-msg]
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-added-large-files
+      - id: check-yaml
+      - id: check-json
+      - id: check-toml
+      - id: detect-private-key
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks
+
+  - repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
+    rev: v9.26.0
+    hooks:
+      - id: commitlint
+        stages: [commit-msg]
+        additional_dependencies: ["@commitlint/config-conventional"]
+# Stack linters go here — copy the block from docs/stacks/<your-stack>.md

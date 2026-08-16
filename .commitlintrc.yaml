@@ -1,0 +1,47 @@
+# Commit message rules — see .github/COMMIT_CONVENTION.md for the human guide.
+#
+# YAML, not commitlint.config.js: a .js config using `export default` requires
+# "type": "module" in a package.json, which will not exist in a Python, PHP or
+# Go repo. YAML is the polyglot-safe choice and is read by both the local
+# pre-commit hook and the CI workflow.
+
+extends:
+  - "@commitlint/config-conventional"
+
+rules:
+  type-enum:
+    - 2
+    - always
+    - [feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert]
+  type-case: [2, always, lower-case]
+  type-empty: [2, never]
+
+  # Scope is required. scope-max-length is what makes a 50-char header
+  # survivable — "refactor(notifications): " alone is 25 characters.
+  # Prefer short, single-word scopes: auth, api, ci, db, ui, deps.
+  scope-empty: [2, never]
+  scope-case: [2, always, kebab-case]
+  scope-max-length: [2, always, 12]
+
+  subject-empty: [2, never]
+  subject-full-stop: [2, never, "."]
+  # subject-case is deliberately NOT overridden here. The config-conventional
+  # default forbids a capitalised first word but still allows proper nouns
+  # mid-subject, so "feat(auth): add OAuth support" passes. Setting this to
+  # lower-case would reject that.
+
+  # 50 is the classic git subject target. GitHub, GitLab and `git log --oneline`
+  # truncate around 72; 50 keeps headers comfortably inside every renderer.
+  header-max-length: [2, always, 50]
+
+  body-leading-blank: [2, always]
+  body-max-line-length: [2, always, 72]
+
+  # The footer limit is disabled on purpose. Nothing can wrap a 90-character
+  # URL, so "Closes: <url>" and Co-Authored-By trailers would otherwise fail.
+  # Put long links and trailers in the footer, not the body.
+  footer-leading-blank: [2, always]
+  footer-max-line-length: [0]
+# scope-enum is intentionally omitted: valid scopes are per-project.
+# TEMPLATE.md step 4 covers filling it in, e.g.
+#   scope-enum: [2, always, [auth, api, db, ui, ci, deps]]

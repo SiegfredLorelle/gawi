@@ -1,0 +1,38 @@
+# CodeRabbit config. Only takes effect if the CodeRabbit app is installed on
+# the repo — free on public repositories, paid on private ones.
+#
+# If you are using the Claude review workflow instead, you can leave this file
+# in place; it does nothing until the app is enabled.
+
+language: en
+
+reviews:
+  profile: chill # `assertive` is noticeably noisier on small PRs
+  request_changes_workflow: false
+  high_level_summary: true
+  review_status: false
+  poem: false
+
+  auto_review:
+    enabled: true
+    drafts: false
+
+  path_filters:
+    - "!**/*.lock"
+    - "!**/uv.lock"
+    - "!**/pnpm-lock.yaml"
+    - "!**/package-lock.json"
+    - "!**/composer.lock"
+    - "!**/go.sum"
+    - "!dist/**"
+    - "!build/**"
+    - "!coverage/**"
+
+  path_instructions:
+    - path: "**/*"
+      instructions: >-
+        Follow the conventions documented in AGENTS.md. Do not flag formatting
+        that the project's linter already handles.
+
+chat:
+  auto_reply: true

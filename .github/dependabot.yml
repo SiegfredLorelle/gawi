@@ -1,0 +1,31 @@
+version: 2
+
+updates:
+  # Enabled by default — every repo from this template uses GitHub Actions.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    commit-message:
+      # Must satisfy .commitlintrc.yaml: type + kebab-case scope <= 12 chars,
+      # and the whole header within 50 characters.
+      prefix: "build(deps)"
+    groups:
+      actions:
+        update-types: [minor, patch]
+
+  # TEMPLATE.md step 8: uncomment the block for your stack.
+  #
+  # - package-ecosystem: uv          # or pip
+  # - package-ecosystem: npm         # pnpm and yarn both use this value
+  # - package-ecosystem: composer
+  # - package-ecosystem: gomod
+  #   directory: /
+  #   schedule:
+  #     interval: weekly
+  #   commit-message:
+  #     prefix: "build(deps)"
+  #   groups:
+  #     minor-patch:
+  #       update-types: [minor, patch]

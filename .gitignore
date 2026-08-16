@@ -1,0 +1,34 @@
+# Universal noise only. Append your stack's rules — see docs/stacks/.
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+*.swo
+*~
+
+# Tooling caches
+.cache/
+*.log
+
+# Build output
+dist/
+build/
+out/
+coverage/
+
+# Claude Code local overrides (shared settings.json IS committed)
+.claude/settings.local.json
