@@ -105,6 +105,16 @@ the main build and `build-logic/`.
 
 ## Notes
 
+- SDK platform packages are **minor-versioned** as of API 36.1/37: the id is
+  `platforms;android-37.0`, and `platforms;android-37` does not exist. Two
+  automated reviewers have already "corrected" this the wrong way — check
+  `sdkmanager --list` before trusting intuition from the old naming scheme.
+- `ci.yml` passes `cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}`
+  to setup-gradle. Create that repository secret with a value from
+  `openssl rand -base64 16`. It only encrypts CI cache entries — losing it
+  costs nothing (rotate freely). Without it the build stays green but
+  silently never persists Gradle's configuration cache, so cold-configure
+  time is paid on every run.
 - The runner needs a JDK and benefits hugely from dependency caching. Add
   `actions/setup-java` (temurin 17) and `gradle/actions/setup-gradle` to
   `ci.yml` — the sanctioned case where editing that file is expected. No SDK
