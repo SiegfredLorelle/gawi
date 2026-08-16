@@ -32,4 +32,4 @@ lint: ## Lint and type-check the codebase
 	./gradlew spotlessCheck detekt lint
 
 test: ## Run the test suite
-	./gradlew testDebugUnitTest :core:domain:test
+	./gradlew test

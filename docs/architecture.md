@@ -228,7 +228,7 @@ The template's Makefile contract maps to Gradle as:
 | `make setup` | `./gradlew help` warm-up (wrapper fetches everything) + git hooks |
 | `make fmt` | Spotless (ktlint) apply |
 | `make lint` | Spotless check + detekt + Android Lint |
-| `make test` | `./gradlew testDebugUnitTest :core:domain:test` (the pure-JVM module has no Android variants) |
+| `make test` | `./gradlew test` (module-generic: JVM modules' `test` plus Android modules' unit tests; a new module can never be silently skipped) |
 
 Deviations and notes:
 
