@@ -9,20 +9,21 @@ class ComposeConventionPlugin : Plugin<Project> {
         with(target) {
             pluginManager.apply("org.jetbrains.kotlin.plugin.compose")
 
-            // Deferred so plugin declaration order in the module file cannot
-            // break configuration: the "android" extension only exists once
-            // an Android plugin (application or library) has been applied.
+            // Everything is deferred so plugin declaration order in the
+            // module file cannot break configuration: the "android"
+            // extension and the debug/androidTest configurations only exist
+            // once an Android plugin (application or library) has applied.
             pluginManager.withPlugin("com.android.base") {
                 val android = extensions.getByName("android") as CommonExtension
                 android.buildFeatures.compose = true
-            }
 
-            dependencies {
-                val bom = libs.findLibrary("androidx-compose-bom").get()
-                "implementation"(platform(bom))
-                "androidTestImplementation"(platform(bom))
-                "implementation"(libs.findLibrary("androidx-compose-ui-tooling-preview").get())
-                "debugImplementation"(libs.findLibrary("androidx-compose-ui-tooling").get())
+                dependencies {
+                    val bom = libs.findLibrary("androidx-compose-bom").get()
+                    "implementation"(platform(bom))
+                    "androidTestImplementation"(platform(bom))
+                    "implementation"(libs.findLibrary("androidx-compose-ui-tooling-preview").get())
+                    "debugImplementation"(libs.findLibrary("androidx-compose-ui-tooling").get())
+                }
             }
         }
     }
