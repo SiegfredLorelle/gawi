@@ -10,7 +10,11 @@
 *.cmd text eol=crlf
 *.ps1 text eol=crlf
 
+# The Gradle wrapper script must stay LF even on Windows checkouts.
+gradlew text eol=lf
+
 # Binary — never diff, never normalise.
+*.jar  binary
 *.png  binary
 *.jpg  binary
 *.jpeg binary
