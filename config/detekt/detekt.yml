@@ -1,0 +1,13 @@
+# Overrides on top of detekt's bundled defaults (buildUponDefaultConfig = true
+# in the root build file). Deliberately near-empty at scaffold time — rule
+# tweaks land here as real code arrives, with a comment saying why.
+
+naming:
+  # Composables are PascalCase by Compose convention.
+  FunctionNaming:
+    ignoreAnnotated: ["Composable"]
+
+style:
+  # @Preview composables exist for the IDE, not for callers.
+  UnusedPrivateMember:
+    ignoreAnnotated: ["Preview"]
