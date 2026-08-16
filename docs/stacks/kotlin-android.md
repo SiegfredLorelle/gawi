@@ -29,15 +29,16 @@ lint: ## Lint and type-check the codebase
 	./gradlew spotlessCheck detekt lint
 
 test: ## Run the test suite
-	./gradlew testDebugUnitTest :core:domain:test
+	./gradlew test
 ```
 
 `./gradlew help` looks like a no-op but the wrapper downloads the Gradle
 distribution and warms the daemon, which is exactly what `setup` means here.
 `lint` is three gates in one: formatting (Spotless check, non-mutating),
-static analysis (detekt), and Android Lint. `testDebugUnitTest` only exists
-on Android modules — pure-JVM modules like `:core:domain` run plain `test`,
-which is why the target names both.
+static analysis (detekt), and Android Lint. `test` is deliberately generic —
+it resolves to plain `test` on pure-JVM modules and the unit-test tasks on
+Android modules, so a newly added module can never be silently skipped the
+way an explicit task list would allow.
 
 ## 2. .pre-commit-config.yaml
 
