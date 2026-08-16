@@ -20,8 +20,10 @@ spotless {
     kotlin {
         target("**/*.kt")
         targetExclude("**/build/**")
+        // Spotless does not pass ktlint_* properties from .editorconfig to
+        // ktlint, so this override must mirror the same setting there (kept
+        // for IDE ktlint integrations). Change both together.
         ktlint(libs.versions.ktlint.get()).editorConfigOverride(
-            // Composables are PascalCase by Compose convention.
             mapOf("ktlint_function_naming_ignore_when_annotated_with" to "Composable"),
         )
     }
@@ -36,12 +38,9 @@ detekt {
     buildUponDefaultConfig = true
     parallel = true
     config.setFrom(files("config/detekt/detekt.yml"))
+    // Derived from the project tree so a new module can never silently
+    // escape analysis. build-logic is an included build, added by hand.
     source.setFrom(
-        files(
-            "app/src",
-            "core/domain/src",
-            "core/data/src",
-            "build-logic/src",
-        ),
+        files(subprojects.map { it.projectDir.resolve("src") } + file("build-logic/src")),
     )
 }
