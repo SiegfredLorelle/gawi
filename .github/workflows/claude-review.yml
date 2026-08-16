@@ -54,6 +54,11 @@ jobs:
       - uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Without this the action mints a token via OIDC, which needs the
+          # id-token: write permission this workflow deliberately withholds
+          # (see note above). The workflow's own token is scoped to exactly
+          # the permissions block: read + comment.
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           # Read and comment only. No Write, no Edit, no arbitrary Bash,
           # no merging. Widen this only if you understand the note above.
           claude_args: >-
