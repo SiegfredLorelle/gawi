@@ -42,3 +42,9 @@ captures/
 *.aab
 *.hprof
 .cxx/
+
+# Android signing material — binary keystores slip past gitleaks
+*.jks
+*.keystore
+keystore.properties
+signing.properties
