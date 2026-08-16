@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark counterpart of values/themes.xml so the pre-setContent window
+         follows the system theme. The framework has no
+         Theme.Material.DayNight; this manual -night override is the
+         appcompat-free equivalent. -->
+    <style name="Theme.Gawi" parent="android:Theme.Material.NoActionBar" />
+</resources>
