@@ -49,6 +49,17 @@ jobs:
             | tar -xz -C /usr/local/bin gitleaks
           gitleaks git --redact --no-banner --exit-code 1
 
+      # Stack deviation, documented in docs/stacks/kotlin-android.md: Gradle
+      # needs a pinned JDK, and without dependency caching every run pays a
+      # cold multi-minute build. The Android SDK itself needs no step —
+      # ubuntu-latest ships it with licenses accepted.
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v5
+
       - name: setup
         run: make setup
 
