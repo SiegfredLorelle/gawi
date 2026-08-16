@@ -111,12 +111,11 @@ BREAKING CHANGE: /v1/* now returns 410. Migrate to /v2/*.
 
 ## Project scopes
 
-`scope-enum` is not set by default. To restrict scopes to a fixed list for
-this project, add it to `.commitlintrc.yaml`:
-
-```yaml
-scope-enum: [2, always, [auth, api, db, ui, ci, deps]]
-```
+Scopes are restricted to this project's real areas via `scope-enum` in
+`.commitlintrc.yaml` — check there for the current list (`app`, `domain`,
+`data`, `gradle`, `ci`, `docs`, …). A commit with any other scope is
+rejected by the hook and by CI. When a new module is born, add its scope to
+the enum in the same PR.
 
 ## Merge and revert commits
 
