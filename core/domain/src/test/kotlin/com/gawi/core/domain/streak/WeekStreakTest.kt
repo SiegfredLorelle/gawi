@@ -69,6 +69,13 @@ class WeekStreakTest {
     }
 
     @Test
+    fun `future-dated completions never pre-fill the current week`() {
+        val withFuture = dates("2026-08-17", "2026-08-19")
+
+        assertEquals(0, Streaks.weekStreak(withFuture, timesPerWeek = 2, today = today))
+    }
+
+    @Test
     fun `over-completing a week counts once`() {
         val fourDays = dates("2026-08-10", "2026-08-11", "2026-08-12", "2026-08-13")
 

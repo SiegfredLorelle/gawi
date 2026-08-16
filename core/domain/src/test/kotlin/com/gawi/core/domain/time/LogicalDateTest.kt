@@ -89,6 +89,20 @@ class LogicalDateTest {
     }
 
     @Test
+    fun `a cutoff inside the fall-back hour regresses the date for the rewound stretch`() {
+        val cutoff = LocalTime.of(2, 30)
+        val pastCutoffCest = Instant.parse("2026-10-25T00:40:00Z")
+        val rewoundBelowCutoffCet = Instant.parse("2026-10-25T01:10:00Z")
+
+        assertEquals(date("2026-10-25"), logicalDate(pastCutoffCest, cutoff, berlin))
+        assertEquals(
+            "accepted anomaly: wall clock fell back below the cutoff",
+            date("2026-10-24"),
+            logicalDate(rewoundBelowCutoffCet, cutoff, berlin),
+        )
+    }
+
+    @Test
     fun `berlin fall back keeps all twenty-five hours on one calendar date under midnight cutoff`() {
         val startOfDay = Instant.parse("2026-10-24T22:00:00Z")
 

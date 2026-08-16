@@ -156,6 +156,23 @@ class CommandValidationTest {
     }
 
     @Test
+    fun `undo and note updates on an archived habit are rejected like adds`() {
+        val state = Projector.rebuild(
+            listOf(
+                event(1, 1000, habitCreated(habit)),
+                event(2, 2000, completionAdded(habit, "2026-08-17")),
+                event(3, 3000, HabitArchived(habit)),
+            ),
+        )
+
+        rejectedWith(Commands.undoCompletion(state, habit, today), CommandError.HabitIsArchived)
+        rejectedWith(
+            Commands.updateCompletionNote(state, eventId(2), "frozen"),
+            CommandError.HabitIsArchived,
+        )
+    }
+
+    @Test
     fun `undo on an empty cell is rejected`() {
         rejectedWith(Commands.undoCompletion(stateWithHabit, habit, today), CommandError.CompletionNotFound)
     }

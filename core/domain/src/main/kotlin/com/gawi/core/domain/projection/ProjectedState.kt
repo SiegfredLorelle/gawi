@@ -101,12 +101,9 @@ data class ProjectedState(
         completions[CompletionKey(habitId, logicalDate)]?.liveAddIds.orEmpty()
 
     /** The completed logical dates for a habit — the streak calculators' input. */
-    fun completedDates(habitId: HabitId): Set<LocalDate> = completions
-        .filterValues { it.isCompleted }
-        .keys
-        .filter { it.habitId == habitId }
-        .map { it.logicalDate }
-        .toSet()
+    fun completedDates(habitId: HabitId): Set<LocalDate> = completions.entries.mapNotNullTo(mutableSetOf()) { (key, cell) ->
+        key.logicalDate.takeIf { key.habitId == habitId && cell.isCompleted }
+    }
 
     companion object {
         val EMPTY = ProjectedState()

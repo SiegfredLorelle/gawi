@@ -24,7 +24,9 @@ class UuidV7Generator(private val nowMillis: () -> Long = System::currentTimeMil
 
     @Synchronized
     fun next(): EventId {
-        val now = nowMillis()
+        // A pre-epoch clock (RTC reset) would hex-format with a minus sign
+        // and break the canonical form; clamp — monotonicity handles the rest.
+        val now = nowMillis().coerceAtLeast(0)
         if (now > lastMillis) {
             lastMillis = now
             counter = random.nextInt(COUNTER_SEED_BOUND)

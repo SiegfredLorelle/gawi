@@ -98,6 +98,18 @@ class UuidV7GeneratorTest {
     }
 
     @Test
+    fun `a pre-epoch clock is clamped and still yields canonical ids`() {
+        clock = -5_000
+        val generator = generator()
+
+        val first = generator.next()
+        val second = generator.next()
+
+        assertEquals(0, timestampOf(first))
+        assertTrue(second > first)
+    }
+
+    @Test
     fun `different random seeds give different ids at the same instant`() {
         clock = 1_755_400_000_000
 
