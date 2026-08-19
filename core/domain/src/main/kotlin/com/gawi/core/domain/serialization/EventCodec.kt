@@ -38,14 +38,22 @@ class EventCodec {
     }
 
     // SerializationException is an IllegalArgumentException, as are the
-    // canonical-form and schedule-kind require()s; dates throw DateTimeException.
+    // canonical-form and schedule-kind require()s; a check() in a future
+    // upcast raises IllegalStateException; dates throw DateTimeException.
+    // Deliberately not RuntimeException — that would relabel genuine logic
+    // bugs as data corruption.
     private fun decodeWith(codec: PayloadCodec<out EventPayload>, type: String, schemaVersion: Int, json: String): EventPayload = try {
         codec.decode(schemaVersion, json)
     } catch (cause: IllegalArgumentException) {
-        throw EventCodecException("corrupt $type v$schemaVersion payload", cause)
+        corrupt(type, schemaVersion, cause)
+    } catch (cause: IllegalStateException) {
+        corrupt(type, schemaVersion, cause)
     } catch (cause: DateTimeException) {
-        throw EventCodecException("corrupt $type v$schemaVersion payload", cause)
+        corrupt(type, schemaVersion, cause)
     }
+
+    private fun corrupt(type: String, schemaVersion: Int, cause: Throwable): Nothing =
+        throw EventCodecException("corrupt $type v$schemaVersion payload", cause)
 
     private companion object {
         val codecs: Map<String, PayloadCodec<out EventPayload>> = listOf(
