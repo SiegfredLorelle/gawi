@@ -14,9 +14,9 @@ spotless = "8.9.0"
 # Consumed by the Spotless config in the root build file, not a plugin.
 ktlint = "1.8.0"
 junit = "4.13.2"
-# Robolectric 4.16.1 ships android-all jars up to Android 16 (API 36) only.
-# Every :core:data test pins sdk=36 in robolectric.properties because the
-# default is targetSdk, and no jar exists for 37 — see that file.
+# :core:data pins the test SDK to 35 in robolectric.properties rather than
+# taking the targetSdk default, which would be 37. Read that file before
+# bumping this: the ceiling is the project's JDK 17, not this version.
 robolectric = "4.16.1"
 turbine = "1.2.0"
 # SDK levels and JDK, read by the convention plugins in build-logic.
@@ -35,7 +35,6 @@ androidx-activity-compose = { group = "androidx.activity", name = "activity-comp
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
-androidx-room-testing = { group = "androidx.room", name = "room-testing", version.ref = "room" }
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
 kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
