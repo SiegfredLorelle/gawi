@@ -214,10 +214,23 @@ Do not "upgrade" this to exact alarms.
   retro-window enforcement, UUIDv7 monotonicity, and the
   incremental-≡-rebuild projection invariant.
 - `:core:data`: Room DAO tests on the JVM (Robolectric / in-memory database).
+- Feature modules: **Compose UI tests on the JVM**, under Robolectric, in the
+  module's own `test` source set — not `androidTest`. They render a stateless
+  screen composable, assert what it draws and what a tap reports, and so cover
+  the gap between a mapper test (what the state says) and a ViewModel test
+  (which state is emitted). Being unit tests, they need no device and change
+  nothing below. Aim them at wiring and at rules a reader could delete by
+  accident; the logic itself is already covered above.
 - Widget, notifications, and OEM battery behavior: **physical device only**
   (PRD §7). No emulator in CI.
 - CI runs unit tests only; instrumented tests are a manual, on-device
-  activity.
+  activity. The JVM Compose tests are unit tests and are inside that gate —
+  this line changes only if cross-app journeys (widget on a launcher, the
+  notification shade) are ever put in CI, which needs Gradle Managed Devices
+  and is a decision, not a detail.
+- Golden-image / screenshot testing is **deliberately not adopted yet**: Momo's
+  art is placeholder copy (PRD OQ-4), so goldens would pin something designed
+  to change. Revisit when the four moods have real art.
 
 ## 9. Repo integration (template contract)
 
