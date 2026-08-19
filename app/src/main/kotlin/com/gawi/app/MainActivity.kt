@@ -3,6 +3,7 @@ package com.gawi.app
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import com.gawi.core.ui.theme.GawiTheme
 import com.gawi.feature.today.TodayRoute
 import dagger.hilt.android.AndroidEntryPoint
@@ -25,6 +26,13 @@ import dagger.hilt.android.AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Not optional, and not only about insets. targetSdk 37 makes the status
+        // bar transparent with no way out, and its icon colour comes from
+        // windowLightStatusBar, which neither window theme sets and which
+        // defaults to light icons. The Today view's app bar paints `surface`
+        // straight under them, so in light mode they would be white on white.
+        // This resolves the appearance from the actual theme, both ways round.
+        enableEdgeToEdge()
         setContent {
             GawiTheme {
                 TodayRoute()
