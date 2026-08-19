@@ -68,8 +68,8 @@ internal class SeedActivity : ComponentActivity() {
     /**
      * The day cutoff and the reminder time, if the caller passed them.
      *
-     * Here because they are the only two settings the on-device checklist needs
-     * and :feature:settings does not exist. The cutoff also happens to be the
+     * Here because they are the only two settings docs/running.md §5's checklist
+     * needs and :feature:settings does not exist. The cutoff also happens to be the
      * cheapest way to make the day roll over on a real clock: set it a couple of
      * minutes ahead and watch the rows flip without touching the device time.
      */

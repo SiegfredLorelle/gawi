@@ -9,6 +9,7 @@ Android SDK; neither lives in the repo.
 #   SDK       → ~/Android/Sdk      (cmdline-tools + sdkmanager)
 # then export JAVA_HOME and ANDROID_HOME in your shell profile.
 sdkmanager "platform-tools" "platforms;android-37.0" "build-tools;37.0.0"
+# Emulator, system images and device setup: ../running.md
 
 # Generate the wrapper once with a downloaded Gradle distribution; commit it.
 # Pin the distribution checksum (from

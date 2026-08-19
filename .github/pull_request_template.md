@@ -17,5 +17,7 @@
 - [ ] Commits follow the convention (see `.github/COMMIT_CONVENTION.md`)
 - [ ] `.env.example` updated if new configuration was added
 - [ ] Docs or `AGENTS.md` updated if conventions changed
+- [ ] Ran on a device or emulator if the change is user-visible, per
+      [docs/running.md](../docs/running.md)
 
 <!-- Add the `needs-review` label if you want an AI review pass on this PR. -->

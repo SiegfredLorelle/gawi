@@ -1,0 +1,354 @@
+# Running and testing Gawi
+
+How to get the app onto a screen, and what to check by hand once it is there.
+
+Companion to [the architecture](architecture.md) §8, which makes this necessary:
+CI runs unit tests only, and *"instrumented tests are a manual, on-device
+activity"*. §5 below is that activity written down. Toolchain setup for the
+**build** lives in [docs/stacks/kotlin-android.md](stacks/kotlin-android.md);
+this file picks up where that leaves off.
+
+**What has actually been run.** The Linux path in this document was executed end
+to end on 2026-08-20 (Arch, AMD Ryzen, AVD on Android 17 x86_64). The macOS and
+Windows sections come from Google's and Microsoft's documentation and have **not**
+been run by anyone here — they are marked as such. **No physical device has been
+attached on any platform**, so the whole of §3 is unverified. Corrections
+welcome; that is what those markers are for.
+
+---
+
+## 1. Prerequisites
+
+### Everyone
+
+| Need | Notes |
+|---|---|
+| **JDK 17** | Pinned by `jdk` in `gradle/libs.versions.toml` and by CI. Check with `./gradlew -version`, which reports the JVM Gradle actually uses. |
+| **Android SDK** | `platform-tools`, `platforms;android-37.0`, `build-tools;37.0.0`, `emulator`. See the stack doc for the one-time install. |
+| **`ANDROID_HOME`** | Exported in your shell profile, pointing at the SDK. |
+| **Accepted licences** | `sdkmanager --licenses`. Skipping this makes Gradle's SDK auto-download fail with an opaque error — a very common first-run blocker. |
+| **`make`** | The command contract (`make help`). See the Windows note below. |
+| **`pre-commit`** | A Python tool, needed by `make setup` for the git hooks. Not a JVM dependency, easy to miss. |
+| **~16 GB RAM** | Google's documented figure for the emulator. Below it the emulator warns and thrashes. |
+
+Two environment traps worth stating outright:
+
+- **`ANDROID_SDK_ROOT` is deprecated** in favour of `ANDROID_HOME`. If both are
+  set and disagree, the build complains. Unset the old one.
+- **Android Studio's bundled JDK may differ from your shell's.** That is the
+  classic "works in the IDE, fails in the terminal" confusion. `./gradlew
+  -version` is the arbiter.
+
+Line endings need **no** configuration: `.gitattributes` already pins `gradlew`
+to LF and `*.bat` to CRLF, and a committed `.gitattributes` overrides whatever
+`core.autocrlf` you have. Please do not "fix" it.
+
+### Linux — *verified*
+
+The emulator needs KVM. One command answers whether you have it, on every
+platform:
+
+```sh
+$ANDROID_HOME/emulator/emulator -accel-check
+# working: "KVM (version 12) is installed and usable."
+```
+
+If `/dev/kvm` is missing, the cause is almost always **virtualization disabled in
+firmware**, not a missing kernel module. Diagnose it carefully, because the
+obvious grep lies:
+
+```sh
+# WRONG: matches "svm_lock" as a substring and reports success on a machine
+# where SVM is disabled.
+grep -E 'vmx|svm' /proc/cpuinfo
+
+# RIGHT: word-bounded against the flags line only.
+awk -F': ' '/^flags/{print $2; exit}' /proc/cpuinfo | tr ' ' '\n' | grep -x -E 'svm|vmx'
+```
+
+Empty output with `svm_lock`, `npt` and `nrip_save` present is the signature of a
+CPU that supports virtualization while the firmware has it switched off. Enable
+it in the UEFI setup — **SVM Mode** on AMD, **VT-x** on Intel. On the Gigabyte
+B450 this repo was developed on: *Tweaker → Advanced CPU Settings → SVM Mode →
+Enabled*. `kvm_amd`/`kvm_intel` then autoload; you do not need `modprobe`.
+
+Permissions on `/dev/kvm` differ by distro, so check rather than follow folklore:
+
+```sh
+ls -l /dev/kvm
+# crw-rw-rw-  (0666, systemd's own udev rule) -> nothing more to do
+# crw-rw----  (0660, common on Debian/Ubuntu) -> sudo usermod -aG kvm $USER, then re-login
+```
+
+**Wayland note.** The emulator UI is Qt and runs through XWayland. If the window
+never appears or renders black, try `-gpu host`, then `-gpu software`. Forcing
+XWayland with `QT_QPA_PLATFORM=xcb` also helps. (`swiftshader_indirect`, which
+older guides recommend, no longer exists — `emulator -help-gpu` lists the current
+modes.)
+
+### macOS — *unverified here; from Google's documentation*
+
+- SDK lives at `~/Library/Android/sdk`.
+- **Acceleration needs no setup.** The emulator uses the built-in
+  Hypervisor.framework — nothing to install, no firmware setting. Intel HAXM has
+  been unavailable since macOS 11; ignore any guide that mentions it.
+- `make` comes from the Xcode Command Line Tools: `xcode-select --install`.
+- **A physical device needs no driver.**
+- **Apple Silicon must use an `arm64-v8a` system image** — see §2.
+
+### Windows — *unverified here; from Google's and Microsoft's documentation*
+
+- SDK lives at `%LOCALAPPDATA%\Android\Sdk`.
+- **Acceleration is WHPX** (Windows Hypervisor Platform):
+  1. Enable virtualization in firmware — **SVM Mode** on AMD, **VT-x** on Intel.
+  2. Start → *"Turn Windows features on or off"* → tick **Windows Hypervisor
+     Platform** → OK → **reboot** (not optional).
+  3. Verify with `emulator -accel-check`.
+- **Two older options are dead.** Intel HAXM is discontinued, and the Android
+  Emulator hypervisor driver (**AEHD**) is deprecated with a sunset date of
+  **2026-12-31**. If either is installed, remove it — e.g. `sc stop aehd && sc
+  delete aehd` — and use WHPX.
+- **Do not disable Hyper-V.** That instruction is legacy. WHPX exists precisely
+  so the emulator coexists with Hyper-V, WSL2 and Docker Desktop. The conflict
+  belonged to AEHD, which required Hyper-V *off*; moving to WHPX resolves it.
+  You still cannot run the emulator nested inside a VirtualBox/VMware guest, and
+  some anti-cheat drivers claim the hypervisor exclusively.
+- **A physical device needs a driver** — the only platform that does. Google USB
+  Driver via SDK Manager for Pixel devices, the vendor's own driver otherwise.
+- **`make` needs a POSIX shell.** The Makefile uses `[ -n "$CI" ]`, `grep` and
+  `awk`. Git Bash supplies those but **not `make` itself**; MSYS2
+  (`pacman -S make`) is the cleanest single install. Because the Makefile is a
+  thin wrapper, you can skip it entirely:
+
+  | Instead of | Run |
+  |---|---|
+  | `make fmt` | `gradlew.bat spotlessApply` |
+  | `make lint` | `gradlew.bat spotlessCheck detekt lint` |
+  | `make test` | `gradlew.bat test` |
+  | `make run` | `gradlew.bat :app:installDebug` then the `adb shell am start` line from the Makefile |
+
+  Building inside WSL2 works, but **run the emulator and `adb` on the Windows
+  side**: GPU passthrough into WSL2 is a common source of rendering failure, and
+  reaching a Windows-hosted emulator from WSL2 otherwise needs port forwarding
+  (WSL2 mirrored networking mode is the tidy fix).
+
+---
+
+## 2. An emulator
+
+### Create the AVD
+
+**The image ABI must match your CPU**, or the AVD will not start:
+
+| Host | Image |
+|---|---|
+| Intel / AMD | `…;x86_64` |
+| Apple Silicon | `…;arm64-v8a` |
+
+The package ids differ only in that last field:
+
+```sh
+# Intel/AMD hosts
+sdkmanager "system-images;android-37.1;google_apis_playstore_ps16k;x86_64"
+# Apple Silicon
+sdkmanager "system-images;android-37.1;google_apis_playstore_ps16k;arm64-v8a"
+```
+
+Then create the device. `avdmanager list device` shows the profiles;
+`medium_phone` is a reasonable default:
+
+```sh
+avdmanager create avd \
+  -n gawi \
+  -k "system-images;android-37.1;google_apis_playstore_ps16k;x86_64" \
+  -d medium_phone
+```
+
+That command prints two `Could not load devices from …/devices.xml` errors. They
+are **noise** — the profile is applied anyway (`hw.device.name=medium_phone`,
+1080×2400, 2 GB in the generated `config.ini`) and the AVD boots. Verified, so
+do not go hunting.
+
+> An `x86_64` image is not expected to run on Apple Silicon at all — there is no
+> slow-but-working fallback. Google does not document the exact failure, so if
+> yours behaves differently, correct this line.
+
+### Start it and run the app
+
+```sh
+$ANDROID_HOME/emulator/emulator -avd gawi &
+adb wait-for-device
+make run
+```
+
+`make run` builds the debug variant, installs it, and launches the Today view. It
+resolves `adb` from `PATH`; override that if your SDK is somewhere unusual:
+
+```sh
+make run ADB=~/Library/Android/sdk/platform-tools/adb
+```
+
+**With more than one device attached**, name the target — otherwise the launch
+step stops with `adb: more than one device/emulator`, and Gradle installs to
+*every* attached device rather than choosing:
+
+```sh
+adb devices                              # find the serial
+ANDROID_SERIAL=emulator-5556 make run
+```
+
+Useful while iterating:
+
+```sh
+adb logcat -c                                   # clear, then reproduce
+adb logcat -d -s AndroidRuntime:E               # crashes only
+adb exec-out screencap -p > /tmp/shot.png       # screenshot
+adb shell pm clear com.gawi.app                 # wipe the database and settings
+```
+
+---
+
+## 3. A physical device — *unverified on every platform*
+
+PRD §7 makes a real device the primary target for widget and notification work,
+because launchers and OEM battery policies differ from emulators. None of that
+exists yet, so nothing in this repo yet *requires* a device — but the setup is
+here so it is not discovered later.
+
+1. On the phone: **Settings → About → tap Build number seven times**, then
+   **Developer options → USB debugging**.
+2. Connect it and accept the RSA fingerprint prompt.
+3. `adb devices` must show `device`. Anything else means step 4.
+
+Per platform:
+
+- **Linux** — needs udev rules. On Arch: `pacman -S android-udev`, then
+  `sudo usermod -aG adbusers $USER` and **log out and back in** (group
+  membership only refreshes on login). Debian/Ubuntu ship
+  `android-sdk-platform-tools-common` and use the `plugdev` group instead. The
+  symptom of missing rules is `adb devices` listing the serial with
+  **`no permissions`** rather than `device`; after installing them,
+  `sudo udevadm control --reload-rules && sudo udevadm trigger`, replug, then
+  `adb kill-server && adb start-server`.
+- **macOS** — nothing needed.
+- **Windows** — install the USB driver (see §1).
+
+### Wireless debugging
+
+Android 11+ (pairing code, no cable):
+
+```sh
+# Phone: Developer options -> Wireless debugging -> Pair device with pairing code
+adb pair 192.168.1.50:37123      # port from the pairing dialog
+adb connect 192.168.1.50:5555    # port from the main Wireless debugging screen
+```
+
+The two ports differ, which is the usual stumbling block. Pairing is once per
+workstation.
+
+`minSdk` is 29, so Android 10 testers are in scope and need the legacy route,
+which requires one initial cable:
+
+```sh
+adb tcpip 5555
+# unplug
+adb connect 192.168.1.50:5555
+```
+
+---
+
+## 4. Putting habits on a device
+
+> **Temporary.** There is no create-habit screen yet — `:feature:habits` does not
+> exist (architecture §2), so a fresh install can only show the empty state. This
+> whole section disappears with `app/src/debug/` when the create form lands.
+
+A debug-only activity seeds one daily and one weekly habit. It is in the debug
+source set, so it cannot ship, and it has no launcher entry — only `adb` reaches
+it:
+
+```sh
+adb shell am start -n com.gawi.app/com.gawi.app.debug.SeedActivity
+adb logcat -d -s GawiSeed
+```
+
+It is re-runnable — habits already present are skipped. It also writes the two
+settings that have no screen yet, which is what makes §5's clock checks possible:
+
+```sh
+adb shell am start -n com.gawi.app/com.gawi.app.debug.SeedActivity \
+  --es cutoff 03:00 --es reminder 21:00
+```
+
+Start it **while the Today view is open**: it runs in its own task, so you watch
+rows arrive without a restart.
+
+---
+
+## 5. Manual verification checklist
+
+Architecture §8 puts instrumented tests outside CI, so this is the substitute.
+Work through it for any change to the data path or the Today view; note in the PR
+which parts you ran.
+
+**On an emulator**
+
+- [ ] The app launches and `adb logcat -d -s AndroidRuntime:E` is empty.
+- [ ] Seed **while the screen is open** — rows appear with no restart. This one
+      observation covers Hilt building the data layer, the event log being
+      folded, the projection write, and the Room `Flow`.
+- [ ] Tap a row: it ticks, and its streak appears. Tap again: it unticks. A
+      daily streak reads as a count, a weekly one in weeks.
+- [ ] Force-stop and relaunch: completions and streaks are rebuilt from the log.
+- [ ] The database exists — `adb shell run-as com.gawi.app ls -l databases`.
+      To inspect it, **pull the `-wal` too**:
+
+      ```sh
+      adb exec-out run-as com.gawi.app cat databases/gawi.db     > /tmp/gawi.db
+      adb exec-out run-as com.gawi.app cat databases/gawi.db-wal > /tmp/gawi.db-wal
+      sqlite3 /tmp/gawi.db 'select type, payload from events;'
+      ```
+
+      Without the WAL you read a pre-checkpoint snapshot and will think writes
+      were lost — the main file was 4 KB against a 181 KB WAL when this was
+      written.
+- [ ] Settings persist. `files/datastore/settings.preferences_pb` appears after
+      the **first write**, not the first read, so seed with `--es cutoff` first.
+      Then force-stop, relaunch, and re-run the seeder: it prints the stored
+      settings.
+- [ ] **Day rollover, against a real clock.** Set the cutoff a couple of minutes
+      ahead (`--es cutoff HH:MM`): "today" becomes yesterday, so a completed row
+      reads unticked. Leave the screen alone; when the boundary passes the row
+      flips back on its own. Prefer this to `adb shell date`, which needs
+      `adb root` and is refused on Play-image emulators.
+- [ ] **The mascot follows the clock, not just the data.** With something
+      outstanding, set `--es reminder` to a time just past now. The panel changes
+      with no habit touched and no interaction.
+- [ ] A cancelled tap still commits: tap, immediately press Back, relaunch, and
+      the completion is there.
+
+**Physical device only** — nothing here is built yet, so these are placeholders
+that come alive with the widget and the reminder (architecture §8, PRD §7):
+
+- [ ] Home-screen widget: renders, taps complete, refreshes after an in-app change.
+- [ ] End-of-day reminder fires, and stays silent when everything is done.
+- [ ] Survives doze and the vendor's battery optimiser.
+
+---
+
+## 6. Troubleshooting
+
+| Symptom | Cause and fix |
+|---|---|
+| `/dev/kvm is not found` (Android Studio adds *"Enable VT-x"*) | Virtualization off in firmware. See §1 Linux. On AMD the setting is **SVM**, not VT-x — Studio's wording is Intel-only. |
+| `x86_64 emulation currently requires hardware acceleration!` | Same cause. `emulator -accel-check` confirms. |
+| Emulator window black, or never appears | GPU renderer. Try `-gpu host`, then `-gpu software`. On Wayland also `QT_QPA_PLATFORM=xcb`. |
+| AVD refuses to start on a Mac | Wrong ABI. Apple Silicon needs `arm64-v8a` (§2). |
+| `adb devices` shows `unauthorized` | The RSA prompt was not accepted. Replug and confirm on the phone; `adb kill-server` to re-offer it. |
+| `adb devices` shows `no permissions` | Linux udev rules or group membership (§3). |
+| `adb devices` empty with a cable attached | On Windows, the USB driver. Everywhere, check the cable is data-capable and the phone is not in charge-only mode. |
+| Gradle fails on a missing SDK package | Licences: `sdkmanager --licenses`. |
+| `make run` fails with `adb: device '…' not found` | Nothing attached, or `ANDROID_SERIAL` points at something that has gone away. |
+| `make run` fails with `adb: more than one device/emulator` | Two or more targets attached. Set `ANDROID_SERIAL` (§2). |
+| `avdmanager create` prints `Could not load devices from …/devices.xml` | Harmless. The device profile is still applied and the AVD boots (§2). |
+| Works in Android Studio, fails in the terminal | Two different JDKs. Compare `./gradlew -version` with Studio's Gradle JDK setting. |
