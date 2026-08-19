@@ -93,8 +93,8 @@ All data is an **append-only event log** (habit created/edited/archived, complet
 ### Phase 1 — Mascot, quick actions & insights (committed)
 
 **Mascot (committed feature)**
-- Original character with emotional states (thriving, content, worried, sad) driven by streak health and today's completion status.
-- Appears in Today view, widget, and reminder notifications ("Kiko is worried — 2 habits left today!").
+- Momo with emotional states (thriving, content, worried, regenerating) driven by streak health and today's completion status. "Regenerating" replaces "sad" on purpose — see §3.5.
+- Appears in Today view, widget, and reminder notifications ("Momo is worried — 2 habits left today!"). Placement in the Today view is fixed: see `docs/ux/today-view.md`.
 - Streak milestone celebrations (7, 30, 100 days; 4, 12, 52 weeks).
 - **Design tooling plan:**
   - Concepting: iterate on character personality, expression sheets, and design briefs with Claude; AI image tools for visual concept exploration.
