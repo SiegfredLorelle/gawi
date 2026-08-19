@@ -1,0 +1,195 @@
+package com.gawi.feature.today
+
+import android.content.Context
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.test.core.app.ApplicationProvider
+import com.gawi.core.domain.mascot.Mood
+import com.gawi.core.domain.model.HabitId
+import com.gawi.core.ui.theme.GawiTheme
+import org.junit.Assert.assertEquals
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import java.time.LocalDate
+
+/**
+ * The screen, rendered.
+ *
+ * On the JVM under Robolectric rather than on a device, so this runs inside the
+ * existing `make test` gate and architecture §8's "CI runs unit tests only"
+ * stays true. What it is here to catch is the class of bug the other tests in
+ * this module structurally cannot: [TodayUiMapperTest] asserts what the state
+ * says and [TodayViewModelTest] asserts which state is emitted, and neither one
+ * can see what a composable does with it.
+ *
+ * That gap has already cost something. The empty state once drew "Nothing left
+ * today" above "No habits yet" — a first run congratulated for having done
+ * nothing, which is precisely what docs/ux/today-view.md §4's rule 0 exists to
+ * prevent. It was captured in a screenshot during device verification and read
+ * past; a reviewer found it afterwards. [emptyState_doesNotClaimNothingLeft] is
+ * that bug, kept failing.
+ *
+ * Deliberately aimed at [TodayScreen] rather than [TodayRoute]: the stateless
+ * composable is the whole of what is under test, so no Hilt graph, no
+ * ViewModel and no substituted clock are involved in a red result. Driving the
+ * wired route belongs with the first real journey, when there is a create form
+ * to start one from.
+ *
+ * Strings are resolved from the test context rather than written out here, so
+ * these assertions survive a copy edit and fail only on a behaviour change.
+ */
+@RunWith(RobolectricTestRunner::class)
+class TodayScreenTest {
+
+    @get:Rule
+    val compose = createComposeRule()
+
+    private val resources = ApplicationProvider.getApplicationContext<Context>().resources
+
+    /**
+     * §4's rule 0, as a test: a habitless first run is not thriving.
+     *
+     * The mood line is asserted alongside the absence, because "Nothing left
+     * today" was never wrong on its own — it was wrong *under* Momo waiting for
+     * a first habit. Asserting only the absence would still pass if the panel
+     * stopped rendering entirely.
+     */
+    @Test
+    fun emptyState_doesNotClaimNothingLeft() {
+        compose.setContent {
+            GawiTheme { TodayScreen(TodayUiState.Empty(Mood.CONTENT), NO_TOGGLE, SnackbarHostState()) }
+        }
+
+        compose.onNodeWithText(string(R.string.today_mood_empty)).assertIsDisplayed()
+        compose.onNodeWithText(string(R.string.today_empty_title)).assertIsDisplayed()
+        compose.onNodeWithText(string(R.string.today_remaining_none)).assertDoesNotExist()
+    }
+
+    /**
+     * A tap carries the row's own date and its own state, not the screen's idea
+     * of either.
+     *
+     * This is 4b's load-bearing decision seen from the layer that consumes it:
+     * `observeToday()` emits one snapshot so the rows and the date they were
+     * queried for cannot disagree, and `HabitList` passes that date down with
+     * each row. A tap that resolved "today" for itself would differ from the
+     * day the user was looking at across a cutoff — and would still pass every
+     * test in this module except this one.
+     *
+     * The second row is the one tapped, and it is the un-completed one, so a
+     * `completed` argument that was read off the wrong row would come back
+     * `true`.
+     */
+    @Test
+    fun rowTap_reportsTheRowsOwnDateAndState() {
+        var reported: Triple<HabitId, Boolean, LocalDate>? = null
+        compose.setContent {
+            GawiTheme {
+                TodayScreen(
+                    state = HABITS,
+                    onToggle = { id, completed, date -> reported = Triple(id, completed, date) },
+                    snackbarHostState = SnackbarHostState(),
+                )
+            }
+        }
+
+        compose.onNodeWithText(WALK.name).performClick()
+
+        assertEquals(Triple(WALK.id, false, LOGICAL_DATE), reported)
+    }
+
+    /** A completed row reports the state it is in, so the ViewModel can undo it. */
+    @Test
+    fun completedRowTap_reportsThatItIsAlreadyDone() {
+        var reported: Triple<HabitId, Boolean, LocalDate>? = null
+        compose.setContent {
+            GawiTheme {
+                TodayScreen(
+                    state = HABITS,
+                    onToggle = { id, completed, date -> reported = Triple(id, completed, date) },
+                    snackbarHostState = SnackbarHostState(),
+                )
+            }
+        }
+
+        compose.onNodeWithText(READ.name).performClick()
+
+        assertEquals(Triple(READ.id, true, LOGICAL_DATE), reported)
+    }
+
+    /**
+     * The failed read tells the user what to do about it.
+     *
+     * The copy matters more than it looks: `catch` terminates the flow, so this
+     * state clears only when the screen re-subscribes. It says to reopen the app
+     * because nothing else will clear it, and that stays honest only while the
+     * two are changed together.
+     */
+    @Test
+    fun unavailable_tellsTheUserToReopen() {
+        compose.setContent {
+            GawiTheme { TodayScreen(TodayUiState.Unavailable, NO_TOGGLE, SnackbarHostState()) }
+        }
+
+        compose.onNodeWithText(string(R.string.today_unavailable_title)).assertIsDisplayed()
+        compose.onNodeWithText(string(R.string.today_unavailable_body)).assertIsDisplayed()
+    }
+
+    /**
+     * Loading draws nothing rather than guessing.
+     *
+     * Not a spinner and not the empty state: the first emission is one Room
+     * query, so this frame exists only so the screen does not tell someone they
+     * have no habits before it has looked.
+     */
+    @Test
+    fun loading_claimsNothingEitherWay() {
+        compose.setContent {
+            GawiTheme { TodayScreen(TodayUiState.Loading, NO_TOGGLE, SnackbarHostState()) }
+        }
+
+        compose.onNodeWithText(string(R.string.today_empty_title)).assertDoesNotExist()
+        compose.onNodeWithText(string(R.string.today_mood_empty)).assertDoesNotExist()
+    }
+
+    private fun string(id: Int): String = resources.getString(id)
+
+    private companion object {
+        val LOGICAL_DATE: LocalDate = LocalDate.parse("2026-08-17")
+        val NO_TOGGLE: (HabitId, Boolean, LocalDate) -> Unit = { _, _, _ -> }
+
+        /** Completed, so a tap on it must report `true`. */
+        val READ = HabitRowUi(
+            id = HabitId("00000000-0000-7000-8000-000000000001"),
+            name = "read",
+            icon = "R",
+            iconTint = null,
+            completed = true,
+            weekProgress = null,
+            streak = StreakUi.Days(count = 3),
+        )
+
+        /** Outstanding, and the row the tap test clicks. */
+        val WALK = HabitRowUi(
+            id = HabitId("00000000-0000-7000-8000-000000000002"),
+            name = "walk",
+            icon = "W",
+            iconTint = null,
+            completed = false,
+            weekProgress = null,
+            streak = StreakUi.None,
+        )
+
+        val HABITS = TodayUiState.Habits(
+            rows = listOf(READ, WALK),
+            mood = Mood.CONTENT,
+            remaining = 1,
+            logicalDate = LOGICAL_DATE,
+        )
+    }
+}
