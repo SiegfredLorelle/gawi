@@ -31,5 +31,10 @@ internal fun Project.configureAndroid(extension: CommonExtension) {
         lint.abortOnError = true
         lint.warningsAsErrors = true
         lint.disable += "GradleDependency"
+        // Robolectric resolves the merged manifest and resources off the unit
+        // test classpath; without this it cannot find them and every test in a
+        // module that uses it fails at startup (architecture §8 puts :core:data
+        // DAO tests on the JVM).
+        testOptions.unitTests.isIncludeAndroidResources = true
     }
 }
