@@ -17,6 +17,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -134,7 +135,14 @@ class TodayMoodTest {
             // emission carrying the old threshold can arrive first. Wait for the
             // one the edit produced rather than assuming it is next.
             var after = awaitItem()
-            while (after.reminderTime != edited) after = awaitItem()
+            var skipped = 0
+            while (after.reminderTime != edited) {
+                assertTrue(
+                    "the edited reminder never arrived in $MAX_INTERVENING_EMISSIONS emissions",
+                    ++skipped <= MAX_INTERVENING_EMISSIONS,
+                )
+                after = awaitItem()
+            }
 
             assertEquals(99, streaks.find(habit.value)!!.currentStreak)
             cancelAndIgnoreRemainingEvents()
@@ -180,7 +188,12 @@ class TodayMoodTest {
             // which the rows are the new day's and the mood is the old day's,
             // which is what one flow buys and two flows cannot.
             var rolled = false
+            var skipped = 0
             while (!rolled) {
+                assertTrue(
+                    "the day never rolled over in $MAX_INTERVENING_EMISSIONS emissions",
+                    ++skipped <= MAX_INTERVENING_EMISSIONS,
+                )
                 val snapshot = awaitItem()
                 if (snapshot.today == before.today.plusDays(1)) {
                     rolled = true
@@ -206,5 +219,17 @@ class TodayMoodTest {
             assertEquals(StreakSnapshot.NONE, snapshot.habits.single().streak)
             cancelAndIgnoreRemainingEvents()
         }
+    }
+
+    private companion object {
+        /**
+         * How many unrelated emissions a wait tolerates before failing.
+         *
+         * Room invalidates per table, so a hand-written row can produce an
+         * emission before the one under test. Bounded so a regression fails
+         * saying what it was waiting for, rather than as a bare Turbine
+         * timeout with none of the reasoning attached.
+         */
+        const val MAX_INTERVENING_EMISSIONS = 5
     }
 }
