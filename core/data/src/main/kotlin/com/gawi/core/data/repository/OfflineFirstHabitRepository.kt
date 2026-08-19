@@ -40,6 +40,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
 import javax.inject.Inject
@@ -160,7 +161,7 @@ internal class OfflineFirstHabitRepository @Inject constructor(
         emitAll(
             readContext()
                 .flatMapLatest { (settings, today) ->
-                    refreshStreaks()
+                    sweepStreaks(today, settings.weekStart)
                     val week = weekOf(today, settings)
                     readModel
                         .observeToday(today.toString(), week.first.toString(), week.second.toString())
@@ -175,7 +176,7 @@ internal class OfflineFirstHabitRepository @Inject constructor(
         emitAll(
             readContext()
                 .flatMapLatest { (settings, today) ->
-                    refreshStreaks()
+                    sweepStreaks(today, settings.weekStart)
                     val week = weekOf(today, settings)
                     readModel
                         .observeHabit(habitId.value, today.toString(), week.first.toString(), week.second.toString())
@@ -195,11 +196,27 @@ internal class OfflineFirstHabitRepository @Inject constructor(
         )
     }
 
-    override suspend fun refreshStreaks() = mutex.withLock {
-        val current = initialised()
+    override suspend fun refreshStreaks() {
         val settings = settings.current()
+        sweepStreaks(todayFor(clock.now(), settings), settings.weekStart)
+    }
+
+    /**
+     * The sweep itself, over a date and week start the caller has already
+     * resolved.
+     *
+     * Separate from [refreshStreaks] so the read path can sweep without reading
+     * the settings again. That matters twice. The observers already hold the
+     * date and week start this is for, so re-deriving them here let the sweep
+     * and the query it runs beneath disagree if a boundary fell between the
+     * two. And [SettingsSource.current] deliberately refuses to answer when the
+     * store is unreadable, which is right for a command and would take a screen
+     * down — so the read path must not call it.
+     */
+    private suspend fun sweepStreaks(today: LocalDate, weekStart: DayOfWeek) = mutex.withLock {
+        val current = initialised()
         database.withTransaction {
-            writer.refreshStreaks(current, todayFor(clock.now(), settings), settings.weekStart)
+            writer.refreshStreaks(current, today, weekStart)
         }
     }
 

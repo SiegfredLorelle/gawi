@@ -16,6 +16,7 @@ import com.gawi.core.domain.time.logicalDate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.robolectric.RuntimeEnvironment
+import java.io.IOException
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -56,6 +57,13 @@ class FakeSettingsSource(initial: UserSettings = UserSettings()) : SettingsSourc
 
     private val state = MutableStateFlow(initial)
 
+    /**
+     * Makes [current] fail the way the real store does when the preferences file
+     * cannot be read, leaving [observe] working. Set it to assert that a reader
+     * does not reach for the command path's read.
+     */
+    var currentFails: Boolean = false
+
     var settings: UserSettings
         get() = state.value
         set(value) {
@@ -63,6 +71,8 @@ class FakeSettingsSource(initial: UserSettings = UserSettings()) : SettingsSourc
         }
 
     override fun observe(): Flow<UserSettings> = state
+
+    override suspend fun current(): UserSettings = if (currentFails) throw IOException("settings unreadable") else super.current()
 
     override suspend fun update(transform: (UserSettings) -> UserSettings) {
         state.value = transform(state.value)
