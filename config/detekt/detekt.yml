@@ -2,23 +2,6 @@
 # in the root build file). Deliberately near-empty at scaffold time — rule
 # tweaks land here as real code arrives, with a comment saying why.
 
-complexity:
-  # The event store is one aggregate — one log, one mutex, one in-memory
-  # projection — so its repository is one interface with a command per user
-  # action plus the queries a screen needs. Splitting it to satisfy a count
-  # would advertise an independence between reads and writes that does not
-  # exist, and the implementation is wider still because each public entry
-  # point delegates to a private body that does not take the lock.
-  TooManyFunctions:
-    thresholdInInterfaces: 14
-    thresholdInClasses: 24
-  # Constructor width here is dependency count, not a design smell: the
-  # repository is assembled from daos and seams that are each independently
-  # replaceable in tests, and collapsing them into a holder object would hide
-  # what it depends on rather than reduce it.
-  LongParameterList:
-    constructorThreshold: 10
-
 naming:
   # Composables are PascalCase by Compose convention.
   FunctionNaming:
