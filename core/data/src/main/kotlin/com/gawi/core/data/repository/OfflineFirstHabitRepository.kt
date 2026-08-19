@@ -26,6 +26,7 @@ import com.gawi.core.domain.projection.ProjectedState
 import com.gawi.core.domain.projection.Projector
 import com.gawi.core.domain.serialization.EventCodec
 import com.gawi.core.domain.time.logicalDate
+import com.gawi.core.domain.time.weekStartOn
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.NonCancellable
@@ -41,7 +42,6 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.time.LocalDate
-import java.time.temporal.TemporalAdjusters
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -264,6 +264,13 @@ internal class OfflineFirstHabitRepository @Inject constructor(
      */
     private fun readContext(): Flow<Pair<UserSettings, LocalDate>> = settings
         .observe()
+        // Only the two settings the queries actually bind. The reminder time
+        // rides along in [UserSettings] for the mascot's benefit and no query
+        // reads it, so an edit to it must not cancel the live query and re-run
+        // the streak sweep under every open screen. The cost is that the
+        // settings reaching the queries below can carry a stale reminder time,
+        // which is sound precisely because nothing below reads it.
+        .distinctUntilChanged { old, new -> old.dayCutoff == new.dayCutoff && old.weekStart == new.weekStart }
         .flatMapLatest { current -> logicalDates(current).map { current to it } }
         // A boundary wake that does not actually change the date — clock skew,
         // a DST shift, a settings write that changed nothing — must not churn
@@ -335,7 +342,7 @@ internal class OfflineFirstHabitRepository @Inject constructor(
     private fun todayFor(now: Instant, settings: UserSettings): LocalDate = logicalDate(now, settings.dayCutoff, clock.zone())
 
     private fun weekOf(today: LocalDate, settings: UserSettings): Pair<LocalDate, LocalDate> {
-        val start = today.with(TemporalAdjusters.previousOrSame(settings.weekStart))
+        val start = weekStartOn(today, settings.weekStart)
         return start to start.plusWeeks(1).minusDays(1)
     }
 
