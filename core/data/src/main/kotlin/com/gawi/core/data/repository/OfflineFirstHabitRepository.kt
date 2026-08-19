@@ -10,6 +10,7 @@ import com.gawi.core.data.db.entity.ProjectionMetaEntity
 import com.gawi.core.data.db.mapper.toDomain
 import com.gawi.core.data.db.mapper.toEntity
 import com.gawi.core.data.model.TodayHabit
+import com.gawi.core.data.model.TodaySnapshot
 import com.gawi.core.data.projection.ProjectionWriter
 import com.gawi.core.data.settings.SettingsSource
 import com.gawi.core.data.settings.UserSettings
@@ -26,12 +27,14 @@ import com.gawi.core.domain.projection.ProjectedState
 import com.gawi.core.domain.projection.Projector
 import com.gawi.core.domain.serialization.EventCodec
 import com.gawi.core.domain.time.logicalDate
+import com.gawi.core.domain.time.reminderOn
 import com.gawi.core.domain.time.weekStartOn
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flatMapLatest
@@ -43,6 +46,8 @@ import kotlinx.coroutines.withContext
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -156,16 +161,19 @@ internal class OfflineFirstHabitRepository @Inject constructor(
         }
     }
 
-    override fun observeToday(): Flow<List<TodayHabit>> = flow {
+    override fun observeToday(): Flow<TodaySnapshot> = flow {
         ensureProjectionCurrent()
         emitAll(
             readContext()
                 .flatMapLatest { (today, weekStart) ->
                     sweepStreaks(today, weekStart)
                     val week = weekOf(today, weekStart)
-                    readModel
+                    val rows = readModel
                         .observeToday(today.toString(), week.first.toString(), week.second.toString())
                         .map { rows -> rows.map { it.toDomain() } }
+                    combine(rows, moodContext(today)) { habits, mood ->
+                        TodaySnapshot(habits, today, mood.now, mood.reminderTime, mood.dayCutoff, weekStart)
+                    }
                 }
                 .distinctUntilChanged(),
         )
@@ -264,11 +272,12 @@ internal class OfflineFirstHabitRepository @Inject constructor(
      * Exactly these two, rather than the settings and the date: the cutoff
      * decides which day is "today" and when the next boundary falls, but it does
      * that inside [logicalDates] below, and no query binds it. Carrying the whole
-     * of [UserSettings] out of here meant carrying a reminder time that the
-     * dedupe below is entitled to leave stale — sound, but only as long as
-     * nobody downstream reached for it, and the mascot's `nearBoundary` needs a
-     * reminder time and will be wired to this path next. Not carrying it is
-     * cheaper than the comment explaining why it is safe to ignore.
+     * of [UserSettings] out of here would mean carrying a reminder time that the
+     * dedupe below is entitled to leave stale, and the mascot's `nearBoundary`
+     * now does read one. That is why the mood takes its settings from
+     * [moodContext] instead: this dedupe must keep swallowing a reminder-time
+     * edit, or every open screen re-runs the streak sweep and cancels its query
+     * over a setting no query binds.
      *
      * Both observers share this so the two cannot drift apart. Holding the
      * settings for the life of a collection would be worse than it looks: a
@@ -301,6 +310,64 @@ internal class OfflineFirstHabitRepository @Inject constructor(
 
     /** The logical date and week start a read query is bound to. */
     private data class QueryContext(val today: LocalDate, val weekStart: DayOfWeek)
+
+    /**
+     * The mood inputs no query binds: the wall clock, and the two thresholds
+     * `nearBoundary` reads.
+     *
+     * A second subscription to the settings, deliberately. [readContext]'s
+     * dedupe is entitled to drop a reminder-time edit — it has to, or every open
+     * screen re-runs the streak sweep over a setting no query binds — so
+     * anything downstream of it carries a stale reminder time by construction.
+     * This is the fresh read, and it sits *inside* the query's `flatMapLatest`
+     * rather than beside it, so an edit here reaches the snapshot through
+     * `combine` without re-entering the block that sweeps.
+     *
+     * The week start is not read here. That one is the outer context's, and a
+     * second independently-deduped copy of a value the query is bound to is
+     * exactly the disagreement [readContext] exists to prevent.
+     */
+    private fun moodContext(today: LocalDate): Flow<MoodContext> = settings
+        .observe()
+        .distinctUntilChanged { old, new -> old.dayCutoff == new.dayCutoff && old.reminderTime == new.reminderTime }
+        .flatMapLatest { current -> reminderTicks(today, current).map { MoodContext(it, current.reminderTime, current.dayCutoff) } }
+
+    /** The mood's half of a reading: wall clock and thresholds, none of it bound by a query. */
+    private data class MoodContext(val now: LocalDateTime, val reminderTime: LocalTime, val dayCutoff: LocalTime)
+
+    /**
+     * Now, and now again the moment [today]'s reminder threshold passes.
+     *
+     * That threshold is the only instant strictly inside a logical day at which
+     * the mood changes with no data change at all, which is why the mood needs a
+     * clock of its own and a query does not. Shaped like [logicalDates] on
+     * purpose, with one difference: this one *completes* once the threshold is
+     * behind us, so an evening spent looking at the screen holds no timer. The
+     * upper edge of `nearBoundary` is the day boundary, and [logicalDates]
+     * already wakes for that — a wake that tears this whole block down and
+     * builds it again for the new date.
+     *
+     * The clock is read here and nowhere else on this path. Sampling it in the
+     * `combine` above instead would mint a fresh `now` on every Room
+     * invalidation, which stops `distinctUntilChanged` deduping anything. It is
+     * sound to sample only here because `nearBoundary`'s two edges are the
+     * reminder instant and the day boundary, and both have a ticker: any `now`
+     * inside an interval gives the same answer as any other.
+     */
+    private fun reminderTicks(today: LocalDate, settings: UserSettings): Flow<LocalDateTime> = flow {
+        while (true) {
+            val now = clock.now()
+            emit(LocalDateTime.ofInstant(now, clock.zone()))
+            val wait = millisUntilReminder(now, today, settings) ?: break
+            delay(wait)
+        }
+    }
+
+    /** Millis until [today]'s reminder threshold, or null once it is behind us. */
+    private fun millisUntilReminder(now: Instant, today: LocalDate, settings: UserSettings): Long? {
+        val at = reminderOn(today, settings.reminderTime, settings.dayCutoff).atZone(clock.zone()).toInstant()
+        return (at.toEpochMilli() - now.toEpochMilli()).takeIf { it > 0 }
+    }
 
     private suspend fun rebuildLocked(current: ProjectedState) {
         val settings = settings.current()

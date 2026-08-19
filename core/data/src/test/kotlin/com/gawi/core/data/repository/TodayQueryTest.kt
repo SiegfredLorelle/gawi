@@ -42,7 +42,7 @@ class TodayQueryTest {
         store.repository.addCompletion(habit, store.today(), note = "chapter one")
 
         store.repository.observeToday().test {
-            val row = awaitItem().single()
+            val row = awaitItem().habits.single()
             assertEquals(habit, row.habit.id)
             assertEquals("read", row.habit.name)
             assertEquals(Schedule.Weekly(3), row.habit.schedule)
@@ -58,7 +58,7 @@ class TodayQueryTest {
         createHabit()
 
         store.repository.observeToday().test {
-            val row = awaitItem().single()
+            val row = awaitItem().habits.single()
             assertFalse(row.completedToday)
             assertNull(row.note)
             assertEquals(0, row.weekCount)
@@ -71,11 +71,11 @@ class TodayQueryTest {
         val habit = createHabit()
 
         store.repository.observeToday().test {
-            assertEquals(1, awaitItem().size)
+            assertEquals(1, awaitItem().habits.size)
 
             store.repository.archiveHabit(habit)
 
-            assertEquals(emptyList<Any>(), awaitItem())
+            assertEquals(emptyList<Any>(), awaitItem().habits)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -97,11 +97,11 @@ class TodayQueryTest {
         store.repository.addCompletion(habit, LocalDate.parse("2026-08-16"))
 
         store.repository.observeToday().test {
-            assertEquals(0, awaitItem().single().weekCount)
+            assertEquals(0, awaitItem().habits.single().weekCount)
 
             store.settings.settings = store.settings.settings.copy(weekStart = DayOfWeek.THURSDAY)
 
-            assertEquals(1, awaitItem().single().weekCount)
+            assertEquals(1, awaitItem().habits.single().weekCount)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -121,7 +121,7 @@ class TodayQueryTest {
         store.settings.currentFails = true
 
         store.repository.observeToday().test {
-            assertEquals(habit, awaitItem().single().habit.id)
+            assertEquals(habit, awaitItem().habits.single().habit.id)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -140,7 +140,7 @@ class TodayQueryTest {
         store.clock.moveTo(LocalDate.parse("2026-08-18"))
 
         store.repository.observeToday().test {
-            val row = awaitItem().single()
+            val row = awaitItem().habits.single()
             assertEquals(0, row.weekCount)
             assertEquals(0, row.streak.current)
             cancelAndIgnoreRemainingEvents()
@@ -170,10 +170,10 @@ class TodayQueryTest {
         val habit = createHabit()
 
         store.repository.observeToday().test {
-            assertFalse(awaitItem().single().completedToday)
+            assertFalse(awaitItem().habits.single().completedToday)
 
             store.repository.addCompletion(habit, store.today())
-            assertTrue(awaitItem().single().completedToday)
+            assertTrue(awaitItem().habits.single().completedToday)
 
             // Nothing changed, so nothing should reach the UI — this is the
             // pairing of skip-if-equal in the writer with distinctUntilChanged
