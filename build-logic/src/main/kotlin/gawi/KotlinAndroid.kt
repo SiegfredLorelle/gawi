@@ -31,6 +31,11 @@ internal fun Project.configureAndroid(extension: CommonExtension) {
         lint.abortOnError = true
         lint.warningsAsErrors = true
         lint.disable += "GradleDependency"
+        // Same reasoning as GradleDependency, and a harder case: this one fires
+        // on gradle/wrapper/, which is generated and must not be hand-edited, so
+        // a Gradle release upstream would redden CI with nothing a change here
+        // could legitimately do about it.
+        lint.disable += "AndroidGradlePluginVersion"
         // Robolectric resolves the merged manifest and resources off the unit
         // test classpath; without this it cannot find them and every test in a
         // module that uses it fails at startup (architecture §8 puts :core:data
