@@ -81,23 +81,26 @@ class TodayQueryTest {
     }
 
     @Test
-    fun `the week count follows the configured week start`() = runTest {
+    fun `changing the week start re-buckets a screen that is already open`() = runTest {
         // Today is Wednesday 19 August, and the completion is the Sunday
         // before it. With a Monday week start this week runs Mon 17 - Sun 23,
         // so the Sunday is last week's. With a Thursday week start it runs
         // Thu 13 - Wed 19, and the same completion is now inside it.
+        //
+        // The edit lands mid-collection on purpose. Re-collecting afterwards
+        // would pass even against a reader that captured the settings once and
+        // then ignored them, which is exactly the bug this pins: the week
+        // bucket would freeze while the streak rows joined into the same query
+        // were recomputed under the new setting.
         store.clock.moveTo(LocalDate.parse("2026-08-19"))
         val habit = createHabit("read", Schedule.Weekly(3))
         store.repository.addCompletion(habit, LocalDate.parse("2026-08-16"))
 
         store.repository.observeToday().test {
             assertEquals(0, awaitItem().single().weekCount)
-            cancelAndIgnoreRemainingEvents()
-        }
 
-        store.settings.settings = store.settings.settings.copy(weekStart = DayOfWeek.THURSDAY)
+            store.settings.settings = store.settings.settings.copy(weekStart = DayOfWeek.THURSDAY)
 
-        store.repository.observeToday().test {
             assertEquals(1, awaitItem().single().weekCount)
             cancelAndIgnoreRemainingEvents()
         }

@@ -1,5 +1,6 @@
 package com.gawi.core.data.db.dao
 
+import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Query
 import com.gawi.core.data.db.entity.TodayHabitRow
@@ -104,7 +105,7 @@ internal interface ReadModelDao {
 
 /** A completed cell and the note showing on it. */
 internal data class CompletedDateRow(
-    @androidx.room.ColumnInfo(name = "logical_date") val logicalDate: String,
-    @androidx.room.ColumnInfo(name = "note") val note: String?,
-    @androidx.room.ColumnInfo(name = "habit_id") val habitId: String,
+    @ColumnInfo(name = "logical_date") val logicalDate: String,
+    @ColumnInfo(name = "note") val note: String?,
+    @ColumnInfo(name = "habit_id") val habitId: String,
 )
