@@ -30,13 +30,18 @@ linter; this happens once per machine.
 | `make fmt` | Format the codebase |
 | `make lint` | Lint and type-check |
 | `make test` | Run the test suite |
+| `make run` | Build, install and launch on a device or emulator |
 
 ## Usage
 
 ```sh
 make test                      # unit tests (pure-JVM domain + Android modules)
-./gradlew :app:assembleDebug   # APK at app/build/outputs/apk/debug/
+make run                       # build, install and launch on a device or emulator
+./gradlew :app:assembleDebug   # APK only, at app/build/outputs/apk/debug/
 ```
+
+Setting up an emulator or a physical device, and the manual checks that CI
+cannot run, are in [docs/running.md](docs/running.md).
 
 ## Contributing
 
