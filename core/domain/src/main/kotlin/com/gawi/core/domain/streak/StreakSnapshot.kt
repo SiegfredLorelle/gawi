@@ -13,6 +13,14 @@ import java.time.LocalDate
  * either [current] is positive and there is no break to describe, or [current]
  * is zero and [previous]/[brokenOn] say what was lost and when.
  *
+ * [brokenOn] is the first day — or, for a weekly habit, the first week start —
+ * on which [current] reads zero, which is the day the break becomes visible
+ * rather than the day the completion was missed. Those are not the same day:
+ * an unfinished day does not break a streak, so a miss on Friday still shows a
+ * live run all Saturday and only reads zero on Sunday. Dating it from when it
+ * reads zero is what lets a caller ask "did this break just now" by comparing
+ * against today, and it is never in the future.
+ *
  * A habit with no completions at all is [NONE] — not a break, just nothing yet.
  *
  * Produced by [Streaks.snapshot], which is pure in the completion set, so this

@@ -47,7 +47,7 @@ class StreakSnapshotTest {
 
         val snapshot = daily(run, on = date("2026-08-15"))
 
-        assertEquals(StreakSnapshot(current = 0, previous = 4, brokenOn = date("2026-08-14")), snapshot)
+        assertEquals(StreakSnapshot(current = 0, previous = 4, brokenOn = date("2026-08-15")), snapshot)
     }
 
     @Test
@@ -56,7 +56,7 @@ class StreakSnapshotTest {
 
         val snapshot = daily(run)
 
-        assertEquals(StreakSnapshot(current = 0, previous = 2, brokenOn = date("2026-01-05")), snapshot)
+        assertEquals(StreakSnapshot(current = 0, previous = 2, brokenOn = date("2026-01-06")), snapshot)
     }
 
     @Test
@@ -68,7 +68,7 @@ class StreakSnapshotTest {
 
         val snapshot = daily(old + recent, on = date("2026-08-15"))
 
-        assertEquals(StreakSnapshot(current = 0, previous = 2, brokenOn = date("2026-08-14")), snapshot)
+        assertEquals(StreakSnapshot(current = 0, previous = 2, brokenOn = date("2026-08-15")), snapshot)
     }
 
     @Test
@@ -80,7 +80,7 @@ class StreakSnapshotTest {
 
         val snapshot = daily(run + future, on = date("2026-08-15"))
 
-        assertEquals(StreakSnapshot(current = 0, previous = 2, brokenOn = date("2026-08-12")), snapshot)
+        assertEquals(StreakSnapshot(current = 0, previous = 2, brokenOn = date("2026-08-13")), snapshot)
     }
 
     @Test
@@ -96,7 +96,7 @@ class StreakSnapshotTest {
 
         val snapshot = weekly(hit, timesPerWeek = 2, on = date("2026-08-17"))
 
-        assertEquals(StreakSnapshot(current = 0, previous = 2, brokenOn = date("2026-08-10")), snapshot)
+        assertEquals(StreakSnapshot(current = 0, previous = 2, brokenOn = date("2026-08-17")), snapshot)
     }
 
     @Test
@@ -129,7 +129,7 @@ class StreakSnapshotTest {
         val askedAgainAfterRecovery = daily(recovered, on = date("2026-08-14"))
 
         assertEquals(askedOnTheDay, askedAgainAfterRecovery)
-        assertEquals(StreakSnapshot(current = 0, previous = 3, brokenOn = date("2026-08-13")), askedOnTheDay)
+        assertEquals(StreakSnapshot(current = 0, previous = 3, brokenOn = date("2026-08-14")), askedOnTheDay)
     }
 
     @Test
@@ -140,7 +140,7 @@ class StreakSnapshotTest {
         val onTheDayItBroke = daily(run, on = date("2026-08-17"))
         val aDayLater = daily(run, on = date("2026-08-18"))
 
-        assertEquals(date("2026-08-16"), onTheDayItBroke.brokenOn)
-        assertEquals(date("2026-08-16"), aDayLater.brokenOn)
+        assertEquals(date("2026-08-17"), onTheDayItBroke.brokenOn)
+        assertEquals(date("2026-08-17"), aDayLater.brokenOn)
     }
 }

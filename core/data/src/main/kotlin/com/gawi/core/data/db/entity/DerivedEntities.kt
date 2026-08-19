@@ -73,10 +73,14 @@ internal data class CompletionEntity(
  *
  * Streaks are not projected: they depend on "today", which is not in the log,
  * so folding them into apply would break the incremental-≡-rebuild invariant
- * (`Streaks` KDoc). They are computed after each transaction and cached here,
- * stamped with the date they were computed for so day rollover is a
- * `WHERE computed_for_date != :today` sweep and a half-applied refresh
- * describes itself.
+ * (`Streaks` KDoc). They are computed after each transaction and cached here.
+ *
+ * `computed_for_date` is what makes a row self-describing: it says which
+ * "today" these numbers answer for, so a row is never silently ambiguous about
+ * whether it has been swept since the day rolled over. It also participates in
+ * row equality, which is what makes the rollover sweep rewrite a row whose
+ * streak numbers happen to be unchanged — the values are the same but the
+ * question they answer is not.
  *
  * There is no unit column. It is derivable from `habits.schedule_kind`, which
  * every query that reads this table already joins, and a second copy could

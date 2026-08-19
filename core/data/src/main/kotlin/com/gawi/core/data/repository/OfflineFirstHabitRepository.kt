@@ -26,6 +26,7 @@ import com.gawi.core.domain.projection.ProjectedState
 import com.gawi.core.domain.projection.Projector
 import com.gawi.core.domain.serialization.EventCodec
 import com.gawi.core.domain.time.logicalDate
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -37,6 +38,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.time.LocalDate
 import java.time.temporal.TemporalAdjusters
@@ -65,8 +67,8 @@ import javax.inject.Singleton
  * Known cost: `Projector.rebuild` folds with immutable map copies, so the
  * start-up fold is quadratic in the number of habits and cells. At the PRD's
  * ~2k events a year that is milliseconds; it would not be at ten times that.
- * The fold is off the main thread, and `rebuildProjections` is not something
- * to reach for casually.
+ * The fold is forced onto a background dispatcher below, and
+ * `rebuildProjections` is not something to reach for casually.
  */
 @Singleton
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -156,6 +158,11 @@ internal class OfflineFirstHabitRepository @Inject constructor(
         val current = ensureProjectionCurrent()
         emitAll(
             logicalDates(current)
+                // Same sweep as observeToday, for the same reason: the streak
+                // join below has no staleness guard, so a detail screen left
+                // open across midnight would re-query with the new date and
+                // pair a fresh completion state with yesterday's streak.
+                .onEach { refreshStreaks() }
                 .flatMapLatest { today ->
                     val week = weekOf(today, current)
                     readModel
@@ -194,10 +201,20 @@ internal class OfflineFirstHabitRepository @Inject constructor(
      */
     private suspend fun initialised(): ProjectedState {
         state?.let { return it }
-        val log = events.loadAll().map { it.toDomain(codec) }
-        val folded = Projector.rebuild(log)
-        state = folded
+        // Decoding the log and folding it are both CPU work, and the fold is
+        // quadratic. A suspend Room query resumes on the caller's dispatcher,
+        // so without this the whole start-up cost lands wherever the collector
+        // runs — which for a ViewModel collecting observeToday is the main
+        // thread.
+        val folded = withContext(Dispatchers.Default) {
+            Projector.rebuild(events.loadAll().map { it.toDomain(codec) })
+        }
+        // Published only after any repair succeeds. Assigning first would mean
+        // a rebuild that failed part-way (a disk error mid-transaction) left
+        // the version mismatch unrepaired *and* unnoticed, because every later
+        // call would short-circuit on a non-null state and never look again.
         if (meta.projectionVersion() != PROJECTION_VERSION) rebuildLocked(folded)
+        state = folded
         return folded
     }
 

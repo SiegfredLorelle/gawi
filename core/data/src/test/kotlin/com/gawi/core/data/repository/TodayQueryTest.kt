@@ -104,6 +104,45 @@ class TodayQueryTest {
     }
 
     @Test
+    fun `a future-dated completion does not inflate this week's count`() = runTest {
+        // Reachable without sync: the device clock runs a day fast, a habit is
+        // completed, and the clock is then corrected — leaving a completion
+        // dated after today. Streaks already refuses to count those, so the
+        // week count must too, or a row reads 1/3 in its subtitle while the
+        // streak computed from the same cells says the week was not touched.
+        store.clock.moveTo(LocalDate.parse("2026-08-19"))
+        val habit = createHabit("read", Schedule.Weekly(3))
+        store.repository.addCompletion(habit, LocalDate.parse("2026-08-19"))
+
+        store.clock.moveTo(LocalDate.parse("2026-08-18"))
+
+        store.repository.observeToday().test {
+            val row = awaitItem().single()
+            assertEquals(0, row.weekCount)
+            assertEquals(0, row.streak.current)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `observing one habit sweeps its stale streak too`() = runTest {
+        // The detail screen has the same rollover problem as the list: the
+        // streak join carries no staleness guard, so opening it against rows
+        // computed for an older day would pair today's completion state with
+        // yesterday's streak.
+        val habit = createHabit()
+        store.repository.addCompletion(habit, store.today())
+        store.clock.advanceDays(2)
+
+        store.repository.observeHabit(habit).test {
+            assertEquals(0, awaitItem()?.streak?.current)
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        assertEquals(store.today().toString(), store.snapshot().streaks.single().computedForDate)
+    }
+
+    @Test
     fun `a repeated completion produces no further emission`() = runTest {
         val habit = createHabit()
 

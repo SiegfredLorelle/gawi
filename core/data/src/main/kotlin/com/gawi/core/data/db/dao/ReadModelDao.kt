@@ -38,7 +38,8 @@ internal interface ReadModelDao {
                t.note AS note,
                (SELECT COUNT(*) FROM completions w
                  WHERE w.habit_id = h.habit_id
-                   AND w.logical_date BETWEEN :weekStart AND :weekEnd) AS week_count,
+                   AND w.logical_date BETWEEN :weekStart AND :weekEnd
+                   AND w.logical_date <= :today) AS week_count,
                COALESCE(s.current_streak, 0) AS current_streak,
                COALESCE(s.previous_streak, 0) AS previous_streak,
                s.broken_on AS broken_on
@@ -71,7 +72,8 @@ internal interface ReadModelDao {
                t.note AS note,
                (SELECT COUNT(*) FROM completions w
                  WHERE w.habit_id = h.habit_id
-                   AND w.logical_date BETWEEN :weekStart AND :weekEnd) AS week_count,
+                   AND w.logical_date BETWEEN :weekStart AND :weekEnd
+                   AND w.logical_date <= :today) AS week_count,
                COALESCE(s.current_streak, 0) AS current_streak,
                COALESCE(s.previous_streak, 0) AS previous_streak,
                s.broken_on AS broken_on

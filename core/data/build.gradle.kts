@@ -10,9 +10,11 @@ android {
 
 dependencies {
     api(project(":core:domain"))
+    // Flow is in HabitRepository's own signature, so every consumer needs it
+    // on the compile classpath — same reason :core:domain is api here.
+    api(libs.kotlinx.coroutines.core)
 
     implementation(libs.androidx.datastore.preferences)
-    implementation(libs.kotlinx.coroutines.core)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
