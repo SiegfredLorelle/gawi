@@ -1,12 +1,21 @@
 package com.gawi.core.data.settings
 
 import androidx.datastore.core.DataStore
+import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import java.io.File
+import java.io.IOException
 import java.time.DayOfWeek
 import java.time.LocalTime
 import javax.inject.Inject
@@ -16,16 +25,43 @@ import javax.inject.Singleton
 internal const val SETTINGS_NAME = "settings"
 
 /**
+ * The settings store, configured in one place so a test gets the same one the
+ * app does.
+ *
+ * The corruption handler is not optional. Without it, a preferences file left
+ * unreadable by an interrupted write makes both reads and writes throw for
+ * good: [DataStoreSettingsSource] would answer defaults forever via its own
+ * `catch`, but `update` reads before it writes, so the user could never even
+ * set the settings back. Discarding preferences that cannot be parsed costs
+ * three values they can set again.
+ *
+ * [scope] defaults to what DataStore would have used, and exists so a test can
+ * bind the store's lifetime to the test's.
+ */
+internal fun settingsDataStore(
+    scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
+    produceFile: () -> File,
+): DataStore<Preferences> = PreferenceDataStoreFactory.create(
+    corruptionHandler = ReplaceFileCorruptionHandler { emptyPreferences() },
+    scope = scope,
+    produceFile = produceFile,
+)
+
+/**
  * [UserSettings] in DataStore, which is where architecture §3 always put them.
  *
  * Times are stored as a second-of-day and the week start as its ISO number,
- * because both survive a locale change and neither needs a parser. Decoding is
- * deliberately forgiving: `LocalTime.ofSecondOfDay` and `DayOfWeek.of` both
- * throw on a value out of range, and a throw inside `dataStore.data` propagates
- * all the way through the repository's read path into `observeToday()` — so a
- * preferences file corrupted by a bad write or a hand-edit would take the Today
- * screen down rather than degrade to a default. Anything unreadable is treated
- * as absent.
+ * because both survive a locale change and neither needs a parser.
+ *
+ * Reading is forgiving at all three levels it can fail, because settings are
+ * read by every command and every query — a throw here propagates through the
+ * repository's read path into `observeToday()` and takes the Today screen down
+ * rather than degrading. A value stored under one of these names with another
+ * type reads as absent rather than raising `ClassCastException`; a value out of
+ * range reads as absent rather than letting `LocalTime.ofSecondOfDay` or
+ * `DayOfWeek.of` throw; and an unreadable file falls back to the defaults, the
+ * unparseable half handled by the corruption handler in `DataModule` and the
+ * rest by [catch]. Anything unreadable is genuinely treated as absent.
  *
  * The [distinctUntilChanged] is load-bearing. DataStore re-emits on every write,
  * including one that changed a value back to what it already was, and the
@@ -40,7 +76,12 @@ internal const val SETTINGS_NAME = "settings"
 @Singleton
 class DataStoreSettingsSource @Inject constructor(private val dataStore: DataStore<Preferences>) : SettingsSource {
 
-    override fun observe(): Flow<UserSettings> = dataStore.data.map(::decode).distinctUntilChanged()
+    override fun observe(): Flow<UserSettings> = dataStore.data
+        // Not a blanket catch: anything that is not a read failure is a bug
+        // here, and swallowing it would hide it behind plausible defaults.
+        .catch { cause -> if (cause is IOException) emit(emptyPreferences()) else throw cause }
+        .map(::decode)
+        .distinctUntilChanged()
 
     override suspend fun update(transform: (UserSettings) -> UserSettings) {
         dataStore.edit { preferences ->
@@ -54,11 +95,14 @@ class DataStoreSettingsSource @Inject constructor(private val dataStore: DataSto
     private fun decode(preferences: Preferences): UserSettings {
         val defaults = UserSettings()
         return UserSettings(
-            dayCutoff = preferences[DAY_CUTOFF].asLocalTime(defaults.dayCutoff),
-            weekStart = preferences[WEEK_START].asDayOfWeek(defaults.weekStart),
-            reminderTime = preferences[REMINDER_TIME].asLocalTime(defaults.reminderTime),
+            dayCutoff = preferences.int(DAY_CUTOFF).asLocalTime(defaults.dayCutoff),
+            weekStart = preferences.int(WEEK_START).asDayOfWeek(defaults.weekStart),
+            reminderTime = preferences.int(REMINDER_TIME).asLocalTime(defaults.reminderTime),
         )
     }
+
+    /** The stored [key], or null if it is absent *or* holds something else. */
+    private fun Preferences.int(key: Preferences.Key<Int>): Int? = asMap()[key] as? Int
 
     private fun Int?.asLocalTime(default: LocalTime): LocalTime =
         if (this != null && this in 0 until SECONDS_PER_DAY) LocalTime.ofSecondOfDay(toLong()) else default
