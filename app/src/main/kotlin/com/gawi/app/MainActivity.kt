@@ -7,7 +7,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import com.gawi.app.ui.theme.GawiTheme
+import com.gawi.core.ui.theme.GawiTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
