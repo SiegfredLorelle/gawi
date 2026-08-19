@@ -4,6 +4,7 @@ import com.gawi.core.domain.model.Schedule
 import com.gawi.core.domain.streak.StreakSnapshot
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -29,7 +30,7 @@ class NearBoundaryTest {
         reminder: LocalTime = LocalTime.of(21, 0),
         cutoff: LocalTime = LocalTime.MIDNIGHT,
         on: LocalDate = today,
-    ) = Mascot.mood(MoodInputs(listOf(outstanding), on, now, reminder, dayCutoff = cutoff))
+    ) = Mascot.mood(MoodInputs(listOf(outstanding), on, now, reminder, cutoff, DayOfWeek.MONDAY))
 
     private fun at(day: String, time: String) = LocalDateTime.parse("${day}T$time")
 
