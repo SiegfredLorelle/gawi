@@ -5,8 +5,17 @@ Companion to [the PRD](../prd.md) §3.5 and §5, and to
 doubles as Momo's habitat; this document fixes *where*, so Phase 1 mascot
 work is an addition rather than a rebuild of the home screen.
 
-**Status:** decided 2026-08-19. Nothing is implemented yet —
-`:feature:today` and `:core:ui` do not exist.
+**Status:** decided 2026-08-19; partly built 2026-08-20. `:core:ui` and
+`:feature:today` now exist and the screen is live. What is built is the
+list — §5's rows, and §3's slot holding the Phase 0 indicator. What is
+**deferred** is §1's *behaviour*: the panel does not yet collapse into an
+app-bar chip on scroll, so the list scrolls under nothing and the
+remaining count sits in the panel rather than in the chip. That is a
+deferral, not a reversal — §1 is still the decision, and the slot is
+already the right size in the right place, so adding the collapse moves
+one composable. The list came first deliberately: the data path beneath
+it had never run on a device, and a scroll animation and a mood state
+machine on the same unproven screen is the wrong thing to debug first.
 
 Sketch canvas (private artifact, 11 low-fi artboards):
 <https://claude.ai/code/artifact/83307fe6-0ec3-43c1-bcc4-f2e8a3453f95>
@@ -197,3 +206,16 @@ Small decisions that were easier to make once drawn:
 - The Phase 1 mascot treatment **in the widget and the reminder** (PRD §5).
   Only the Today-view slot is fixed here.
 - Milestone celebrations (7/30/100 days) have no visual treatment yet.
+- §1's collapse into an app-bar chip, and the chip itself. See the status
+  note above.
+- **The `regenerating` copy has nowhere to come from yet.** §3 says it
+  "names the habit and offers the repair", but the mood is a bare label —
+  it names an artboard, not a habit — and `HabitMoodState` deliberately
+  carries no habit identity. Both halves are missing, and the input is the
+  cheap one. When this lands the shape is a second pure function beside
+  `Mascot.mood`, something like `recentlyBrokenHabits(inputs)` returning
+  the ids, rather than a wider `Mood`: one type should not have to carry
+  both "which drawing" and "which habit". Recorded because two review
+  rounds have now rediscovered it.
+- Momo's own copy. Every line the panel shows is placeholder, chosen to
+  make the three Phase 0 states distinguishable rather than to be read.
