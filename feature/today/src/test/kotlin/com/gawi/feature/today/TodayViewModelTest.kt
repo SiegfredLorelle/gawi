@@ -14,6 +14,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import java.io.IOException
 
 /**
  * The ViewModel's own decisions: what it shows before it has looked, which
@@ -47,6 +48,22 @@ class TodayViewModelTest {
 
             val state = awaitItem() as TodayUiState.Habits
             assertEquals("read", state.rows.single().name)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `a failing read path leaves the screen standing`() = runTest {
+        // Reachable on a first launch: the projection repair calls
+        // SettingsSource.current, which refuses rather than guessing when the
+        // preferences file cannot be read. Uncaught, that would escape stateIn's
+        // sharing coroutine and take the process down on the only screen.
+        repository.failure = IOException("settings unreadable")
+
+        viewModel.uiState.test {
+            // No Loading first: the upstream fails on subscription, so stateIn
+            // has replaced its initial value before anything can observe it.
+            assertEquals(TodayUiState.Unavailable, awaitItem())
             cancelAndIgnoreRemainingEvents()
         }
     }

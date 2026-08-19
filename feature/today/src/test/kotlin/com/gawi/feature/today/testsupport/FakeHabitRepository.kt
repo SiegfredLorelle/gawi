@@ -9,6 +9,7 @@ import com.gawi.core.domain.projection.HabitMetadata
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import java.time.LocalDate
 
 /** A completion the ViewModel asked for, so a test can say which call it made. */
@@ -49,7 +50,10 @@ class FakeHabitRepository : HabitRepository {
 
     suspend fun emit(habits: List<TodayHabit>) = emit(todaySnapshot(habits))
 
-    override fun observeToday(): Flow<TodaySnapshot> = snapshots
+    /** Set to fail the observable the way the real read path can — see [observeToday]. */
+    var failure: Throwable? = null
+
+    override fun observeToday(): Flow<TodaySnapshot> = failure?.let { flow<TodaySnapshot> { throw it } } ?: snapshots
 
     override suspend fun addCompletion(habitId: HabitId, logicalDate: LocalDate, note: String?): CommandResult<Unit> {
         toggles += Toggle(habitId, logicalDate, undo = false)

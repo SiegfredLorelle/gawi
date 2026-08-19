@@ -112,6 +112,31 @@ class TodayUiMapperTest {
     }
 
     @Test
+    fun `a signed hex string is not a colour`() {
+        // toLongOrNull accepts a leading sign, so this is six digits that parse
+        // to a negative number and mask into an arbitrary opaque colour.
+        assertNull(parseHabitColor("#-abcde"))
+        assertNull(parseHabitColor("#-abcdefa"))
+        assertNull(parseHabitColor("#+abcde"))
+    }
+
+    @Test
+    fun `an archived row counts towards neither the mood nor the remaining count`() {
+        // Mascot.mood drops archived habits itself. The count has to drop them
+        // too, or the panel reads "1 left" beside a thriving face the moment an
+        // archived row reaches a snapshot.
+        val state = todaySnapshot(
+            habits = listOf(
+                todayHabit(id = habitId(1), completedToday = true),
+                todayHabit(id = habitId(2), completedToday = false, archived = true),
+            ),
+        ).toUiState() as TodayUiState.Habits
+
+        assertEquals(0, state.remaining)
+        assertEquals(Mood.THRIVING, state.mood)
+    }
+
+    @Test
     fun `the state carries the date its rows were queried for`() {
         val state = todaySnapshot(habits = listOf(todayHabit())).toUiState() as TodayUiState.Habits
         assertEquals(TODAY, state.logicalDate)

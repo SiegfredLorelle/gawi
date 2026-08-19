@@ -17,10 +17,23 @@ import java.time.LocalDate
  * [Loading] is not a spinner. The first emission is one Room query, so anything
  * animated would be a flash; it exists so the screen does not claim there are
  * no habits before it has looked.
+ *
+ * [Unavailable] is the read path failing, which it can: a fresh install repairs
+ * the projection on its first read, and that repair asks the settings store for
+ * an answer it refuses to guess at when the file cannot be read. Without a state
+ * for it the exception would leave the ViewModel's sharing coroutine and take
+ * the process down on the app's only screen.
+ *
+ * Internal throughout. These types carry `Color`, `Mood` and `HabitId`, all of
+ * which arrive on implementation-scope dependencies, so exposing them would
+ * publish a surface no consumer could compile against. [TodayRoute] is this
+ * module's whole API.
  */
-sealed interface TodayUiState {
+internal sealed interface TodayUiState {
 
     data object Loading : TodayUiState
+
+    data object Unavailable : TodayUiState
 
     data class Empty(val mood: Mood) : TodayUiState
 
@@ -42,7 +55,7 @@ sealed interface TodayUiState {
  * [note] is deliberately absent: the note sheet is a long-press flow that does
  * not exist yet, and a field nothing renders invites rendering half of it.
  */
-data class HabitRowUi(
+internal data class HabitRowUi(
     val id: HabitId,
     val name: String,
     val icon: String,
@@ -55,7 +68,7 @@ data class HabitRowUi(
 )
 
 /** A weekly habit's progress through its own week. */
-data class WeekProgress(val done: Int, val target: Int)
+internal data class WeekProgress(val done: Int, val target: Int)
 
 /**
  * A streak as it is drawn.
@@ -65,7 +78,7 @@ data class WeekProgress(val done: Int, val target: Int)
  * same number". Making them different types is what enforces that through
  * exhaustiveness rather than through a convention someone forgets.
  */
-sealed interface StreakUi {
+internal sealed interface StreakUi {
 
     /** No completions ever — nothing to draw. */
     data object None : StreakUi
