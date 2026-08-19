@@ -127,10 +127,15 @@ class TodayMoodTest {
             val corrupted = streaks.find(habit.value)!!.copy(currentStreak = 99)
             streaks.upsert(corrupted)
 
-            store.settings.settings = store.settings.settings.copy(reminderTime = LocalTime.of(19, 0))
+            val edited = LocalTime.of(19, 0)
+            store.settings.settings = store.settings.settings.copy(reminderTime = edited)
 
-            val after = awaitItem()
-            assertEquals(LocalTime.of(19, 0), after.reminderTime)
+            // The hand-written streak row invalidates its table as well, so an
+            // emission carrying the old threshold can arrive first. Wait for the
+            // one the edit produced rather than assuming it is next.
+            var after = awaitItem()
+            while (after.reminderTime != edited) after = awaitItem()
+
             assertEquals(99, streaks.find(habit.value)!!.currentStreak)
             cancelAndIgnoreRemainingEvents()
         }
