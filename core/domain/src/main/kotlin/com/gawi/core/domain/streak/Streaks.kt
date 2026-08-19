@@ -1,5 +1,6 @@
 package com.gawi.core.domain.streak
 
+import com.gawi.core.domain.model.Schedule
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.temporal.TemporalAdjusters
@@ -36,20 +37,31 @@ object Streaks {
     }
 
     /**
-     * Consecutive calendar weeks with at least [timesPerWeek] distinct
-     * completed dates, ending at the current week (if it already hit) or
-     * the previous one. Dates after [today] are ignored — replay accepts
-     * future-dated completions (fast device clocks, imports) and they must
-     * not pre-fill a week. Weeks are keyed by their start date via
+     * Consecutive calendar weeks with at least [Schedule.Weekly.timesPerWeek]
+     * distinct completed dates, ending at the current week (if it already
+     * hit) or the previous one. Dates after [today] are ignored — replay
+     * accepts future-dated completions (fast device clocks, imports) and they
+     * must not pre-fill a week. Weeks are keyed by their start date via
      * [weekStart] arithmetic — never by week-of-year numbers, which
      * misbucket the days around New Year.
+     *
+     * Takes the [Schedule.Weekly] rather than a bare count so the 1..7 bound
+     * that type enforces cannot be bypassed here. A raw target degrades
+     * silently instead of failing: 0 is indistinguishable from 1, because
+     * weeks with no completions are not keys in the grouping to begin with,
+     * and anything above 7 can never be met.
      */
-    fun weekStreak(completedDates: Set<LocalDate>, timesPerWeek: Int, today: LocalDate, weekStart: DayOfWeek = DayOfWeek.MONDAY): Int {
+    fun weekStreak(
+        completedDates: Set<LocalDate>,
+        schedule: Schedule.Weekly,
+        today: LocalDate,
+        weekStart: DayOfWeek = DayOfWeek.MONDAY,
+    ): Int {
         val hitWeeks = completedDates
             .filter { !it.isAfter(today) }
             .groupingBy { it.with(TemporalAdjusters.previousOrSame(weekStart)) }
             .eachCount()
-            .filterValues { it >= timesPerWeek }
+            .filterValues { it >= schedule.timesPerWeek }
             .keys
         val currentWeek = today.with(TemporalAdjusters.previousOrSame(weekStart))
         val anchor = when {
