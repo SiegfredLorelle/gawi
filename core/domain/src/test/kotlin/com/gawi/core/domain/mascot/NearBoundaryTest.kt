@@ -61,6 +61,16 @@ class NearBoundaryTest {
     }
 
     @Test
+    fun `a reminder equal to the cutoff marks the whole logical day`() {
+        // Pinned rather than special-cased: logicalDate's own rule is that a
+        // wall time exactly at the cutoff begins the new day, so a reminder
+        // there marks the day's start. Worth a test because the consequence —
+        // worried from the first minute — is one a reader would call a bug.
+        assertEquals(Mood.WORRIED, moodAt(at("2026-08-17", "00:00"), reminder = LocalTime.MIDNIGHT))
+        assertEquals(Mood.WORRIED, moodAt(at("2026-08-17", "09:00"), reminder = LocalTime.MIDNIGHT))
+    }
+
+    @Test
     fun `a reminder set earlier than the cutoff falls after midnight`() {
         // Cutoff 03:00, reminder 01:00: the reminder for the logical 17th lands
         // at 01:00 on the 18th, in the last two hours of that logical day.
