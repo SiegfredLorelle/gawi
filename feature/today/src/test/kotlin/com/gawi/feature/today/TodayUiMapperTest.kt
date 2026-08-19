@@ -94,6 +94,24 @@ class TodayUiMapperTest {
     }
 
     @Test
+    fun `the mood reaches the state, decided from the same snapshot`() {
+        // Past the reminder with something outstanding, which is §4's rule 3.
+        val worried = todaySnapshot(
+            habits = listOf(todayHabit(completedToday = false)),
+            now = TODAY.atTime(21, 30),
+        ).toUiState() as TodayUiState.Habits
+        assertEquals(Mood.WORRIED, worried.mood)
+
+        // Same rows, same clock, nothing outstanding — §4's rule 1.
+        val thriving = todaySnapshot(
+            habits = listOf(todayHabit(completedToday = true)),
+            now = TODAY.atTime(21, 30),
+        ).toUiState() as TodayUiState.Habits
+        assertEquals(Mood.THRIVING, thriving.mood)
+        assertEquals(0, thriving.remaining)
+    }
+
+    @Test
     fun `the state carries the date its rows were queried for`() {
         val state = todaySnapshot(habits = listOf(todayHabit())).toUiState() as TodayUiState.Habits
         assertEquals(TODAY, state.logicalDate)

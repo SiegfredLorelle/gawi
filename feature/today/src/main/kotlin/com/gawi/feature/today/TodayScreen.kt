@@ -3,7 +3,6 @@ package com.gawi.feature.today
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -56,16 +55,25 @@ internal fun TodayScreen(
             // has looked.
             TodayUiState.Loading -> Box(Modifier.fillMaxSize().padding(insets))
 
-            is TodayUiState.Empty -> EmptyToday(Modifier.fillMaxSize().padding(insets))
+            is TodayUiState.Empty -> Column(Modifier.fillMaxSize().padding(insets)) {
+                MascotPanel(mood = state.mood, remaining = 0, total = 0)
+                EmptyToday(Modifier.fillMaxSize())
+            }
 
-            is TodayUiState.Habits -> HabitList(state, onToggle, insets)
+            is TodayUiState.Habits -> Column(Modifier.fillMaxSize().padding(insets)) {
+                // Above the list rather than over it. §1 keeps habit rows on
+                // plain surface, so row contrast is never a function of the
+                // mood; the collapse into an app-bar chip is what is deferred.
+                MascotPanel(mood = state.mood, remaining = state.remaining, total = state.rows.size)
+                HabitList(state, onToggle)
+            }
         }
     }
 }
 
 @Composable
-private fun HabitList(state: TodayUiState.Habits, onToggle: (HabitId, Boolean, LocalDate) -> Unit, insets: PaddingValues) {
-    LazyColumn(contentPadding = insets) {
+private fun HabitList(state: TodayUiState.Habits, onToggle: (HabitId, Boolean, LocalDate) -> Unit) {
+    LazyColumn {
         items(state.rows, key = { it.id.value }) { row ->
             HabitRow(
                 row = row,

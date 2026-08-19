@@ -31,6 +31,19 @@
          swapping it for a vector is a one-file change. -->
     <string name="today_streak_broken_glyph">\u2702</string>
 
+    <!-- Phase 0's three states (PRD §5). §4's four moods collapse onto them
+         through Mood.toMvp, so Phase 1 adds art here and not logic. -->
+    <string name="today_mood_happy">All done. Momo is thriving.</string>
+    <string name="today_mood_neutral">Momo is pottering about.</string>
+    <string name="today_mood_worried">Momo is getting worried.</string>
+    <string name="today_mood_empty">Momo is waiting for a habit.</string>
+    <!-- An x-of-y ratio rather than a count of a noun, so there is no singular
+         form to write. All of this panel's copy is placeholder either way —
+         §4's per-mood wording is not designed — and plurals get revisited when
+         it is. -->
+    <string name="today_remaining" tools:ignore="PluralsCandidate">%1$d of %2$d left today</string>
+    <string name="today_remaining_none">Nothing left today</string>
+
     <string name="today_complete">Mark done</string>
     <string name="today_undo">Mark not done</string>
 </resources>
