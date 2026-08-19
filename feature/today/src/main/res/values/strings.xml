@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Resource merging is flat across the whole app, so every name here carries a
+  today_ prefix rather than risking a collision with :app's own.
+-->
+<resources>
+    <string name="today_error_retro_window">That day is more than three days ago. Only the last three days can be edited.</string>
+    <string name="today_error_future_date">That day has not happened yet.</string>
+    <string name="today_error_habit_missing">That habit no longer exists.</string>
+    <string name="today_error_habit_archived">That habit is archived.</string>
+    <string name="today_error_unexpected">That did not work. Try again.</string>
+</resources>
