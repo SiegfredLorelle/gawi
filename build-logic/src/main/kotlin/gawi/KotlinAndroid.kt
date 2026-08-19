@@ -41,5 +41,11 @@ internal fun Project.configureAndroid(extension: CommonExtension) {
         // module that uses it fails at startup (architecture §8 puts :core:data
         // DAO tests on the JVM).
         testOptions.unitTests.isIncludeAndroidResources = true
+        // Without this, every android.jar method a unit test reaches throws
+        // "Stub!" instead of doing nothing — including android.util.Log. That
+        // turns a log line inside a catch block into a second exception, which
+        // is exactly the failure a catch block exists to prevent. Robolectric
+        // modules are unaffected; they swap the jar out entirely.
+        testOptions.unitTests.isReturnDefaultValues = true
     }
 }
