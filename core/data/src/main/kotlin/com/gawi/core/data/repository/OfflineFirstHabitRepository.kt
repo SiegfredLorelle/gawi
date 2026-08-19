@@ -146,12 +146,11 @@ internal class OfflineFirstHabitRepository @Inject constructor(
     }
 
     override fun observeToday(): Flow<List<TodayHabit>> = flow {
-        val current = ensureProjectionCurrent()
+        ensureProjectionCurrent()
         emitAll(
-            logicalDates(current)
-                .onEach { refreshStreaks() }
-                .flatMapLatest { today ->
-                    val week = weekOf(today, current)
+            readContext()
+                .flatMapLatest { (settings, today) ->
+                    val week = weekOf(today, settings)
                     readModel
                         .observeToday(today.toString(), week.first.toString(), week.second.toString())
                         .map { rows -> rows.map { it.toDomain() } }
@@ -161,16 +160,11 @@ internal class OfflineFirstHabitRepository @Inject constructor(
     }
 
     override fun observeHabit(habitId: HabitId): Flow<TodayHabit?> = flow {
-        val current = ensureProjectionCurrent()
+        ensureProjectionCurrent()
         emitAll(
-            logicalDates(current)
-                // Same sweep as observeToday, for the same reason: the streak
-                // join below has no staleness guard, so a detail screen left
-                // open across midnight would re-query with the new date and
-                // pair a fresh completion state with yesterday's streak.
-                .onEach { refreshStreaks() }
-                .flatMapLatest { today ->
-                    val week = weekOf(today, current)
+            readContext()
+                .flatMapLatest { (settings, today) ->
+                    val week = weekOf(today, settings)
                     readModel
                         .observeHabit(habitId.value, today.toString(), week.first.toString(), week.second.toString())
                         .map { row -> row?.toDomain() }
@@ -231,10 +225,35 @@ internal class OfflineFirstHabitRepository @Inject constructor(
      * someone opening the app after a projection-version bump would sit looking
      * at stale rows until they happened to tap something.
      */
-    private suspend fun ensureProjectionCurrent(): UserSettings = mutex.withLock {
-        initialised()
-        settings.current()
+    private suspend fun ensureProjectionCurrent() {
+        mutex.withLock { initialised() }
     }
+
+    /**
+     * The settings and logical date every read query binds, re-emitted whenever
+     * either moves — a settings edit, or the day boundary passing.
+     *
+     * Both observers share this so the two cannot drift apart. Holding the
+     * settings for the life of a collection would be worse than it looks: the
+     * captured cutoff decides not just how a week is bucketed but which day is
+     * "today" and when the next boundary falls, so a stale one would keep
+     * answering with the old day indefinitely rather than correcting itself
+     * overnight — while the streak rows joined into the same query, recomputed
+     * by [refreshStreaks], had already moved to the new setting.
+     *
+     * The streak sweep sits here rather than at either call site because a
+     * streak row and the query that joins it must answer for the same day. It
+     * reads the settings itself rather than taking them from the emission, so
+     * an edit landing between the two leaves a brief skew; that converges
+     * rather than sticking, because the edit also cancels [flatMapLatest] and
+     * re-runs it with the newer value and a fresh sweep. Keeping
+     * [refreshStreaks] argument-free is what preserves its contract that the
+     * repository owns the clock and the settings.
+     */
+    private fun readContext(): Flow<Pair<UserSettings, LocalDate>> = settings
+        .observe()
+        .flatMapLatest { current -> logicalDates(current).map { current to it } }
+        .onEach { refreshStreaks() }
 
     private suspend fun rebuildLocked(current: ProjectedState) {
         val settings = settings.current()

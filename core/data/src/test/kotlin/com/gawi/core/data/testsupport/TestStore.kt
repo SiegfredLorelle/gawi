@@ -13,6 +13,8 @@ import com.gawi.core.data.time.DeviceClock
 import com.gawi.core.domain.id.UuidV7Generator
 import com.gawi.core.domain.serialization.EventCodec
 import com.gawi.core.domain.time.logicalDate
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import org.robolectric.RuntimeEnvironment
 import java.time.Instant
 import java.time.LocalDate
@@ -45,9 +47,22 @@ class FakeDeviceClock(var instant: Instant = Instant.parse("2026-08-17T09:00:00Z
     }
 }
 
-class FakeSettingsSource(var settings: UserSettings = UserSettings()) : SettingsSource {
+/**
+ * Settings a test can edit mid-collection. Backed by a [MutableStateFlow] so an
+ * assignment reaches an already-running observer, which is the only way to
+ * catch a reader that captured the settings instead of following them.
+ */
+class FakeSettingsSource(initial: UserSettings = UserSettings()) : SettingsSource {
 
-    override suspend fun current(): UserSettings = settings
+    private val state = MutableStateFlow(initial)
+
+    var settings: UserSettings
+        get() = state.value
+        set(value) {
+            state.value = value
+        }
+
+    override fun observe(): Flow<UserSettings> = state
 }
 
 /**
