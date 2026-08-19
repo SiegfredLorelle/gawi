@@ -143,6 +143,28 @@ class TodayScreenTest {
     }
 
     /**
+     * The one state where "Nothing left today" is the right thing to say.
+     *
+     * The sibling of [emptyState_doesNotClaimNothingLeft], and the reason that
+     * one is not enough on its own: the panel's count line is guarded on
+     * `total > 0`, so asserting only its absence pins half the rule. Everything
+     * ticked with habits present must say it, and must not slide into the empty
+     * state's copy — which is what keying the empty line off the mood instead of
+     * the count would produce, since `THRIVING` and a habitless run are
+     * different things that would start reading the same.
+     */
+    @Test
+    fun allDone_saysNothingLeftWithoutSoundingEmpty() {
+        compose.setContent {
+            GawiTheme { TodayScreen(ALL_DONE, NO_TOGGLE, SnackbarHostState()) }
+        }
+
+        compose.onNodeWithText(string(R.string.today_remaining_none)).assertIsDisplayed()
+        compose.onNodeWithText(string(R.string.today_mood_empty)).assertDoesNotExist()
+        compose.onNodeWithText(string(R.string.today_empty_title)).assertDoesNotExist()
+    }
+
+    /**
      * Loading draws nothing rather than guessing.
      *
      * Not a spinner and not the empty state: the first emission is one Room
@@ -191,6 +213,14 @@ class TodayScreenTest {
             rows = listOf(READ, WALK),
             mood = Mood.CONTENT,
             remaining = 1,
+            logicalDate = LOGICAL_DATE,
+        )
+
+        /** Habits present and none outstanding — READ is the completed one. */
+        val ALL_DONE = TodayUiState.Habits(
+            rows = listOf(READ),
+            mood = Mood.THRIVING,
+            remaining = 0,
             logicalDate = LOGICAL_DATE,
         )
     }
