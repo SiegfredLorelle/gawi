@@ -62,13 +62,90 @@ the same place. MVP paints a static face; Phase 1 swaps in a state
 machine. Nothing around it moves.
 
 Mood vocabulary is **thriving / content / worried / regenerating** (PRD
-§3.5) and the trigger for each is on the canvas mood sheet.
-"Regenerating" is not a euphemism for sad: a broken streak drains the
-tank of colour and regrows a gill, and the copy names the habit and offers
-the repair. It never scolds. That is the whole reason the mascot is an
-axolotl.
+§3.5); §4 below fixes what triggers each. "Regenerating" is not a
+euphemism for sad: a broken streak drains the tank of colour and regrows a
+gill, and the copy names the habit and offers the repair. It never scolds.
+That is the whole reason the mascot is an axolotl.
 
-## 4. What the sketch also pins
+## 4. Mood states
+
+Provisional — this is Phase 1 behaviour, written down now so the MVP
+placeholder and the eventual Rive state machine are driven by the same
+rule, and so nothing depends on reading the private sketch canvas.
+
+### Inputs
+
+- **`outstanding`** — non-archived habits due today and not yet satisfied.
+  - `Schedule.Daily`: outstanding unless completed for today's logical
+    date.
+  - `Schedule.Weekly(n)`: let `remaining = n − completions this week` and
+    `daysLeft` = days left in the week including today. Outstanding iff
+    `remaining > 0 && remaining >= daysLeft`.
+
+    That is deliberately **now-or-never**: a 1×/week habit stays quiet
+    until its last possible day. Weekly targets are not tied to specific
+    days (PRD §4), so treating one as due every day until met would nag
+    about a Sunday-able habit on Monday and contradict the schedule type.
+- **`nearBoundary`** — now is at or past the configured reminder time and
+  before the day boundary. Reuses the setting the end-of-day reminder
+  already needs; no second threshold to keep in sync.
+- **`recentlyBroken`** — a non-archived habit whose streak is `0` today but
+  was `≥1` at the previous rollover. Observable exactly where the data
+  layer already recomputes streaks on day rollover.
+
+### Precedence — first match wins
+
+| # | Mood | Condition |
+|---|---|---|
+| 0 | `content` | no non-archived habits at all |
+| 1 | `thriving` | `outstanding` is empty |
+| 2 | `regenerating` | `recentlyBroken`, inside the window below |
+| 3 | `worried` | `outstanding` non-empty **and** `nearBoundary` |
+| 4 | `content` | otherwise |
+
+Rule 0 is load-bearing, not a guard: without it a first run with zero
+habits satisfies rule 1 and Momo would greet a brand-new user as thriving.
+The first-run artboard draws content.
+
+`thriving` outranking `regenerating` is the deliberate call. Finishing the
+day is the way out of the recovery state, so it can never sit there as a
+quiet scold — which is the entire point of choosing an animal that regrows
+limbs.
+
+### Regenerating: entry and exit
+
+Enters at the rollover that zeroes a streak. Exits at the first day with
+nothing outstanding (→ `thriving`), or after **3 logical days** without
+recovery, whichever comes first — otherwise an abandoned habit would pin
+Momo to a permanent guilt face, which is the failure mode this mood exists
+to avoid.
+
+The 3-day figure is a guess and is flagged for the 30-day trial, alongside
+PRD OQ-3. Grace mechanics, if they ever land, change `recentlyBroken` and
+therefore this whole section.
+
+### MVP mapping
+
+Phase 0 ships three states, not four (PRD §5, "happy/neutral/worried"):
+
+| Phase 1 | MVP placeholder |
+|---|---|
+| `thriving` | happy |
+| `content`, `regenerating` | neutral |
+| `worried` | worried |
+
+Same slot, same inputs, fewer drawings. That is the §3 contract restated as
+behaviour rather than layout: Phase 1 adds art, not logic.
+
+### Where this is computed
+
+A pure function of the projected state, today, now and settings, living in
+`:core:domain` beside `Streaks`. It is not stored and not folded into
+projection, for the reason already written into `Streaks`' KDoc — it
+depends on "today", which is not in the event log, so applying it during
+replay would break the incremental-≡-rebuild invariant (architecture §4).
+
+## 5. What the sketch also pins
 
 Small decisions that were easier to make once drawn:
 
@@ -90,13 +167,17 @@ Small decisions that were easier to make once drawn:
   offers it explicitly.
 - **Habit colour appears as the tint behind the row's icon** — one place,
   set once in the create/edit form.
-- **The widget carries no mascot** at any phase. Glance cannot observe
-  Room and has no room for a habitat.
+- **The widget carries no mascot at MVP.** It is a bare checklist; the
+  emotive indicator is a Today-view element only. Phase 1 does put Momo in
+  the widget and the reminder (PRD §5) — that treatment is not designed
+  yet and is not decided here.
 
-## 5. Still open
+## 6. Still open
 
 - **PRD OQ-4** — Momo's art style. The canvas art is placeholder line
   work; species and name are the only settled parts.
 - **PRD OQ-5** — whether the widget shows streaks. Both answers are drawn;
   neither is chosen.
+- The Phase 1 mascot treatment **in the widget and the reminder** (PRD §5).
+  Only the Today-view slot is fixed here.
 - Milestone celebrations (7/30/100 days) have no visual treatment yet.
