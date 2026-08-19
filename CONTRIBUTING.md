@@ -18,6 +18,9 @@ ls .git/hooks/pre-commit .git/hooks/commit-msg
 
 1. Branch off `main`. Direct pushes to `main` are blocked.
 2. Make the change. Run `make fmt`, `make lint` and `make test`.
+   If the change is user-visible, run it too — `make run`, plus the
+   relevant checks from [docs/running.md](docs/running.md). CI cannot do
+   this part: it runs unit tests only.
 3. Commit following the [commit convention](.github/COMMIT_CONVENTION.md) —
    header 50 chars, scope required, body wrapped at 72.
 4. Open a pull request and fill in the template.
