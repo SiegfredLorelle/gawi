@@ -48,4 +48,4 @@ rules:
   scope-enum:
     - 2
     - always
-    - [app, domain, data, ui, gradle, quality, make, ci, deps, docs, stacks, repo, claude, arch, prd]
+    - [app, domain, data, ui, ux, gradle, quality, make, ci, deps, docs, stacks, repo, claude, arch, prd]
