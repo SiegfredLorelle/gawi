@@ -76,11 +76,18 @@ rule, and so nothing depends on reading the private sketch canvas.
 ### Inputs
 
 - **`outstanding`** — non-archived habits due today and not yet satisfied.
+  A habit completed for today's logical date is never outstanding, whatever
+  its schedule; the per-schedule rules below decide the rest.
   - `Schedule.Daily`: outstanding unless completed for today's logical
     date.
   - `Schedule.Weekly(n)`: let `remaining = n − completions this week` and
     `daysLeft` = days left in the week including today. Outstanding iff
     `remaining > 0 && remaining >= daysLeft`.
+
+    The completion gate above matters here and not only for daily habits:
+    without it, 3×/week with none done needs 3 in 2 days on Saturday, and
+    completing Saturday leaves `remaining` 2 against a `daysLeft` of 2, so
+    the habit would still read outstanding on a day the user turned up.
 
     That is deliberately **now-or-never**: a 1×/week habit stays quiet
     until its last possible day. Weekly targets are not tied to specific
