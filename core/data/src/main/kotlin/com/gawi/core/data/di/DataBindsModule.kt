@@ -2,7 +2,7 @@ package com.gawi.core.data.di
 
 import com.gawi.core.data.repository.HabitRepository
 import com.gawi.core.data.repository.OfflineFirstHabitRepository
-import com.gawi.core.data.settings.DefaultSettingsSource
+import com.gawi.core.data.settings.DataStoreSettingsSource
 import com.gawi.core.data.settings.SettingsSource
 import com.gawi.core.data.time.DeviceClock
 import com.gawi.core.data.time.SystemDeviceClock
@@ -27,7 +27,7 @@ internal abstract class DataBindsModule {
     abstract fun habitRepository(implementation: OfflineFirstHabitRepository): HabitRepository
 
     @Binds
-    abstract fun settingsSource(implementation: DefaultSettingsSource): SettingsSource
+    abstract fun settingsSource(implementation: DataStoreSettingsSource): SettingsSource
 
     @Binds
     abstract fun deviceClock(implementation: SystemDeviceClock): DeviceClock
