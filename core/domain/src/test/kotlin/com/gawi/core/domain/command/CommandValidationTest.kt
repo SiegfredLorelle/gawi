@@ -203,6 +203,24 @@ class CommandValidationTest {
     }
 
     @Test
+    fun `both completion commands report archived ahead of liveness`() {
+        val state = Projector.rebuild(
+            listOf(
+                event(1, 1000, habitCreated(habit)),
+                event(2, 2000, completionAdded(habit, "2026-08-17")),
+                event(3, 3000, CompletionTombstoned(eventId(2))),
+                event(4, 4000, HabitArchived(habit)),
+            ),
+        )
+
+        rejectedWith(Commands.undoCompletion(state, habit, today), CommandError.HabitIsArchived)
+        rejectedWith(
+            Commands.updateCompletionNote(state, eventId(2), "frozen"),
+            CommandError.HabitIsArchived,
+        )
+    }
+
+    @Test
     fun `a note update on an unknown completion is rejected`() {
         rejectedWith(
             Commands.updateCompletionNote(stateWithHabit, eventId(99), "nowhere"),

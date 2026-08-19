@@ -80,6 +80,17 @@ object Commands {
      * Undo tombstones every live add the local log knows for the cell
      * (architecture §4), so a merge-duplicate the undo already saw cannot
      * resurrect the completion.
+     *
+     * Checks archived before liveness, matching [updateCompletionNote]; the
+     * habit-level gate is the coarser one, as in [addCompletion].
+     *
+     * There is deliberately no `HabitNotFound` branch. A completion can
+     * legitimately exist before its `HabitCreated` arrives under log merge
+     * (architecture §1.3), which is why [ProjectedState] models metadata as
+     * nullable and parks early-arriving references — refusing to undo a
+     * completion the user can see, because its habit metadata has not synced
+     * yet, would be worse than an imprecise error. For the same reason
+     * absent metadata reads as not-archived rather than as an error.
      */
     fun undoCompletion(state: ProjectedState, habitId: HabitId, logicalDate: LocalDate): CommandResult<List<CompletionTombstoned>> {
         val liveIds = state.liveAddIds(habitId, logicalDate)
@@ -90,14 +101,23 @@ object Commands {
         }
     }
 
-    /** [text] may be empty — that is a clear, a valid write that wins LWW like any other. */
+    /**
+     * [text] may be empty — that is a clear, a valid write that wins LWW like
+     * any other.
+     *
+     * Archived is checked before liveness so an archived habit reports
+     * [CommandError.HabitIsArchived] whatever the completion's state, exactly
+     * as [undoCompletion] does; an unknown event id is still
+     * [CommandError.CompletionNotFound], since the cell cannot be resolved
+     * without one. The same no-`HabitNotFound` reasoning applies here.
+     */
     fun updateCompletionNote(state: ProjectedState, completionEventId: EventId, text: String): CommandResult<CompletionNoteUpdated> {
         val key = state.addIdToKey[completionEventId]
             ?: return CommandResult.Rejected(CommandError.CompletionNotFound)
         val cell = state.completions.getValue(key)
         return when {
-            completionEventId !in cell.liveAddIds -> CommandResult.Rejected(CommandError.CompletionNotFound)
             state.habit(key.habitId)?.archived == true -> CommandResult.Rejected(CommandError.HabitIsArchived)
+            completionEventId !in cell.liveAddIds -> CommandResult.Rejected(CommandError.CompletionNotFound)
             else -> CommandResult.Accepted(CompletionNoteUpdated(completionEventId, text))
         }
     }
