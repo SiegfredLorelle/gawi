@@ -1,9 +1,9 @@
 package com.gawi.core.domain.streak
 
 import com.gawi.core.domain.model.Schedule
+import com.gawi.core.domain.time.weekStartOn
 import java.time.DayOfWeek
 import java.time.LocalDate
-import java.time.temporal.TemporalAdjusters
 
 /**
  * Pure streak calculators over projected completion dates (architecture
@@ -58,7 +58,7 @@ object Streaks {
         weekStart: DayOfWeek = DayOfWeek.MONDAY,
     ): Int {
         val hitWeeks = hitWeeks(completedDates, schedule, today, weekStart)
-        val currentWeek = weekOf(today, weekStart)
+        val currentWeek = weekStartOn(today, weekStart)
         val anchor = when {
             currentWeek in hitWeeks -> currentWeek
             currentWeek.minusWeeks(1) in hitWeeks -> currentWeek.minusWeeks(1)
@@ -134,7 +134,7 @@ object Streaks {
     ): StreakSnapshot {
         val current = weekStreak(completedDates, schedule, today, weekStart)
         val lastHitWeek = hitWeeks(completedDates, schedule, today, weekStart)
-            .filter { !it.isAfter(weekOf(today, weekStart)) }
+            .filter { !it.isAfter(weekStartOn(today, weekStart)) }
             .maxOrNull()
         return when {
             current > 0 -> StreakSnapshot(current, previous = 0, brokenOn = null)
@@ -163,10 +163,8 @@ object Streaks {
         weekStart: DayOfWeek,
     ): Set<LocalDate> = completedDates
         .filter { !it.isAfter(today) }
-        .groupingBy { weekOf(it, weekStart) }
+        .groupingBy { weekStartOn(it, weekStart) }
         .eachCount()
         .filterValues { it >= schedule.timesPerWeek }
         .keys
-
-    private fun weekOf(date: LocalDate, weekStart: DayOfWeek): LocalDate = date.with(TemporalAdjusters.previousOrSame(weekStart))
 }
