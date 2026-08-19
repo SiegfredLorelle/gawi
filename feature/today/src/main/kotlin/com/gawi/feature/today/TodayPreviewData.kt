@@ -68,6 +68,17 @@ private val PREVIEW_ROWS = listOf(
         streak = StreakUi.None,
     ),
     HabitRowUi(
+        id = previewId("6"),
+        // Translucent, so what the glyph really sits on is this blended with
+        // the surface behind it rather than the colour as written.
+        name = "walk",
+        icon = "W",
+        iconTint = parseHabitColor("#40FFFFFF"),
+        completed = false,
+        weekProgress = null,
+        streak = StreakUi.None,
+    ),
+    HabitRowUi(
         id = previewId("4"),
         // An unparseable colour, which the event log can hold and a row has to
         // survive: this one falls back to a theme role.

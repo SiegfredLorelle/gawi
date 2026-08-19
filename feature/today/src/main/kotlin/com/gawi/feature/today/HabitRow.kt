@@ -17,8 +17,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.onClick
@@ -88,22 +86,17 @@ private fun HabitIcon(row: HabitRowUi) {
             style = MaterialTheme.typography.titleSmall,
             // The glyph cannot take a theme role, because what it sits on is
             // unvalidated: parseHabitColor checks that the stored string is a
-            // colour, deliberately not that it is a usable one. onSurface over
-            // #000000 is black on black in light mode. Luminance decides
-            // instead, and the theme role applies only when there is no habit
-            // colour to sit on.
+            // colour, deliberately not that it is a usable one. A pure black
+            // habit would otherwise draw a dark glyph on itself in light mode.
             //
-            // Alpha is honoured, so #00aabbcc is a transparent circle and the
-            // glyph then sits on the surface. Not a crash, and the create form
-            // is where that input gets constrained.
-            color = tint?.let { if (it.luminance() > CONTRAST_PIVOT) Color.Black else Color.White }
+            // The background is passed in because the tint may be translucent,
+            // in which case what the glyph really sits on is the two composited
+            // — see glyphColorOn.
+            color = tint?.let { glyphColorOn(it, MaterialTheme.colorScheme.background) }
                 ?: MaterialTheme.colorScheme.onSecondaryContainer,
         )
     }
 }
-
-/** Above this, a background is light enough to want dark text on it. */
-private const val CONTRAST_PIVOT = 0.5f
 
 /** The name, and for a weekly habit the "2/3 this week" §5 asks for. */
 @Composable
