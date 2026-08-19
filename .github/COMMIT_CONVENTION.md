@@ -118,11 +118,25 @@ Both are easier to check than to remember:
 tail -n +3 msg | grep -nE '^[A-Za-z-]+:|#[0-9A-Za-z]'
 ```
 
-**The local hook can be laxer than CI.** `.pre-commit-config.yaml` does not pin
-a commitlint version, so it installs the newest, while the workflow's action
-bundles its own — and the two disagree about exactly these parser edge cases.
-A clean `git commit` is therefore not proof CI will pass. When they disagree,
-CI is the one that decides.
+**The local hook used to be laxer than CI, for two separate reasons.** One is
+fixed and one cannot be, so it is worth knowing which is which. When they
+disagree, CI is the one that decides.
+
+*The version gap is closed.* `.pre-commit-config.yaml` pinned no commitlint
+version, so it installed the newest (21) while the workflow's action bundles 19,
+and the two parsers disagree about exactly these edge cases — 19 rejects a hex
+past the first body line and 21 accepts it. The hook is now pinned to the same
+major. Move it and the action together.
+
+*The hash case is still invisible locally, at any version.* The hook lints
+through `commitlint --edit`, which strips lines beginning with `#` as git
+comments before the parser ever sees them — so a body line **starting** with
+`#000000` is dropped locally and passes. `git commit -F` and `-m` do not strip
+it, so it is stored in the commit, and CI lints the stored commit and fails.
+`--cleanup=strip` makes the two agree only by deleting the sentence, which is
+worse than the error. The rule is simply to never open a body line with `#`;
+the grep above is what catches it, and it catches the mid-line case too, which
+no amount of pinning will make visible either.
 
 ## Breaking changes
 
