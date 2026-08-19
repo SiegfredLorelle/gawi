@@ -72,15 +72,26 @@ internal fun TodayScreen(
                 // plain surface, so row contrast is never a function of the
                 // mood; the collapse into an app-bar chip is what is deferred.
                 MascotPanel(mood = state.mood, remaining = state.remaining, total = state.rows.size)
-                HabitList(state, onToggle)
+                // weight(1f) states the intent rather than fixing a bug: Column
+                // already measures a non-weighted child against the space its
+                // siblings left, so the list scrolls correctly either way. What
+                // it does buy is a guarantee that stays true if anything is ever
+                // placed below the list.
+                //
+                // The panel above is the unbounded one — non-weighted, measured
+                // first, floored but not capped — so at a large font scale it
+                // takes what it needs and the list gets the rest. Capping it
+                // would bring back the clipping heightIn(min) was added to fix;
+                // §1's collapse into the app bar is where this gets revisited.
+                HabitList(state, onToggle, Modifier.weight(1f))
             }
         }
     }
 }
 
 @Composable
-private fun HabitList(state: TodayUiState.Habits, onToggle: (HabitId, Boolean, LocalDate) -> Unit) {
-    LazyColumn {
+private fun HabitList(state: TodayUiState.Habits, onToggle: (HabitId, Boolean, LocalDate) -> Unit, modifier: Modifier = Modifier) {
+    LazyColumn(modifier) {
         items(state.rows, key = { it.id.value }) { row ->
             HabitRow(
                 row = row,
