@@ -3,6 +3,7 @@ package com.gawi.core.domain.time
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.temporal.TemporalAdjusters
@@ -41,3 +42,29 @@ fun logicalDate(instant: Instant, cutoff: LocalTime, zone: ZoneId): LocalDate {
  * to disagree about where a week begins.
  */
 fun weekStartOn(date: LocalDate, weekStart: DayOfWeek): LocalDate = date.with(TemporalAdjusters.previousOrSame(weekStart))
+
+/**
+ * The wall-clock moment the end-of-day reminder threshold falls for the
+ * logical date [today].
+ *
+ * The logical day runs from its cutoff to the next, so the reminder falls on
+ * the *following* calendar date whenever it is set earlier in the day than the
+ * cutoff. With a 03:00 cutoff and a 21:00 reminder, 01:30 on the 16th is 22:30
+ * into the logical 15th — the case a same-date comparison gets backwards.
+ *
+ * A reminder set *equal* to the cutoff therefore marks the day's start rather
+ * than its end. That follows from [logicalDate]'s own rule that a wall time
+ * exactly at the cutoff begins the new day, and is left consistent with it
+ * rather than special-cased; a settings screen offering the two as one control
+ * is where the combination should be prevented.
+ *
+ * Public and here rather than private to the mascot because three callers need
+ * the same answer: the mood's `nearBoundary`, the data layer's ticker that
+ * re-reads the mood when the threshold passes, and the WorkManager reminder
+ * when it lands. A second copy of this shift is how the worried face and the
+ * notification would come to fire at different hours.
+ */
+fun reminderOn(today: LocalDate, reminderTime: LocalTime, dayCutoff: LocalTime): LocalDateTime {
+    val date = if (reminderTime < dayCutoff) today.plusDays(1) else today
+    return LocalDateTime.of(date, reminderTime)
+}
