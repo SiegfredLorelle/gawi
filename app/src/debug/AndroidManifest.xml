@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Debug variant only. Step 4b needs habits on the device to exercise the
+  tap -> event -> projection -> Flow -> UI loop, and :feature:habits does not
+  exist yet (architecture §2). Delete this whole directory when it does.
+
+  No intent-filter, so nothing in the app can reach SeedActivity and it never
+  appears in a launcher. Its own task affinity means it can be started while
+  the Today screen is open, which is how rows are seen arriving live.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <activity
+            android:name=".debug.SeedActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+    </application>
+
+</manifest>
