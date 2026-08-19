@@ -1,0 +1,79 @@
+package com.gawi.feature.today
+
+import androidx.compose.ui.graphics.Color
+import com.gawi.core.domain.mascot.Mood
+import com.gawi.core.domain.model.HabitId
+import java.time.LocalDate
+
+/**
+ * What the Today screen draws, and nothing it has to work out for itself.
+ *
+ * [Empty] is a state rather than [Habits] with an empty list. A `LazyColumn`
+ * over no rows draws a blank screen, and docs/ux/today-view.md §4 makes zero
+ * habits load-bearing rather than incidental — its rule 0 exists so a first run
+ * is not greeted as thriving. Conflating the two here would be the same mistake
+ * the mood rules refuse to make.
+ *
+ * [Loading] is not a spinner. The first emission is one Room query, so anything
+ * animated would be a flash; it exists so the screen does not claim there are
+ * no habits before it has looked.
+ */
+sealed interface TodayUiState {
+
+    data object Loading : TodayUiState
+
+    data class Empty(val mood: Mood) : TodayUiState
+
+    data class Habits(
+        val rows: List<HabitRowUi>,
+        val mood: Mood,
+        /** Outstanding right now, by §4's rule — not simply "not ticked". */
+        val remaining: Int,
+        /** The date a tap writes to: the one these rows were queried for. */
+        val logicalDate: LocalDate,
+    ) : TodayUiState
+}
+
+/**
+ * One row. A model rather than eight parameters, so the row composable stays
+ * inside detekt's parameter limit and the display rules are asserted on the
+ * JVM instead of through pixels.
+ *
+ * [note] is deliberately absent: the note sheet is a long-press flow that does
+ * not exist yet, and a field nothing renders invites rendering half of it.
+ */
+data class HabitRowUi(
+    val id: HabitId,
+    val name: String,
+    val icon: String,
+    /** Null when the stored colour does not parse; the row falls back to a theme role. */
+    val iconTint: Color?,
+    val completed: Boolean,
+    /** Non-null only for a weekly schedule — §5 draws "2/3 this week" for those alone. */
+    val weekProgress: WeekProgress?,
+    val streak: StreakUi,
+)
+
+/** A weekly habit's progress through its own week. */
+data class WeekProgress(val done: Int, val target: Int)
+
+/**
+ * A streak as it is drawn.
+ *
+ * Sealed, and split by unit, because §5 says a daily streak is a count of days
+ * and a weekly one is a count of weeks and "the two must never be styled as the
+ * same number". Making them different types is what enforces that through
+ * exhaustiveness rather than through a convention someone forgets.
+ */
+sealed interface StreakUi {
+
+    /** No completions ever — nothing to draw. */
+    data object None : StreakUi
+
+    data class Days(val count: Int) : StreakUi
+
+    data class Weeks(val count: Int) : StreakUi
+
+    /** Zero now, with what was lost kept as context — §5's "was 4". */
+    data class Broken(val previous: Int, val weekly: Boolean) : StreakUi
+}
