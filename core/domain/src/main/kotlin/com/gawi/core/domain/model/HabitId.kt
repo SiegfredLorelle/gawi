@@ -12,7 +12,7 @@ import com.gawi.core.domain.id.CanonicalUuid
 value class HabitId(val value: String) {
 
     init {
-        require(CanonicalUuid.matches(value)) { "not a canonical UUID string: $value" }
+        require(CanonicalUuid.matches(value)) { "not a canonical UUIDv7 string: $value" }
     }
 
     override fun toString(): String = value

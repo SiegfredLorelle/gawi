@@ -34,6 +34,20 @@ class EventIdTest {
     }
 
     @Test
+    fun `rejects a canonical uuid that is not version 7`() {
+        assertThrows(IllegalArgumentException::class.java) {
+            EventId("0190163d-8694-4abc-8def-0123456789ab")
+        }
+    }
+
+    @Test
+    fun `rejects a canonical uuid with a non-rfc variant`() {
+        assertThrows(IllegalArgumentException::class.java) {
+            EventId("0190163d-8694-7abc-cdef-0123456789ab")
+        }
+    }
+
+    @Test
     fun `compares by canonical string order`() {
         val smaller = EventId("0190163d-8694-7abc-8def-0123456789ab")
         val larger = EventId("0190163d-8694-7abd-8def-0123456789ab")
