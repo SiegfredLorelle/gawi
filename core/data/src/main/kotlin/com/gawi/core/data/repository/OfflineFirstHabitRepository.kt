@@ -160,9 +160,9 @@ internal class OfflineFirstHabitRepository @Inject constructor(
         ensureProjectionCurrent()
         emitAll(
             readContext()
-                .flatMapLatest { (settings, today) ->
-                    sweepStreaks(today, settings.weekStart)
-                    val week = weekOf(today, settings)
+                .flatMapLatest { (today, weekStart) ->
+                    sweepStreaks(today, weekStart)
+                    val week = weekOf(today, weekStart)
                     readModel
                         .observeToday(today.toString(), week.first.toString(), week.second.toString())
                         .map { rows -> rows.map { it.toDomain() } }
@@ -175,9 +175,9 @@ internal class OfflineFirstHabitRepository @Inject constructor(
         ensureProjectionCurrent()
         emitAll(
             readContext()
-                .flatMapLatest { (settings, today) ->
-                    sweepStreaks(today, settings.weekStart)
-                    val week = weekOf(today, settings)
+                .flatMapLatest { (today, weekStart) ->
+                    sweepStreaks(today, weekStart)
+                    val week = weekOf(today, weekStart)
                     readModel
                         .observeHabit(habitId.value, today.toString(), week.first.toString(), week.second.toString())
                         .map { row -> row?.toDomain() }
@@ -259,16 +259,22 @@ internal class OfflineFirstHabitRepository @Inject constructor(
     }
 
     /**
-     * The settings and logical date every read query binds, re-emitted whenever
-     * either moves — a settings edit, or the day boundary passing.
+     * Everything a read query binds, and nothing else.
+     *
+     * Exactly these two, rather than the settings and the date: the cutoff
+     * decides which day is "today" and when the next boundary falls, but it does
+     * that inside [logicalDates] below, and no query binds it. Carrying the whole
+     * of [UserSettings] out of here meant carrying a reminder time that the
+     * dedupe below is entitled to leave stale — sound, but only as long as
+     * nobody downstream reached for it, and the mascot's `nearBoundary` needs a
+     * reminder time and will be wired to this path next. Not carrying it is
+     * cheaper than the comment explaining why it is safe to ignore.
      *
      * Both observers share this so the two cannot drift apart. Holding the
-     * settings for the life of a collection would be worse than it looks: the
-     * captured cutoff decides not just how a week is bucketed but which day is
-     * "today" and when the next boundary falls, so a stale one would keep
-     * answering with the old day indefinitely rather than correcting itself
-     * overnight — while the streak rows joined into the same query, recomputed
-     * by [refreshStreaks], had already moved to the new setting.
+     * settings for the life of a collection would be worse than it looks: a
+     * stale cutoff would keep answering with the old day indefinitely rather
+     * than correcting itself overnight — while the streak rows joined into the
+     * same query, recomputed by the sweep, had already moved to the new setting.
      *
      * The streak sweep deliberately does *not* live here. It belongs inside the
      * downstream `flatMapLatest`, which cancels the previous query before
@@ -279,21 +285,22 @@ internal class OfflineFirstHabitRepository @Inject constructor(
      * completion state paired with today's streak. `distinctUntilChanged` is
      * downstream of that and would not filter it.
      */
-    private fun readContext(): Flow<Pair<UserSettings, LocalDate>> = settings
+    private fun readContext(): Flow<QueryContext> = settings
         .observe()
-        // Only the two settings the queries actually bind. The reminder time
-        // rides along in [UserSettings] for the mascot's benefit and no query
-        // reads it, so an edit to it must not cancel the live query and re-run
-        // the streak sweep under every open screen. The cost is that the
-        // settings reaching the queries below can carry a stale reminder time,
-        // which is sound precisely because nothing below reads it.
+        // A reminder-time edit changes nothing here, and must not cancel the
+        // live query and re-run the streak sweep under every open screen.
         .distinctUntilChanged { old, new -> old.dayCutoff == new.dayCutoff && old.weekStart == new.weekStart }
-        .flatMapLatest { current -> logicalDates(current).map { current to it } }
-        // A boundary wake that does not actually change the date — clock skew,
-        // a DST shift, a settings write that changed nothing — must not churn
-        // the query underneath an open screen. Emitting only real changes is
-        // also what stops the sweep below running on every wake.
+        // The cutoff has to reach this far, even though it goes no further: a
+        // new one restarts the boundary timer on the new schedule.
+        .flatMapLatest { current -> logicalDates(current).map { QueryContext(it, current.weekStart) } }
+        // A wake that does not actually change what a query binds — clock skew,
+        // a DST shift, a cutoff edit that leaves "today" where it was — must not
+        // churn the query underneath an open screen. Emitting only real changes
+        // is also what stops the sweep below running on every wake.
         .distinctUntilChanged()
+
+    /** The logical date and week start a read query is bound to. */
+    private data class QueryContext(val today: LocalDate, val weekStart: DayOfWeek)
 
     private suspend fun rebuildLocked(current: ProjectedState) {
         val settings = settings.current()
@@ -358,8 +365,8 @@ internal class OfflineFirstHabitRepository @Inject constructor(
 
     private fun todayFor(now: Instant, settings: UserSettings): LocalDate = logicalDate(now, settings.dayCutoff, clock.zone())
 
-    private fun weekOf(today: LocalDate, settings: UserSettings): Pair<LocalDate, LocalDate> {
-        val start = weekStartOn(today, settings.weekStart)
+    private fun weekOf(today: LocalDate, weekStart: DayOfWeek): Pair<LocalDate, LocalDate> {
+        val start = weekStartOn(today, weekStart)
         return start to start.plusWeeks(1).minusDays(1)
     }
 
