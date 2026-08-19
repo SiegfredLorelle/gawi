@@ -295,6 +295,15 @@ Architecture §8 puts instrumented tests outside CI, so this is the substitute.
 Work through it for any change to the data path or the Today view; note in the PR
 which parts you ran.
 
+**What `make test` now covers on its own.** `TodayScreenTest` renders the Today
+screen under Robolectric, so the empty, loading and unavailable states, and the
+fact that a tap reports the tapped row's own date and completion, are checked
+without a device. They are still listed below because the checklist verifies
+them *through the real stack* — a tap that reaches Room and comes back — which a
+stateless render cannot. What has genuinely moved off this list is reading the
+screen for wrong copy: that class of bug is now caught by a failing test rather
+than by noticing it in a screenshot.
+
 **On an emulator**
 
 - [ ] The app launches and `adb logcat -d -s AndroidRuntime:E` is empty.
