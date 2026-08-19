@@ -64,7 +64,9 @@ Full guide with examples: `.github/COMMIT_CONVENTION.md`
   never use kapt (KSP only).
 - **Never edit by hand**: `gradle/wrapper/`, `gradlew`, `gradlew.bat`.
 - **Testing** (docs/architecture.md §8): new `:core:domain` logic ships with
-  JVM unit tests; CI runs unit tests only — instrumented tests are a manual,
+  JVM unit tests, and a feature module's screen composable ships with a JVM
+  Compose test under Robolectric in its own `test` source set — not
+  `androidTest`. CI runs unit tests only; instrumented tests are a manual,
   on-device activity.
 - Run `make fmt` before committing; `make lint` and `make test` before
   considering any change complete.
