@@ -35,6 +35,9 @@ jobs:
         with:
           fetch-depth: 0 # needs every commit in the PR, not just the tip
 
+      # Bundles the commitlint 19 line. .pre-commit-config.yaml pins the local
+      # hook to the same major on purpose — move the two together, or the hook
+      # goes back to passing messages this job rejects.
       - uses: wagoid/commitlint-github-action@v6.2.1
         with:
           configFile: .commitlintrc.yaml

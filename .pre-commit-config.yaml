@@ -41,5 +41,16 @@ repos:
     hooks:
       - id: commitlint
         stages: [commit-msg]
-        additional_dependencies: ["@commitlint/config-conventional"]
+        # Pinned to the major CI runs, which is the whole point of the hook.
+        # wagoid/commitlint-github-action@v6.2.1 bundles the 19 line, and it is
+        # the newest tag that action has published, so 19 is a ceiling and not a
+        # preference. Left unpinned this hook installs its own newest (21), and
+        # the two parsers disagree about what a body line is -- a clean local
+        # commit was then not proof CI would pass, which is the one thing a
+        # commit-msg hook exists to tell you. Ranges rather than exact patches
+        # on purpose: these are the constraints the action itself declares.
+        # Move these and .github/workflows/commit-lint.yml together.
+        additional_dependencies:
+          - "@commitlint/cli@^19.2.1"
+          - "@commitlint/config-conventional@^19.1.0"
 # Stack linters go here — copy the block from docs/stacks/<your-stack>.md
