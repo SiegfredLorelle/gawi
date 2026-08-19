@@ -3,7 +3,7 @@ package com.gawi.feature.today
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -37,7 +37,11 @@ internal fun MascotPanel(mood: Mood, remaining: Int, total: Int, modifier: Modif
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .height(PanelHeight)
+            // A minimum, not a fixed height: §3's promise is that the slot does
+            // not move when the character replaces the placeholder, and a hard
+            // height would deliver that by clipping the copy at large font
+            // scales instead.
+            .heightIn(min = PanelHeight)
             .padding(horizontal = GawiSpacing.Row),
         verticalArrangement = Arrangement.spacedBy(GawiSpacing.Line, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -80,7 +84,8 @@ private fun moodCopy(mood: Mood, total: Int): Int = when {
 }
 
 /**
- * §3's fixed height. Fixed because the slot's whole promise is that swapping
- * the placeholder for the character moves nothing around it.
+ * §3's slot height, as a floor. The character and the placeholder occupy the
+ * same box so that swapping them moves nothing around it; growing for larger
+ * text is the one exception, because the alternative is losing the copy.
  */
 private val PanelHeight = 96.dp

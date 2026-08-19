@@ -1,5 +1,6 @@
 package com.gawi.feature.today
 
+import android.util.Log
 import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -12,6 +13,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
@@ -20,7 +22,7 @@ import java.time.LocalDate
 import javax.inject.Inject
 
 /** A rejection worth telling the user about, once. */
-data class TodayMessage(@StringRes val text: Int)
+internal data class TodayMessage(@StringRes val text: Int)
 
 /**
  * The Today view's state and its two commands.
@@ -37,6 +39,17 @@ internal class TodayViewModel @Inject constructor(private val habits: HabitRepos
     val uiState: StateFlow<TodayUiState> = habits
         .observeToday()
         .map { it.toUiState() }
+        // The read path can fail, and an exception here would escape into
+        // stateIn's sharing coroutine and kill the process on the app's only
+        // screen. It is not hypothetical: a fresh install repairs the projection
+        // on its first read, and that repair calls SettingsSource.current, which
+        // deliberately refuses rather than guessing at a cutoff when the
+        // preferences file cannot be read. Room and codec failures are the same
+        // shape. Rejections are values; this is for the things that are not.
+        .catch { cause ->
+            Log.e("TodayViewModel", "the today read failed", cause)
+            emit(TodayUiState.Unavailable)
+        }
         .stateIn(
             scope = viewModelScope,
             // Load-bearing rather than a default. Collecting observeToday takes

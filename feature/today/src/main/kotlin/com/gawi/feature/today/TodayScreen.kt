@@ -1,5 +1,6 @@
 package com.gawi.feature.today
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -55,6 +56,12 @@ internal fun TodayScreen(
             // has looked.
             TodayUiState.Loading -> Box(Modifier.fillMaxSize().padding(insets))
 
+            TodayUiState.Unavailable -> Notice(
+                title = R.string.today_unavailable_title,
+                body = R.string.today_unavailable_body,
+                modifier = Modifier.fillMaxSize().padding(insets),
+            )
+
             is TodayUiState.Empty -> Column(Modifier.fillMaxSize().padding(insets)) {
                 MascotPanel(mood = state.mood, remaining = 0, total = 0)
                 EmptyToday(Modifier.fillMaxSize())
@@ -87,18 +94,28 @@ private fun HabitList(state: TodayUiState.Habits, onToggle: (HabitId, Boolean, L
 
 @Composable
 private fun EmptyToday(modifier: Modifier = Modifier) {
+    Notice(
+        title = R.string.today_empty_title,
+        body = R.string.today_empty_body,
+        modifier = modifier,
+    )
+}
+
+/** Centred two-line copy — the shape both the empty and the failed states take. */
+@Composable
+private fun Notice(@StringRes title: Int, @StringRes body: Int, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier.padding(GawiSpacing.Row),
         verticalArrangement = Arrangement.spacedBy(GawiSpacing.Gap, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
-            text = stringResource(R.string.today_empty_title),
+            text = stringResource(title),
             style = MaterialTheme.typography.titleMedium,
             textAlign = TextAlign.Center,
         )
         Text(
-            text = stringResource(R.string.today_empty_body),
+            text = stringResource(body),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,

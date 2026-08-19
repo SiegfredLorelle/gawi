@@ -19,6 +19,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.semantics
 import com.gawi.core.ui.theme.GawiSpacing
 
 /**
@@ -32,13 +34,19 @@ import com.gawi.core.ui.theme.GawiSpacing
  */
 @Composable
 internal fun HabitRow(row: HabitRowUi, onToggle: (Boolean) -> Unit, modifier: Modifier = Modifier) {
+    val completeLabel = stringResource(if (row.completed) R.string.today_undo else R.string.today_complete)
     Row(
         modifier = modifier
             .toggleable(
                 value = row.completed,
                 role = Role.Checkbox,
+                // Without a label the row announces only its name and state, so
+                // the action it performs is left implicit.
                 onValueChange = onToggle,
             )
+            .semantics {
+                onClick(label = completeLabel, action = null)
+            }
             .padding(horizontal = GawiSpacing.Row, vertical = GawiSpacing.Gap),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(GawiSpacing.Gap),

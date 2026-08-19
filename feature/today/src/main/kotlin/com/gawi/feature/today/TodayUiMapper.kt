@@ -23,9 +23,13 @@ internal fun TodaySnapshot.toUiState(): TodayUiState {
     return TodayUiState.Habits(
         rows = habits.map { it.toRowUi() },
         mood = mood,
-        // Asked of the same rule the mood asked, from the same snapshot, so the
-        // count and the face cannot disagree. §1's app-bar chip will read this.
-        remaining = habits.count { Mascot.isOutstanding(it.toMoodState(), today, weekStart) },
+        // Asked of the same rule the mood asked, from the same snapshot, and
+        // filtered the same way, so the count and the face cannot disagree.
+        // Mascot.mood drops archived habits itself; leaving them in here would
+        // make that agreement observeToday's property rather than this
+        // function's, and it would break the day a detail screen reuses this.
+        // §1's app-bar chip will read this count.
+        remaining = habits.count { !it.habit.archived && Mascot.isOutstanding(it.toMoodState(), today, weekStart) },
         logicalDate = today,
     )
 }
@@ -74,13 +78,23 @@ internal fun StreakSnapshot.toUi(schedule: Schedule): StreakUi = when {
  * test classpath for what is a string parse.
  */
 internal fun parseHabitColor(hex: String): Color? {
-    if (!hex.startsWith("#")) return null
-    val digits = hex.drop(1)
-    // Color(Long) reads 0xAARRGGBB. Color(ULong) is the raw packed encoding and
-    // would read these digits as a different colour space entirely.
-    val argb = when (digits.length) {
-        RGB_DIGITS -> digits.toLongOrNull(radix = HEX_RADIX)?.or(OPAQUE_ALPHA)
-        ARGB_DIGITS -> digits.toLongOrNull(radix = HEX_RADIX)
+    val digits = hex.removePrefix("#")
+    // Every guard as one expression, because a hash, a length and a digit set
+    // are three ways of saying the same thing: this either is a colour or is
+    // not. toLongOrNull would otherwise accept a leading sign, making "#-abcde"
+    // six characters that parse negative and mask into an arbitrary opaque
+    // colour rather than falling back to a theme role.
+    val argb = when {
+        digits.length == hex.length -> null
+
+        !digits.all { it in '0'..'9' || it in 'a'..'f' || it in 'A'..'F' } -> null
+
+        // Color(Long) reads 0xAARRGGBB. Color(ULong) is the raw packed encoding
+        // and would read these digits as a different colour space entirely.
+        digits.length == RGB_DIGITS -> digits.toLongOrNull(radix = HEX_RADIX)?.or(OPAQUE_ALPHA)
+
+        digits.length == ARGB_DIGITS -> digits.toLongOrNull(radix = HEX_RADIX)
+
         else -> null
     }
     return argb?.let { Color(it) }
