@@ -1,18 +1,22 @@
 package com.gawi.core.data.settings
 
 import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import app.cash.turbine.test
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
+import java.io.IOException
 import java.time.DayOfWeek
 import java.time.LocalTime
 
@@ -29,8 +33,15 @@ class DataStoreSettingsSourceTest {
     @get:Rule
     val folder = TemporaryFolder()
 
+    /** A store whose reads fail, which no real DataStore lets a test arrange. */
+    private fun throwing(cause: Throwable) = object : DataStore<Preferences> {
+        override val data: Flow<Preferences> = flow { throw cause }
+
+        override suspend fun updateData(transform: suspend (Preferences) -> Preferences) = error("not used")
+    }
+
     private fun TestScope.store(name: String = "settings"): DataStore<Preferences> =
-        PreferenceDataStoreFactory.create(scope = backgroundScope) { File(folder.root, "$name.preferences_pb") }
+        settingsDataStore(scope = backgroundScope) { File(folder.root, "$name.preferences_pb") }
 
     @Test
     fun `an empty store answers the PRD defaults`() = runTest {
@@ -78,6 +89,45 @@ class DataStoreSettingsSourceTest {
         }
 
         assertEquals(UserSettings(), DataStoreSettingsSource(dataStore).current())
+    }
+
+    @Test
+    fun `a value stored under one of these names with another type reads as absent`() = runTest {
+        val dataStore = store()
+        dataStore.edit { preferences -> preferences[stringPreferencesKey("week_start_iso")] = "monday" }
+
+        assertEquals(UserSettings(), DataStoreSettingsSource(dataStore).current())
+    }
+
+    @Test
+    fun `an unreadable file answers the defaults rather than throwing`() = runTest {
+        // A read failure must not reach observeToday, which every screen
+        // collects and every command reads through.
+        val unreadable = throwing(IOException("unreadable"))
+
+        assertEquals(UserSettings(), DataStoreSettingsSource(unreadable).current())
+    }
+
+    @Test
+    fun `anything that is not a read failure still propagates`() = runTest {
+        val broken = throwing(IllegalStateException("a bug"))
+
+        val thrown = runCatching { DataStoreSettingsSource(broken).current() }.exceptionOrNull()
+
+        assertTrue(thrown is IllegalStateException)
+    }
+
+    @Test
+    fun `a corrupt file is replaced rather than breaking the store for good`() = runTest {
+        // Without the corruption handler this is terminal: reads throw, and so
+        // does update, because it reads before it writes — so the user could not
+        // set the settings back either.
+        File(folder.root, "corrupt.preferences_pb").writeText("not a protobuf at all")
+        val source = DataStoreSettingsSource(store("corrupt"))
+
+        source.update { it.copy(weekStart = DayOfWeek.SUNDAY) }
+
+        assertEquals(DayOfWeek.SUNDAY, source.current().weekStart)
     }
 
     @Test

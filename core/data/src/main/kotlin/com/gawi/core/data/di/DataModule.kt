@@ -2,7 +2,6 @@ package com.gawi.core.data.di
 
 import android.content.Context
 import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.room.Room
@@ -15,6 +14,7 @@ import com.gawi.core.data.db.dao.HabitStreakDao
 import com.gawi.core.data.db.dao.ProjectionMetaDao
 import com.gawi.core.data.db.dao.ReadModelDao
 import com.gawi.core.data.settings.SETTINGS_NAME
+import com.gawi.core.data.settings.settingsDataStore
 import com.gawi.core.domain.id.UuidV7Generator
 import com.gawi.core.domain.serialization.EventCodec
 import dagger.Module
@@ -71,7 +71,7 @@ internal object DataModule {
     @Provides
     @Singleton
     fun settingsDataStore(@ApplicationContext context: Context): DataStore<Preferences> =
-        PreferenceDataStoreFactory.create { context.preferencesDataStoreFile(SETTINGS_NAME) }
+        settingsDataStore { context.preferencesDataStoreFile(SETTINGS_NAME) }
 
     @Provides
     @Singleton
