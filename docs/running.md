@@ -300,9 +300,13 @@ screen under Robolectric, so the empty, loading and unavailable states, and the
 fact that a tap reports the tapped row's own date and completion, are checked
 without a device. They are still listed below because the checklist verifies
 them *through the real stack* — a tap that reaches Room and comes back — which a
-stateless render cannot. What has genuinely moved off this list is reading the
-screen for wrong copy: that class of bug is now caught by a failing test rather
-than by noticing it in a screenshot.
+stateless render cannot.
+
+**Read the copy anyway.** The tests resolve every expected string from the same
+`R.string` the composable renders, so a reword cannot fail them — by design, so
+they survive a copy edit. What they do catch is copy in the wrong *place*: the
+empty state rendering the remaining-count line is a failing test now, which is
+the shape the 4b bug took. Wording itself is still yours to read.
 
 **On an emulator**
 
