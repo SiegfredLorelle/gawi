@@ -16,8 +16,10 @@ import java.time.LocalDate
  *
  * Rejections are values, not exceptions. `RetroWindowExceeded` and `BlankName`
  * are things a user does, and the domain already models them as data. Thrown
- * exceptions are reserved for the two real failures: a corrupt log
- * (`EventCodecException`) and SQLite itself.
+ * exceptions are reserved for the real failures: a corrupt log
+ * (`EventCodecException`), SQLite itself, and an unreadable settings store,
+ * which a command refuses to guess past because it validates against the
+ * answer.
  *
  * Nothing above this interface knows events exist (architecture §4).
  */

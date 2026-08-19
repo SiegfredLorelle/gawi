@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import app.cash.turbine.test
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -100,19 +101,33 @@ class DataStoreSettingsSourceTest {
     }
 
     @Test
-    fun `an unreadable file answers the defaults rather than throwing`() = runTest {
-        // A read failure must not reach observeToday, which every screen
-        // collects and every command reads through.
+    fun `an unreadable file answers the read path with the defaults`() = runTest {
+        // A read failure must not reach observeToday: a screen bound to a guessed
+        // cutoff shows the wrong day's rows, a dead flow shows nothing, and
+        // neither writes anything that outlives the process.
         val unreadable = throwing(IOException("unreadable"))
 
-        assertEquals(UserSettings(), DataStoreSettingsSource(unreadable).current())
+        assertEquals(UserSettings(), DataStoreSettingsSource(unreadable).observe().first())
+    }
+
+    @Test
+    fun `an unreadable file refuses the command path rather than guessing`() = runTest {
+        // Commands validate against the answer — addCompletion checks the retro
+        // window and the future-date rule against a today derived from the
+        // cutoff — and what the log keeps is never re-bucketed on replay. A
+        // refused write is recoverable; a wrongly admitted one is not.
+        val unreadable = throwing(IOException("unreadable"))
+
+        val thrown = runCatching { DataStoreSettingsSource(unreadable).current() }.exceptionOrNull()
+
+        assertTrue(thrown is IOException)
     }
 
     @Test
     fun `anything that is not a read failure still propagates`() = runTest {
         val broken = throwing(IllegalStateException("a bug"))
 
-        val thrown = runCatching { DataStoreSettingsSource(broken).current() }.exceptionOrNull()
+        val thrown = runCatching { DataStoreSettingsSource(broken).observe().first() }.exceptionOrNull()
 
         assertTrue(thrown is IllegalStateException)
     }

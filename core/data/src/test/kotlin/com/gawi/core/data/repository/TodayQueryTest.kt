@@ -107,6 +107,26 @@ class TodayQueryTest {
     }
 
     @Test
+    fun `an unreadable settings store does not take the screen down`() = runTest {
+        // The read path degrades on a settings read failure rather than dying,
+        // and it can only do that if it never asks for the command path's read:
+        // SettingsSource.current refuses when the store is unreadable, because a
+        // command validates the retro window against its answer. The streak
+        // sweep is the one that used to reach for it, so this pins the structure
+        // rather than a behaviour — nothing here would fail if the sweep started
+        // calling current() again except this assertion.
+        val habit = createHabit()
+        store.repository.addCompletion(habit, store.today())
+
+        store.settings.currentFails = true
+
+        store.repository.observeToday().test {
+            assertEquals(habit, awaitItem().single().habit.id)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
     fun `a future-dated completion does not inflate this week's count`() = runTest {
         // Reachable without sync: the device clock runs a day fast, a habit is
         // completed, and the clock is then corrected — leaving a completion

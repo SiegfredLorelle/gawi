@@ -13,6 +13,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.io.File
 import java.io.IOException
@@ -53,15 +54,26 @@ internal fun settingsDataStore(
  * Times are stored as a second-of-day and the week start as its ISO number,
  * because both survive a locale change and neither needs a parser.
  *
- * Reading is forgiving at all three levels it can fail, because settings are
- * read by every command and every query — a throw here propagates through the
- * repository's read path into `observeToday()` and takes the Today screen down
- * rather than degrading. A value stored under one of these names with another
- * type reads as absent rather than raising `ClassCastException`; a value out of
- * range reads as absent rather than letting `LocalTime.ofSecondOfDay` or
- * `DayOfWeek.of` throw; and an unreadable file falls back to the defaults, the
- * unparseable half handled by the corruption handler in `DataModule` and the
- * rest by [catch]. Anything unreadable is genuinely treated as absent.
+ * Reading is forgiving about the *contents*, at both levels they can fail. A
+ * value stored under one of these names with another type reads as absent rather
+ * than raising `ClassCastException`; a value out of range reads as absent rather
+ * than letting `LocalTime.ofSecondOfDay` or `DayOfWeek.of` throw. Either would
+ * otherwise propagate through the repository's read path into `observeToday()`
+ * and take the Today screen down over a stray byte.
+ *
+ * A file that cannot be *read* is where the two paths part, and the asymmetry is
+ * deliberate rather than an oversight. [observe] degrades to the defaults,
+ * because a query bound to a guessed cutoff shows the wrong day's rows while a
+ * dead flow shows nothing, and neither writes anything that outlives the
+ * process. [current] refuses, because commands validate against its answer —
+ * `Commands.addCompletion` checks the retro window and the future-date rule
+ * against a `today` derived from the cutoff, so guessing there can admit or
+ * reject a tap it should not, and what the log then keeps is never re-bucketed
+ * on replay. Refusing a write is recoverable; a wrongly admitted one is not.
+ *
+ * Corruption is handled a level up, by the handler in `DataModule`, so a
+ * replaced file reads clean and both paths see the defaults — genuine loss of
+ * the stored values rather than a guess about them.
  *
  * The [distinctUntilChanged] is load-bearing. DataStore re-emits on every write,
  * including one that changed a value back to what it already was, and the
@@ -75,6 +87,13 @@ internal fun settingsDataStore(
  */
 @Singleton
 class DataStoreSettingsSource @Inject constructor(private val dataStore: DataStore<Preferences>) : SettingsSource {
+
+    /**
+     * Deliberately not the inherited default, which reads through [observe] and
+     * would inherit its fallback. Cold, so the read is retried on the next
+     * command rather than needing retry machinery here.
+     */
+    override suspend fun current(): UserSettings = decode(dataStore.data.first())
 
     override fun observe(): Flow<UserSettings> = dataStore.data
         // Not a blanket catch: anything that is not a read failure is a bug
