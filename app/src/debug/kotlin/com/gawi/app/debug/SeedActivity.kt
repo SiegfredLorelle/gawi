@@ -49,11 +49,18 @@ internal class SeedActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         lifecycleScope.launch {
-            applyExtras()
-            // Reading the settings back is the honest persistence check: the
-            // stored file holds second-of-day varints, so dumping it shows the
-            // keys but not the values.
-            report(seed() + " | " + settings.current())
+            // The log line is this tool's only feedback channel, so a bad extra
+            // has to arrive as a message rather than as a stack trace with no
+            // GawiSeed line in it at all.
+            runCatching {
+                applyExtras()
+                // Reading the settings back is the honest persistence check: the
+                // stored file holds second-of-day varints, so dumping it shows
+                // the keys but not the values.
+                seed() + " | " + settings.current()
+            }
+                .onSuccess { report(it) }
+                .onFailure { report("failed: $it") }
             finish()
         }
     }
@@ -67,6 +74,8 @@ internal class SeedActivity : ComponentActivity() {
      * minutes ahead and watch the rows flip without touching the device time.
      */
     private suspend fun applyExtras() {
+        // LocalTime.parse throws on anything that is not ISO-8601; the caller
+        // hears about it through report() above.
         intent.getStringExtra("cutoff")?.let { value ->
             settings.update { it.copy(dayCutoff = LocalTime.parse(value)) }
         }
