@@ -1,12 +1,10 @@
 package com.gawi.feature.today
 
-import android.content.Context
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.test.core.app.ApplicationProvider
 import com.gawi.core.domain.mascot.Mood
 import com.gawi.core.domain.model.HabitId
 import com.gawi.core.ui.theme.GawiTheme
@@ -15,6 +13,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import java.time.LocalDate
 
 /**
@@ -49,7 +48,10 @@ class TodayScreenTest {
     @get:Rule
     val compose = createComposeRule()
 
-    private val resources = ApplicationProvider.getApplicationContext<Context>().resources
+    // Robolectric's own accessor rather than ApplicationProvider, which would be
+    // androidx.test:core — a different library, reached only transitively
+    // through ui-test-junit4 and carrying no catalog entry to bump.
+    private val resources = RuntimeEnvironment.getApplication().resources
 
     /**
      * §4's rule 0, as a test: a habitless first run is not thriving.
