@@ -4,9 +4,19 @@
   tap -> event -> projection -> Flow -> UI loop, and :feature:habits does not
   exist yet (architecture §2). Delete this whole directory when it does.
 
-  No intent-filter, so nothing in the app can reach SeedActivity and it never
-  appears in a launcher. Its own task affinity means it can be started while
-  the Today screen is open, which is how rows are seen arriving live.
+  Exported, because adb cannot start a component that is not: the shell runs as
+  uid 2000 and does not hold START_ANY_ACTIVITY, so a non-exported activity is
+  refused outright on any build where `adb root` is unavailable — which includes
+  the Play-image emulators this project uses. Exporting alone would let any
+  installed app start it by explicit name, so DUMP is the gate: the shell holds
+  it, third-party apps cannot get it.
+
+  The missing intent-filter is why it never appears in a launcher. That is a
+  separate property from who may start it, and crediting it with the protection
+  DUMP provides is how this looked deliberate while being open.
+
+  Its own task affinity means it can be started while the Today screen is open,
+  which is how rows are seen arriving live.
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
@@ -15,6 +25,7 @@
             android:name=".debug.SeedActivity"
             android:excludeFromRecents="true"
             android:exported="true"
+            android:permission="android.permission.DUMP"
             android:taskAffinity=""
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
     </application>
