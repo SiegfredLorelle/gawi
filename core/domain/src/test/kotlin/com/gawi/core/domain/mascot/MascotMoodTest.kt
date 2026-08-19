@@ -4,6 +4,7 @@ import com.gawi.core.domain.model.Schedule
 import com.gawi.core.domain.streak.StreakSnapshot
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -27,7 +28,7 @@ class MascotMoodTest {
     private fun brokeOn(day: LocalDate) = StreakSnapshot(current = 0, previous = 4, brokenOn = day)
 
     private fun moodOf(vararg habits: HabitMoodState, at: LocalTime = morning, on: LocalDate = today) =
-        Mascot.mood(MoodInputs(habits.toList(), on, LocalDateTime.of(on, at), reminder))
+        Mascot.mood(MoodInputs(habits.toList(), on, LocalDateTime.of(on, at), reminder, LocalTime.MIDNIGHT, DayOfWeek.MONDAY))
 
     @Test
     fun `a first run with no habits is content rather than thriving`() {

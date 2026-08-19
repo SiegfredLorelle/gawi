@@ -51,12 +51,7 @@ object Streaks {
      * weeks with no completions are not keys in the grouping to begin with,
      * and anything above 7 can never be met.
      */
-    fun weekStreak(
-        completedDates: Set<LocalDate>,
-        schedule: Schedule.Weekly,
-        today: LocalDate,
-        weekStart: DayOfWeek = DayOfWeek.MONDAY,
-    ): Int {
+    fun weekStreak(completedDates: Set<LocalDate>, schedule: Schedule.Weekly, today: LocalDate, weekStart: DayOfWeek): Int {
         val hitWeeks = hitWeeks(completedDates, schedule, today, weekStart)
         val currentWeek = weekStartOn(today, weekStart)
         val anchor = when {
@@ -94,15 +89,11 @@ object Streaks {
      * own unit, so a caller needs the schedule to read it — the same schedule
      * it already needs to know whether a `3` means days or weeks.
      */
-    fun snapshot(
-        completedDates: Set<LocalDate>,
-        schedule: Schedule,
-        today: LocalDate,
-        weekStart: DayOfWeek = DayOfWeek.MONDAY,
-    ): StreakSnapshot = when (schedule) {
-        is Schedule.Daily -> dailySnapshot(completedDates, today)
-        is Schedule.Weekly -> weeklySnapshot(completedDates, schedule, today, weekStart)
-    }
+    fun snapshot(completedDates: Set<LocalDate>, schedule: Schedule, today: LocalDate, weekStart: DayOfWeek): StreakSnapshot =
+        when (schedule) {
+            is Schedule.Daily -> dailySnapshot(completedDates, today)
+            is Schedule.Weekly -> weeklySnapshot(completedDates, schedule, today, weekStart)
+        }
 
     private fun dailySnapshot(completedDates: Set<LocalDate>, today: LocalDate): StreakSnapshot {
         val current = dayStreak(completedDates, today)

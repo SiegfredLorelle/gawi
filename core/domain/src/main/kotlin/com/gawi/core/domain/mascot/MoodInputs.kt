@@ -57,6 +57,14 @@ data class HabitMoodState(
  * may not see, and the dependency rule is not negotiable (architecture §2). The
  * three fields it lends are copied in, and the mapping is the data layer's job.
  *
+ * None of the three settings defaults, deliberately. There is one construction
+ * site — the data layer, which holds a `UserSettings` and has all three in hand —
+ * so a default buys it nothing and would let a caller that forgot to map one
+ * compile. [dayCutoff] is the one that would hurt: it decides which wall-clock
+ * window `nearBoundary` treats as the end of the day, so a silent midnight would
+ * put the mascot's worried face at the wrong hour for every user who moved their
+ * cutoff, with no compile error and no test to catch it.
+ *
  * [now] is wall-clock time in the device's own zone, so the zone is already
  * resolved and this module needs no `ZoneId`. [today] is passed rather than
  * derived from [now] and [dayCutoff] so the mood is decided for exactly the
@@ -68,6 +76,6 @@ data class MoodInputs(
     val today: LocalDate,
     val now: LocalDateTime,
     val reminderTime: LocalTime,
-    val dayCutoff: LocalTime = LocalTime.MIDNIGHT,
-    val weekStart: DayOfWeek = DayOfWeek.MONDAY,
+    val dayCutoff: LocalTime,
+    val weekStart: DayOfWeek,
 )

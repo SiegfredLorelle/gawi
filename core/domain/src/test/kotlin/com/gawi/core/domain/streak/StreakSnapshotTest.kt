@@ -3,6 +3,7 @@ package com.gawi.core.domain.streak
 import com.gawi.core.domain.model.Schedule
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import java.time.DayOfWeek
 import java.time.LocalDate
 
 class StreakSnapshotTest {
@@ -14,10 +15,10 @@ class StreakSnapshotTest {
 
     private fun date(day: String) = LocalDate.parse(day)
 
-    private fun daily(completed: Set<LocalDate>, on: LocalDate = today) = Streaks.snapshot(completed, Schedule.Daily, on)
+    private fun daily(completed: Set<LocalDate>, on: LocalDate = today) = Streaks.snapshot(completed, Schedule.Daily, on, DayOfWeek.MONDAY)
 
     private fun weekly(completed: Set<LocalDate>, timesPerWeek: Int, on: LocalDate = today) =
-        Streaks.snapshot(completed, Schedule.Weekly(timesPerWeek), on)
+        Streaks.snapshot(completed, Schedule.Weekly(timesPerWeek), on, DayOfWeek.MONDAY)
 
     @Test
     fun `no completions is neither running nor broken`() {
