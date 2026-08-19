@@ -35,8 +35,9 @@ fun logicalDate(instant: Instant, cutoff: LocalTime, zone: ZoneId): LocalDate {
  * start (architecture §5).
  *
  * Weeks are keyed by this date and never by week-of-year numbers, which
- * misbucket the days around New Year. Shared by the streak calculators and
- * the mascot's mood rules so the two cannot disagree about where a week
- * begins.
+ * misbucket the days around New Year. Public rather than internal because the
+ * three places that bucket a week — the streak calculators, the mascot's mood
+ * rules, and the read model's week bounds in `:core:data` — must not be able
+ * to disagree about where a week begins.
  */
-internal fun weekStartOn(date: LocalDate, weekStart: DayOfWeek): LocalDate = date.with(TemporalAdjusters.previousOrSame(weekStart))
+fun weekStartOn(date: LocalDate, weekStart: DayOfWeek): LocalDate = date.with(TemporalAdjusters.previousOrSame(weekStart))
