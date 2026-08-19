@@ -123,7 +123,7 @@ class ProjectionRebuildInvariantTest {
             // opens the app after an upgrade and taps nothing must still see
             // repaired rows rather than stale ones.
             val restarted = TestStore.createOver(store.database)
-            restarted.repository.observeToday().first()
+            restarted.repository.observeToday().first().habits
 
             assertEquals(healthy, store.snapshot())
         } finally {

@@ -1,6 +1,7 @@
 package com.gawi.core.data.repository
 
 import com.gawi.core.data.model.TodayHabit
+import com.gawi.core.data.model.TodaySnapshot
 import com.gawi.core.domain.command.CommandResult
 import com.gawi.core.domain.model.HabitId
 import com.gawi.core.domain.projection.HabitMetadata
@@ -53,10 +54,15 @@ interface HabitRepository {
     suspend fun updateNote(habitId: HabitId, logicalDate: LocalDate, text: String): CommandResult<Unit>
 
     /**
-     * Every non-archived habit for the current logical date. Re-emits by
-     * itself when the day rolls over, so callers never learn rollover exists.
+     * Every non-archived habit for the current logical date, with that date and
+     * the thresholds the mascot's mood is decided against.
+     *
+     * Re-emits by itself when the day rolls over and when the reminder
+     * threshold passes, so callers never learn either exists — and never hold a
+     * clock, a zone or a cutoff of their own. The date a caller writes a
+     * completion to is the one it was handed here, not one it resolved.
      */
-    fun observeToday(): Flow<List<TodayHabit>>
+    fun observeToday(): Flow<TodaySnapshot>
 
     /** One habit, archived or not — null once it no longer exists. */
     fun observeHabit(habitId: HabitId): Flow<TodayHabit?>
