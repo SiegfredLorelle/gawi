@@ -99,6 +99,31 @@ feat(auth): Add login                       ✗ subject-case
 A body with no blank line after the header fails `body-leading-blank`, and a
 body line over 72 characters fails `body-max-line-length`.
 
+## Two ways a body line becomes a footer by accident
+
+`footer-leading-blank` fires when the parser decides a line starts the footer
+and there is no blank line above it. Two shapes trip it, and neither looks like
+a footer to a human:
+
+- **A line beginning `word:`.** Writing "…rather than\nfailing: 0 behaves like
+  1…" makes `failing:` a trailer token. Reword so no body line opens with a
+  single word and a colon.
+- **A hash followed by letters or digits — `#000000`, `#42`.** The parser reads
+  `#` as an issue prefix, so the line becomes a reference footer. This is why a
+  commit about colours spells them out in prose instead of writing the hex.
+
+Both are easier to check than to remember:
+
+```sh
+tail -n +3 msg | grep -nE '^[A-Za-z-]+:|#[0-9A-Za-z]'
+```
+
+**The local hook can be laxer than CI.** `.pre-commit-config.yaml` does not pin
+a commitlint version, so it installs the newest, while the workflow's action
+bundles its own — and the two disagree about exactly these parser edge cases.
+A clean `git commit` is therefore not proof CI will pass. When they disagree,
+CI is the one that decides.
+
 ## Breaking changes
 
 Either suffix the type with `!` or add a `BREAKING CHANGE:` footer:
