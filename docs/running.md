@@ -104,10 +104,12 @@ modes.)
   2. Start → *"Turn Windows features on or off"* → tick **Windows Hypervisor
      Platform** → OK → **reboot** (not optional).
   3. Verify with `emulator -accel-check`.
-- **Two older options are dead.** Intel HAXM is discontinued, and the Android
-  Emulator hypervisor driver (**AEHD**) is deprecated with a sunset date of
-  **2026-12-31**. If either is installed, remove it — e.g. `sc stop aehd && sc
-  delete aehd` — and use WHPX.
+- **Two older options are on the way out.** Intel HAXM is discontinued outright.
+  The Android Emulator hypervisor driver (**AEHD**) still works, but is
+  deprecated with a sunset date of **2026-12-31**, so migrate rather than adopt.
+  Enable WHPX and confirm `emulator -accel-check` reports it working *first* —
+  only then remove AEHD (`sc stop aehd && sc delete aehd`), or you are left with
+  no accelerator at all.
 - **Do not disable Hyper-V.** That instruction is legacy. WHPX exists precisely
   so the emulator coexists with Hyper-V, WSL2 and Docker Desktop. The conflict
   belonged to AEHD, which required Hyper-V *off*; moving to WHPX resolves it.
@@ -158,10 +160,12 @@ Then create the device. `avdmanager list device` shows the profiles;
 `medium_phone` is a reasonable default:
 
 ```sh
-avdmanager create avd \
-  -n gawi \
-  -k "system-images;android-37.1;google_apis_playstore_ps16k;x86_64" \
-  -d medium_phone
+# Intel/AMD hosts
+avdmanager create avd -n gawi -d medium_phone \
+  -k "system-images;android-37.1;google_apis_playstore_ps16k;x86_64"
+# Apple Silicon — same command, same ABI swap as above
+avdmanager create avd -n gawi -d medium_phone \
+  -k "system-images;android-37.1;google_apis_playstore_ps16k;arm64-v8a"
 ```
 
 That command prints two `Could not load devices from …/devices.xml` errors. They
@@ -311,7 +315,8 @@ which parts you ran.
 
       Without the WAL you read a pre-checkpoint snapshot and will think writes
       were lost — the main file was 4 KB against a 181 KB WAL when this was
-      written.
+      written. A *missing* `-wal` is fine and means SQLite has checkpointed
+      into the main file, so let that copy fail rather than chasing it.
 - [ ] Settings persist. `files/datastore/settings.preferences_pb` appears after
       the **first write**, not the first read, so seed with `--es cutoff` first.
       Then force-stop, relaunch, and re-run the seeder: it prints the stored
