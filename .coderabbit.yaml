@@ -17,6 +17,24 @@ reviews:
     enabled: true
     drafts: false
 
+  # The description check earns its keep — it caught a PR left on the
+  # template. Advisory only; `request_changes_workflow: false` above means
+  # nothing here blocks a merge.
+  #
+  # Docstring coverage is off rather than retuned. The metric counts every
+  # declaration in the diff, so a Kotlin repo is scored partly on its
+  # backticked test function names (`rejects uppercase hex` and friends).
+  # :core:domain landed with KDoc on roughly a third of its main declarations
+  # and on every non-obvious decision, and still scored 3.24% against the 80%
+  # default. Any threshold this repo could actually hold sits so low it would
+  # never fail a real PR, so it would be a check in name only — and one that
+  # can never go green just trains you to ignore checks.
+  pre_merge_checks:
+    description:
+      mode: warning
+    docstrings:
+      mode: "off"
+
   path_filters:
     - "!**/*.lock"
     - "!**/uv.lock"
