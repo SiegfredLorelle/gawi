@@ -7,6 +7,7 @@ import com.gawi.core.domain.event.HabitCreated
 import com.gawi.core.domain.id.EventId
 import com.gawi.core.domain.model.HabitId
 import com.gawi.core.domain.model.Schedule
+import com.gawi.core.domain.projection.HabitMetadata
 import java.time.Instant
 import java.time.LocalDate
 
@@ -31,3 +32,6 @@ fun habitCreated(habit: HabitId, name: String = "read", schedule: Schedule = Sch
 
 fun completionAdded(habit: HabitId, date: String, note: String? = null): CompletionAdded =
     CompletionAdded(habit, LocalDate.parse(date), note)
+
+fun metadata(name: String = "read", schedule: Schedule = Schedule.Daily, tag: String? = null): HabitMetadata =
+    HabitMetadata(name = name, icon = "book", color = "#aabbcc", schedule = schedule, tag = tag)

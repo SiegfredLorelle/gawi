@@ -2,8 +2,17 @@ package com.gawi.core.data.db
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import com.gawi.core.data.db.dao.CompletionProjectionDao
 import com.gawi.core.data.db.dao.EventDao
+import com.gawi.core.data.db.dao.HabitProjectionDao
+import com.gawi.core.data.db.dao.HabitStreakDao
+import com.gawi.core.data.db.dao.ProjectionMetaDao
+import com.gawi.core.data.db.dao.ReadModelDao
+import com.gawi.core.data.db.entity.CompletionEntity
 import com.gawi.core.data.db.entity.EventEntity
+import com.gawi.core.data.db.entity.HabitEntity
+import com.gawi.core.data.db.entity.HabitStreakEntity
+import com.gawi.core.data.db.entity.ProjectionMetaEntity
 
 /**
  * The one database: an append-only `events` table, and — as the projection
@@ -22,13 +31,29 @@ import com.gawi.core.data.db.entity.EventEntity
  * this database — it would delete the only copy of the user's history.
  */
 @Database(
-    entities = [EventEntity::class],
+    entities = [
+        EventEntity::class,
+        HabitEntity::class,
+        CompletionEntity::class,
+        HabitStreakEntity::class,
+        ProjectionMetaEntity::class,
+    ],
     version = DATABASE_VERSION,
     exportSchema = true,
 )
 internal abstract class GawiDatabase : RoomDatabase() {
 
     abstract fun eventDao(): EventDao
+
+    abstract fun habitProjectionDao(): HabitProjectionDao
+
+    abstract fun completionProjectionDao(): CompletionProjectionDao
+
+    abstract fun habitStreakDao(): HabitStreakDao
+
+    abstract fun projectionMetaDao(): ProjectionMetaDao
+
+    abstract fun readModelDao(): ReadModelDao
 }
 
 internal const val DATABASE_VERSION = 1
