@@ -50,6 +50,15 @@ repos:
         # commit-msg hook exists to tell you. Ranges rather than exact patches
         # on purpose: these are the constraints the action itself declares.
         # Move these and .github/workflows/commit-lint.yml together.
+        #
+        # Known soft spot: this pin wins by npm resolution, not by declaration.
+        # The hook package declares its own @commitlint/cli 21 and its own
+        # commitlint bin, so two installed packages claim the name; npm hoists
+        # the root request here and bin/commitlint resolves to 19, with 21 left
+        # nested alongside. Verified, but a different npm or install order could
+        # resolve it the other way silently. The structural fix, if it ever
+        # matters, is pinning rev: to a hook release whose own dependency is the
+        # 19 line. Check with: commitlint --version, inside the hook env.
         additional_dependencies:
           - "@commitlint/cli@^19.2.1"
           - "@commitlint/config-conventional@^19.1.0"
