@@ -88,7 +88,11 @@ object Streaks {
      * calculator anchored at the last success has no such history.
      *
      * [StreakSnapshot.brokenOn] also answers the mood spec's `recentlyBroken`
-     * input (today-view §4) as `brokenOn == today`, with nothing stored.
+     * input (today-view §4) with nothing stored, as `brokenOn == today` for a
+     * daily habit and `brokenOn == the current week's start` for a weekly one.
+     * Like [StreakSnapshot.current] itself, it is denominated in the schedule's
+     * own unit, so a caller needs the schedule to read it — the same schedule
+     * it already needs to know whether a `3` means days or weeks.
      */
     fun snapshot(
         completedDates: Set<LocalDate>,
@@ -113,7 +117,11 @@ object Streaks {
             else -> StreakSnapshot(
                 current = 0,
                 previous = dayStreak(completedDates, lastCompleted),
-                brokenOn = lastCompleted.plusDays(1),
+                // Two days on, not one. An unfinished day does not break a
+                // streak, so the day after the last completion still reads
+                // positive; the first day this reads zero is the one after
+                // that, and that is the day the user sees the break.
+                brokenOn = lastCompleted.plusDays(2),
             )
         }
     }
@@ -139,7 +147,10 @@ object Streaks {
                 // weekStreak's own "ignore dates after today" filter measures
                 // the run as it stood when it ended rather than clipping it.
                 previous = weekStreak(completedDates, schedule, lastHitWeek.plusWeeks(1).minusDays(1), weekStart),
-                brokenOn = lastHitWeek.plusWeeks(1),
+                // The start of the first week this reads zero — two weeks on
+                // for the same reason the daily case is two days on. A week
+                // still below target has not broken anything yet.
+                brokenOn = lastHitWeek.plusWeeks(2),
             )
         }
     }

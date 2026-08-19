@@ -67,7 +67,7 @@ class StreakRefreshTest {
         store.clock.advanceDays(2)
         store.repository.refreshStreaks()
 
-        assertEquals(start.plusDays(1).toString(), store.snapshot().streaks.single().brokenOn)
+        assertEquals(start.plusDays(2).toString(), store.snapshot().streaks.single().brokenOn)
     }
 
     @Test
@@ -146,6 +146,6 @@ class StreakRefreshTest {
         val broken = store.snapshot().streaks.single()
         assertEquals(0, broken.currentStreak)
         assertEquals(1, broken.previousStreak)
-        assertEquals("2026-08-24", broken.brokenOn)
+        assertEquals("2026-08-31", broken.brokenOn)
     }
 }
