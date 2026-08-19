@@ -81,6 +81,14 @@ data class CompletionCell(
  * [pendingNoteWrites]) park references that arrive before their target —
  * sync makes that ordering possible — and participate in equality so the
  * incremental-vs-rebuild invariant compares them too.
+ *
+ * **[addIdToKey] indexes [completions], and every key it holds resolves.**
+ * `Projector.applyAdd` is the only writer and adds to both maps in one `copy`;
+ * nothing ever removes from either, since tombstoning moves an id between a
+ * cell's live and dead sets rather than dropping it. Callers therefore follow
+ * an [addIdToKey] hit with `completions.getValue(key)` on purpose — a miss
+ * means the state came from somewhere other than `Projector`, and that is a
+ * broken invariant worth failing on, not a completion to report as missing.
  */
 data class ProjectedState(
     val habitRecords: Map<HabitId, HabitRecord> = emptyMap(),
