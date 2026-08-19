@@ -46,6 +46,13 @@ internal fun Project.configureAndroid(extension: CommonExtension) {
         // turns a log line inside a catch block into a second exception, which
         // is exactly the failure a catch block exists to prevent. Robolectric
         // modules are unaffected; they swap the jar out entirely.
+        //
+        // The cost, since it applies to every module: an android.jar call in a
+        // non-Robolectric test now returns a quiet default rather than failing
+        // loudly, so TextUtils.isEmpty("x") reads false and Uri.parse returns
+        // null instead of announcing that the framework is a stub. Architecture
+        // §8 puts the correctness weight on JVM tests, so a module that starts
+        // leaning on framework behaviour wants Robolectric rather than this.
         testOptions.unitTests.isReturnDefaultValues = true
     }
 }
