@@ -1,9 +1,11 @@
 package com.gawi.core.domain.time
 
+import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
+import java.time.temporal.TemporalAdjusters
 
 /**
  * The date a moment belongs to, given the configurable day-boundary cutoff
@@ -27,3 +29,14 @@ fun logicalDate(instant: Instant, cutoff: LocalTime, zone: ZoneId): LocalDate {
     val local = instant.atZone(zone)
     return if (local.toLocalTime() < cutoff) local.toLocalDate().minusDays(1) else local.toLocalDate()
 }
+
+/**
+ * The start date of the week [date] falls in, under the configurable week
+ * start (architecture §5).
+ *
+ * Weeks are keyed by this date and never by week-of-year numbers, which
+ * misbucket the days around New Year. Shared by the streak calculators and
+ * the mascot's mood rules so the two cannot disagree about where a week
+ * begins.
+ */
+internal fun weekStartOn(date: LocalDate, weekStart: DayOfWeek): LocalDate = date.with(TemporalAdjusters.previousOrSame(weekStart))
