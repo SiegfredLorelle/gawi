@@ -120,6 +120,15 @@ recovery, whichever comes first — otherwise an abandoned habit would pin
 Momo to a permanent guilt face, which is the failure mode this mood exists
 to avoid.
 
+The window is measured against `StreakSnapshot.brokenOn` — the day a break
+becomes *visible*, not the day the completion was missed — and in logical
+days for **both** schedules, so it runs `brokenOn` through `brokenOn + 2`.
+A weekly habit's `brokenOn` is a week start, so it regenerates only on the
+first three days of the week its streak zeroed. That is deliberate rather
+than a rounding of the weekly case: `regenerating` outranks `worried`, and a
+window that lasted the whole week would mask the now-or-never warning on
+exactly the days a weekly habit still has one chance left.
+
 The 3-day figure is a guess and is flagged for the 30-day trial, alongside
 PRD OQ-3. Grace mechanics, if they ever land, change `recentlyBroken` and
 therefore this whole section.
