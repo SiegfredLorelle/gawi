@@ -6,12 +6,16 @@ package com.gawi.core.domain.id
  * occupies the most significant bits, lexicographic order of [value] equals
  * numeric UUID order equals generation order — the property the LWW
  * tiebreak and the events table's primary-key ordering rely on.
+ *
+ * That property is why [CanonicalUuid] pins the version and variant nibbles
+ * rather than the shape alone: a well-formed v4 carries no time ordering, and
+ * accepting one here would quietly break both.
  */
 @JvmInline
 value class EventId(val value: String) : Comparable<EventId> {
 
     init {
-        require(CanonicalUuid.matches(value)) { "not a canonical UUID string: $value" }
+        require(CanonicalUuid.matches(value)) { "not a canonical UUIDv7 string: $value" }
     }
 
     override fun compareTo(other: EventId): Int = value.compareTo(other.value)

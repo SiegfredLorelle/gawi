@@ -17,4 +17,18 @@ class HabitIdTest {
     fun `rejects non-canonical strings`() {
         assertThrows(IllegalArgumentException::class.java) { HabitId("habit-1") }
     }
+
+    @Test
+    fun `rejects a canonical uuid that is not version 7`() {
+        assertThrows(IllegalArgumentException::class.java) {
+            HabitId("0190163d-8694-4abc-8def-0123456789ab")
+        }
+    }
+
+    @Test
+    fun `rejects a canonical uuid with a non-rfc variant`() {
+        assertThrows(IllegalArgumentException::class.java) {
+            HabitId("0190163d-8694-7abc-cdef-0123456789ab")
+        }
+    }
 }
