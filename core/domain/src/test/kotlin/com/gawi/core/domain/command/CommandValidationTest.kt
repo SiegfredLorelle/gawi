@@ -221,6 +221,25 @@ class CommandValidationTest {
     }
 
     @Test
+    fun `archived is honoured before the habit metadata arrives`() {
+        // HabitArchived merging ahead of HabitCreated is exactly the ordering
+        // the independent archive register exists to survive: the log knows
+        // the habit is archived even though it cannot yet be displayed.
+        val state = Projector.rebuild(
+            listOf(
+                event(2, 2000, completionAdded(habit, "2026-08-17")),
+                event(3, 3000, HabitArchived(habit)),
+            ),
+        )
+
+        rejectedWith(Commands.undoCompletion(state, habit, today), CommandError.HabitIsArchived)
+        rejectedWith(
+            Commands.updateCompletionNote(state, eventId(2), "frozen"),
+            CommandError.HabitIsArchived,
+        )
+    }
+
+    @Test
     fun `a note update on an unknown completion is rejected`() {
         rejectedWith(
             Commands.updateCompletionNote(stateWithHabit, eventId(99), "nowhere"),
