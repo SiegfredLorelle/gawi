@@ -23,10 +23,10 @@ class OutstandingTest {
     private fun daily(completedToday: Boolean) =
         HabitMoodState(Schedule.Daily, archived = false, completedToday, completionsThisWeek = 0, StreakSnapshot.NONE)
 
-    private fun weekly(timesPerWeek: Int, done: Int = 0) = HabitMoodState(
+    private fun weekly(timesPerWeek: Int, done: Int = 0, completedToday: Boolean = false) = HabitMoodState(
         Schedule.Weekly(timesPerWeek),
         archived = false,
-        completedToday = false,
+        completedToday = completedToday,
         completionsThisWeek = done,
         streak = StreakSnapshot.NONE,
     )
@@ -57,6 +57,15 @@ class OutstandingTest {
         assertFalse(outstanding(weekly(timesPerWeek = 3, done = 1), on = day(4)))
         // remaining 2, daysLeft 2 on Saturday — now or never.
         assertTrue(outstanding(weekly(timesPerWeek = 3, done = 1), on = day(5)))
+    }
+
+    @Test
+    fun `a weekly habit completed today is not outstanding today`() {
+        // Saturday, 3x/week, none done before today: the target is already out
+        // of reach, and the bare now-or-never arithmetic would keep nagging on a
+        // day the user did turn up.
+        assertTrue(outstanding(weekly(timesPerWeek = 3), on = day(5)))
+        assertFalse(outstanding(weekly(timesPerWeek = 3, done = 1, completedToday = true), on = day(5)))
     }
 
     @Test

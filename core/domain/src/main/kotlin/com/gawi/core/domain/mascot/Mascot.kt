@@ -78,6 +78,16 @@ object Mascot {
     /**
      * Whether [habit] is due today and not yet satisfied — §4's `outstanding`.
      *
+     * Nothing completed today is outstanding today, whatever its schedule. §4
+     * writes that gate into the daily rule only, and stating the weekly rule as
+     * a bare `remaining >= daysLeft` leaves a habit outstanding after the user
+     * has done everything today allows: 3×/week with none done reaches Saturday
+     * needing 3 in 2 days, and completing Saturday leaves 2 needed in a
+     * `daysLeft` of 2, so it would still read outstanding — nagging about a
+     * target that is already out of reach, on a day the user did turn up. The
+     * gate only ever fires once the target has become unreachable, because a
+     * reachable one is satisfied by the arithmetic instead.
+     *
      * A weekly habit is deliberately **now-or-never**: with `remaining`
      * completions to go and `daysLeft` days to go, it is outstanding only once
      * `remaining >= daysLeft`, so a 1×/week habit stays quiet until its last
@@ -90,14 +100,15 @@ object Mascot {
      * now-or-never rule in the UI is exactly how the two would come to
      * disagree.
      */
-    fun isOutstanding(habit: HabitMoodState, today: LocalDate, weekStart: DayOfWeek): Boolean = when (habit.schedule) {
-        is Schedule.Daily -> !habit.completedToday
+    fun isOutstanding(habit: HabitMoodState, today: LocalDate, weekStart: DayOfWeek): Boolean =
+        !habit.completedToday && when (habit.schedule) {
+            is Schedule.Daily -> true
 
-        is Schedule.Weekly -> {
-            val remaining = habit.schedule.timesPerWeek - habit.completionsThisWeek
-            remaining > 0 && remaining >= daysLeftInWeek(today, weekStart)
+            is Schedule.Weekly -> {
+                val remaining = habit.schedule.timesPerWeek - habit.completionsThisWeek
+                remaining > 0 && remaining >= daysLeftInWeek(today, weekStart)
+            }
         }
-    }
 
     /** Days left in [today]'s week, counting today: 7 on the week's first day, 1 on its last. */
     private fun daysLeftInWeek(today: LocalDate, weekStart: DayOfWeek): Int {
@@ -130,6 +141,13 @@ object Mascot {
      * 21:00 reminder, 01:30 on the 16th is 22:30 into the logical 15th and is
      * near its boundary — which is the case a naive same-date comparison gets
      * backwards.
+     *
+     * A reminder set *equal* to the cutoff therefore marks the day's start, not
+     * its end, and the whole logical day counts as near the boundary. That
+     * follows from `logicalDate`'s own rule that a wall time exactly at the
+     * cutoff begins the new day, so it is left consistent with it rather than
+     * special-cased here; a settings screen offering the two as one control is
+     * where that combination should be prevented.
      *
      * The upper bound is redundant when `today` was derived from `now`, and
      * kept anyway: it means a caller holding a stale date reads "not near the
