@@ -19,17 +19,17 @@ import com.gawi.core.domain.streak.StreakSnapshot
  */
 internal fun TodaySnapshot.toUiState(): TodayUiState {
     val mood = Mascot.mood(moodInputs())
-    if (habits.isEmpty()) return TodayUiState.Empty(mood)
+    // Filtered once, at the top, so the rows, the count and the face cannot
+    // disagree. Mascot.mood drops archived habits itself; doing it here too is
+    // what makes that agreement this function's property rather than
+    // observeToday's, which filters in SQL — and it is what keeps a detail
+    // screen honest when it reuses this. §1's app-bar chip reads the count.
+    val live = habits.filterNot { it.habit.archived }
+    if (live.isEmpty()) return TodayUiState.Empty(mood)
     return TodayUiState.Habits(
-        rows = habits.map { it.toRowUi() },
+        rows = live.map { it.toRowUi() },
         mood = mood,
-        // Asked of the same rule the mood asked, from the same snapshot, and
-        // filtered the same way, so the count and the face cannot disagree.
-        // Mascot.mood drops archived habits itself; leaving them in here would
-        // make that agreement observeToday's property rather than this
-        // function's, and it would break the day a detail screen reuses this.
-        // §1's app-bar chip will read this count.
-        remaining = habits.count { !it.habit.archived && Mascot.isOutstanding(it.toMoodState(), today, weekStart) },
+        remaining = live.count { Mascot.isOutstanding(it.toMoodState(), today, weekStart) },
         logicalDate = today,
     )
 }

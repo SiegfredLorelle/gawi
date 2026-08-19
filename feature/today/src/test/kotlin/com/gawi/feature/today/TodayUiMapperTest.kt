@@ -121,10 +121,10 @@ class TodayUiMapperTest {
     }
 
     @Test
-    fun `an archived row counts towards neither the mood nor the remaining count`() {
-        // Mascot.mood drops archived habits itself. The count has to drop them
-        // too, or the panel reads "1 left" beside a thriving face the moment an
-        // archived row reaches a snapshot.
+    fun `an archived row is not drawn, counted, or moodful`() {
+        // Mascot.mood drops archived habits itself, so the rows and the count
+        // have to drop them too. Assert all three: asserting only the count is
+        // what let an archived habit stay a drawn, tappable row.
         val state = todaySnapshot(
             habits = listOf(
                 todayHabit(id = habitId(1), completedToday = true),
@@ -132,8 +132,16 @@ class TodayUiMapperTest {
             ),
         ).toUiState() as TodayUiState.Habits
 
+        assertEquals(listOf(habitId(1)), state.rows.map { it.id })
         assertEquals(0, state.remaining)
         assertEquals(Mood.THRIVING, state.mood)
+    }
+
+    @Test
+    fun `a list of only archived habits is empty, not a list of rows`() {
+        val state = todaySnapshot(habits = listOf(todayHabit(archived = true))).toUiState()
+
+        assertEquals(TodayUiState.Empty(Mood.CONTENT), state)
     }
 
     @Test
