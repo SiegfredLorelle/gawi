@@ -65,10 +65,13 @@ object Mascot {
      */
     fun mood(inputs: MoodInputs): Mood {
         val live = inputs.habits.filterNot { it.archived }
-        val outstanding = live.filter { isOutstanding(it, inputs.today, inputs.weekStart) }
+        // A predicate rather than the set: row 1 asks whether outstanding is
+        // empty, nothing here asks what is in it, and the remaining count the
+        // Today view needs belongs to the UI computing it from [isOutstanding].
+        val nothingOutstanding = live.none { isOutstanding(it, inputs.today, inputs.weekStart) }
         return when {
             live.isEmpty() -> Mood.CONTENT
-            outstanding.isEmpty() -> Mood.THRIVING
+            nothingOutstanding -> Mood.THRIVING
             live.any { recentlyBroken(it.streak, inputs.today) } -> Mood.REGENERATING
             nearBoundary(inputs) -> Mood.WORRIED
             else -> Mood.CONTENT
