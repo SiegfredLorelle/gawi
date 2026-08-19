@@ -41,6 +41,17 @@ androidx-activity-compose = { group = "androidx.activity", name = "activity-comp
 # there directly rather than incidentally.
 androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }
 androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation" }
+# Compose UI tests, run on the JVM under Robolectric rather than on a device —
+# architecture §8 keeps CI on unit tests only, and these fit that gate as they
+# are. Versionless like the entries above, so the BOM decides: the platform is
+# declared on implementation and its constraints apply across the whole
+# resolution, so a testImplementation entry is governed by it too.
+#
+# ui-test-manifest carries no code. It contributes the AndroidManifest that
+# declares the ComponentActivity createComposeRule() launches, which is why it
+# goes on a variant configuration and not alongside the driver above.
+androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 # hilt-navigation-compose is deliberately absent. hiltViewModel() needs it,
 # but its pom drags the whole of navigation-compose in, and this app has one
 # screen. viewModel() resolves the same Hilt factory through the
