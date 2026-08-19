@@ -32,11 +32,13 @@ dependencies {
     // the androidTest source set architecture §8 keeps off CI.
     testImplementation(libs.androidx.compose.ui.test.junit4)
     testImplementation(libs.robolectric)
-    // debugImplementation, not testImplementation: this artifact is only an
-    // AndroidManifest declaring the activity the rule launches, and the unit
-    // test manifest is merged from the tested variant's dependencies rather
-    // than from the test configuration. Safe on a variant configuration because
-    // AGP 9 gives a library debug unit tests only — there is no
-    // testReleaseUnitTest task to leave without a manifest.
-    debugImplementation(libs.androidx.compose.ui.test.manifest)
+    // testImplementation, deliberately not debugImplementation. This artifact is
+    // only an AndroidManifest, declaring the ComponentActivity the rule launches
+    // — but that activity is android:exported="true", and on a variant
+    // configuration it merges into :app's packaged debug manifest as well as
+    // into the unit test one. That would put a second exported activity in every
+    // debug install, next to the one app/src/debug guards with DUMP for reasons
+    // it spells out at length. Scoping it to the test configuration keeps it
+    // where the compose rule needs it and out of the app.
+    testImplementation(libs.androidx.compose.ui.test.manifest)
 }
