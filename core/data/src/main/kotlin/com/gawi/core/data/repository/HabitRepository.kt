@@ -21,6 +21,10 @@ import java.time.LocalDate
  *
  * Nothing above this interface knows events exist (architecture §4).
  */
+// One aggregate means one interface: a command per user action, plus the
+// queries a screen needs. Splitting it to satisfy a function count would
+// advertise an independence between reads and writes that does not exist.
+@Suppress("TooManyFunctions")
 interface HabitRepository {
 
     /** Mints the habit id and returns it, so the caller can navigate to it. */

@@ -70,6 +70,12 @@ import javax.inject.Singleton
  * The fold is forced onto a background dispatcher below, and
  * `rebuildProjections` is not something to reach for casually.
  */
+// Wider than the interface it implements, because every public entry point
+// takes the mutex and delegates to a private body that must not. The
+// constructor is wide for a related reason: each dao and seam is separately
+// replaceable in tests, and folding them into a holder would hide what this
+// depends on rather than reduce it.
+@Suppress("TooManyFunctions", "LongParameterList")
 @Singleton
 @OptIn(ExperimentalCoroutinesApi::class)
 internal class OfflineFirstHabitRepository @Inject constructor(
