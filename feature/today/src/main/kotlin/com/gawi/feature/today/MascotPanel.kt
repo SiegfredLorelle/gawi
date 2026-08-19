@@ -51,17 +51,24 @@ internal fun MascotPanel(mood: Mood, remaining: Int, total: Int, modifier: Modif
             style = MaterialTheme.typography.titleMedium,
             textAlign = TextAlign.Center,
         )
-        Text(
-            text = if (remaining == 0) {
-                stringResource(R.string.today_remaining_none)
-            } else {
-                // Counted by §4's rule rather than by unticked rows, so a weekly
-                // habit with its target still reachable is not counted here.
-                stringResource(R.string.today_remaining, remaining, total)
-            },
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        // Nothing at all to say when there is nothing to do yet. "Nothing left
+        // today" under an empty list reads as an achievement, which is the exact
+        // reading §4's rule 0 exists to prevent — the mood line above already
+        // speaks for this state, and the empty copy below it says the rest.
+        if (total > 0) {
+            Text(
+                text = if (remaining == 0) {
+                    stringResource(R.string.today_remaining_none)
+                } else {
+                    // Counted by §4's rule rather than by unticked rows, so a
+                    // weekly habit with its target still reachable is not
+                    // counted here.
+                    stringResource(R.string.today_remaining, remaining, total)
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 
