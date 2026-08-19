@@ -3,10 +3,34 @@
   Resource merging is flat across the whole app, so every name here carries a
   today_ prefix rather than risking a collision with :app's own.
 -->
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="today_error_retro_window">That day is more than three days ago. Only the last three days can be edited.</string>
     <string name="today_error_future_date">That day has not happened yet.</string>
     <string name="today_error_habit_missing">That habit no longer exists.</string>
     <string name="today_error_habit_archived">That habit is archived.</string>
     <string name="today_error_unexpected">That did not work. Try again.</string>
+
+    <string name="today_title">Today</string>
+    <string name="today_empty_title">No habits yet</string>
+    <string name="today_empty_body">Momo is waiting. Add a habit and it starts here.</string>
+
+    <!-- "2/3 this week", for weekly habits only. Daily rows have no subtitle.
+         Not a plural: the numbers are a ratio and "week" is not what they
+         count, so there is no singular form to write. The wording is fixed by
+         docs/ux/today-view.md §5. -->
+    <string name="today_week_progress" tools:ignore="PluralsCandidate">%1$d/%2$d this week</string>
+
+    <!-- A daily streak counts days and a weekly one counts weeks, and the two
+         must never read as the same number, so the week form carries a unit. -->
+    <string name="today_streak_days">%d</string>
+    <string name="today_streak_weeks">%dw</string>
+    <string name="today_streak_broken">0</string>
+    <string name="today_streak_was_days">was %d</string>
+    <string name="today_streak_was_weeks">was %dw</string>
+    <!-- Stands in for the cut-thread glyph the sketch draws. A resource so
+         swapping it for a vector is a one-file change. -->
+    <string name="today_streak_broken_glyph">\u2702</string>
+
+    <string name="today_complete">Mark done</string>
+    <string name="today_undo">Mark not done</string>
 </resources>
