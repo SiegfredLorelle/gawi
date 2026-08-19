@@ -46,6 +46,13 @@ internal class TodayViewModel @Inject constructor(private val habits: HabitRepos
         // deliberately refuses rather than guessing at a cutoff when the
         // preferences file cannot be read. Room and codec failures are the same
         // shape. Rejections are values; this is for the things that are not.
+        //
+        // catch terminates the flow rather than resuming it, so Unavailable is
+        // the last thing this subscription ever emits — recovery is the screen
+        // re-subscribing after WhileSubscribed's window lapses, which is why
+        // the copy tells the user to reopen the app rather than promising it
+        // will right itself. A bounded retryWhen would make that recovery
+        // deliberate instead of incidental; deferred, not overlooked.
         .catch { cause ->
             Log.e("TodayViewModel", "the today read failed", cause)
             emit(TodayUiState.Unavailable)

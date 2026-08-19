@@ -219,3 +219,10 @@ Small decisions that were easier to make once drawn:
   rounds have now rediscovered it.
 - Momo's own copy. Every line the panel shows is placeholder, chosen to
   make the three Phase 0 states distinguishable rather than to be read.
+- **`regenerating` is currently invisible.** The MVP mapping above folds it
+  onto `neutral`, which shows one line of copy, so nothing on screen
+  separates a user recovering from a broken streak from one merely
+  pottering. That is what shipping three faces instead of four means, and
+  it is fine at Phase 0 — but it does mean `Mood.REGENERATING` is decided,
+  tested, and unobservable, so the mood rules cannot be checked by looking
+  at the app. Resolved by the same work as the copy gap above.

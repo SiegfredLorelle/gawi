@@ -12,7 +12,7 @@
 
     <string name="today_title">Today</string>
     <string name="today_unavailable_title">Can\'t open your habits</string>
-    <string name="today_unavailable_body">Something went wrong reading them. Reopening the app usually fixes it.</string>
+    <string name="today_unavailable_body">Something went wrong reading them. Close the app and open it again to retry.</string>
     <string name="today_empty_title">No habits yet</string>
     <string name="today_empty_body">Momo is waiting. Add a habit and it starts here.</string>
 
