@@ -2,6 +2,7 @@ package com.gawi.core.domain.mascot
 
 import com.gawi.core.domain.model.Schedule
 import com.gawi.core.domain.streak.StreakSnapshot
+import com.gawi.core.domain.time.reminderOn
 import com.gawi.core.domain.time.weekStartOn
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -138,28 +139,18 @@ object Mascot {
      * the day boundary. One threshold, shared with the end-of-day reminder, so
      * there is no second one to keep in sync.
      *
-     * The logical day `today` runs from its cutoff to the next, in wall-clock
-     * terms, so the reminder falls on the *following* calendar date whenever it
-     * is set earlier in the day than the cutoff. With a 03:00 cutoff and a
-     * 21:00 reminder, 01:30 on the 16th is 22:30 into the logical 15th and is
-     * near its boundary — which is the case a naive same-date comparison gets
-     * backwards.
+     * Where the threshold falls is [reminderOn]'s answer, not this function's.
+     * It is shared because the data layer has to wake at the same instant to
+     * re-read the mood, and the reminder notification will have to fire at it.
      *
-     * A reminder set *equal* to the cutoff therefore marks the day's start, not
-     * its end, and the whole logical day counts as near the boundary. That
-     * follows from `logicalDate`'s own rule that a wall time exactly at the
-     * cutoff begins the new day, so it is left consistent with it rather than
-     * special-cased here; a settings screen offering the two as one control is
-     * where that combination should be prevented.
-     *
-     * The upper bound is redundant when `today` was derived from `now`, and
-     * kept anyway: it means a caller holding a stale date reads "not near the
-     * boundary" rather than leaving Momo worried indefinitely.
+     * The upper bound is this function's own, and is redundant when `today` was
+     * derived from `now`. It is kept anyway: it means a caller holding a stale
+     * date reads "not near the boundary" rather than leaving Momo worried
+     * indefinitely.
      */
     private fun nearBoundary(inputs: MoodInputs): Boolean {
         val dayStart = LocalDateTime.of(inputs.today, inputs.dayCutoff)
-        val reminderDate = if (inputs.reminderTime < inputs.dayCutoff) inputs.today.plusDays(1) else inputs.today
-        val reminderAt = LocalDateTime.of(reminderDate, inputs.reminderTime)
+        val reminderAt = reminderOn(inputs.today, inputs.reminderTime, inputs.dayCutoff)
         return !inputs.now.isBefore(reminderAt) && inputs.now.isBefore(dayStart.plusDays(1))
     }
 }
