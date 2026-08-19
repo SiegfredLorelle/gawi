@@ -63,6 +63,10 @@ class FakeSettingsSource(initial: UserSettings = UserSettings()) : SettingsSourc
         }
 
     override fun observe(): Flow<UserSettings> = state
+
+    override suspend fun update(transform: (UserSettings) -> UserSettings) {
+        state.value = transform(state.value)
+    }
 }
 
 /**
