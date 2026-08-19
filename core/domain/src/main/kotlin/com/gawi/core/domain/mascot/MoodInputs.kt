@@ -29,6 +29,12 @@ import java.time.LocalTime
  * [completionsThisWeek] is counted in the week [MoodInputs.weekStart] begins,
  * and [completedToday] against the logical date, so both already answer "as of
  * when" and neither needs the completion set.
+ *
+ * [completionsThisWeek] **includes today's completion.** The read model counts
+ * it that way and a test pins it, but the rules read both fields together — the
+ * weekly branch of [Mascot.isOutstanding] subtracts this count *and* checks
+ * [completedToday] — so a producer that excluded today would shift every weekly
+ * now-or-never threshold by a day without failing a domain test.
  */
 data class HabitMoodState(
     val schedule: Schedule,
