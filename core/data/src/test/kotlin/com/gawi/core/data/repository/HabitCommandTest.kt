@@ -128,6 +128,23 @@ class HabitCommandTest {
     }
 
     @Test
+    fun `an archived habit reports archived whether or not the cell is completed`() = runTest {
+        // The domain checks archived before liveness precisely so the error
+        // does not depend on completion state. This layer has to resolve an
+        // event id before it can call the domain at all, so it is the one that
+        // can get the precedence wrong.
+        val completed = createHabit("completed")
+        val empty = createHabit("empty")
+        store.repository.addCompletion(completed, store.today())
+        store.repository.archiveHabit(completed)
+        store.repository.archiveHabit(empty)
+
+        rejectedWith(store.repository.updateNote(completed, store.today(), "x"), CommandError.HabitIsArchived)
+        rejectedWith(store.repository.updateNote(empty, store.today(), "x"), CommandError.HabitIsArchived)
+        rejectedWith(store.repository.undoCompletion(empty, store.today()), CommandError.HabitIsArchived)
+    }
+
+    @Test
     fun `add then undo then add leaves one completion, the new note, and three events`() = runTest {
         val habit = createHabit()
         val today = store.today()

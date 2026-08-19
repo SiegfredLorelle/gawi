@@ -28,6 +28,7 @@ import com.gawi.core.domain.serialization.EventCodec
 import com.gawi.core.domain.time.logicalDate
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -35,7 +36,6 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -136,12 +136,22 @@ internal class OfflineFirstHabitRepository @Inject constructor(
      * every live add in the cell regardless of which one a note chose.
      */
     override suspend fun updateNote(habitId: HabitId, logicalDate: LocalDate, text: String): CommandResult<Unit> = commit { state ->
-        when (val parent = state.liveAddIds(habitId, logicalDate).maxOrNull()) {
-            // No live add means there is no completion to annotate, and there
-            // is no event id to hand the domain command either.
-            null -> CommandResult.Rejected(CommandError.CompletionNotFound)
+        when {
+            // Repeated from the domain on purpose. updateCompletionNote checks
+            // archived before liveness, so an archived habit reports
+            // HabitIsArchived whatever the completion's state — but reaching it
+            // at all needs an event id this layer can only get from a live add.
+            // Resolving first without this would make the error depend on
+            // completion state, which is exactly what that ordering exists to
+            // prevent, and would disagree with undoCompletion right beside it.
+            state.isArchived(habitId) -> CommandResult.Rejected(CommandError.HabitIsArchived)
 
-            else -> Commands.updateCompletionNote(state, parent, text).asPayloads()
+            else -> when (val parent = state.liveAddIds(habitId, logicalDate).maxOrNull()) {
+                // No live add: nothing to annotate, and no id for the domain.
+                null -> CommandResult.Rejected(CommandError.CompletionNotFound)
+
+                else -> Commands.updateCompletionNote(state, parent, text).asPayloads()
+            }
         }
     }
 
@@ -150,6 +160,7 @@ internal class OfflineFirstHabitRepository @Inject constructor(
         emitAll(
             readContext()
                 .flatMapLatest { (settings, today) ->
+                    refreshStreaks()
                     val week = weekOf(today, settings)
                     readModel
                         .observeToday(today.toString(), week.first.toString(), week.second.toString())
@@ -164,6 +175,7 @@ internal class OfflineFirstHabitRepository @Inject constructor(
         emitAll(
             readContext()
                 .flatMapLatest { (settings, today) ->
+                    refreshStreaks()
                     val week = weekOf(today, settings)
                     readModel
                         .observeHabit(habitId.value, today.toString(), week.first.toString(), week.second.toString())
@@ -241,19 +253,23 @@ internal class OfflineFirstHabitRepository @Inject constructor(
      * overnight — while the streak rows joined into the same query, recomputed
      * by [refreshStreaks], had already moved to the new setting.
      *
-     * The streak sweep sits here rather than at either call site because a
-     * streak row and the query that joins it must answer for the same day. It
-     * reads the settings itself rather than taking them from the emission, so
-     * an edit landing between the two leaves a brief skew; that converges
-     * rather than sticking, because the edit also cancels [flatMapLatest] and
-     * re-runs it with the newer value and a fresh sweep. Keeping
-     * [refreshStreaks] argument-free is what preserves its contract that the
-     * repository owns the clock and the settings.
+     * The streak sweep deliberately does *not* live here. It belongs inside the
+     * downstream `flatMapLatest`, which cancels the previous query before
+     * running the new block — so by the time new streak rows are committed, no
+     * query bound to the old day is still subscribed. Sweeping here instead
+     * would write those rows while the previous query was still live, and Room
+     * invalidates asynchronously, so that query could re-emit yesterday's
+     * completion state paired with today's streak. `distinctUntilChanged` is
+     * downstream of that and would not filter it.
      */
     private fun readContext(): Flow<Pair<UserSettings, LocalDate>> = settings
         .observe()
         .flatMapLatest { current -> logicalDates(current).map { current to it } }
-        .onEach { refreshStreaks() }
+        // A boundary wake that does not actually change the date — clock skew,
+        // a DST shift, a settings write that changed nothing — must not churn
+        // the query underneath an open screen. Emitting only real changes is
+        // also what stops the sweep below running on every wake.
+        .distinctUntilChanged()
 
     private suspend fun rebuildLocked(current: ProjectedState) {
         val settings = settings.current()
@@ -289,11 +305,25 @@ internal class OfflineFirstHabitRepository @Inject constructor(
         val after = stamped.fold(before, Projector::apply)
         val settings = settings.current()
 
-        database.withTransaction {
-            events.insertAll(stamped.map { it.toEntity(codec) })
-            writer.applyDelta(before, after, stamped, todayFor(now, settings), settings.weekStart)
+        // The commit and the publish are one unit, and cancellation must not
+        // land between them. `withContext` — which `withTransaction` is built
+        // on — throws on resume if the caller's job was cancelled while the
+        // block ran, *even when the block finished*. Without NonCancellable a
+        // tap cancelled mid-transaction could therefore commit the event and
+        // never advance the in-memory state. That does not self-heal: `state`
+        // is non-null by then, so `initialised()` short-circuits for the life
+        // of the process, leaving the command authority a whole event behind
+        // the log. An undo on that cell would report CompletionNotFound
+        // against a row the user can still see, and the next `applyDelta`
+        // would diff from a stale baseline. The KDoc above reasons about the
+        // opposite direction; this is the one that bites.
+        withContext(NonCancellable) {
+            database.withTransaction {
+                events.insertAll(stamped.map { it.toEntity(codec) })
+                writer.applyDelta(before, after, stamped, todayFor(now, settings), settings.weekStart)
+            }
+            state = after
         }
-        state = after
 
         // The widget refresh belongs here — architecture §4 makes this the one
         // place responsible for keeping Glance current, because widgets do not
