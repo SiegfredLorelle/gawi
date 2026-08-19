@@ -16,6 +16,24 @@ import kotlin.random.Random
  * the timestamp field advances by one millisecond instead — the id stream
  * never blocks and never repeats, at the cost of timestamps briefly running
  * ahead of a misbehaving clock.
+ *
+ * The clock is clamped to the 48-bit field at both ends. Below zero it would
+ * hex-format with a minus sign; above the field maximum (year ~10889) it
+ * would format wider than twelve digits, and either way [format] emits a
+ * string [CanonicalUuid] rejects — which poisons `lastMillis` and makes every
+ * later call throw too, killing the whole write path rather than one id. At
+ * the upper clamp the timestamp can no longer advance, so monotonicity is
+ * what gives way instead of the format: only reachable from garbage RTC data,
+ * and a lower-sorting id beats an unusable generator.
+ *
+ * **Monotonicity is per-instance, not process-wide.** `lastMillis` and
+ * `counter` are instance state, while architecture §3 leans on a global order
+ * for the LWW tiebreak and the events table's primary key. Two instances
+ * generating in the same millisecond interleave freely, and because each
+ * seeds `counter` randomly in `[0, 0x800)` they can collide outright — on the
+ * sync dedupe key. Exactly one instance may exist per event log; provide it
+ * as a `@Singleton`. The `@Synchronized` below guards shared use of one
+ * instance and says nothing about a second one.
  */
 class UuidV7Generator(private val nowMillis: () -> Long = System::currentTimeMillis, private val random: Random = Random.Default) {
 
@@ -24,16 +42,16 @@ class UuidV7Generator(private val nowMillis: () -> Long = System::currentTimeMil
 
     @Synchronized
     fun next(): EventId {
-        // A pre-epoch clock (RTC reset) would hex-format with a minus sign
-        // and break the canonical form; clamp — monotonicity handles the rest.
-        val now = nowMillis().coerceAtLeast(0)
+        // Garbage RTC data at either end would format outside the canonical
+        // form and poison the generator; clamp to the field width instead.
+        val now = nowMillis().coerceIn(0, MAX_TIMESTAMP_MILLIS)
         if (now > lastMillis) {
             lastMillis = now
             counter = random.nextInt(COUNTER_SEED_BOUND)
         } else if (counter < COUNTER_MAX) {
             counter++
         } else {
-            lastMillis++
+            lastMillis = (lastMillis + 1).coerceAtMost(MAX_TIMESTAMP_MILLIS)
             counter = random.nextInt(COUNTER_SEED_BOUND)
         }
         return EventId(format(lastMillis, counter, random.nextLong()))
@@ -57,6 +75,9 @@ class UuidV7Generator(private val nowMillis: () -> Long = System::currentTimeMil
         const val GROUP_1 = 8
         const val GROUP_4 = 4
         const val COUNTER_MAX = 0xFFF
+
+        /** The widest value the 48-bit timestamp field can hold, i.e. twelve hex digits. */
+        const val MAX_TIMESTAMP_MILLIS = 0xFFFF_FFFF_FFFFL
 
         /** Seeding below half the range leaves ≥2048 same-millisecond ids of burst headroom. */
         const val COUNTER_SEED_BOUND = 0x800

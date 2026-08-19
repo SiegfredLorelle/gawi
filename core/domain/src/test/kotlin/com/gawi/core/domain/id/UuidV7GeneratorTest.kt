@@ -110,6 +110,22 @@ class UuidV7GeneratorTest {
     }
 
     @Test
+    fun `a far-future clock is clamped and the generator keeps working`() {
+        clock = Long.MAX_VALUE
+        val generator = generator()
+
+        // Every next() validates through EventId, so surviving a run that
+        // exhausts the counter at the ceiling is the assertion that matters:
+        // an unclamped clock formats too wide, and the throw is permanent.
+        val first = generator.next()
+        repeat(5_000) { generator.next() }
+        val last = generator.next()
+
+        assertEquals(0xFFFF_FFFF_FFFF, timestampOf(first))
+        assertEquals(0xFFFF_FFFF_FFFF, timestampOf(last))
+    }
+
+    @Test
     fun `different random seeds give different ids at the same instant`() {
         clock = 1_755_400_000_000
 
