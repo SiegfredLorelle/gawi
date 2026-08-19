@@ -10,7 +10,9 @@ package com.gawi.core.domain.id
  *   that lexicographic order equals generation order, which is only true of a
  *   v7 id; a v4 would satisfy a shape-only pattern and silently carry no time
  *   ordering, breaking the LWW tiebreak and the events table's primary-key
- *   ordering (architecture §3).
+ *   ordering (architecture §3). [HabitId] never relies on that ordering, but
+ *   shares the pattern anyway: its own contract declares a UUIDv7, one
+ *   generator mints both, and a single rule is easier to keep honest than two.
  * - **Lowercase only.** Stored ids stay byte-comparable, which is what makes an
  *   `ORDER BY id` read equal log order. RFC 9562 §4 asks readers to accept
  *   either case, so a foreign log with uppercase ids is legal input that this

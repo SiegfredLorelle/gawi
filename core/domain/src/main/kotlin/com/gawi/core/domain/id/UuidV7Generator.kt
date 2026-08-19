@@ -5,7 +5,8 @@ import kotlin.random.Random
 /**
  * Hand-rolled UUIDv7 generator (RFC 9562) with a strict monotonicity
  * guarantee: every id returned by one instance compares greater than the
- * previous one, in generation order, no matter what the clock does.
+ * previous one, in generation order, whatever the clock does — with the one
+ * exception at the field ceiling described below.
  *
  * Layout: 48-bit unix timestamp (millis) | version 7 | 12-bit counter in
  * rand_a | variant 10 | 62 random bits in rand_b.
@@ -14,8 +15,8 @@ import kotlin.random.Random
  * millisecond and incremented for ids generated within the same
  * millisecond. On counter overflow, or when the wall clock moves backwards,
  * the timestamp field advances by one millisecond instead — the id stream
- * never blocks and never repeats, at the cost of timestamps briefly running
- * ahead of a misbehaving clock.
+ * never blocks, and outside the ceiling case below it never repeats, at the
+ * cost of timestamps briefly running ahead of a misbehaving clock.
  *
  * The clock is clamped to the 48-bit field at both ends. Below zero it would
  * hex-format with a minus sign; above the field maximum (year ~10889) it
@@ -25,6 +26,11 @@ import kotlin.random.Random
  * the upper clamp the timestamp can no longer advance, so monotonicity is
  * what gives way instead of the format: only reachable from garbage RTC data,
  * and a lower-sorting id beats an unusable generator.
+ *
+ * Note that a ceiling clock is sticky. Once `lastMillis` sits at the maximum,
+ * `now > lastMillis` can never hold again, so every later id keeps the
+ * year-10889 timestamp even after the clock recovers; only a new instance
+ * resets it.
  *
  * **Monotonicity is per-instance, not process-wide.** `lastMillis` and
  * `counter` are instance state, while architecture §3 leans on a global order
