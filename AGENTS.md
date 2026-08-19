@@ -24,6 +24,7 @@ contract, and it is the same in every repo regardless of language.
 | `make fmt` | Format the codebase |
 | `make lint` | Lint and type-check |
 | `make test` | Run the test suite |
+| `make run` | Build, install and launch on a device or emulator |
 
 Run `make lint` and `make test` before considering any change complete.
 

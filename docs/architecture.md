@@ -229,9 +229,15 @@ The template's Makefile contract maps to Gradle as:
 | `make fmt` | Spotless (ktlint) apply |
 | `make lint` | Spotless check + detekt + Android Lint |
 | `make test` | `./gradlew test` (module-generic: JVM modules' `test` plus Android modules' unit tests; a new module can never be silently skipped) |
+| `make run` | `./gradlew :app:installDebug` + `adb shell am start` (see below) |
 
 Deviations and notes:
 
+- **`make run` is an addition to the template's contract**, not a rename of it.
+  Nothing in CI calls it, so the cross-repo sameness the Makefile header protects
+  is untouched; what it buys is that §8's manual on-device activity has a
+  one-command entry point instead of living in people's shell history. The
+  procedure it serves is [docs/running.md](running.md).
 - `ci.yml` gains JDK 17 setup and Gradle caching. This is a **conscious
   deviation** from the template's "never edit the workflow" rule: that rule
   prevents stack drift across many repos, and this repo has exactly one stack
