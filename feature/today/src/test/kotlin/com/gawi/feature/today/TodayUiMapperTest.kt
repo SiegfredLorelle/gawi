@@ -17,6 +17,8 @@ import java.time.LocalDate
 class TodayUiMapperTest {
 
     private val daily = Schedule.Daily
+    private val lightBackground = Color(0xFFFFFBFE)
+    private val darkBackground = Color(0xFF141218)
     private val weekly = Schedule.Weekly(3)
 
     @Test
@@ -70,6 +72,29 @@ class TodayUiMapperTest {
         assertNull(parseHabitColor("#abc"))
         assertNull(parseHabitColor("#gggggg"))
         assertNull(parseHabitColor(""))
+    }
+
+    @Test
+    fun `the glyph contrasts with an opaque habit colour`() {
+        // The case that broke: a theme content role would be invisible on both.
+        assertEquals(Color.White, glyphColorOn(Color(0xFF000000), lightBackground))
+        assertEquals(Color.Black, glyphColorOn(Color(0xFFFFFFFF), lightBackground))
+    }
+
+    @Test
+    fun `the glyph contrasts with what a translucent colour renders as`() {
+        // luminance() reads RGB and ignores alpha, so a transparent white is
+        // "bright" on paper while what shows through is the background. Judged
+        // on the tint alone, both of these would pick black.
+        assertEquals(Color.White, glyphColorOn(Color(0x00FFFFFF), darkBackground))
+        assertEquals(Color.Black, glyphColorOn(Color(0x00FFFFFF), lightBackground))
+    }
+
+    @Test
+    fun `a half-transparent colour is judged on the blend, not the tint`() {
+        // White at 50% over black renders mid-grey, which sits below the pivot
+        // and so still wants a light glyph.
+        assertEquals(Color.White, glyphColorOn(Color(0x80FFFFFF), darkBackground))
     }
 
     @Test

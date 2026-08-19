@@ -1,6 +1,8 @@
 package com.gawi.feature.today
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.luminance
 import com.gawi.core.data.model.TodayHabit
 import com.gawi.core.data.model.TodaySnapshot
 import com.gawi.core.data.model.toMoodState
@@ -99,6 +101,26 @@ internal fun parseHabitColor(hex: String): Color? {
     }
     return argb?.let { Color(it) }
 }
+
+/**
+ * The colour a habit's icon glyph should take when it sits on [tint].
+ *
+ * Composited first, because [luminance] is WCAG relative luminance over the RGB
+ * channels and ignores alpha entirely. A translucent tint would otherwise be
+ * judged on the colour it nominally is rather than the colour it renders as —
+ * translucent white reads as bright and picks a dark glyph, while what the user
+ * sees is mostly [background] showing through, which in dark mode is nearly
+ * black. Compositing makes a fully transparent tint fall out correctly too: it
+ * resolves to [background] and the glyph contrasts against that.
+ *
+ * Here rather than in the composable because it is a decision, not layout — the
+ * same reason the rest of §5's rules live in this file.
+ */
+internal fun glyphColorOn(tint: Color, background: Color): Color =
+    if (tint.compositeOver(background).luminance() > CONTRAST_PIVOT) Color.Black else Color.White
+
+/** Above this, a background is light enough to want dark text on it. */
+private const val CONTRAST_PIVOT = 0.5f
 
 private const val HEX_RADIX = 16
 private const val RGB_DIGITS = 6
