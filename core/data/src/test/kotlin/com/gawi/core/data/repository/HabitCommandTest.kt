@@ -7,6 +7,8 @@ import com.gawi.core.domain.command.CommandError
 import com.gawi.core.domain.command.CommandResult
 import com.gawi.core.domain.model.HabitId
 import com.gawi.core.domain.model.Schedule
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -233,5 +235,31 @@ class HabitCommandTest {
         assertEquals(java.time.LocalDate.parse("2026-08-16"), today)
         store.repository.addCompletion(habit, today)
         assertEquals("2026-08-16", store.snapshot().completions.single().logicalDate)
+    }
+
+    @Test
+    fun `an append cancelled mid-commit still advances the command authority`() = runTest {
+        // Its own store: the cancellation has to fire from inside the projection
+        // transaction, which is the one place a test can reach the window
+        // between the event committing and the in-memory state being published.
+        var append: Job? = null
+        val store = TestStore.create(onCompletionWrite = { append?.cancel() })
+        try {
+            val habit = (store.repository.createHabit(metadata()) as CommandResult.Accepted).payload
+
+            append = launch { store.repository.addCompletion(habit, store.today()) }
+            append.join()
+
+            // The commit is NonCancellable, so the event landed.
+            assertEquals(1, store.database.completionProjectionDao().all().size)
+
+            // And the command authority went with it. This is the assertion that
+            // matters: skip the publish and `state` stays a whole event behind
+            // the log for the life of the process, so this undo would be
+            // rejected against a row the user can still see.
+            assertTrue(store.repository.undoCompletion(habit, store.today()) is CommandResult.Accepted)
+        } finally {
+            store.close()
+        }
     }
 }

@@ -2,6 +2,7 @@ package com.gawi.core.data.testsupport
 
 import androidx.room.Room
 import com.gawi.core.data.db.GawiDatabase
+import com.gawi.core.data.db.dao.CompletionProjectionDao
 import com.gawi.core.data.db.entity.CompletionEntity
 import com.gawi.core.data.db.entity.HabitEntity
 import com.gawi.core.data.db.entity.HabitStreakEntity
@@ -80,6 +81,32 @@ class FakeSettingsSource(initial: UserSettings = UserSettings()) : SettingsSourc
 }
 
 /**
+ * A completion DAO that runs [onUpsert] before each write.
+ *
+ * The only seam a test has *inside* the projection transaction. `appendLocked`
+ * commits the event and publishes the in-memory state as one unit, and the
+ * window between them is reachable from nowhere else: cancelling before the
+ * transaction aborts it, and cancelling after it is too late. Delegates
+ * everything else, so the real writer still does the real work.
+ */
+internal class HookedCompletionDao(private val delegate: CompletionProjectionDao, private val onUpsert: () -> Unit) :
+    CompletionProjectionDao {
+
+    override suspend fun upsert(completion: CompletionEntity) {
+        onUpsert()
+        delegate.upsert(completion)
+    }
+
+    override suspend fun find(habitId: String, logicalDate: String): CompletionEntity? = delegate.find(habitId, logicalDate)
+
+    override suspend fun delete(habitId: String, logicalDate: String) = delegate.delete(habitId, logicalDate)
+
+    override suspend fun deleteAll() = delegate.deleteAll()
+
+    override suspend fun all(): List<CompletionEntity> = delegate.all()
+}
+
+/**
  * An in-memory database wired to a real repository — the same object graph
  * `DataModule` builds, minus Hilt.
  *
@@ -109,6 +136,7 @@ internal class TestStore private constructor(
             clock: FakeDeviceClock = FakeDeviceClock(),
             settings: FakeSettingsSource = FakeSettingsSource(),
             idSeed: Long = 1,
+            onCompletionWrite: (() -> Unit)? = null,
         ): TestStore = createOver(
             database = Room
                 .inMemoryDatabaseBuilder(RuntimeEnvironment.getApplication(), GawiDatabase::class.java)
@@ -116,6 +144,7 @@ internal class TestStore private constructor(
             clock = clock,
             settings = settings,
             idSeed = idSeed,
+            onCompletionWrite = onCompletionWrite,
         )
 
         /**
@@ -128,10 +157,12 @@ internal class TestStore private constructor(
             clock: FakeDeviceClock = FakeDeviceClock(),
             settings: FakeSettingsSource = FakeSettingsSource(),
             idSeed: Long = 1,
+            onCompletionWrite: (() -> Unit)? = null,
         ): TestStore {
+            val completions = database.completionProjectionDao()
             val writer = ProjectionWriter(
                 habits = database.habitProjectionDao(),
-                completions = database.completionProjectionDao(),
+                completions = onCompletionWrite?.let { HookedCompletionDao(completions, it) } ?: completions,
                 streaks = database.habitStreakDao(),
             )
             val repository = OfflineFirstHabitRepository(
