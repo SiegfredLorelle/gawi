@@ -57,6 +57,17 @@ private val PREVIEW_ROWS = listOf(
         streak = StreakUi.Broken(previous = LOST_DAY_STREAK, weekly = false),
     ),
     HabitRowUi(
+        id = previewId("5"),
+        // A parseable but unusable colour. The theme's content role would be
+        // invisible on this in light mode, so the glyph picks its own.
+        name = "meditate",
+        icon = "M",
+        iconTint = parseHabitColor("#000000"),
+        completed = false,
+        weekProgress = null,
+        streak = StreakUi.None,
+    ),
+    HabitRowUi(
         id = previewId("4"),
         // An unparseable colour, which the event log can hold and a row has to
         // survive: this one falls back to a theme role.
