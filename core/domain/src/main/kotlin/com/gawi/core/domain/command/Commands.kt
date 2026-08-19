@@ -89,13 +89,17 @@ object Commands {
      * (architecture §1.3), which is why [ProjectedState] models metadata as
      * nullable and parks early-arriving references — refusing to undo a
      * completion the user can see, because its habit metadata has not synced
-     * yet, would be worse than an imprecise error. For the same reason
-     * absent metadata reads as not-archived rather than as an error.
+     * yet, would be worse than an imprecise error.
+     *
+     * The archived gate reads [ProjectedState.isArchived], not
+     * `habit(id)?.archived`: the latter is null whenever metadata is missing,
+     * which would wave through an undo on a habit the log already knows was
+     * archived. Missing metadata means unknown, never not-archived.
      */
     fun undoCompletion(state: ProjectedState, habitId: HabitId, logicalDate: LocalDate): CommandResult<List<CompletionTombstoned>> {
         val liveIds = state.liveAddIds(habitId, logicalDate)
         return when {
-            state.habit(habitId)?.archived == true -> CommandResult.Rejected(CommandError.HabitIsArchived)
+            state.isArchived(habitId) -> CommandResult.Rejected(CommandError.HabitIsArchived)
             liveIds.isEmpty() -> CommandResult.Rejected(CommandError.CompletionNotFound)
             else -> CommandResult.Accepted(liveIds.sorted().map(::CompletionTombstoned))
         }
@@ -109,14 +113,15 @@ object Commands {
      * [CommandError.HabitIsArchived] whatever the completion's state, exactly
      * as [undoCompletion] does; an unknown event id is still
      * [CommandError.CompletionNotFound], since the cell cannot be resolved
-     * without one. The same no-`HabitNotFound` reasoning applies here.
+     * without one. The same no-`HabitNotFound` reasoning and the same
+     * [ProjectedState.isArchived] gate apply here.
      */
     fun updateCompletionNote(state: ProjectedState, completionEventId: EventId, text: String): CommandResult<CompletionNoteUpdated> {
         val key = state.addIdToKey[completionEventId]
             ?: return CommandResult.Rejected(CommandError.CompletionNotFound)
         val cell = state.completions.getValue(key)
         return when {
-            state.habit(key.habitId)?.archived == true -> CommandResult.Rejected(CommandError.HabitIsArchived)
+            state.isArchived(key.habitId) -> CommandResult.Rejected(CommandError.HabitIsArchived)
             completionEventId !in cell.liveAddIds -> CommandResult.Rejected(CommandError.CompletionNotFound)
             else -> CommandResult.Accepted(CompletionNoteUpdated(completionEventId, text))
         }

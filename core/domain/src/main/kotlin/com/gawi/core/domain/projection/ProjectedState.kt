@@ -96,6 +96,15 @@ data class ProjectedState(
         }
     }
 
+    /**
+     * Whether the log says this habit is archived, independent of whether its
+     * metadata has arrived. [habit] deliberately answers null until a habit
+     * can be displayed, so commands must ask here instead — the archive
+     * register is its own LWW register precisely so `HabitArchived` merging
+     * ahead of `HabitCreated` still counts.
+     */
+    fun isArchived(habitId: HabitId): Boolean = habitRecords[habitId]?.archived == true
+
     /** What an undo command must tombstone: every live add the local log knows for the cell. */
     fun liveAddIds(habitId: HabitId, logicalDate: LocalDate): Set<EventId> =
         completions[CompletionKey(habitId, logicalDate)]?.liveAddIds.orEmpty()
