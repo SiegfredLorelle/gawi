@@ -43,9 +43,9 @@ rules:
   footer-leading-blank: [2, always]
   footer-max-line-length: [0]
 
-  # This project's real areas. Module scopes (today, habits, widget) get
-  # added when those modules are born (docs/architecture.md §2).
+  # This project's real areas. Module scopes (habits, widget) get added when
+  # those modules are born (docs/architecture.md §2); today is born now.
   scope-enum:
     - 2
     - always
-    - [app, domain, data, ui, ux, gradle, quality, make, ci, deps, docs, stacks, repo, claude, arch, prd]
+    - [app, domain, data, ui, today, ux, gradle, quality, make, ci, deps, docs, stacks, repo, claude, arch, prd]
