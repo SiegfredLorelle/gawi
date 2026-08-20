@@ -253,18 +253,30 @@ cases where a count is zero get their own string rather than reading "0 added".
   its own three keys, and two tests pin that in both directions. The three
   preferences are what the user set; when an export last happened is a record of
   what the app did — the same distinction §6 draws about the two rows.
-- **The last-export age is counted at emission, so it can go stale on an open
-  screen.** A screen left open across midnight shows yesterday's count until it
-  re-subscribes, which `WhileSubscribed(5_000)` makes a five-second staleness on
-  any real return to the screen. Likewise, the log is counted per emission and
-  an import does not touch the stamp, so importing into a previously empty log
-  does not switch the row from silent to "Never exported" until the flow
-  restarts. Both are cheap to fix with a clock tick and neither is worth one.
+- **The last-export *age* is still counted at emission, so it can go stale on an
+  open screen.** A screen left open across midnight shows yesterday's count until
+  it re-subscribes, which `WhileSubscribed(5_000)` makes a five-second staleness
+  on any real return to the screen. Cheap to fix with a clock tick, and not worth
+  one.
+
+  This bullet used to carry a second half that is now fixed, and the way it was
+  wrong is worth keeping. It said the log was counted per emission so importing
+  into a previously empty log left the row silent "until the flow restarts", and
+  judged that not worth fixing alongside the midnight case. **The two are not
+  alike.** Midnight needs a screen left open across a day boundary; the import
+  case is two taps on first run — fresh install, open Settings, import a backup
+  from another phone, and the row that should now say "Never exported" says
+  nothing. A reviewer pointed out that `docs/running.md` §4 could not even catch
+  it, because its import check runs *after* an export and so starts with a log
+  that already has events. The count is a `Flow` off `EventDao` now, so Room's
+  invalidation moves the row on any append and the `COUNT(*)` stops re-running on
+  unrelated preferences writes. Lesson: "stale until it re-subscribes" was a true
+  sentence that made a first-run defect sound like a rounding error.
 - **Every failure resolves towards nudging rather than towards silence**, and
   that rule is what `ExportJournal` is arranged around. This value only ever
   decides whether to warn someone they may have no backup, so a wrong warning
   costs an export nobody needed and a wrong silence costs the warning PRD §5
-  asked for. Three places apply it, and each one had to be decided separately:
+  asked for. Four places apply it, and each one had to be decided separately:
 
   An **unreadable preferences file** substitutes empty preferences and carries
   on, so the log is still counted and a device with events on it is still
@@ -289,20 +301,43 @@ cases where a count is zero get their own string rather than reading "0 added".
   the old stamp stands, so the row keeps nudging, and the next export tries
   again.
 
-  **This bullet used to claim the first of those and the code did the opposite.**
-  The fallback was a fixed "nothing to lose", which silenced the nudge over a
-  preferences read — the one failure the feature exists to prevent — and the
-  doc, written in the same sitting, described the intention rather than the code.
-  A reviewer caught it. That makes four times in this project; the tell each
-  time has been a doc sentence explaining *why* something is safe, written before
-  the thing was.
+  A **log that cannot be counted** reads as having something to lose. This is the
+  one that got away twice, and the reason is a type hierarchy: Room throws
+  `SQLiteException`, which is a `RuntimeException` and has no relationship to
+  `IOException`, so a corrupt, locked or full database walked straight past the
+  preferences guard — which was the only guard, because the count ran inside the
+  same `map` — and was answered a layer up with "nothing to lose". The nudge was
+  therefore silenced by the failure that makes it most urgent. The two reads have
+  separate guards now, because they fail for separate reasons. Answering "there is
+  something here" costs an export nobody needed, and on a broken database that
+  export fails loudly, which tells the user more than silence would.
+
+  **A garbage stored value** is refused rather than narrowed. `recencyOf` maps
+  the day count to an `Int` for the quantity resource, and a stored
+  `Long.MIN_VALUE` dates the stamp to the year -292275055 — 106,752,011,854 days,
+  which narrows to -622,170,546, a negative age that reads as not-overdue.
+  Measured rather than reasoned about. Bounding the count at `Int.MAX_VALUE`
+  where the future-stamp check already lives is what makes that narrowing safe by
+  construction instead of by luck.
+
+  **This bullet twice claimed a safety the code did not have.** First the
+  preferences fallback was a fixed "nothing to lose" while the doc said the
+  opposite; then, after that was fixed, the sentence "a device with events on it
+  therefore still gets nudged" was left standing while the count could still
+  throw past the guard. Both were caught by reviewers, and both were written in
+  the same sitting as the code they described. That is four occurrences in this
+  project of the same failure mode, and the tell has been identical every time: a
+  sentence explaining *why* something is safe, written before it was.
 - **A caught read completes the flow, so a recovered status is not picked up
   until the screen re-subscribes.** `Flow.catch` emits and then ends, which
   `combine` treats as a flow that will never speak again — the same property
   `DataStoreSettingsSource.observe()` and `TodayViewModel`'s `catch` already
-  have, and carried here rather than fixed for consistency with them. Bounded by
-  `WhileSubscribed(5_000)`, and the frozen value is the nudging one, so it fails
-  on the safe side. A bounded `retryWhen` is the fix for all three at once.
+  have, and carried here rather than fixed for consistency with them. It now
+  applies to each half of the status separately: a failed count freezes
+  `hasEvents` while the stamp keeps updating, and the reverse. Bounded by
+  `WhileSubscribed(5_000)`, and every frozen value is the nudging one, so it
+  fails on the safe side. A bounded `retryWhen` is the fix for all of them at
+  once.
 - **The stamp is written after the output stream closes, and no JVM test covers
   that ordering.** It has to mean "a file landed" rather than "a write was
   attempted", or the nudge goes quiet for thirty days over a document that was
