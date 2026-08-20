@@ -25,6 +25,16 @@ import java.time.LocalTime
  * or a time is drawn with is a decision, so it lives in the mapper next to the
  * others; what travels here is what the picker has to open on.
  *
+ * [Settings.dataTask] is the one thing here that is not a stored value, and
+ * that is not a hole in the rule this screen is built on. "The store is the
+ * only source of truth" is a rule about *committed settings* — it exists so
+ * the screen can never draw a value the file does not hold. There is no
+ * preference called "an export is running", so no write can make the screen
+ * and the file disagree about it. It lives on the state rather than in the
+ * screen because the work belongs to `viewModelScope`: it is the coroutine
+ * finishing, not a gesture, that ends the busy state, and screen-local state
+ * has no way to hear that.
+ *
  * Internal throughout, like the other two: [SettingsRoute] is this module's
  * whole API.
  */
@@ -34,5 +44,20 @@ internal sealed interface SettingsUiState {
 
     data object Unavailable : SettingsUiState
 
-    data class Settings(val dayCutoff: LocalTime, val weekStart: DayOfWeek, val reminderTime: LocalTime) : SettingsUiState
+    data class Settings(
+        val dayCutoff: LocalTime,
+        val weekStart: DayOfWeek,
+        val reminderTime: LocalTime,
+        val dataTask: DataTask = DataTask.Idle,
+    ) : SettingsUiState
 }
+
+/**
+ * Whether a file is being written or read right now.
+ *
+ * Three states rather than a boolean, because the two rows say different
+ * things while they wait and both are disabled either way — exporting while an
+ * import is half-applied, or the reverse, is a race with a user's only backup
+ * on one side of it.
+ */
+internal enum class DataTask { Idle, Exporting, Importing }

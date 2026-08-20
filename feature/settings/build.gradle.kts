@@ -19,6 +19,17 @@ dependencies {
     // exports it, which is exactly why declaring it would say something untrue.
     implementation(project(":core:ui"))
 
+    // rememberLauncherForActivityResult, and nothing else from this artifact.
+    // It is the Storage Access Framework seam: the picker belongs to the
+    // system, so exporting and importing a file needs no permission, no
+    // FileProvider and no <queries>, and the manifest's comment about having
+    // none of those stays true.
+    //
+    // The second module to take it; :app had it alone. The alternative was
+    // registering both contracts on MainActivity and threading two callbacks
+    // down through the navigation graph, which would put this screen's file
+    // handling in a module with no other reason to know about it.
+    implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
     // hiltViewModel() rather than viewModel(): this is a back-stack
     // destination, so the store owner is the entry rather than the activity.

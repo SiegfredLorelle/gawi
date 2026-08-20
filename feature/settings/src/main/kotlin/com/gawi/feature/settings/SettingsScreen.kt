@@ -116,6 +116,7 @@ private fun SettingsList(state: SettingsUiState.Settings, actions: SettingsActio
             help = stringResource(R.string.settings_reminder_help),
             onClick = { openDialog = SettingsDialog.Reminder },
         )
+        DataSection(state.dataTask, actions)
     }
 
     when (openDialog) {

@@ -13,15 +13,21 @@ import kotlinx.coroutines.ensureActive
  * configuration. Same shape as the other two modules' message types, and
  * deliberately not shared with them.
  *
- * There is only ever one message here, and that is worth saying out loud rather
- * than leaving as an accident of the current copy. The habits and today modules
- * map `CommandError` because their writes are commands, which model refusal as
- * a value. `SettingsSource.update` is not a command: it validates nothing and
- * refuses nothing, because a fixed picker cannot express an invalid time or a
- * day that is not a day. So the only way a settings write fails is by throwing,
- * and every throw reads the same to the user.
+ * It used to be true that there was only ever one message here, and the reason
+ * it was true is the reason it no longer is. `SettingsSource.update` is not a
+ * command: it validates nothing and refuses nothing, because a fixed picker
+ * cannot express an invalid time or a day that is not a day, so the only way a
+ * settings write fails is by throwing and every throw reads the same. Import is
+ * the first thing on this screen whose *input the user chooses*, and so the
+ * first that can be refused rather than only thrown at — which is what the
+ * habits and today modules have always modelled with `CommandError`, arrived at
+ * here from the other end.
+ *
+ * [args] carries the import counts. A list rather than a vararg so this stays a
+ * data class an assertion can compare whole, and `Any` rather than `Int` so a
+ * future message naming a file needs no second type.
  */
-internal data class SettingsMessage(@StringRes val text: Int)
+internal data class SettingsMessage(@StringRes val text: Int, val args: List<Any> = emptyList())
 
 /**
  * Runs a settings write, turning anything it throws into a `null`.

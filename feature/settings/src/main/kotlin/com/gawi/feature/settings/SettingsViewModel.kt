@@ -1,17 +1,21 @@
 package com.gawi.feature.settings
 
+import android.net.Uri
 import android.util.Log
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.gawi.core.data.backup.EventArchive
 import com.gawi.core.data.settings.SettingsSource
 import com.gawi.core.data.settings.UserSettings
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -34,11 +38,20 @@ import javax.inject.Inject
  * behind.
  */
 @HiltViewModel
-internal class SettingsViewModel @Inject constructor(private val settings: SettingsSource) : ViewModel() {
+internal class SettingsViewModel @Inject constructor(private val settings: SettingsSource, private val archive: EventArchive) :
+    ViewModel() {
 
-    val uiState: StateFlow<SettingsUiState> = settings
-        .observe()
-        .map { it.toUiState() }
+    /**
+     * Whether a file is being written or read.
+     *
+     * The one thing this class holds that the store does not, and it is not a
+     * copy of anything stored — see [SettingsUiState]. It lives here rather
+     * than in the screen because the work is `viewModelScope`'s: what ends it
+     * is a coroutine finishing, which a `rememberSaveable` cannot hear.
+     */
+    private val dataTask = MutableStateFlow(DataTask.Idle)
+
+    val uiState: StateFlow<SettingsUiState> = combine(settings.observe(), dataTask) { stored, task -> stored.toUiState(task) }
         .catch { cause ->
             // Not the unreadable-file case, which observe() absorbs into
             // defaults on purpose. Reaching here means something that is not IO
@@ -74,7 +87,55 @@ internal class SettingsViewModel @Inject constructor(private val settings: Setti
     fun onReminderTimeChange(reminderTime: LocalTime) = write { it.copy(reminderTime = reminderTime) }
 
     /**
-     * One write path for all three, because there is only one.
+     * Writes the whole log to the document the picker returned.
+     *
+     * Takes the `Uri` and uses it now. The grant belongs to the activity that
+     * asked for it, so there is nothing here worth keeping for later.
+     */
+    fun onExportTo(destination: Uri) = runDataTask(DataTask.Exporting) {
+        archive.exportTo(destination)
+        SettingsMessage(R.string.settings_export_done)
+    }
+
+    /** Merges the export at [source] into this device's log. */
+    fun onImportFrom(source: Uri) = runDataTask(DataTask.Importing) { messageFor(archive.importFrom(source)) }
+
+    /**
+     * One at a time, and always says something.
+     *
+     * The idle guard is here as well as on the rows, because two taps can land
+     * before the disabled state has been through `combine` and recomposed.
+     * `finally` rather than a line at the end: a failure that skipped it would
+     * leave both rows dead for the life of the screen.
+     */
+    private fun runDataTask(task: DataTask, work: suspend () -> SettingsMessage) {
+        if (dataTask.value != DataTask.Idle) return
+        dataTask.value = task
+        viewModelScope.launch {
+            try {
+                val message = commandOrNull(TAG, work)
+                messages.send(message ?: SettingsMessage(failureFor(task)))
+            } finally {
+                dataTask.value = DataTask.Idle
+            }
+        }
+    }
+
+    @StringRes
+    private fun failureFor(task: DataTask): Int = when (task) {
+        // Not "nothing was written": the picker created the document before the
+        // write began, so what is on disk is a plausibly-named partial file.
+        DataTask.Exporting -> R.string.settings_error_export
+
+        // Import validates the whole file before it writes a row, so this one
+        // can promise the log is untouched and mean it.
+        DataTask.Importing -> R.string.settings_error_import
+
+        DataTask.Idle -> R.string.settings_error_unexpected
+    }
+
+    /**
+     * One write path for all three settings, because there is only one.
      *
      * A transform rather than three setters is the shape [SettingsSource] asks
      * for: a preferences file is read-modify-write, and per-field setters would
