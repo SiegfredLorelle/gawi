@@ -6,7 +6,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -33,11 +32,14 @@ fun SettingsRoute(onBack: () -> Unit) {
     // LocalResources rather than LocalContext: reading strings off the context
     // is not configuration-aware, so the copy would go stale on a locale change.
     val resources = LocalResources.current
-    val context = LocalContext.current
-    // Keyed on the configuration rather than remembered once: the clock
-    // preference is a system setting, and changing it is a configuration change.
-    val configuration = LocalConfiguration.current
-    val is24Hour = remember(configuration) { DateFormat.is24HourFormat(context) }
+    // Read on each composition rather than remembered. Deliberately NOT keyed on
+    // LocalConfiguration, which would look like it refreshed and would not:
+    // Configuration carries no 12/24-hour field, so flipping the system clock
+    // format broadcasts ACTION_TIME_CHANGED and never triggers a configuration
+    // change. The call is a settings lookup the framework caches, so reading it
+    // is cheap; what it costs is that the format only catches up when something
+    // else recomposes this. docs/ux/settings.md §5 records the gap.
+    val is24Hour = DateFormat.is24HourFormat(LocalContext.current)
 
     LaunchedEffect(viewModel) {
         viewModel.events.collect { message ->

@@ -8,13 +8,18 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimeInput
 import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TimePickerDialog
+import androidx.compose.material3.TimePickerDialogDefaults
+import androidx.compose.material3.TimePickerDisplayMode
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -46,6 +51,15 @@ import java.time.LocalTime
  * legal cutoff and a legal reminder — which is what makes this simpler than the
  * habit editor's weekly stepper, where the domain type throws on an
  * out-of-range value and a separate UI type had to exist to hold one.
+ *
+ * Material's own [TimePickerDialog] rather than an [AlertDialog] wrapping a
+ * [TimePicker]. That is not a cosmetic preference: `AlertDialog` puts its text
+ * slot in a `weight(1f, fill = false)` box with no scrolling, so a ~400dp clock
+ * dial is *clipped* rather than scrolled on a short viewport — and since the
+ * activity is not locked to portrait and the open dialog survives rotation, a
+ * user could confirm a time whose minute ring they could not reach. This
+ * dialog carries a display-mode toggle instead, and opens on the text input
+ * when the window is shorter than the dial needs.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,11 +69,16 @@ internal fun TimeDialog(titleRes: Int, initial: LocalTime, is24Hour: Boolean, on
         initialMinute = initial.minute,
         is24Hour = is24Hour,
     )
+    // A Boolean, not the TimePickerDisplayMode itself. That type is a value
+    // class over an Int, so rememberSaveable boxes it into something the default
+    // SaveableStateRegistry cannot put in a Bundle — and it throws when the
+    // dialog is composed, not when it is restored. Saving the flag and deriving
+    // the mode keeps the state bundleable with no custom Saver.
+    var showTextInput by rememberSaveable { mutableStateOf(false) }
+    val mode = if (showTextInput) TimePickerDisplayMode.Input else TimePickerDisplayMode.Picker
 
-    AlertDialog(
+    TimePickerDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(titleRes)) },
-        text = { TimePicker(state = picker) },
         confirmButton = {
             TextButton(onClick = { onConfirm(LocalTime.of(picker.hour, picker.minute)) }) {
                 Text(stringResource(R.string.settings_confirm))
@@ -68,7 +87,16 @@ internal fun TimeDialog(titleRes: Int, initial: LocalTime, is24Hour: Boolean, on
         dismissButton = {
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.settings_cancel)) }
         },
-    )
+        title = { Text(stringResource(titleRes)) },
+        modeToggleButton = {
+            TimePickerDialogDefaults.DisplayModeToggle(
+                onDisplayModeChange = { showTextInput = !showTextInput },
+                displayMode = mode,
+            )
+        },
+    ) {
+        if (mode == TimePickerDisplayMode.Picker) TimePicker(state = picker) else TimeInput(state = picker)
+    }
 }
 
 /**
@@ -89,7 +117,10 @@ internal fun WeekStartDialog(selected: DayOfWeek, onConfirm: (DayOfWeek) -> Unit
         title = { Text(stringResource(R.string.settings_week_start_label)) },
         text = {
             Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
+                // selectableGroup, so assistive technology announces these as one
+                // set of seven and reads a position within it, rather than as
+                // seven unrelated selectable things that happen to be adjacent.
+                modifier = Modifier.selectableGroup().verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(GawiSpacing.Line),
             ) {
                 WEEK_START_OPTIONS.forEach { day ->

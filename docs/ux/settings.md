@@ -105,12 +105,22 @@ which the Route reads from the platform and passes down. That keeps the decision
 in the mapper — where the other decisions are — while leaving both conventions
 renderable in a test with no device to set the flag on.
 
-**The limitation, recorded rather than discovered later:** that formatter uses
+**Two limitations, recorded rather than discovered later.** The formatter uses
 `Locale.ROOT`, so the meridiem is always the English `AM`/`PM`. It is
 deterministic, which is what stops the test and the screen disagreeing on a
 machine set to something else, and this app has no `values-xx` anywhere — so the
 day names beside it are English too. The moment a second locale is added, this
 is one of the two things that has to change, and the other is every string file.
+
+And the 12-or-24-hour flag is read when the screen composes, not observed. This
+is worth stating precisely because the obvious fix does not work: `Configuration`
+carries no 12/24-hour field, so keying a `remember` on `LocalConfiguration`
+looks like a refresh and is a no-op — flipping the system clock format
+broadcasts `ACTION_TIME_CHANGED` and never recreates the activity. Observing it
+properly means a `ContentObserver` on `Settings.System.TIME_12_24` or a receiver
+for that broadcast. Deferred: the payoff is a screen that re-renders while the
+user is changing an Android setting they reached by leaving this app, and the
+next thing that recomposes catches up anyway.
 
 ## 6. Still open
 
