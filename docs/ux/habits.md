@@ -77,7 +77,17 @@ Fields are fixed by `HabitMetadata(name, icon, color, schedule, tag)`.
 
 `canSave` and the ViewModel's own blank check are both present on purpose. A
 disabled button and an enforced rule are different things, and only one of them
-is enforcement.
+is enforcement. The field is drawn as an *error* only when editing, though: a
+habit that had a name and no longer does is wrong, while an untouched create
+form is not wrong yet, and greeting a first habit with a red field is not
+validation. The disabled Save is what conveys the block in that case.
+
+**Saving is guarded against a second tap.** `createHabit` is the only
+non-idempotent command this module issues — archive and unarchive converge
+under last-write-wins, and a completion collapses per logical date — so nothing
+below deduplicates it, and two quick taps would leave two identical habits and
+pop the back stack twice. The guard releases on rejection, because a save the
+user can fix has to be a save they can retry.
 
 ## 4. Archive is the delete story
 

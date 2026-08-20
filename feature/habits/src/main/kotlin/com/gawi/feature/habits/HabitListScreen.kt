@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
@@ -30,6 +31,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.dp
 import com.gawi.core.ui.component.Notice
 import com.gawi.core.ui.theme.GawiSpacing
 import com.gawi.core.ui.theme.glyphColorOn
@@ -90,7 +92,12 @@ internal fun HabitListScreen(
 
 @Composable
 private fun HabitList(state: HabitListUiState.Habits, actions: HabitListActions, modifier: Modifier = Modifier) {
-    LazyColumn(modifier) {
+    // Scaffold's content padding covers the bars and the window insets but not
+    // the floating action button, which is drawn over the content. Without this
+    // the last row sits under the FAB and the FAB takes the touch, so its
+    // archive button cannot be reached once there are enough habits to fill the
+    // screen.
+    LazyColumn(modifier, contentPadding = PaddingValues(bottom = FAB_CLEARANCE)) {
         items(state.active, key = { it.id.value }) { row -> HabitManageRow(row, actions) }
         if (state.archived.isNotEmpty()) {
             item(key = ARCHIVED_HEADER_KEY) {
@@ -202,3 +209,6 @@ private fun GlyphButton(glyph: String, labelRes: Int, onClick: () -> Unit) {
 }
 
 private const val ARCHIVED_HEADER_KEY = "archived-header"
+
+/** The FAB's own height plus the margin above and below it. */
+private val FAB_CLEARANCE = 88.dp

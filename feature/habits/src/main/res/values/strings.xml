@@ -33,6 +33,17 @@
     <string name="habits_name_error">Give it a name.</string>
     <string name="habits_icon_label">Icon</string>
     <string name="habits_color_label">Colour</string>
+    <!-- Read out by assistive technology in place of the hex, which would
+         otherwise be spelled character by character. Same order as
+         HabitPalette.Colors; HabitsUiMapperTest pins that they stay in step. -->
+    <string name="habits_color_red">Red</string>
+    <string name="habits_color_pink">Pink</string>
+    <string name="habits_color_purple">Purple</string>
+    <string name="habits_color_blue">Blue</string>
+    <string name="habits_color_teal">Teal</string>
+    <string name="habits_color_green">Green</string>
+    <string name="habits_color_yellow">Yellow</string>
+    <string name="habits_color_orange">Orange</string>
     <string name="habits_tag_label">Tag (optional)</string>
     <string name="habits_schedule_label">Schedule</string>
     <string name="habits_schedule_daily_option">Daily</string>

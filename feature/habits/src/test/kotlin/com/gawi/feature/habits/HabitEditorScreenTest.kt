@@ -166,6 +166,45 @@ class HabitEditorScreenTest {
         compose.onNodeWithContentDescription(string(R.string.habits_target_more)).assertIsEnabled()
     }
 
+    /**
+     * Tapping the already-selected Weekly chip keeps the target it has.
+     *
+     * Writing the default unconditionally meant re-tapping the highlighted chip
+     * knocked a Weekly(6) habit back to 3, silently, and saving persisted it.
+     */
+    @Test
+    fun tappingWeeklyWhenAlreadyWeekly_keepsTheTarget() {
+        render(newHabitForm().copy(schedule = ScheduleUi.Weekly(6)))
+
+        compose.onNodeWithText(string(R.string.habits_schedule_weekly_option)).performScrollTo().performClick()
+
+        assertEquals(ScheduleUi.Weekly(6), edits.last().schedule)
+    }
+
+    /** And switching from daily picks a sensible default rather than nothing. */
+    @Test
+    fun tappingWeeklyFromDaily_startsAtTheDefault() {
+        render(newHabitForm())
+
+        compose.onNodeWithText(string(R.string.habits_schedule_weekly_option)).performScrollTo().performClick()
+
+        assertEquals(ScheduleUi.Weekly(3), edits.last().schedule)
+    }
+
+    /**
+     * Every colour swatch announces a name, not its hex.
+     *
+     * Read out character by character otherwise — "number sign E F 5 3 5 0".
+     */
+    @Test
+    fun colourSwatches_areNamedForAssistiveTechnology() {
+        render(newHabitForm())
+
+        COLOR_LABELS.forEach { label ->
+            compose.onNodeWithContentDescription(string(label)).assertExists()
+        }
+    }
+
     @Test
     fun steppingTheTarget_reportsTheNewNumber() {
         render(newHabitForm().copy(schedule = ScheduleUi.Weekly(3)))
@@ -180,11 +219,10 @@ class HabitEditorScreenTest {
     @Test
     fun pickingAColour_reportsThePaletteEntry() {
         render(newHabitForm())
-        val other = HabitPalette.Colors.last()
 
-        compose.onNodeWithContentDescription(other).performScrollTo().performClick()
+        compose.onNodeWithContentDescription(string(COLOR_LABELS.last())).performScrollTo().performClick()
 
-        assertEquals(other, edits.last().color)
+        assertEquals(HabitPalette.Colors.last(), edits.last().color)
     }
 
     /**

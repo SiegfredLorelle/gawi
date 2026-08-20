@@ -25,27 +25,46 @@ import com.gawi.feature.today.TodayRoute
  */
 @Composable
 internal fun GawiNavHost(navController: NavHostController = rememberNavController()) {
+    /**
+     * Every navigation goes through here, single-top.
+     *
+     * Without it, two quick taps on one button push two identical entries and
+     * Back has to be pressed twice to undo one intent.
+     */
+    fun go(destination: Destination) = navController.navigate(destination) { launchSingleTop = true }
+
+    /**
+     * And every pop, guarded.
+     *
+     * `popBackStack()` on the last entry empties the stack and the host renders
+     * nothing — a blank screen with no way out. Checking for something to
+     * return to makes a duplicate pop a no-op instead.
+     */
+    fun back() {
+        if (navController.previousBackStackEntry != null) navController.popBackStack()
+    }
+
     NavHost(navController = navController, startDestination = Destination.Today) {
         composable<Destination.Today> {
             TodayRoute(
-                onAddHabit = { navController.navigate(Destination.HabitEditor()) },
-                onManageHabits = { navController.navigate(Destination.Habits) },
+                onAddHabit = { go(Destination.HabitEditor()) },
+                onManageHabits = { go(Destination.Habits) },
             )
         }
 
         composable<Destination.Habits> {
             HabitListRoute(
-                onAddHabit = { navController.navigate(Destination.HabitEditor()) },
-                onEditHabit = { habitId -> navController.navigate(Destination.HabitEditor(habitId)) },
-                onBack = { navController.popBackStack() },
+                onAddHabit = { go(Destination.HabitEditor()) },
+                onEditHabit = { habitId -> go(Destination.HabitEditor(habitId)) },
+                onBack = ::back,
             )
         }
 
         composable<Destination.HabitEditor> { entry ->
             HabitEditorRoute(
                 habitId = entry.toRoute<Destination.HabitEditor>().habitId,
-                onSaved = { navController.popBackStack() },
-                onCancel = { navController.popBackStack() },
+                onSaved = ::back,
+                onCancel = ::back,
             )
         }
     }

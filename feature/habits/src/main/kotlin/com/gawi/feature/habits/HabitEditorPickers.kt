@@ -49,7 +49,11 @@ internal fun IconPicker(form: HabitEditorUiState.Form, onEdit: (HabitEditorUiSta
         val selected = icon == form.icon
         Box(
             modifier = Modifier
-                .size(GawiSpacing.IconBox)
+                // 48dp rather than the 40dp a habit icon takes on a row. There
+                // the row is the touch target; here the swatch is, and
+                // `selectable` does not expand it the way a Material
+                // component's own minimum size would.
+                .size(TOUCH_TARGET)
                 .clip(CircleShape)
                 .background(MaterialTheme.colorScheme.surfaceVariant)
                 .selectableBorder(selected)
@@ -65,17 +69,37 @@ internal fun IconPicker(form: HabitEditorUiState.Form, onEdit: (HabitEditorUiSta
     }
 }
 
+/**
+ * The names assistive technology reads instead of the hex.
+ *
+ * Positional, matching [HabitPalette.Colors]. `HabitsUiMapperTest` asserts the
+ * two lists stay the same length, so adding a swatch without a name is a
+ * failing test rather than a swatch that announces itself as
+ * "number sign E F 5 3 5 0".
+ */
+internal val COLOR_LABELS = listOf(
+    R.string.habits_color_red,
+    R.string.habits_color_pink,
+    R.string.habits_color_purple,
+    R.string.habits_color_blue,
+    R.string.habits_color_teal,
+    R.string.habits_color_green,
+    R.string.habits_color_yellow,
+    R.string.habits_color_orange,
+)
+
 /** The colour, chosen from a fixed palette, which is what keeps it valid. */
 @Composable
 internal fun ColorPicker(form: HabitEditorUiState.Form, onEdit: (HabitEditorUiState.Form) -> Unit) {
-    FlowingRow(HabitPalette.Colors) { hex ->
+    FlowingRow(HabitPalette.Colors.withIndex().toList()) { (index, hex) ->
         val selected = hex == form.color
+        val label = stringResource(COLOR_LABELS[index])
         // Never null for a palette entry — HabitColorTest pins that — so the
         // fallback here is for a colour that arrived from somewhere else.
         val tint = parseHabitColor(hex) ?: MaterialTheme.colorScheme.secondaryContainer
         Box(
             modifier = Modifier
-                .size(GawiSpacing.IconBox)
+                .size(TOUCH_TARGET)
                 .clip(CircleShape)
                 .background(tint)
                 .selectableBorder(selected)
@@ -84,7 +108,7 @@ internal fun ColorPicker(form: HabitEditorUiState.Form, onEdit: (HabitEditorUiSt
                     role = Role.RadioButton,
                     onClick = { onEdit(form.copy(color = hex)) },
                 )
-                .semantics { contentDescription = hex },
+                .semantics { contentDescription = label },
             contentAlignment = Alignment.Center,
         ) {
             if (selected) {
@@ -117,7 +141,12 @@ internal fun SchedulePicker(form: HabitEditorUiState.Form, onEdit: (HabitEditorU
             )
             FilterChip(
                 selected = weekly != null,
-                onClick = { onEdit(form.copy(schedule = ScheduleUi.Weekly(DEFAULT_WEEKLY_TARGET))) },
+                // Keeps the target it already has. Writing the default
+                // unconditionally meant tapping the already-selected chip
+                // silently knocked a Weekly(6) habit back to 3.
+                onClick = {
+                    onEdit(form.copy(schedule = ScheduleUi.Weekly(weekly?.timesPerWeek ?: DEFAULT_WEEKLY_TARGET)))
+                },
                 label = { Text(stringResource(R.string.habits_schedule_weekly_option)) },
             )
         }
@@ -179,6 +208,9 @@ private fun Modifier.selectableBorder(selected: Boolean): Modifier =
     if (selected) border(SELECTION_RING, MaterialTheme.colorScheme.onSurface, CircleShape) else this
 
 private val SELECTION_RING = 3.dp
-private const val SWATCHES_PER_ROW = 6
+
+/** The 48dp minimum. See [IconPicker] for why this is not GawiSpacing's 40. */
+private val TOUCH_TARGET = 48.dp
+private const val SWATCHES_PER_ROW = 5
 private const val MIN_WEEKLY_TARGET = 1
 private const val DEFAULT_WEEKLY_TARGET = 3

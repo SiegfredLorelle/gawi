@@ -200,6 +200,58 @@ class HabitEditorViewModelTest {
     }
 
     /**
+     * Two quick taps create one habit, not two.
+     *
+     * `createHabit` is the one non-idempotent command here — archive and
+     * unarchive converge under last-write-wins and a completion collapses per
+     * logical date — so nothing below deduplicates it. Without the guard this
+     * appends two `HabitCreated` events and leaves two identical habits, and
+     * sends `Saved` twice, which pops the back stack twice.
+     */
+    @Test
+    fun `saving twice in a row creates one habit`() = runTest {
+        val editor = editorFor(null)
+        editor.onEdit((editor.uiState.value as HabitEditorUiState.Form).copy(name = "read"))
+
+        editor.onSave()
+        editor.onSave()
+
+        assertEquals(1, repository.created.size)
+    }
+
+    /** And the same for an update, which would otherwise pop twice. */
+    @Test
+    fun `saving twice in a row updates once`() = runTest {
+        repository.habit = todayHabit(habitState(id = habitId(1), name = "read"))
+        val editor = editorFor(habitId(1).value)
+        editor.onEdit((editor.uiState.value as HabitEditorUiState.Form).copy(name = "read more"))
+
+        editor.onSave()
+        editor.onSave()
+
+        assertEquals(1, repository.updated.size)
+    }
+
+    /**
+     * A rejected save is retryable.
+     *
+     * The other half of the guard: latching on rejection too would leave the
+     * user staring at a form they can fix and cannot save.
+     */
+    @Test
+    fun `a rejected save can be retried once the name is fixed`() = runTest {
+        val editor = editorFor(null)
+
+        editor.onSave()
+        assertTrue(repository.created.isEmpty())
+
+        editor.onEdit((editor.uiState.value as HabitEditorUiState.Form).copy(name = "read"))
+        editor.onSave()
+
+        assertEquals(1, repository.created.size)
+    }
+
+    /**
      * The weekly clamp, from the ViewModel's side.
      *
      * The stepper stops at seven, so this is the case where something else set
