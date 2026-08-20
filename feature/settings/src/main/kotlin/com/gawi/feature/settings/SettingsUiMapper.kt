@@ -1,6 +1,7 @@
 package com.gawi.feature.settings
 
 import androidx.annotation.StringRes
+import com.gawi.core.data.backup.ExportStatus
 import com.gawi.core.data.backup.ImportResult
 import com.gawi.core.data.settings.UserSettings
 import java.time.DayOfWeek
@@ -18,15 +19,100 @@ import java.util.Locale
 /**
  * The stored settings, as the screen draws them.
  *
- * [dataTask] is not stored anywhere and is defaulted, so every caller that does
- * not care about a file being written reads exactly as it did before.
+ * [dataTask] and [exportRecency] are not settings and both are defaulted, so
+ * every caller that does not care about a file being written reads exactly as it
+ * did before. Their defaults are the states that draw the screen as it drew
+ * before either existed.
  */
-internal fun UserSettings.toUiState(dataTask: DataTask = DataTask.Idle): SettingsUiState = SettingsUiState.Settings(
+internal fun UserSettings.toUiState(
+    dataTask: DataTask = DataTask.Idle,
+    exportRecency: ExportRecency = ExportRecency.NothingYet,
+): SettingsUiState = SettingsUiState.Settings(
     dayCutoff = dayCutoff,
     weekStart = weekStart,
     reminderTime = reminderTime,
     dataTask = dataTask,
+    exportRecency = exportRecency,
 )
+
+/**
+ * What the export row can say about the last backup.
+ *
+ * An absent stamp splits in two, and that split is the whole reason this is not
+ * a null check at the call site: on a log with events it is the case the nudge
+ * exists for, and on an empty one it is a warning about losing nothing.
+ *
+ * Exhaustive over nothing — [ExportStatus] is two fields — but written as a
+ * `when` on the day count so the nought case cannot fall into [ExportRecency.DaysAgo]
+ * and render "0 days ago", which is arithmetic rather than an answer.
+ */
+internal fun recencyOf(status: ExportStatus): ExportRecency {
+    val days = status.daysSinceExport
+    return when {
+        days == null -> if (status.hasEvents) ExportRecency.Never else ExportRecency.NothingYet
+        days == 0L -> ExportRecency.Today
+        else -> ExportRecency.DaysAgo(days.toInt())
+    }
+}
+
+/**
+ * How one data row behaves while [dataTask] runs, where [row] is the task that
+ * row starts.
+ *
+ * Both rows go dead while either runs. Exporting midway through an import reads
+ * a log that is half-merged; importing during an export writes a file that is
+ * half-written. Neither is worth allowing to save a tap. What differs is which
+ * row's help line has become a status, which is the only part a screen reader
+ * needs telling about.
+ */
+internal fun activityOf(dataTask: DataTask, row: DataTask): RowActivity = when (dataTask) {
+    DataTask.Idle -> RowActivity.Live
+    row -> RowActivity.Running
+    else -> RowActivity.Blocked
+}
+
+/**
+ * The export row's help line.
+ *
+ * Precedence is running, then overdue, then the plain explanation, and the order
+ * matters: a row that is writing a file right now has no business telling the
+ * user they have no backup.
+ *
+ * The nudge is carried by words and not by a colour. PRD §5 asks for a gentle
+ * one, an alarm-coloured caption is not that, and the value line above this
+ * already says how long it has been — so the sentence here does not repeat the
+ * number.
+ */
+@StringRes
+internal fun exportHelp(activity: RowActivity, recency: ExportRecency): Int = when {
+    activity == RowActivity.Running -> R.string.settings_export_running
+    overdue(recency) -> R.string.settings_export_overdue_help
+    else -> R.string.settings_export_help
+}
+
+/** The import row's help line. It has no nudge, because importing is not a backup. */
+@StringRes
+internal fun importHelp(activity: RowActivity): Int =
+    if (activity == RowActivity.Running) R.string.settings_import_running else R.string.settings_import_help
+
+/**
+ * Whether a backup is old enough to say something about.
+ *
+ * [EXPORT_NUDGE_DAYS] is PRD §5's number and lives here, beside the copy it
+ * governs, rather than in the data layer: how many days is too many is a
+ * decision about what to say, and counting the days is a fact.
+ *
+ * [ExportRecency.Never] is overdue and [ExportRecency.NothingYet] is not, which
+ * is the same distinction [recencyOf] drew and the reason it drew it.
+ */
+private fun overdue(recency: ExportRecency): Boolean = when (recency) {
+    ExportRecency.Never -> true
+    is ExportRecency.DaysAgo -> recency.days >= EXPORT_NUDGE_DAYS
+    ExportRecency.NothingYet, ExportRecency.Today -> false
+}
+
+/** PRD §5: "no export has been made for 30 days". */
+internal const val EXPORT_NUDGE_DAYS = 30
 
 /**
  * The name of a day, as a string resource.

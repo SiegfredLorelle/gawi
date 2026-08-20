@@ -2,6 +2,7 @@ package com.gawi.feature.settings
 
 import android.net.Uri
 import app.cash.turbine.test
+import com.gawi.core.data.backup.ExportStatus
 import com.gawi.core.data.backup.ImportResult
 import com.gawi.core.data.settings.UserSettings
 import com.gawi.feature.settings.testsupport.FakeEventArchive
@@ -15,6 +16,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import java.io.IOException
+import java.time.DayOfWeek
+import java.time.LocalTime
 
 /**
  * Exporting and importing, from the ViewModel down.
@@ -169,6 +172,69 @@ class SettingsDataViewModelTest {
         gate.complete(Unit)
 
         assertEquals(listOf(DESTINATION), archive.exported)
+    }
+
+    // --- the last-export status ------------------------------------------
+
+    @Test
+    fun `the state carries what the archive says about the last export`() = runTest {
+        archive.exportStatus.value = ExportStatus(daysSinceExport = 34, hasEvents = true)
+
+        viewModel.uiState.test {
+            assertEquals(SettingsUiState.Loading, awaitItem())
+            settings.emit(UserSettings())
+
+            assertEquals(ExportRecency.DaysAgo(34), (awaitItem() as SettingsUiState.Settings).exportRecency)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    /**
+     * A new stamp reaches a screen that is already open.
+     *
+     * This is the point of the status being a flow rather than a read: a
+     * successful export has to change the row that offered it, and the user is
+     * still looking at that row when it lands.
+     */
+    @Test
+    fun `an export landing changes the row that offered it`() = runTest {
+        archive.exportStatus.value = ExportStatus(daysSinceExport = null, hasEvents = true)
+
+        viewModel.uiState.test {
+            assertEquals(SettingsUiState.Loading, awaitItem())
+            settings.emit(UserSettings())
+            assertEquals(ExportRecency.Never, (awaitItem() as SettingsUiState.Settings).exportRecency)
+
+            archive.exportStatus.value = ExportStatus(daysSinceExport = 0, hasEvents = true)
+
+            assertEquals(ExportRecency.Today, (awaitItem() as SettingsUiState.Settings).exportRecency)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    /**
+     * **A broken caption must not take the recovery path off the screen.**
+     *
+     * The settings flow going to `Unavailable` on failure is right — settings
+     * you cannot read cannot be drawn. This flow is one line of text under a
+     * button, and it shares the `catch` with them, so without its own guard a
+     * failure here hides the export and import rows entirely: the only
+     * disaster-recovery path on the device, lost over its own caption
+     * (docs/ux/settings.md §7).
+     */
+    @Test
+    fun `a status that cannot be read leaves the rest of the screen alone`() = runTest {
+        archive.statusFailure = IOException("the preferences file is unreadable")
+
+        viewModel.uiState.test {
+            assertEquals(SettingsUiState.Loading, awaitItem())
+            settings.emit(UserSettings(weekStart = DayOfWeek.SUNDAY))
+
+            val state = awaitItem()
+            assertEquals(SettingsUiState.Settings(LocalTime.MIDNIGHT, DayOfWeek.SUNDAY, LocalTime.of(21, 0)), state)
+            assertEquals(ExportRecency.NothingYet, (state as SettingsUiState.Settings).exportRecency)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     private companion object {

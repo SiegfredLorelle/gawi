@@ -1,9 +1,14 @@
 package com.gawi.feature.settings
 
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -303,6 +308,33 @@ class SettingsScreenTest {
         compose.onNodeWithText(string(R.string.settings_export_help)).assertDoesNotExist()
     }
 
+    /**
+     * The status is *announced*, not merely swapped in.
+     *
+     * A row that has gone dead and changed its caption silently reads as broken
+     * to a screen reader, which is why `RowActivity` distinguishes Running from
+     * Blocked at all — collapsing the two would have been the tidy way to fit
+     * detekt's parameter limit and would have lost exactly this.
+     */
+    @Test
+    fun whileExporting_theStatusIsAnnouncedAndNotJustSwapped() {
+        render(STORED.copy(dataTask = DataTask.Exporting))
+
+        compose.onNodeWithText(string(R.string.settings_export_running))
+            .performScrollTo()
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite))
+    }
+
+    /** The mirror: a row that is merely waiting its turn must not interrupt. */
+    @Test
+    fun whileExporting_theBlockedRowIsNotAnnounced() {
+        render(STORED.copy(dataTask = DataTask.Exporting))
+
+        compose.onNodeWithText(string(R.string.settings_import_help))
+            .performScrollTo()
+            .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.LiveRegion))
+    }
+
     /** Kills a `when` that reports the other branch's copy. */
     @Test
     fun whileImporting_itIsTheImportRowThatSaysSo() {
@@ -348,6 +380,117 @@ class SettingsScreenTest {
             "Imported that file: 1 added, 1 already here.",
             resources.getString(message.text, *message.args.toTypedArray()),
         )
+    }
+
+    // --- the last-export nudge (PRD §5) ----------------------------------
+
+    /**
+     * The value line the export row gained, which is what turns it into a
+     * `SettingRow`. Rendered rather than asserted on the mapper, because a
+     * quantity resource is the one part of this that only a composition
+     * resolves.
+     */
+    @Test
+    fun exportRow_saysHowLongAgoTheLastBackupWas() {
+        render(STORED.copy(exportRecency = ExportRecency.DaysAgo(34)))
+
+        compose.onNodeWithText("Last exported 34 days ago").performScrollTo().assertIsDisplayed()
+    }
+
+    /** The reason this is a `<plurals>` and not one string with a `%d` in it. */
+    @Test
+    fun exportRow_readsGrammaticallyAtOneDay() {
+        render(STORED.copy(exportRecency = ExportRecency.DaysAgo(1)))
+
+        compose.onNodeWithText("Last exported 1 day ago").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun exportRow_saysToday_ratherThanNoughtDaysAgo() {
+        render(STORED.copy(exportRecency = ExportRecency.Today))
+
+        compose.onNodeWithText(string(R.string.settings_export_today)).performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun exportRow_neverExported_saysSo() {
+        render(STORED.copy(exportRecency = ExportRecency.Never))
+
+        compose.onNodeWithText(string(R.string.settings_export_never)).performScrollTo().assertIsDisplayed()
+    }
+
+    /**
+     * The nudge itself: overdue replaces the explanation rather than joining it.
+     *
+     * Both halves matter. A screen that showed the nudge *and* the ordinary help
+     * would pass an assertion about the nudge alone while reading as two
+     * paragraphs of caption under one row.
+     */
+    @Test
+    fun exportRow_overdue_replacesTheHelpLineWithTheNudge() {
+        render(STORED.copy(exportRecency = ExportRecency.DaysAgo(30)))
+
+        compose.onNodeWithText(string(R.string.settings_export_overdue_help)).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(string(R.string.settings_export_help)).assertDoesNotExist()
+    }
+
+    @Test
+    fun exportRow_recentBackup_keepsTheOrdinaryHelp() {
+        render(STORED.copy(exportRecency = ExportRecency.DaysAgo(29)))
+
+        compose.onNodeWithText(string(R.string.settings_export_help)).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(string(R.string.settings_export_overdue_help)).assertDoesNotExist()
+    }
+
+    /**
+     * A fresh install is not warned about losing nothing, and the row is exactly
+     * what it was before any of this existed.
+     */
+    @Test
+    fun nothingYet_drawsNoValueLineAndNoNudge() {
+        render(STORED.copy(exportRecency = ExportRecency.NothingYet))
+
+        compose.onNodeWithText(string(R.string.settings_export_help)).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(string(R.string.settings_export_never)).assertDoesNotExist()
+        compose.onNodeWithText(string(R.string.settings_export_overdue_help)).assertDoesNotExist()
+    }
+
+    /**
+     * docs/ux/settings.md §6, still true after the two row composables became
+     * one: the value line belongs to the export row alone. The import row passes
+     * null and draws no middle line, so this counts rather than merely finding.
+     */
+    @Test
+    fun theValueLineBelongsToTheExportRowAlone() {
+        render(STORED.copy(exportRecency = ExportRecency.Never))
+
+        assertEquals(
+            1,
+            compose.onAllNodesWithText(string(R.string.settings_export_never)).fetchSemanticsNodes().size,
+        )
+        compose.onNodeWithText(string(R.string.settings_import_help)).performScrollTo().assertIsDisplayed()
+    }
+
+    /** Running wins over overdue: a row writing a file must not say there is no file. */
+    @Test
+    fun whileExporting_theStatusReplacesTheNudge() {
+        render(STORED.copy(dataTask = DataTask.Exporting, exportRecency = ExportRecency.Never))
+
+        compose.onNodeWithText(string(R.string.settings_export_running)).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(string(R.string.settings_export_overdue_help)).assertDoesNotExist()
+    }
+
+    /**
+     * The value line survives the row going dead. It is a stored fact rather
+     * than an affordance, so hiding it while an import runs would make the row
+     * look like it had never been exported.
+     */
+    @Test
+    fun whileImporting_theExportRowStillSaysWhenItLastRan() {
+        render(STORED.copy(dataTask = DataTask.Importing, exportRecency = ExportRecency.DaysAgo(34)))
+
+        compose.onNodeWithText("Last exported 34 days ago").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(string(R.string.settings_export_label)).performScrollTo().assertIsNotEnabled()
     }
 
     private fun render(state: SettingsUiState, actions: SettingsActions = NO_ACTIONS, is24Hour: Boolean = true) {

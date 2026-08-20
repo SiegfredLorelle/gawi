@@ -11,9 +11,11 @@ import java.time.LocalTime
  * inside detekt's parameter limit — which fires *at* six, not above it — and
  * adding a fourth setting does not re-thread every call site and test.
  *
- * Six properties is the last one that fits. The constructor threshold is seven,
- * so the 30-day nudge's "not now" will need a rethink rather than one more
- * line here.
+ * Six properties is the last one that fits: the constructor threshold is seven.
+ * The 30-day nudge did not need a seventh in the end, because it has no "not
+ * now" — a nudge that can be dismissed for thirty days is a nudge that says
+ * nothing, and there is no second surface to dismiss it from. It is a caption on
+ * the row that fixes it.
  *
  * Each change carries the whole new value rather than a delta. `update` on the
  * store is a read-modify-write over one transform, so a partial edit has

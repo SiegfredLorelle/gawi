@@ -6,6 +6,7 @@ import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gawi.core.data.backup.EventArchive
+import com.gawi.core.data.backup.ExportStatus
 import com.gawi.core.data.settings.SettingsSource
 import com.gawi.core.data.settings.UserSettings
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -26,9 +27,13 @@ import javax.inject.Inject
 /**
  * The settings screen's state holder.
  *
- * Injects only the settings source: no repository and no clock. Nothing on this
- * screen is a function of the habits or of the date — it edits the three values
- * that decide how both are interpreted, which is a different job.
+ * Injects the settings source and the archive: no repository and no clock. What
+ * this screen shows is not a function of the habits or of the date — it edits
+ * the three values that decide how both are interpreted, which is a different
+ * job. Even the last-export age arrives already counted, from the class that
+ * does own a clock, so there is still nothing here that has to be told what time
+ * it is. (This paragraph used to claim the settings source was the only
+ * injection, which stopped being true when export landed.)
  *
  * The store is the single source of truth for what is drawn. There is no local
  * copy of a committed setting here, which is what stops the screen and the file
@@ -51,8 +56,10 @@ internal class SettingsViewModel @Inject constructor(private val settings: Setti
      */
     private val dataTask = MutableStateFlow(DataTask.Idle)
 
-    val uiState: StateFlow<SettingsUiState> = combine(settings.observe(), dataTask) { stored, task -> stored.toUiState(task) }
-        .catch { cause ->
+    val uiState: StateFlow<SettingsUiState> =
+        combine(settings.observe(), exportStatus(), dataTask) { stored, status, task ->
+            stored.toUiState(task, recencyOf(status))
+        }.catch { cause ->
             // Not the unreadable-file case, which observe() absorbs into
             // defaults on purpose. Reaching here means something that is not IO
             // went wrong, and guessing a cutoff is the one thing this app
@@ -60,11 +67,30 @@ internal class SettingsViewModel @Inject constructor(private val settings: Setti
             Log.e(TAG, "the settings read failed", cause)
             emit(SettingsUiState.Unavailable)
         }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
-            initialValue = SettingsUiState.Loading,
-        )
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+                initialValue = SettingsUiState.Loading,
+            )
+
+    /**
+     * The last-export status, guarded so that it can never take the screen down.
+     *
+     * `ExportJournal` already absorbs the expected failure — an unreadable
+     * preferences file — and decides what it *means* there, so reaching this
+     * catch is a bug in an archive rather than a bad disk. It is still caught,
+     * because the alternative is specific and bad: the two flows this is
+     * combined with go to [SettingsUiState.Unavailable] on failure, correctly,
+     * since settings you cannot read cannot be drawn. This one is a caption on a
+     * row, and one shared catch cannot tell them apart — so without this, a
+     * broken caption takes the only disaster-recovery path on the device off the
+     * screen with it (docs/ux/settings.md §7).
+     */
+    private fun exportStatus(): Flow<ExportStatus> = archive.observeExportStatus()
+        .catch { cause ->
+            Log.e(TAG, "the last-export status is unreadable", cause)
+            emit(ExportStatus(daysSinceExport = null, hasEvents = false))
+        }
 
     private val messages = Channel<SettingsMessage>(Channel.BUFFERED)
 

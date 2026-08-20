@@ -25,7 +25,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import com.gawi.core.ui.component.Notice
 import com.gawi.core.ui.theme.GawiSpacing
@@ -116,7 +118,7 @@ private fun SettingsList(state: SettingsUiState.Settings, actions: SettingsActio
             help = stringResource(R.string.settings_reminder_help),
             onClick = { openDialog = SettingsDialog.Reminder },
         )
-        DataSection(state.dataTask, actions)
+        DataSection(state.dataTask, state.exportRecency, actions)
     }
 
     when (openDialog) {
@@ -156,32 +158,62 @@ private fun SettingsList(state: SettingsUiState.Settings, actions: SettingsActio
 }
 
 /**
- * One setting: what it is, what it is set to, and what it does.
+ * One row: what it is, what it is set to if that is a thing it has, and what it
+ * does.
  *
  * The whole row is the target rather than the value alone, so a setting is not
  * harder to reach for being set to a short string. The explanation is part of
- * the row rather than a help icon, because all three of these change how the
- * app counts days and a reader who has to go looking for that will not.
+ * the row rather than a help icon, because all three settings change how the app
+ * counts days and a reader who has to go looking for that will not.
+ *
+ * **[value] is nullable, and that replaced a second near-identical composable.**
+ * docs/ux/settings.md §6 argued the Data section's rows must not be this one
+ * with an empty value, because the middle line is `titleMedium` in the primary
+ * colour and means "this is what it is set to" — three rows teach that before a
+ * reader reaches the fourth. The argument holds and is why null draws no middle
+ * line at all rather than an empty one: the import row has nothing to put there
+ * and never will. What changed is that the export row now *does* have a stored
+ * value, so keeping two composables would have meant maintaining the same
+ * `Column` twice to express one difference.
+ *
+ * [activity] carries both "can this be tapped" and "is this the row that is
+ * busy". See [RowActivity] for why they are one parameter and not two.
  */
 @Composable
-private fun SettingRow(label: String, value: String, help: String, onClick: () -> Unit) {
+internal fun SettingRow(label: String, value: String?, help: String, activity: RowActivity = RowActivity.Live, onClick: () -> Unit) {
+    val live = activity == RowActivity.Live
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClickLabel = label, onClick = onClick)
+            .clickable(enabled = live, onClickLabel = label, onClick = onClick)
             .padding(horizontal = GawiSpacing.Row, vertical = GawiSpacing.Gap),
         verticalArrangement = Arrangement.spacedBy(GawiSpacing.Line),
     ) {
-        Text(text = label, style = MaterialTheme.typography.bodyLarge)
         Text(
-            text = value,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.primary,
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            // A colour rather than an alpha: no magic number to name, and dark
+            // mode needs no second thought.
+            color = if (live) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        if (value != null) {
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
         Text(
             text = help,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            // Marks the row whose help line has been replaced by a status, so a
+            // screen reader is told rather than left tapping something silent.
+            modifier = if (activity == RowActivity.Running) {
+                Modifier.semantics { liveRegion = LiveRegionMode.Polite }
+            } else {
+                Modifier
+            },
         )
     }
 }
