@@ -243,6 +243,26 @@ class EventLogCodecTest {
         assertTrue(refusalFrom(fileWith(payload = """{"habit_id":"not-a-uuid"}""")) is ExportRejection.Malformed)
     }
 
+    /**
+     * Nothing reads `tz_offset_min` today, which is why it is checked now
+     * rather than later: unvalidated, the first consumer to build a
+     * `ZoneOffset` from it would get a `DateTimeException` from inside a
+     * transaction, on an event nobody can point at any more.
+     */
+    @Test
+    fun `an offset outside the legal range is malformed`() {
+        val refusal = refusalFrom(fileWith(tzOffsetMin = 99_999)) as ExportRejection.Malformed
+
+        assertTrue(refusal.detail, refusal.detail.startsWith("event 0 (${uuid(1)})"))
+        assertTrue(refusal.detail, refusal.detail.contains("tz_offset_min"))
+    }
+
+    @Test
+    fun `the extremes of the legal offset range are accepted`() {
+        assertEquals(1_080, events(fileWith(tzOffsetMin = 1_080)).single().tzOffsetMin)
+        assertEquals(-1_080, events(fileWith(tzOffsetMin = -1_080)).single().tzOffsetMin)
+    }
+
     @Test
     fun `an unreadable instant is malformed`() {
         assertTrue(refusalFrom(fileWith(occurredAt = "yesterday")) is ExportRejection.Malformed)
@@ -288,13 +308,14 @@ class EventLogCodecTest {
         eventCount: Int = 1,
         id: String = uuid(1),
         occurredAt: String = "2026-08-17T08:00:00Z",
+        tzOffsetMin: Int = 0,
         type: String = "HabitCreated",
         schemaVersion: Int = 1,
         payload: String = """{"habit_id":"${uuid(9)}","name":"read","icon":"book","color":"#aabbcc","schedule":{"kind":"daily"}}""",
     ) = """
         {"format":"gawi.event-log","format_version":$formatVersion,
          "exported_at":"$EXPORTED_AT","app_version":"0.1.0","event_count":$eventCount,
-         "events":[{"id":"$id","occurred_at":"$occurredAt","tz_offset_min":0,
+         "events":[{"id":"$id","occurred_at":"$occurredAt","tz_offset_min":$tzOffsetMin,
                     "type":"$type","schema_version":$schemaVersion,"payload":$payload}]}
     """.trimIndent()
 

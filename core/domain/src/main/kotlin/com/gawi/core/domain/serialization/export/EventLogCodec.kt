@@ -37,9 +37,11 @@ class EventLogCodec(payloads: EventCodec) {
      * build does not know — or a payload from a newer schema version — still
      * exports. That is not a corner case to tolerate but the point: a log this
      * build cannot fully read is the one a user most needs to get off the
-     * device. The only thing that fails here is payload text that is not JSON
-     * at all, which no writer can produce and which means the database itself
-     * is damaged.
+     * device. What does fail here is a stored payload that is not a JSON
+     * *object* — text that will not parse at all, and equally `[]`, `"x"` or
+     * `12`, since the envelope's payload field is an object and `.jsonObject`
+     * refuses anything else. No writer can produce either, so both mean the
+     * database itself is damaged and both should be loud.
      */
     fun encode(events: List<EncodedEvent>, meta: ExportMeta): String {
         val envelope = ExportEnvelopeV1(
