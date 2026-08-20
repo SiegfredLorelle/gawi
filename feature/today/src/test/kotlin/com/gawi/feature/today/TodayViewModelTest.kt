@@ -129,4 +129,24 @@ class TodayViewModelTest {
         }
         assertTrue(repository.toggles.isNotEmpty())
     }
+
+    /**
+     * A tap whose command throws is reported, not escaped.
+     *
+     * `appendLocked` consults `SettingsSource.current()` on every write, and
+     * that refuses to guess a cutoff when the preferences file cannot be read.
+     * Uncaught it leaves `viewModelScope`, which has no exception handler, and
+     * reaches the thread's default handler — process death on the app's
+     * most-used tap. `uiState` was already guarded against the same failure.
+     */
+    @Test
+    fun `a toggle that throws is reported rather than crashing`() = runTest {
+        repository.commandFailure = IllegalStateException("the settings file cannot be read")
+
+        viewModel.events.test {
+            viewModel.onToggle(habitId(1), completed = false, logicalDate = TODAY)
+            assertEquals(TodayMessage(R.string.today_error_unexpected), awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
 }
