@@ -476,6 +476,20 @@ build on each other, and the third is the one that has no JVM test behind it.
       help line has become the nudge. Proves the split above, in the other
       direction, and that "never" is overdue immediately rather than in thirty
       days.
+- [ ] **An import moves the row without leaving the screen.** From a cleared
+      install again — `adb shell pm clear com.gawi.app` — open Settings while
+      the log is empty, confirm the row is silent, then **without navigating
+      away** tap **Import a file** and pick an export saved earlier. The row must
+      switch to **Never exported** with the nudge *immediately*.
+
+      This step exists because the obvious ordering hides the bug. The import
+      check further down runs after an export, so the log already has events and
+      the row is already saying something — which is why a reviewer, not this
+      checklist, found that importing into an *empty* log left the row silent
+      for up to five seconds. Watch for the five seconds specifically: a row that
+      only updates after you leave and come back is the defect, not a pass.
+      Creating a habit on Today and returning to Settings within five seconds
+      checks the same mechanism from the other side.
 - [ ] **A finished export records itself, and only a finished one.** Export a
       copy, keep the offered name, and return to Settings: the row reads
       **Last exported today** and the ordinary help is back. **This is the only
