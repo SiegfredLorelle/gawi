@@ -62,7 +62,7 @@ internal fun Project.configureAndroid(extension: CommonExtension) {
         //
         // Harmless on the modules that do not use Robolectric: nothing reads the
         // file unless Robolectric is on their test classpath.
-        sourceSets.getByName("test").resources.srcDir(rootDir.resolve(ROBOLECTRIC_CONFIG))
+        sourceSets.getByName("test").resources.directories.add(rootDir.resolve(ROBOLECTRIC_CONFIG).path)
     }
 }
 
