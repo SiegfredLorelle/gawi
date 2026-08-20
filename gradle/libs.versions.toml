@@ -58,10 +58,9 @@ androidx-compose-foundation = { group = "androidx.compose.foundation", name = "f
 # declares the ComponentActivity createComposeRule() launches — and that
 # activity is android:exported="true". Put it on testImplementation, never on
 # debugImplementation: a variant configuration merges it into :app's packaged
-# debug manifest too, which adds a second exported activity to every debug
-# install, unguarded, beside the one app/src/debug gates behind DUMP. The unit
-# test manifest merge reads test-configuration dependencies, so nothing is lost
-# by scoping it. Android Lint will not catch the mistake — ExportedActivity is
+# debug manifest too, which adds an exported activity to every debug install,
+# reachable by any app that knows its name. The unit test manifest merge reads
+# test-configuration dependencies, so nothing is lost by scoping it. Android Lint will not catch the mistake — ExportedActivity is
 # off by default and the lint report stayed clean while the manifest carried it.
 androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }

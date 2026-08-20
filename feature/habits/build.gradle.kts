@@ -46,9 +46,8 @@ dependencies {
     // only an AndroidManifest, declaring the ComponentActivity the rule launches
     // — but that activity is android:exported="true", and on a variant
     // configuration it merges into :app's packaged debug manifest as well as
-    // into the unit test one. That would put a second exported activity in every
-    // debug install, next to the one app/src/debug guards with DUMP for reasons
-    // it spells out at length. Scoping it to the test configuration keeps it
-    // where the compose rule needs it and out of the app.
+    // into the unit test one. That would put an exported activity in every debug
+    // install, reachable by any app that knows its name. Scoping it to the test
+    // configuration keeps it where the compose rule needs it and out of the app.
     testImplementation(libs.androidx.compose.ui.test.manifest)
 }
