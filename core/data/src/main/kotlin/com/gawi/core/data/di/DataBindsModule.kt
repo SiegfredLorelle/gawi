@@ -1,5 +1,7 @@
 package com.gawi.core.data.di
 
+import com.gawi.core.data.backup.CompletionCsvArchive
+import com.gawi.core.data.backup.ContentResolverCompletionCsvArchive
 import com.gawi.core.data.backup.ContentResolverEventArchive
 import com.gawi.core.data.backup.EventArchive
 import com.gawi.core.data.repository.HabitRepository
@@ -41,4 +43,14 @@ internal abstract class DataBindsModule {
      */
     @Binds
     abstract fun eventArchive(implementation: ContentResolverEventArchive): EventArchive
+
+    /**
+     * Unscoped, and holding nothing at all: it reads a table and writes a
+     * document. Deliberately not bound to the same implementation as
+     * [eventArchive] — the CSV is not a recovery path and does not stamp the
+     * last-export time, which is enforced by the implementation not being given
+     * the journal.
+     */
+    @Binds
+    abstract fun completionCsvArchive(implementation: ContentResolverCompletionCsvArchive): CompletionCsvArchive
 }
