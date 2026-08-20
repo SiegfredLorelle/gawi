@@ -213,17 +213,22 @@ class SettingsDataViewModelTest {
     }
 
     /**
-     * **A broken caption must not take the recovery path off the screen.**
+     * **A broken caption must not take the recovery path off the screen, and must
+     * not go quiet either.**
      *
-     * The settings flow going to `Unavailable` on failure is right — settings
-     * you cannot read cannot be drawn. This flow is one line of text under a
-     * button, and it shares the `catch` with them, so without its own guard a
-     * failure here hides the export and import rows entirely: the only
-     * disaster-recovery path on the device, lost over its own caption
-     * (docs/ux/settings.md §7).
+     * Two assertions, and the second is the one a reviewer asked for. The settings
+     * flow going to `Unavailable` on failure is right — settings you cannot read
+     * cannot be drawn — while this flow is one line of text under a button and
+     * shares the `catch` with them, so without its own guard a failure here hides
+     * the export and import rows entirely: the only disaster-recovery path on the
+     * device, lost over its own caption (docs/ux/settings.md §7).
+     *
+     * Asserting `Never` rather than `NothingYet` is what distinguishes "the
+     * caption failed safely" from "the caption failed quietly". The old
+     * expectation passed against a fallback that silenced the nudge.
      */
     @Test
-    fun `a status that cannot be read leaves the rest of the screen alone`() = runTest {
+    fun `a status that cannot be read nudges rather than going quiet`() = runTest {
         archive.statusFailure = IOException("the preferences file is unreadable")
 
         viewModel.uiState.test {
@@ -231,8 +236,11 @@ class SettingsDataViewModelTest {
             settings.emit(UserSettings(weekStart = DayOfWeek.SUNDAY))
 
             val state = awaitItem()
-            assertEquals(SettingsUiState.Settings(LocalTime.MIDNIGHT, DayOfWeek.SUNDAY, LocalTime.of(21, 0)), state)
-            assertEquals(ExportRecency.NothingYet, (state as SettingsUiState.Settings).exportRecency)
+            assertEquals(
+                SettingsUiState.Settings(LocalTime.MIDNIGHT, DayOfWeek.SUNDAY, LocalTime.of(21, 0), exportRecency = ExportRecency.Never),
+                state,
+            )
+            assertEquals(ExportRecency.Never, (state as SettingsUiState.Settings).exportRecency)
             cancelAndIgnoreRemainingEvents()
         }
     }
