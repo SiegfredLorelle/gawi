@@ -408,21 +408,39 @@ the shape the 4b bug took. Wording itself is still yours to read.
       and neither row answers a tap until it finishes. On a small log this is
       over before you can see it — that is expected, and `SettingsScreenTest`
       covers it instead.
-- [ ] **Backing out mid-export still leaves a whole file.** With a log big
-      enough for the check above to be visible, tap **Export a copy**, save into
-      Downloads, and press Back out of Settings the moment the row reads
-      *Writing the file…*. No snackbar appears — expected, and the gap
-      `docs/ux/settings.md` §7 still records. Then check the tail:
+- [ ] **A file far too large to be an export is refused, not fatal.** The picker
+      shows essentially everything by design, so this is the likeliest wrong tap:
+
+      ```sh
+      adb shell 'dd if=/dev/zero of=/sdcard/Download/toobig.json bs=1048576 count=40'
+      ```
+
+      Import it. The snackbar says it is not a Gawi export, the app is still
+      running (`adb shell pidof com.gawi.app` returns the same pid) and the log
+      is untouched. Before the ceiling this was an `OutOfMemoryError`, which is
+      an `Error` and so slipped past the guard around every other failure here —
+      process death on the recovery screen with nothing said. Delete the file
+      afterwards.
+- [ ] **An export you do not interrupt ends in a closing brace.** Export into
+      Downloads, then:
 
       ```sh
       adb shell 'cat /sdcard/Download/gawi-export-*.json | tail -c 120'
       ```
 
-      It ends in a closing brace rather than mid-token, and importing it back
-      reports the same event count the log holds. Proves the write survives
-      `viewModelScope` being cancelled — the claim §7 used to make and the code
-      did not keep. Without it the file is *zero bytes*, not partial: `"wt"`
-      truncates at open and the only cancellable moment is the log read after.
+      It ends `}` rather than mid-token, and the `event_count` near the top
+      matches what the log holds. That is the check that the reordering — encode
+      first, open the document last — did not break the ordinary path.
+- [ ] **Leaving the screen the instant you tap Save can leave an empty file, and
+      that is a known gap.** Tap **Export a copy**, save, and press Back out of
+      Settings immediately. Two outcomes are both correct: no file at all (Back
+      beat the picker, so nothing was ever created), or a **zero-byte** file
+      (the picker created the document and the screen died before the export
+      started). What must *not* appear is a partial file — and if you import
+      whichever file you got, it is refused as damaged, which is the property
+      that makes the gap bounded. See `docs/ux/settings.md` §7; closing it needs
+      an application-scoped coroutine, which is a decision rather than a patch.
+      Delete the file afterwards so the next check starts clean.
 - [ ] **Process death mid-export is not survived, and the file is refused rather
       than half-restored.** Repeat the check above but run
       `adb shell am force-stop com.gawi.app` instead of pressing Back. The file

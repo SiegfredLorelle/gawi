@@ -215,25 +215,47 @@ cases where a count is zero get their own string rather than reading "0 added".
   which is a fourth `UserSettings` field and so a `:core:data` change with its
   own tests — and it is what turns the export row into a `SettingRow` with a
   real value, per §6.
-- **An export survives leaving the screen, but still says nothing.** The log is
-  read and encoded before the document is opened — opening truncates it, so the
-  irreversible step goes last — and the open, write and close run under
-  `NonCancellable`. Backing out mid-export therefore finishes the file rather
-  than leaving the zero-byte one `"wt"` would otherwise leave under a plausible
-  name. `viewModelScope` is gone by then and the snackbar with it, so the backup
-  is whole and the user has no way to know it. Process death is *not* survived:
-  a force-stop or a low-memory kill mid-write leaves whatever the provider had.
-  That much is bounded rather than dangerous — truncated JSON does not parse and
-  `event_count` would not match what follows it, so the import path refuses such
-  a file as damaged instead of restoring part of it. Closing the last of the gap
-  means an application-scoped coroutine or WorkManager, both of which are
-  decisions above this module.
+- **Leaving the screen the instant you tap Save can still leave an empty file,
+  and the export is tied to the screen's lifetime.** Two of the three ways this
+  used to go wrong are fixed and the third is not, so it is worth separating
+  them.
+
+  Fixed: the log is read and encoded *before* the document is opened, because
+  opening truncates it. A read that throws — SQLite, a full disk — therefore no
+  longer empties the file, and no longer replaces a backup the user picked to
+  overwrite with nothing. Fixed too: the open, write and close run under
+  `NonCancellable`, so a write that has *begun* finishes even if the destination
+  is popped underneath it.
+
+  Not fixed: the picker creates the document when the user taps Save, and the
+  export only starts when the result reaches the ViewModel. If the destination
+  is already leaving at that moment, `viewModelScope` is cancelled and the
+  coroutine never runs its body at all — so SAF's freshly created, zero-length
+  document is what remains, under a name that reads like a backup.
+  `NonCancellable` cannot help here: it protects a region once entered, and this
+  never enters one. **Reproduced on a device** by tapping Save and pressing Back
+  immediately (two of three attempts). At a realistic log size the window is a
+  few milliseconds, which is why a person is unlikely to hit it and an impatient
+  one still can.
+
+  Nor is process death survived: a force-stop or a low-memory kill mid-write
+  leaves whatever the provider had. That much is bounded rather than dangerous —
+  truncated JSON does not parse and `event_count` would not match what follows
+  it, so the import path refuses such a file as damaged rather than restoring
+  part of it. The same is true of the zero-length file above.
+
+  Closing the rest means running the export on an application-scoped coroutine
+  or WorkManager so it does not belong to the screen. That is a real decision
+  rather than a line of code: work that outlives the screen it was started from
+  can never report its result, and this screen's whole argument for staying
+  silent on success is that the row redrawing is the feedback.
 
   This bullet used to claim the write was already non-cancellable. It was not;
   the doc was describing an intention the code never carried, which a PR
   reviewer caught as a self-contradiction. Recorded because the failure mode —
   a doc that reads like a decision and is actually a wish — is one this project
-  has now hit twice.
+  has now hit twice, and the second time it was caught by running the thing
+  rather than by reading it.
 - **The Data section is inside the `Settings` branch**, so a non-IO read
   failure takes the recovery path off the screen along with the settings.
   `Unavailable` is a bug-shaped state that IO cannot produce — `observe()`
