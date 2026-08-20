@@ -1,8 +1,10 @@
 package com.gawi.feature.settings
 
 import androidx.annotation.StringRes
+import com.gawi.core.data.backup.ImportResult
 import com.gawi.core.data.settings.UserSettings
 import java.time.DayOfWeek
+import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -13,9 +15,18 @@ import java.util.Locale
 // these are decisions, and a decision made in a composable can only be got
 // wrong in a screenshot. Both are covered by SettingsUiMapperTest.
 
-/** The stored settings, as the screen draws them. */
-internal fun UserSettings.toUiState(): SettingsUiState =
-    SettingsUiState.Settings(dayCutoff = dayCutoff, weekStart = weekStart, reminderTime = reminderTime)
+/**
+ * The stored settings, as the screen draws them.
+ *
+ * [dataTask] is not stored anywhere and is defaulted, so every caller that does
+ * not care about a file being written reads exactly as it did before.
+ */
+internal fun UserSettings.toUiState(dataTask: DataTask = DataTask.Idle): SettingsUiState = SettingsUiState.Settings(
+    dayCutoff = dayCutoff,
+    weekStart = weekStart,
+    reminderTime = reminderTime,
+    dataTask = dataTask,
+)
 
 /**
  * The name of a day, as a string resource.
@@ -28,8 +39,8 @@ internal fun UserSettings.toUiState(): SettingsUiState =
  * would depend on which machine rendered it.
  *
  * Exhaustive rather than defaulted, so a `when` here is a compile error if
- * `java.time` ever grows an eighth day — which is the same bet `messageFor`
- * makes about `CommandError`, and costs nothing to hold.
+ * `java.time` ever grows an eighth day — the same bet [messageFor] makes about
+ * `ImportResult`, and it costs nothing to hold.
  */
 @StringRes
 internal fun labelFor(day: DayOfWeek): Int = when (day) {
@@ -62,3 +73,49 @@ internal val WEEK_START_OPTIONS: List<DayOfWeek> = DayOfWeek.entries
 private val TIME_24_HOUR: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.ROOT)
 
 private val TIME_12_HOUR: DateTimeFormatter = DateTimeFormatter.ofPattern("h:mm a", Locale.ROOT)
+
+/**
+ * What an import is worth saying.
+ *
+ * Three sentences rather than one with two numbers in it, because the
+ * interesting cases are the ones where a number is zero: "0 added, 140 already
+ * here" is arithmetic, and "nothing new in that file" is an answer.
+ *
+ * The copy is also written so that no count governs a noun — "1 added" and
+ * "128 added" are both grammatical — which is why none of this is a `<plurals>`
+ * and why the suppression in strings.xml is honest rather than a dodge. A
+ * quantity resource selects on one number and this sentence has two.
+ *
+ * Exhaustive over [ImportResult], so a fourth way to refuse a file cannot be
+ * added without deciding what it says to the user.
+ */
+internal fun messageFor(result: ImportResult): SettingsMessage = when (result) {
+    is ImportResult.Merged -> when {
+        result.added > 0 -> SettingsMessage(R.string.settings_import_done, listOf(result.added, result.read - result.added))
+        result.read > 0 -> SettingsMessage(R.string.settings_import_nothing_new)
+        else -> SettingsMessage(R.string.settings_import_empty)
+    }
+
+    ImportResult.Refused.NotAnExport -> SettingsMessage(R.string.settings_error_import_unreadable)
+
+    is ImportResult.Refused.Damaged -> SettingsMessage(R.string.settings_error_import_unreadable)
+
+    // Intact, merely newer. Telling someone their only backup is damaged when
+    // the fix is to update the app would be a lie with consequences.
+    is ImportResult.Refused.FromANewerVersion -> SettingsMessage(R.string.settings_error_import_newer)
+}
+
+/**
+ * The name the save dialog opens on.
+ *
+ * A suggestion and not a path: the picker lets the user rename it and choose
+ * where it goes, and the app is never told where that was.
+ *
+ * [today] is the device's wall-clock date and deliberately **not** the logical
+ * date. The day cutoff decides which day a completion belongs to
+ * (architecture §5); it has no business deciding what a file is called, and
+ * someone exporting at 00:30 under an 03:00 cutoff would otherwise find
+ * yesterday's name on today's backup. ISO order so a folder of these sorts
+ * chronologically.
+ */
+internal fun exportFileName(today: LocalDate): String = "gawi-export-${DateTimeFormatter.ISO_LOCAL_DATE.format(today)}.json"

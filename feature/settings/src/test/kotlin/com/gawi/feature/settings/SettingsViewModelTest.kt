@@ -2,6 +2,7 @@ package com.gawi.feature.settings
 
 import app.cash.turbine.test
 import com.gawi.core.data.settings.UserSettings
+import com.gawi.feature.settings.testsupport.FakeEventArchive
 import com.gawi.feature.settings.testsupport.FakeSettingsSource
 import com.gawi.feature.settings.testsupport.MainDispatcherRule
 import kotlinx.coroutines.test.runTest
@@ -31,7 +32,7 @@ class SettingsViewModelTest {
     // by lazy, not a field initialiser. JUnit runs field initialisers before it
     // applies rules, so an eager ViewModel would bind viewModelScope to the real
     // main dispatcher before MainDispatcherRule installs the test one.
-    private val viewModel by lazy { SettingsViewModel(settings) }
+    private val viewModel by lazy { SettingsViewModel(settings, FakeEventArchive()) }
 
     @Test
     fun `it starts loading, before the store has answered`() = runTest {

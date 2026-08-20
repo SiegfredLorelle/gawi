@@ -2,10 +2,13 @@ package com.gawi.feature.settings
 
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import com.gawi.core.data.backup.ImportResult
 import com.gawi.core.ui.theme.GawiTheme
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -229,6 +232,124 @@ class SettingsScreenTest {
         assertEquals(1, backs)
     }
 
+    // --- the Data section ------------------------------------------------
+
+    @Test
+    fun dataSection_offersExportAndImportUnderItsOwnHeading() {
+        render(STORED)
+
+        compose.onNodeWithText(string(R.string.settings_data_header)).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(string(R.string.settings_export_label)).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(string(R.string.settings_import_label)).performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun dataRows_explainWhatTheyDoAndWhatTheyDoNot() {
+        render(STORED)
+
+        compose.onNodeWithText(string(R.string.settings_export_help)).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(string(R.string.settings_import_help)).performScrollTo().assertIsDisplayed()
+    }
+
+    /**
+     * Mutation-checked, and the direct analogue of the reminder/cutoff test
+     * above: two adjacent rows differing in three tokens is the same
+     * copy-paste shape that once wired the reminder dialog to the day cutoff.
+     * Here the two lambdas have identical types, so nothing but this notices
+     * if they are crossed.
+     */
+    @Test
+    fun exportRow_reportsATapAndTheImportRowDoesNot() {
+        val exports = mutableListOf<Unit>()
+        val imports = mutableListOf<Unit>()
+        render(STORED, actions = NO_ACTIONS.copy(onExport = { exports += Unit }, onImport = { imports += Unit }))
+
+        compose.onNodeWithText(string(R.string.settings_export_label)).performScrollTo().performClick()
+
+        assertEquals(1, exports.size)
+        assertEquals(0, imports.size)
+    }
+
+    @Test
+    fun importRow_reportsATapAndTheExportRowDoesNot() {
+        val exports = mutableListOf<Unit>()
+        val imports = mutableListOf<Unit>()
+        render(STORED, actions = NO_ACTIONS.copy(onExport = { exports += Unit }, onImport = { imports += Unit }))
+
+        compose.onNodeWithText(string(R.string.settings_import_label)).performScrollTo().performClick()
+
+        assertEquals(1, imports.size)
+        assertEquals(0, exports.size)
+    }
+
+    /**
+     * Both rows, not just the running one. Exporting midway through an import
+     * reads a half-merged log, and leaving the *other* row live is the easy
+     * mistake — nothing else here would see it.
+     */
+    @Test
+    fun whileExporting_bothDataRowsAreDisabled() {
+        render(STORED.copy(dataTask = DataTask.Exporting))
+
+        compose.onNodeWithText(string(R.string.settings_export_label)).performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithText(string(R.string.settings_import_label)).performScrollTo().assertIsNotEnabled()
+    }
+
+    @Test
+    fun whileExporting_theRowSaysSoInsteadOfExplainingItself() {
+        render(STORED.copy(dataTask = DataTask.Exporting))
+
+        compose.onNodeWithText(string(R.string.settings_export_running)).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(string(R.string.settings_export_help)).assertDoesNotExist()
+    }
+
+    /** Kills a `when` that reports the other branch's copy. */
+    @Test
+    fun whileImporting_itIsTheImportRowThatSaysSo() {
+        render(STORED.copy(dataTask = DataTask.Importing))
+
+        compose.onNodeWithText(string(R.string.settings_import_running)).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(string(R.string.settings_export_running)).assertDoesNotExist()
+    }
+
+    @Test
+    fun whileIdle_neitherRowSaysItIsRunning() {
+        render(STORED)
+
+        compose.onNodeWithText(string(R.string.settings_export_running)).assertDoesNotExist()
+        compose.onNodeWithText(string(R.string.settings_import_running)).assertDoesNotExist()
+    }
+
+    /**
+     * Recorded as a decision rather than left as a fact: the Data section is
+     * inside the `Settings` branch, so a non-IO read failure takes the recovery
+     * path off the screen with it. `Unavailable` is a bug-shaped state that IO
+     * cannot produce, so this is tolerable — see docs/ux/settings.md.
+     */
+    @Test
+    fun unavailable_takesTheDataSectionWithIt() {
+        render(SettingsUiState.Unavailable)
+
+        compose.onNodeWithText(string(R.string.settings_export_label)).assertDoesNotExist()
+    }
+
+    /**
+     * Why there is no `<plurals>`, pinned rather than left in a comment.
+     *
+     * A quantity resource selects on one number and this sentence has two, so
+     * the copy has to be grammatical at every count instead. One-and-one is the
+     * case that would read wrong if anyone rewrote it as "1 entries".
+     */
+    @Test
+    fun importCounts_readGrammaticallyAtOne() {
+        val message = messageFor(ImportResult.Merged(read = 2, added = 1))
+
+        assertEquals(
+            "Imported that file: 1 added, 1 already here.",
+            resources.getString(message.text, *message.args.toTypedArray()),
+        )
+    }
+
     private fun render(state: SettingsUiState, actions: SettingsActions = NO_ACTIONS, is24Hour: Boolean = true) {
         compose.setContent {
             GawiTheme { SettingsScreen(state, actions, SnackbarHostState(), is24Hour) }
@@ -249,6 +370,8 @@ class SettingsScreenTest {
             onDayCutoffChange = {},
             onWeekStartChange = {},
             onReminderTimeChange = {},
+            onExport = {},
+            onImport = {},
             onBack = {},
         )
     }

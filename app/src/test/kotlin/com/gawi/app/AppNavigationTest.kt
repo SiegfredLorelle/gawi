@@ -8,6 +8,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
@@ -201,6 +202,23 @@ class AppNavigationTest {
         awaitDescribed(string(TodayR.string.today_settings)).performClick()
 
         awaitText(string(SettingsR.string.settings_day_monday)).assertIsDisplayed()
+    }
+
+    /**
+     * The Data section resolves its own binding in the production graph.
+     *
+     * Worth a case of its own rather than folding into the check above: the
+     * export implementation injects an `@ApplicationContext` and a
+     * `ContentResolver`, which is a wiring mistake that only shows up at
+     * runtime. Nothing below `:app` builds the real graph, so nothing below
+     * `:app` can catch it.
+     */
+    @Test
+    fun settingsShowsTheDataSection() {
+        awaitDescribed(string(TodayR.string.today_settings)).performClick()
+        awaitText(string(SettingsR.string.settings_title))
+
+        awaitText(string(SettingsR.string.settings_export_label)).performScrollTo().assertIsDisplayed()
     }
 
     /** And its back button comes back. */

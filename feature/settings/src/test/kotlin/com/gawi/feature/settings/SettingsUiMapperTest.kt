@@ -1,10 +1,12 @@
 package com.gawi.feature.settings
 
+import com.gawi.core.data.backup.ImportResult
 import com.gawi.core.data.settings.UserSettings
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.DayOfWeek
+import java.time.LocalDate
 import java.time.LocalTime
 
 /**
@@ -81,5 +83,72 @@ class SettingsUiMapperTest {
         assertEquals("9:05 AM", formatTime(LocalTime.of(9, 5), is24Hour = false))
         assertEquals("12:00 PM", formatTime(LocalTime.NOON, is24Hour = false))
         assertEquals("9:00 PM", formatTime(LocalTime.of(21, 0), is24Hour = false))
+    }
+
+    // --- the export file name ---------------------------------------------
+
+    /**
+     * Mutation-checked. A `dd-MM-yyyy` pattern reads perfectly well and
+     * destroys the one property the name is for — that a folder of these sorts
+     * chronologically — and a locale-dependent formatter is the same bug
+     * `formatTime`'s `Locale.ROOT` guards against.
+     */
+    @Test
+    fun `the export file name is the date in ISO order`() {
+        assertEquals("gawi-export-2026-08-20.json", exportFileName(LocalDate.of(2026, 8, 20)))
+    }
+
+    @Test
+    fun `a single digit month and day are padded`() {
+        assertEquals("gawi-export-2026-01-05.json", exportFileName(LocalDate.of(2026, 1, 5)))
+    }
+
+    // --- what an import says ----------------------------------------------
+
+    @Test
+    fun `an import that added something reports both counts`() {
+        val message = messageFor(ImportResult.Merged(read = 140, added = 128))
+
+        assertEquals(SettingsMessage(R.string.settings_import_done, listOf(128, 12)), message)
+    }
+
+    /**
+     * One added and one skipped is the case the copy has to survive without a
+     * `<plurals>`. That it *reads* correctly is asserted in `SettingsScreenTest`,
+     * which has resources; what is pinned here is that both counts arrive.
+     */
+    @Test
+    fun `a single added entry carries both counts`() {
+        assertEquals(
+            SettingsMessage(R.string.settings_import_done, listOf(1, 1)),
+            messageFor(ImportResult.Merged(read = 2, added = 1)),
+        )
+    }
+
+    /**
+     * Mutation-checked: collapsing these two branches is invisible everywhere
+     * else, and one of them would then tell the user something false about
+     * their file.
+     */
+    @Test
+    fun `a file of duplicates is not the same message as an empty one`() {
+        assertEquals(SettingsMessage(R.string.settings_import_nothing_new), messageFor(ImportResult.Merged(read = 9, added = 0)))
+        assertEquals(SettingsMessage(R.string.settings_import_empty), messageFor(ImportResult.Merged(read = 0, added = 0)))
+    }
+
+    @Test
+    fun `the wrong file and a damaged one read the same`() {
+        val unreadable = SettingsMessage(R.string.settings_error_import_unreadable)
+
+        assertEquals(unreadable, messageFor(ImportResult.Refused.NotAnExport))
+        assertEquals(unreadable, messageFor(ImportResult.Refused.Damaged("event 3: nope")))
+    }
+
+    /** Intact but newer must never read as damage — the fix is to update. */
+    @Test
+    fun `a newer export is not reported as damage`() {
+        val message = messageFor(ImportResult.Refused.FromANewerVersion(formatVersion = 2))
+
+        assertEquals(SettingsMessage(R.string.settings_error_import_newer), message)
     }
 }

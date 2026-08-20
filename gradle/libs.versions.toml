@@ -42,6 +42,15 @@ androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", versi
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
 androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+# Not covered by the compose BOM — androidx.activity ships on its own train,
+# so activityCompose above is the number that moves.
+#
+# Two modules now. :app for setContent and enableEdgeToEdge; :feature:settings
+# for rememberLauncherForActivityResult, which is the only way a composable
+# reaches the Storage Access Framework. Its pom is activity, compose and
+# lifecycle, so nothing a feature module has no business with arrives with it —
+# the same test hilt-lifecycle-viewmodel-compose passed and
+# hilt-navigation-compose failed.
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 # Versionless, so the compose BOM decides. material3 pulls both in today;
 # :core:ui declares them because Modifier and isSystemInDarkTheme are used

@@ -4,7 +4,7 @@
   settings_ prefix rather than risking a collision with :app's, :feature:today's
   or :feature:habits'.
 -->
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="settings_title">Settings</string>
     <string name="settings_back">Back</string>
 
@@ -37,7 +37,52 @@
     <string name="settings_confirm">Set</string>
     <string name="settings_cancel">Cancel</string>
 
+    <!-- The Data section. Nothing in it is a setting: these rows have no
+         stored value, so they say what the action does rather than what it is
+         set to. The export row gains a value line when the 30-day nudge lands
+         and there is a stored date to put in it (PRD §5). -->
+    <string name="settings_data_header">Data</string>
+
+    <string name="settings_export_label">Export a copy</string>
+    <string name="settings_export_help">Writes every habit and everything you have logged to a JSON file, wherever you choose to put it. Nothing is sent anywhere — moving that file off this phone is up to you, and it is the only backup there is.</string>
+
+    <string name="settings_import_label">Import a file</string>
+    <string name="settings_import_help">Adds what a Gawi export holds to what is already here. Nothing is replaced and nothing is removed, so importing the same file twice changes nothing the second time.</string>
+
+    <!-- Shown in place of the help line while the work runs, and announced as
+         a live region: a row that has gone dead and says nothing reads as
+         broken. -->
+    <string name="settings_export_running">Writing the file…</string>
+    <string name="settings_import_running">Reading the file…</string>
+
+    <!-- Export speaks on success where a settings write does not. There is no
+         row redrawing to be the feedback, and the file went somewhere this app
+         is never told about. -->
+    <string name="settings_export_done">Exported. That file is the only copy — keep it somewhere other than this phone.</string>
+
+    <!-- Two independent counts in one sentence, which a <plurals> cannot
+         express: a quantity resource selects on one number. Composing two
+         translated fragments to dodge that is worse than one sentence, so the
+         copy is written to need neither — "1 added, 1 already here" and "128
+         added, 12 already here" are both grammatical. The cases where a count
+         is zero get their own string from messageFor() rather than reading
+         "0 added". -->
+    <string name="settings_import_done" tools:ignore="PluralsCandidate">Imported that file: %1$d added, %2$d already here.</string>
+    <string name="settings_import_nothing_new">Nothing new in that file. Everything in it was already here.</string>
+    <string name="settings_import_empty">That file had nothing in it. Nothing changed.</string>
+
     <!-- The only failure this screen can report. A settings write validates
          nothing and refuses nothing, so the only way it fails is by throwing. -->
     <string name="settings_error_unexpected">That did not save. Try again.</string>
+
+    <!-- Export refuses to claim nothing was written: the picker has already
+         created the document by the time a write can fail, so a truncated file
+         with a plausible name is exactly what someone would later trust. -->
+    <string name="settings_error_export">That export did not finish. Delete the file it started rather than trusting it, and try again.</string>
+
+    <!-- Import validates the whole file before it writes anything, so these
+         two can both promise that nothing changed. -->
+    <string name="settings_error_import_unreadable">That is not a Gawi export, or it is damaged. Nothing was changed.</string>
+    <string name="settings_error_import_newer">That export came from a newer version of Gawi. Update the app and try again — the file is fine.</string>
+    <string name="settings_error_import">That import did not finish. Nothing was changed.</string>
 </resources>
