@@ -70,10 +70,15 @@ internal class ExportReader(private val payloads: EventCodec) {
         val format = (root[FORMAT_KEY] as? JsonPrimitive)?.takeIf { it.isString }?.content
         if (format != EXPORT_FORMAT) refuse(ExportRejection.NotAnExport)
 
-        // A file that claims our format and carries no version is not ours
-        // either: every version we have ever written has had one.
-        val version = (root[FORMAT_VERSION_KEY] as? JsonPrimitive)?.content?.toIntOrNull()
-            ?: refuse(ExportRejection.NotAnExport)
+        // Absent is a different thing from unreadable, and they get different
+        // answers. A file claiming our format with no version at all is not
+        // ours — every version we have written has had one. A file that *has*
+        // one this cannot read is ours and broken, and must not be reported as
+        // somebody else's file: a future envelope writing `2.0` would otherwise
+        // be turned away with the least useful message available.
+        val stated = root[FORMAT_VERSION_KEY] as? JsonPrimitive ?: refuse(ExportRejection.NotAnExport)
+        val version = stated.takeIf { !it.isString }?.content?.toIntOrNull()
+            ?: malformed("format_version is not a whole number: ${stated.content}")
         if (version != EXPORT_FORMAT_VERSION) {
             refuse(ExportRejection.UnsupportedFormatVersion(version, EXPORT_FORMAT_VERSION))
         }

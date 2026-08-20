@@ -55,6 +55,16 @@ internal class EventLogArchive @Inject constructor(
         destination.flush()
     }
 
+    /**
+     * Reads an export.
+     *
+     * A leading byte order mark is stripped rather than refused. `EF BB BF`
+     * decodes to U+FEFF without complaint and the JSON lexer treats only space,
+     * tab, CR and LF as leading whitespace, so a file carrying one fails to
+     * parse at offset zero — and this is reachable along exactly the path the
+     * format is designed to invite, since a Windows editor saving a
+     * hand-repaired export adds one by default.
+     */
     suspend fun import(source: InputStream): ImportResult {
         val bytes = source.readBytes()
         val text = try {
@@ -64,7 +74,7 @@ internal class EventLogArchive @Inject constructor(
             // CharacterCodingException *is* an IOException, and IO is supposed
             // to propagate from here — a mis-encoded file the user picked is
             // not a disk failure.
-            bytes.decodeToString(throwOnInvalidSequence = true)
+            bytes.decodeToString(throwOnInvalidSequence = true).removePrefix(BYTE_ORDER_MARK)
         } catch (cause: CharacterCodingException) {
             return ImportResult.Refused.Damaged("not UTF-8 text: ${cause.message}")
         }
@@ -81,7 +91,23 @@ internal class EventLogArchive @Inject constructor(
      */
     private fun ExportRejection.asResult(): ImportResult = when (this) {
         ExportRejection.NotAnExport -> ImportResult.Refused.NotAnExport
-        is ExportRejection.UnsupportedFormatVersion -> ImportResult.Refused.FromANewerVersion(found)
+
+        // Only *above* ours is a newer build. A version below it is a number
+        // this app has never written, so telling someone to update would be
+        // advice that can never come true — and the whole point of separating
+        // these cases is that the one about a working file has to be right.
+        is ExportRejection.UnsupportedFormatVersion ->
+            if (found > supported) {
+                ImportResult.Refused.FromANewerVersion(found)
+            } else {
+                ImportResult.Refused.Damaged("format version $found is not one this app has ever written")
+            }
+
         is ExportRejection.Malformed -> ImportResult.Refused.Damaged(detail)
+    }
+
+    private companion object {
+        /** U+FEFF, which a Windows editor prepends when it saves as UTF-8. */
+        const val BYTE_ORDER_MARK = "\uFEFF"
     }
 }

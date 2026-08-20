@@ -30,7 +30,7 @@ import kotlinx.coroutines.ensureActive
 internal data class SettingsMessage(@StringRes val text: Int, val args: List<Any> = emptyList())
 
 /**
- * Runs a settings write, turning anything it throws into a `null`.
+ * Runs a write, turning anything it throws into a `null`.
  *
  * A third copy of the same guard `:feature:habits` and `:feature:today` carry,
  * for the reason `TodayViewModel` records: feature modules do not depend on one
@@ -44,17 +44,23 @@ internal data class SettingsMessage(@StringRes val text: Int, val args: List<Any
  * tapping a time, rather than a snackbar. The read path is `.catch`-guarded;
  * the write path needs this.
  *
+ * Two kinds of caller now, which is why [what] is a parameter rather than a
+ * fixed string: a settings write, and an export or an import. The second is by
+ * far the likelier to throw — a document provider can revoke a grant, run out
+ * of space or vanish mid-write — so a log line claiming a settings write failed
+ * would point at the wrong half of the screen.
+ *
  * Returns `null` rather than a `Result`, because the caller has nothing to do
  * with the throwable beyond what has already been logged.
  */
 @Suppress("TooGenericExceptionCaught")
-internal suspend fun <T> commandOrNull(tag: String, command: suspend () -> T): T? = try {
+internal suspend fun <T> commandOrNull(tag: String, what: String, command: suspend () -> T): T? = try {
     command()
 } catch (failure: Exception) {
     // Cancellation is not a failure, and must not be reported as one:
     // ensureActive() rethrows it. Doing it this way rather than with a bare
     // `throw failure` also keeps detekt's RethrowCaughtException quiet.
     currentCoroutineContext().ensureActive()
-    Log.e(tag, "the settings write failed", failure)
+    Log.e(tag, "$what failed", failure)
     null
 }
