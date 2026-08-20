@@ -308,9 +308,15 @@ bounds, the disabled save, the archived row's action, and the fact that a tap
 reports the tapped row's own date and completion, are all checked without a
 device. They are still listed below because the checklist verifies them *through
 the real stack* — a tap that reaches Room and comes back, and a habit that
-survives a process death — which a stateless render cannot. Nothing yet drives
-the wired Routes through the navigation graph; that is the cross-module journey
-test, and it needs a Hilt test graph.
+survives a process death — which a stateless render cannot.
+
+`AppNavigationTest` goes one layer further: it launches the real `MainActivity`
+under `HiltTestApplication`, so the production Hilt graph, the navigation graph
+and every route are covered without a device too. What it deliberately leaves
+out is anything that **writes** — Room's `InvalidationTracker` does not deliver
+in that setup, so a screen never re-reads after a write (see
+docs/architecture.md §8). That is the part this checklist still owns, and why
+the create, edit and archive steps below earn their place.
 
 **Read the copy anyway.** The tests resolve every expected string from the same
 `R.string` the composable renders, so a reword cannot fail them — by design, so

@@ -155,3 +155,18 @@ the action is trivially reversible.
   upcast-on-read, not a UI change.
 - **No habit-count limit** is specified anywhere, and none is enforced. The list
   is a `LazyColumn`, so this is fine until some other part of the app cares.
+- **A habit whose stored icon or colour is not in `HabitPalette` opens the
+  editor with nothing selected in that picker.** Deliberately left: the form
+  carries the loaded value, so saving preserves it and only the picker looks
+  unset. Reachable today only for habits the old debug seeder wrote. The fix is
+  to append the current value to the offered list when absent — worth doing if
+  import ever makes off-palette values common, and safe to add now that the
+  colour label lookup degrades rather than throwing.
+- **A `Saved` event can be lost** if the Route's collector is cancelled between
+  `receive()` and the callback, leaving the habit saved but the editor open with
+  Save latched. Narrow enough to accept: the same window exists for a rejection
+  snackbar, which nobody would call a bug. The fix is to make "saved" a state
+  flag rather than a one-shot event, which is a redesign, not a patch.
+- **The in-progress form does not survive process death** — the ViewModel holds
+  a plain `MutableStateFlow` with no `SavedStateHandle`. Draft persistence is a
+  feature rather than a fix.
