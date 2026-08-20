@@ -187,6 +187,29 @@ class HabitEditorScreenTest {
         assertEquals(other, edits.last().color)
     }
 
+    /**
+     * A failed load is not a fresh create.
+     *
+     * Titling it "New habit" is what reading `form?.editing` gives you, since
+     * there is no form to ask — a screen claiming to be a new habit while
+     * showing an error. Loading and Unavailable only happen when an id was
+     * supplied, so both are an edit.
+     */
+    @Test
+    fun unavailable_isNotTitledAsANewHabit() {
+        render(HabitEditorUiState.Unavailable)
+
+        compose.onNodeWithText(string(R.string.habits_new_title)).assertDoesNotExist()
+        compose.onNodeWithText(string(R.string.habits_edit_title)).assertIsDisplayed()
+    }
+
+    @Test
+    fun loading_isNotTitledAsANewHabitEither() {
+        render(HabitEditorUiState.Loading)
+
+        compose.onNodeWithText(string(R.string.habits_new_title)).assertDoesNotExist()
+    }
+
     @Test
     fun unavailable_saysSoRatherThanShowingABlankForm() {
         render(HabitEditorUiState.Unavailable)
