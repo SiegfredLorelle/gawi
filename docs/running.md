@@ -282,9 +282,11 @@ picker returns, but nothing above those knows whether a picker appears at all.
 `HabitListScreenTest`, `HabitEditorScreenTest` and `SettingsScreenTest` render
 those screens under Robolectric, so the empty, loading and unavailable states,
 the weekly target's bounds, the disabled save, the archived row's action, the
-fact that a tap reports the tapped row's own date and completion, and the fact
-that the settings rows draw the *stored* values rather than the defaults, are
-all checked without a device. They are still listed below because the checklist
+fact that a tap reports the tapped row's own date and completion, the fact
+that the settings rows draw the *stored* values rather than the defaults, and
+every state of the export row's nudge — silent, never, today, a day count and
+overdue, including that a running export outranks the nudge — are all checked
+without a device. They are still listed below because the checklist
 verifies them *through the real stack* — a tap that reaches Room and comes back,
 and a habit that survives a process death — which a stateless render cannot.
 
@@ -460,6 +462,48 @@ the shape the 4b bug took. Wording itself is still yours to read.
       import the file. Every habit, completion and streak comes back. This is
       the promise architecture §6 makes on behalf of `allowBackup="false"`, and
       it is the only check that tests it as a user would need it.
+
+**The 30-day nudge** (PRD §5). Run these in order from a cleared install — they
+build on each other, and the third is the one that has no JVM test behind it.
+
+- [ ] **A fresh install is not nudged about losing nothing.** After
+      `adb shell pm clear com.gawi.app`, open Settings → **Data**. The export
+      row has *no* value line and the ordinary help underneath it. Proves the
+      empty-log case: the stamp is absent here exactly as it is on a log full
+      of events, and only the log tells the two apart.
+- [ ] **A log with something in it and no backup says so.** Create one habit,
+      then reopen Settings. The export row reads **Never exported** and the
+      help line has become the nudge. Proves the split above, in the other
+      direction, and that "never" is overdue immediately rather than in thirty
+      days.
+- [ ] **A finished export records itself, and only a finished one.** Export a
+      copy, keep the offered name, and return to Settings: the row reads
+      **Last exported today** and the ordinary help is back. **This is the only
+      check of the ordering** — the stamp is written after the output stream
+      closes, so that it means "a file landed" rather than "a write was
+      attempted", and substituting a `ContentResolver` to test that needs a
+      Robolectric shadow this project does not use (docs/ux/settings.md §7).
+- [ ] **A cancelled export does not count as a backup.** Tap **Export a copy**
+      and press Back out of the save dialog. The row still reads whatever it
+      read before. Proves the stamp follows the write and not the tap.
+- [ ] **An import does not count as a backup either.** Import the file from
+      above. The row still says today and the value does not move. Deliberate:
+      an imported file proves a copy was readable, not that it is recent, so
+      importing a backup from March must not silence the nudge for a month.
+- [ ] **The stamp survives a restart.** `adb shell am force-stop com.gawi.app`,
+      relaunch, reopen Settings: still **Last exported today**. Proves it is in
+      the preferences file rather than in memory.
+- [ ] **A month later, the nudge comes back.** Settings → **Date & time**, turn
+      off automatic time and move the date forward 31 days — the device UI, not
+      `adb shell date`, which needs root and is refused on a Play image. Reopen
+      Gawi's settings: **Last exported 31 days ago**, with the nudge underneath.
+      **Put the date back and re-enable automatic time afterwards**; a 31-day
+      jump also sweeps every streak, so any check above this one has to be
+      re-run from a clean state rather than after this.
+- [ ] **A settings edit does not reset the clock.** With a stamp in place,
+      change the week start and come back. The value line has not moved. Proves
+      the export stamp shares a preferences file with the three settings and
+      survives a write that assigns all three of their keys.
 
 **Physical device only** — nothing here is built yet, so these are placeholders
 that come alive with the widget and the reminder (architecture §8, PRD §7):
