@@ -13,6 +13,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import java.io.InputStream
 
 /**
  * What importing does to a log that is already there.
@@ -242,6 +243,40 @@ class EventLogImportTest {
             assertEquals(ImportResult.Merged(events, events), result)
         } finally {
             other.close()
+        }
+    }
+
+    /**
+     * A file too large to be an export is refused, not fatal.
+     *
+     * The picker shows essentially everything by design, so the likeliest wrong
+     * tap is a big file — and an `OutOfMemoryError` is an `Error`, which the
+     * ViewModel's guard catches `Exception` and therefore misses. Uncaught out
+     * of `viewModelScope` that is process death, on the recovery screen, with
+     * no message. Everything else on this path refuses as a value; this used
+     * not to.
+     *
+     * Driven by a stream that never ends rather than a large fixture, so the
+     * ceiling is what stops the read.
+     */
+    @Test
+    fun `a file larger than the ceiling is refused rather than read`() = runTest {
+        store.repository.createHabit(metadata(name = "read"))
+        val log = store.log()
+
+        val result = store.archive.import(endlessStream())
+
+        assertTrue("$result", result is ImportResult.Refused.Damaged)
+        assertEquals(log, store.log())
+    }
+
+    /** Bytes for as long as anyone keeps asking. */
+    private fun endlessStream(): InputStream = object : InputStream() {
+        override fun read(): Int = 'x'.code
+
+        override fun read(b: ByteArray, off: Int, len: Int): Int {
+            b.fill('x'.code.toByte(), off, off + len)
+            return len
         }
     }
 

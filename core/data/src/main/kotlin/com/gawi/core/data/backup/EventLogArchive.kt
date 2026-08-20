@@ -8,6 +8,7 @@ import com.gawi.core.domain.serialization.export.EventLogCodec
 import com.gawi.core.domain.serialization.export.ExportMeta
 import com.gawi.core.domain.serialization.export.ExportRead
 import com.gawi.core.domain.serialization.export.ExportRejection
+import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.io.OutputStream
 import java.nio.charset.CharacterCodingException
@@ -56,8 +57,31 @@ internal class EventLogArchive @Inject constructor(
     }
 
     /**
-     * Reads an export.
+     * Reads an export, refusing anything too large to be one.
      *
+     * The picker deliberately offers `application/octet-stream` and `text/plain`
+     * as well as JSON, because an export round-tripped through a cloud drive
+     * comes back mistyped and a filter that hides someone's own backup is the
+     * worse failure. The cost is that it now shows essentially everything, so
+     * the likeliest wrong tap is a large file — and this was the one path here
+     * where that was a crash rather than a refusal, because `OutOfMemoryError`
+     * is an `Error` and the guard the caller wraps this in catches `Exception`.
+     *
+     * The ceiling is a sanity check and **not** a memory guarantee: the parsed
+     * tree is several times the size of the text, so a file just under it is
+     * still heavy. What it removes is picking a video on the one screen whose
+     * whole job is disaster recovery.
+     */
+    suspend fun import(source: InputStream): ImportResult {
+        val bytes = source.readAtMost(MAX_IMPORT_BYTES)
+        return if (bytes.size > MAX_IMPORT_BYTES) {
+            ImportResult.Refused.Damaged("larger than ${MAX_IMPORT_BYTES / BYTES_PER_MB} MB, so it is not a Gawi export")
+        } else {
+            importText(bytes)
+        }
+    }
+
+    /**
      * A leading byte order mark is stripped rather than refused. `EF BB BF`
      * decodes to U+FEFF without complaint and the JSON lexer treats only space,
      * tab, CR and LF as leading whitespace, so a file carrying one fails to
@@ -65,8 +89,7 @@ internal class EventLogArchive @Inject constructor(
      * format is designed to invite, since a Windows editor saving a
      * hand-repaired export adds one by default.
      */
-    suspend fun import(source: InputStream): ImportResult {
-        val bytes = source.readBytes()
+    private suspend fun importText(bytes: ByteArray): ImportResult {
         val text = try {
             // Strict, deliberately. The lenient default substitutes U+FFFD for
             // a bad byte, which turns an encoding problem into a baffling parse
@@ -106,8 +129,41 @@ internal class EventLogArchive @Inject constructor(
         is ExportRejection.Malformed -> ImportResult.Refused.Damaged(detail)
     }
 
-    private companion object {
+    /**
+     * At most [limit] bytes, plus however much of the final chunk overshoots.
+     *
+     * Hand-rolled because `InputStream.readNBytes` is API 33 and this app is
+     * minSdk 29 — it compiles against the current platform jar and then fails
+     * lint's `NewApi`, which is an error here. The overshoot is deliberate:
+     * reading one chunk past the ceiling is what lets the caller tell "exactly
+     * at the limit" from "over it" without a second read.
+     */
+    private fun InputStream.readAtMost(limit: Int): ByteArray {
+        val sink = ByteArrayOutputStream()
+        val chunk = ByteArray(DEFAULT_BUFFER_SIZE)
+        while (sink.size() <= limit) {
+            val read = read(chunk)
+            if (read < 0) break
+            sink.write(chunk, 0, read)
+        }
+        return sink.toByteArray()
+    }
+
+    internal companion object {
         /** U+FEFF, which a Windows editor prepends when it saves as UTF-8. */
-        const val BYTE_ORDER_MARK = "\uFEFF"
+        private const val BYTE_ORDER_MARK = "\uFEFF"
+
+        private const val BYTES_PER_MB = 1_024 * 1_024
+
+        /**
+         * The largest file this will even try to read.
+         *
+         * Measured rather than guessed: a real 294-event export was 115,023
+         * bytes, so 391 bytes an event, and the PRD's ~2k events a year puts a
+         * heavy user near 780 KB a year. Thirty-two megabytes is about forty
+         * years of that, so it refuses nothing anyone will ever have and
+         * refuses a photo immediately.
+         */
+        const val MAX_IMPORT_BYTES = 32 * BYTES_PER_MB
     }
 }
