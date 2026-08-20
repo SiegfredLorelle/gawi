@@ -5,6 +5,7 @@ import com.gawi.core.data.model.TodaySnapshot
 import com.gawi.core.domain.command.CommandResult
 import com.gawi.core.domain.model.HabitId
 import com.gawi.core.domain.projection.HabitMetadata
+import com.gawi.core.domain.projection.HabitState
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 
@@ -63,6 +64,15 @@ interface HabitRepository {
      * completion to is the one it was handed here, not one it resolved.
      */
     fun observeToday(): Flow<TodaySnapshot>
+
+    /**
+     * Every habit as it is configured, archived included, ordered by name.
+     *
+     * The management list's read. Deliberately not a [TodaySnapshot]: it
+     * carries no completion state, no week count and no streak, because
+     * managing habits is not doing them.
+     */
+    fun observeAllHabits(): Flow<List<HabitState>>
 
     /** One habit, archived or not — null once it no longer exists. */
     fun observeHabit(habitId: HabitId): Flow<TodayHabit?>
