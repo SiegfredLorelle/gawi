@@ -1,5 +1,6 @@
 package com.gawi.feature.settings
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -186,7 +187,7 @@ private fun SettingRow(label: String, value: String, help: String, onClick: () -
 
 /** An icon button with no icon font behind it, named for assistive technology. */
 @Composable
-private fun GlyphButton(glyph: String, labelRes: Int, onClick: () -> Unit) {
+private fun GlyphButton(glyph: String, @StringRes labelRes: Int, onClick: () -> Unit) {
     val label = stringResource(labelRes)
     IconButton(onClick = onClick, modifier = Modifier.semantics { contentDescription = label }) {
         Text(text = glyph, style = MaterialTheme.typography.titleLarge)
