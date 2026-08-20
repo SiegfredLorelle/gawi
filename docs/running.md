@@ -4,7 +4,7 @@ How to get the app onto a screen, and what to check by hand once it is there.
 
 Companion to [the architecture](architecture.md) §8, which makes this necessary:
 CI runs unit tests only, and *"instrumented tests are a manual, on-device
-activity"*. §5 below is that activity written down. Toolchain setup for the
+activity"*. §4 below is that activity written down. Toolchain setup for the
 **build** lives in [docs/stacks/kotlin-android.md](stacks/kotlin-android.md);
 this file picks up where that leaves off.
 
@@ -259,64 +259,34 @@ adb tcpip 5555
 adb connect 192.168.1.50:5555
 ```
 
----
-
-## 4. Setting the two settings that have no screen
-
-Habits are created in the app now — Today's empty state has a button, and its
-app bar leads to the habit list. What is left of `app/src/debug/` is the day
-cutoff and the reminder time, which `:feature:settings` does not exist to set
-yet (architecture §2).
-
-> **Temporary.** This section and `app/src/debug/` both disappear when
-> `:feature:settings` lands.
-
-A debug-only activity, in the debug source set so it cannot ship, with no
-launcher entry — only `adb` reaches it:
-
-```sh
-adb shell am start -n com.gawi.app/com.gawi.app.debug.SeedActivity \
-  --es cutoff 03:00 --es reminder 21:00
-adb logcat -d -s GawiSeed
-```
-
-Passing no extras reads the settings back without changing them, which is the
-only way to see their values: the stored file holds second-of-day varints, so
-dumping it shows the keys and not what they are set to.
-
-```sh
-adb shell am start -n com.gawi.app/com.gawi.app.debug.SeedActivity
-```
-
-The cutoff is also the cheapest way to force a day rollover against a real
-clock — set it a couple of minutes ahead and watch the rows flip — which is what
-§5's clock checks rely on. `adb shell date` needs `adb root` and is refused on
-the Play images this project uses.
-
----
-
-## 5. Manual verification checklist
+## 4. Manual verification checklist
 
 Architecture §8 puts instrumented tests outside CI, so this is the substitute.
 Work through it for any change to the data path or the Today view; note in the PR
 which parts you ran.
 
+The clock-dependent checks below used to need an `adb` call into a debug
+activity. They drive the settings screen now, which is the same code path a user
+takes — so what they verify is the app rather than a test fixture beside it.
+
 **What `make test` now covers on its own.** `TodayScreenTest`,
-`HabitListScreenTest` and `HabitEditorScreenTest` render those screens under
-Robolectric, so the empty, loading and unavailable states, the weekly target's
-bounds, the disabled save, the archived row's action, and the fact that a tap
-reports the tapped row's own date and completion, are all checked without a
-device. They are still listed below because the checklist verifies them *through
-the real stack* — a tap that reaches Room and comes back, and a habit that
-survives a process death — which a stateless render cannot.
+`HabitListScreenTest`, `HabitEditorScreenTest` and `SettingsScreenTest` render
+those screens under Robolectric, so the empty, loading and unavailable states,
+the weekly target's bounds, the disabled save, the archived row's action, the
+fact that a tap reports the tapped row's own date and completion, and the fact
+that the settings rows draw the *stored* values rather than the defaults, are
+all checked without a device. They are still listed below because the checklist
+verifies them *through the real stack* — a tap that reaches Room and comes back,
+and a habit that survives a process death — which a stateless render cannot.
 
 `AppNavigationTest` goes one layer further: it launches the real `MainActivity`
 under `HiltTestApplication`, so the production Hilt graph, the navigation graph
-and every route are covered without a device too. What it deliberately leaves
-out is anything that **writes** — Room's `InvalidationTracker` does not deliver
-in that setup, so a screen never re-reads after a write (see
-docs/architecture.md §8). That is the part this checklist still owns, and why
-the create, edit and archive steps below earn their place.
+and all four routes are covered without a device too — including that the
+settings screen resolves its `SettingsSource` binding and reads the real store.
+What it deliberately leaves out is anything that **writes** — Room's
+`InvalidationTracker` does not deliver in that setup, so a screen never re-reads
+after a write (see docs/architecture.md §8). That is the part this checklist
+still owns, and why the create, edit and archive steps below earn their place.
 
 **Read the copy anyway.** The tests resolve every expected string from the same
 `R.string` the composable renders, so a reword cannot fail them — by design, so
@@ -357,18 +327,28 @@ the shape the 4b bug took. Wording itself is still yours to read.
       were lost — the main file was 4 KB against a 181 KB WAL when this was
       written. A *missing* `-wal` is fine and means SQLite has checkpointed
       into the main file, so let that copy fail rather than chasing it.
-- [ ] Settings persist. `files/datastore/settings.preferences_pb` appears after
-      the **first write**, not the first read, so set one with `--es cutoff`
-      first. Then force-stop, relaunch, and run the debug activity with no
-      extras: it prints the stored settings back.
+- [ ] Settings persist. Open **Settings** from Today's app bar — the gear, not
+      the list glyph beside it — and change the day cutoff.
+      `files/datastore/settings.preferences_pb` appears after the **first
+      write**, not the first read, so it will not exist until you do. Then
+      force-stop, relaunch and reopen the screen: it reads the stored value
+      back, not the default.
 - [ ] **Day rollover, against a real clock.** Set the cutoff a couple of minutes
-      ahead (`--es cutoff HH:MM`): "today" becomes yesterday, so a completed row
-      reads unticked. Leave the screen alone; when the boundary passes the row
-      flips back on its own. Prefer this to `adb shell date`, which needs
-      `adb root` and is refused on Play-image emulators.
+      ahead in Settings, then go back to Today: "today" becomes yesterday, so a
+      completed row reads unticked. Leave the screen alone; when the boundary
+      passes the row flips back on its own. This is still the cheapest way to
+      force a boundary — `adb shell date` needs `adb root` and is refused on
+      the Play images this project uses.
 - [ ] **The mascot follows the clock, not just the data.** With something
-      outstanding, set `--es reminder` to a time just past now. The panel changes
-      with no habit touched and no interaction.
+      outstanding, set *Day is nearly over at* to a time just past now. The
+      panel changes with no habit touched and no interaction — and the habit
+      rows do not reload underneath it, which is the point of the repository
+      subscribing to the settings twice with different dedupes.
+- [ ] **Week start re-buckets what is already on screen.** With a weekly habit
+      showing a ratio, change the week start. The ratio re-counts against the
+      new week without leaving the screen. Unlike the cutoff, this is not
+      prospective-only: nothing about a week is stored on an event, so it is
+      recomputed on read.
 - [ ] A cancelled tap still commits: tap, immediately press Back, relaunch, and
       the completion is there.
 
@@ -381,7 +361,7 @@ that come alive with the widget and the reminder (architecture §8, PRD §7):
 
 ---
 
-## 6. Troubleshooting
+## 5. Troubleshooting
 
 | Symptom | Cause and fix |
 |---|---|

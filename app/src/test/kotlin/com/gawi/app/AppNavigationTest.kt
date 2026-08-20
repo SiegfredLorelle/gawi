@@ -62,7 +62,7 @@ import com.gawi.feature.today.R as TodayR
  * it: `DataModule` and `DataBindsModule` are `internal` to `:core:data` and
  * cannot be named from here. So write journeys stay where they are already
  * covered — `:core:data`'s own tests for the command path, the feature modules'
- * screen tests for what a state draws, and `docs/running.md` §5 on a device.
+ * screen tests for what a state draws, and `docs/running.md` §4 on a device.
  */
 @HiltAndroidTest
 @RunWith(RobolectricTestRunner::class)
