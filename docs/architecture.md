@@ -39,12 +39,12 @@ Now-in-Android convention: Gradle version catalog
 | Module | Contents |
 |---|---|
 | `:app` | MainActivity, navigation graph, Hilt app wiring, WorkManager scheduling for the end-of-day reminder |
-| `:core:domain` | Pure Kotlin/JVM: event types, projection logic, logical-date rules, streak computation, UUIDv7 generator |
-| `:core:data` | Repositories, event store, Room database + DAOs, DataStore settings, JSON/CSV export + import |
+| `:core:domain` | Pure Kotlin/JVM: event types, projection logic, logical-date rules, streak computation, UUIDv7 generator, event and export JSON codecs |
+| `:core:data` | Repositories, event store, Room database + DAOs, DataStore settings, export/import plumbing and the CSV of completions |
 | `:core:ui` | Theme, shared composables |
 | `:feature:today` | Today view (app home screen, Momo's habitat) |
 | `:feature:habits` | Create/edit/archive habit, habit detail |
-| `:feature:settings` | Day boundary, week start, reminder time, export |
+| `:feature:settings` | Day boundary, week start, reminder time, export and import |
 | `:widget` | Glance home-screen widget |
 
 Dependency rule: `feature → core`, `widget → core`, `app → everything`,
@@ -64,12 +64,25 @@ cutoff and the reminder time over `adb` was deleted when `:feature:settings`
 landed, as this paragraph used to promise, and there is no debug source set
 anywhere in the project now.
 
-`:feature:settings` is built to the three preferences the data layer holds —
-day boundary, week start and reminder time. **Export is the part of its row in
-the table above that is not built yet**, and it is deliberately its own piece
-of work rather than a fourth row on that screen: it is the only
-disaster-recovery path there is, `allowBackup` is off (§6), and the event log
-cannot be reconstructed from anything.
+`:feature:settings` holds the three preferences the data layer stores — day
+boundary, week start and reminder time — and, below them in a labelled section
+of their own, **export and import**. They are a section rather than a fourth
+setting row because they are not settings: they have no stored value and they
+are the only disaster-recovery path there is, `allowBackup` being off (§6) and
+the event log reconstructible from nothing. **The CSV of completions PRD §5 also
+asks for is not built**, nor is its nudge when no export has been made for 30
+days.
+
+**The export codec is in `:core:domain`, not `:core:data`**, which is the one
+place this table's `:core:data` row would once have said otherwise. An export
+embeds each payload as nested JSON rather than as an escaped string — the "open
+formats" half of the PRD's data-ownership promise, so that `jq` can walk the
+file — and doing that means parsing `EncodedPayload.json`, i.e. knowing that the
+domain's opaque payload string is JSON at all. That knowledge belongs in the
+package that already has it. The consequence is worth stating because it is
+load-bearing: `:core:data` has no kotlinx-serialization dependency, in main or
+in test, so that dependency appearing there later is a signal this boundary has
+been crossed.
 
 **`:app` owns navigation, and no other module depends on a navigation
 library.** A feature module exposes Route composables taking plain lambdas, so
@@ -129,6 +142,18 @@ and never enter the log.
 versions to the current shape at deserialization time. The log is never
 migrated in place — replaying a years-old log through current code must always
 work (PRD §7 "migrations replay-safe").
+
+**An export carries two version numbers and they mean different things.** The
+envelope has a `format_version`, which says how to find the events; each event
+carries the `schema_version` above, which describes one payload. A newer
+envelope full of v1 payloads is an ordinary file, and so is the reverse. A
+reader must establish the envelope version *before* it decodes anything else,
+so that a file from a newer build is refused as unsupported rather than as
+corrupt — the log has one writer and an unknown shape there is corruption, but
+a file is picked by a user and may legitimately come from the future. Payload
+bytes travel verbatim through both directions of an export, because decoding
+and re-encoding would upcast to the current version and drop unknown keys,
+which is the log migrated in place.
 
 ## 4. Projections (derived state)
 

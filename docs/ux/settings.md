@@ -6,8 +6,10 @@ as capabilities and never as a screen — *"configurable: day boundary time, wee
 start day (default Monday), reminder time, timezone behavior"* is the whole of
 it — so this document is where the screen those four words imply is decided.
 
-**Status:** decided and built 2026-08-20, with `:feature:settings`. **Export**
-is the part of architecture §2's row for this module that is not built; see §6.
+**Status:** decided and built 2026-08-20, with `:feature:settings`. **Export and
+import** landed the same day, as a labelled section below the three settings
+(§6). The rest of PRD §5's data row — a CSV of completions, and the nudge when
+no export has been made for 30 days — is still unbuilt; see §7.
 
 Written after the screens, like [habits.md](habits.md) and unlike
 [today-view.md](today-view.md). Little here was open: the fields are fixed by
@@ -78,6 +80,10 @@ value to hold. Every point on the clock is a legal cutoff and every day is a
 legal week start, so unlike `Schedule.Weekly` there is no domain type waiting to
 throw on an out-of-range value.
 
+The system file picker is the Data section's version of this dialog (§6): it
+belongs to the platform, and backing out of it returns a null `Uri`, which does
+nothing and says nothing.
+
 ## 4. The gear moves to what it looks like
 
 Today's app bar had one action, *Manage habits*, drawn as a gear. That was
@@ -122,16 +128,108 @@ for that broadcast. Deferred: the payoff is a screen that re-renders while the
 user is changing an Android setting they reached by leaving this app, and the
 next thing that recomposes catches up anyway.
 
-## 6. Still open
+## 6. Export and import, and the two rows that are not settings
 
-- **Export is not built**, and it is the rest of this module's job per
-  architecture §2. It should not wait: it is the only disaster-recovery path
-  there is, `allowBackup` is deliberately off (architecture §6), and the event
-  log cannot be reconstructed from anything else. Harmless while the database
-  holds scratch data; unrecoverable eighteen days into a streak. PRD §5 also
-  wants a gentle in-app nudge when no export has been made for 30 days, which
-  is the one piece of this that plausibly belongs on *this* screen rather than
-  beside it.
+PRD §5 gives this app one recovery path and architecture §6 explains why there
+is only one: Auto Backup is off, so nothing else copies the log anywhere, and
+the log cannot be rebuilt from the derived tables. That makes these two rows the
+most consequential thing on the screen and, oddly, the least setting-like.
+
+**They are a section with a heading; the three settings above are not.** The
+habit list already made this choice for its archived group — the obvious group
+goes unlabelled and only the one that needs saying gets a name. Labelling both
+would mean inventing a word for "the three settings", and every candidate
+("General", "Preferences") says less than the rows do on their own. No divider
+either: a rule and a heading are two devices doing one job, and there is no
+`HorizontalDivider` anywhere in this app to be consistent with.
+
+**`ActionRow`, not `SettingRow` with an empty value.** A `SettingRow`'s middle
+line is `titleMedium` in the primary colour and it means *this is what the
+setting is set to*; three rows teach a reader that before they reach these two.
+"Export a copy" is not a value. It was tempting to pre-stage the 30-day nudge by
+writing "Last exported: never" there, and that would be copy the store cannot
+back — the one thing §2 argues against. The convergence goes the other way: when
+the nudge lands and there is a stored date, the export row *becomes* a
+`SettingRow`, one call site and one mapper function. The import row will never
+have a value.
+
+**The system picker is this section's "pick, then confirm" (§3), so there is no
+dialog.** Cancelling it returns a null `Uri` and nothing happens and nothing is
+said, which is exactly the rule the other three rows follow. A dialog *before*
+the picker would ask someone to confirm a file they have not chosen; a dialog
+*after* it could only repeat the name they just tapped. Merge is also
+idempotent — importing the same file twice changes nothing the second time — so
+the usual "this cannot be undone" justification is half absent.
+
+Be honest about the other half: importing the **wrong** file adds habits the app
+can only archive, never delete (`habits.md` §4). That is the case a confirmation
+would guard and precisely the case it cannot, because at confirm time nothing
+has read the file. What would change this is a dry run in `:core:data` — parse
+and count without committing — after which *"128 new, 12 already here — import?"*
+is a genuinely different offer and earns a dialog. Recorded rather than built.
+
+**The file name uses the wall-clock date, not the logical one.** The day cutoff
+decides which day a completion belongs to (architecture §5); it has no business
+deciding what a file is called, and someone exporting at 00:30 under an 03:00
+cutoff would otherwise find yesterday's name on today's backup. ISO order so a
+folder of them sorts chronologically.
+
+**The import picker's type filter is generous and is never the check.** An
+export round-tripped through a cloud drive or a messaging app frequently comes
+back typed `application/octet-stream`, and some providers report any `.json` as
+`text/plain`, so all three are offered. A filter that hides someone's own backup
+from them is a worse failure than one that also shows a few text files. What
+makes a file an export is decided by reading it.
+
+**The busy state is a field on the state, where the dialog state is not**, and
+the difference is who owns the work. A half-picked time belongs to the dialog
+and dies with it — that is the point of §3. An export belongs to
+`viewModelScope`: it keeps running across a recomposition, and it is the
+coroutine finishing rather than a gesture that ends it, which screen-local state
+has no way to hear. This does not weaken §3's "the store is the only source of
+truth": that rule is about *committed settings*, and there is no preference
+called "an export is running". Both rows disable while either runs, because
+exporting midway through an import reads a half-merged log.
+
+**Export speaks on success where a settings write is silent.** §7 notes that a
+successful settings change says nothing, because the row redrawing is the
+feedback. There is no row to redraw here, and the file went somewhere the app is
+never told about, so silence would be indistinguishable from nothing happening.
+
+**There is no `<plurals>`, and the suppression in `strings.xml` is honest.** The
+import result is two independent counts in one sentence and a quantity resource
+selects on one number. Composing two translated fragments to get around that is
+worse than one sentence, so the copy is written to need neither — "1 added, 1
+already here" and "128 added, 12 already here" are both grammatical — and the
+cases where a count is zero get their own string rather than reading "0 added".
+
+## 7. Still open
+
+- **The CSV of completions is not built.** PRD §5 asks for it alongside the
+  JSON, and the two are different things for different jobs: the JSON is the
+  event log and the only thing an import can rebuild from, while the CSV is a
+  view of the completions projection for a spreadsheet. It is not a recovery
+  path and must not be described as one.
+- **The 30-day nudge is not built**, and it is the piece of PRD §5 that belongs
+  on this screen rather than beside it. It needs a stored `lastExportedAt`,
+  which is a fourth `UserSettings` field and so a `:core:data` change with its
+  own tests — and it is what turns the export row into a `SettingRow` with a
+  real value, per §6.
+- **An export cancelled by leaving the screen leaves a truncated file.** The
+  write itself is non-cancellable, so navigating away mid-export still finishes
+  it, but `viewModelScope` is gone by then and the snackbar is lost — so a user
+  who backs out is told nothing either way. Doing this properly means an
+  application-scoped coroutine or WorkManager, both of which are decisions
+  above this module.
+- **The Data section is inside the `Settings` branch**, so a non-IO read
+  failure takes the recovery path off the screen along with the settings.
+  `Unavailable` is a bug-shaped state that IO cannot produce — `observe()`
+  absorbs `IOException` into defaults — so this is tolerable rather than
+  invisible, and `unavailable_takesTheDataSectionWithIt` pins it as a decision.
+  If it ever becomes reachable in practice, the fix is to draw the section as a
+  sibling of the `when` rather than inside it.
+- **An import cannot be previewed.** See §6: a dry run in `:core:data` is what
+  would make a confirmation dialog worth having.
 - **No confirmation that a write landed.** A successful change is silent: the
   row redrawing from the store is the feedback, and a snackbar on every tap
   would be noise. The failure path does speak. Worth revisiting only if the
@@ -168,3 +266,10 @@ next thing that recomposes catches up anyway.
   cleanup rather than this one — and §4's argument about the glyph carrying no
   meaning on its own is written in three places now, which is usually the signal
   that the component wants extracting.
+
+  **`SectionHeader` is the sixth**, added by the Data section: a bare `Text` at
+  `titleSmall`/`onSurfaceVariant` with the same padding as
+  `HabitListScreen.kt`'s archived heading. Not identical — that one is a
+  `LazyColumn` item and takes no modifier — so it is a second occurrence rather
+  than a copy, which is exactly the threshold this bullet exists to track.
+  Whenever the glyph button moves to `:core:ui`, this should move with it.
