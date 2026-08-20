@@ -109,6 +109,16 @@ internal class ExportReader(private val payloads: EventCodec) {
         } catch (cause: DateTimeParseException) {
             malformed(at(index, entry.id, "occurred_at is not an ISO-8601 instant: ${cause.message}"))
         }
+        // Range-checked even though nothing reads it yet, and *because*
+        // nothing reads it yet. Stored unvalidated, a hand-mangled offset
+        // becomes a DateTimeException the first time something builds a
+        // ZoneOffset from it — thrown from inside a transaction, long after
+        // the import, on an event the user can no longer identify. Refusing
+        // it here keeps the promise the rest of this class makes: every
+        // refusal names an event.
+        if (entry.tzOffsetMin !in -MAX_OFFSET_MINUTES..MAX_OFFSET_MINUTES) {
+            malformed(at(index, entry.id, "tz_offset_min is outside ±$MAX_OFFSET_MINUTES: ${entry.tzOffsetMin}"))
+        }
         val payload = EncodedPayload(entry.type, entry.schemaVersion, entry.payload.toString())
         proveReadable(index, entry.id, payload)
         // Truncated rather than refused. The column stores epoch millis, so a
@@ -148,5 +158,8 @@ internal class ExportReader(private val payloads: EventCodec) {
     private companion object {
         const val FORMAT_KEY = "format"
         const val FORMAT_VERSION_KEY = "format_version"
+
+        /** `ZoneOffset` runs to ±18:00, and nothing outside that is an offset. */
+        const val MAX_OFFSET_MINUTES = 18 * 60
     }
 }
