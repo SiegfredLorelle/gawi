@@ -72,7 +72,7 @@ internal class ContentResolverEventArchive @Inject constructor(
      * a `ContentResolver` means a Robolectric shadow, which nothing in this
      * project does yet, and [EventLogArchive] is split out precisely so the
      * decisions are testable without one. It is checked on a device instead
-     * (docs/running.md §5).
+     * (docs/running.md §4).
      */
     override suspend fun exportTo(destination: Uri) = withContext(NonCancellable + Dispatchers.IO) {
         val bytes = archive.encode()
