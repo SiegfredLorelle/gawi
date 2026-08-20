@@ -1,7 +1,5 @@
 package com.gawi.feature.today
 
-import androidx.annotation.StringRes
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -9,19 +7,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import com.gawi.core.domain.model.HabitId
-import com.gawi.core.ui.theme.GawiSpacing
+import com.gawi.core.ui.component.Notice
 import java.time.LocalDate
 
 /**
@@ -57,14 +52,18 @@ internal fun TodayScreen(
             TodayUiState.Loading -> Box(Modifier.fillMaxSize().padding(insets))
 
             TodayUiState.Unavailable -> Notice(
-                title = R.string.today_unavailable_title,
-                body = R.string.today_unavailable_body,
+                title = stringResource(R.string.today_unavailable_title),
+                body = stringResource(R.string.today_unavailable_body),
                 modifier = Modifier.fillMaxSize().padding(insets),
             )
 
             is TodayUiState.Empty -> Column(Modifier.fillMaxSize().padding(insets)) {
                 MascotPanel(mood = state.mood, remaining = 0, total = 0)
-                EmptyToday(Modifier.fillMaxSize())
+                Notice(
+                    title = stringResource(R.string.today_empty_title),
+                    body = stringResource(R.string.today_empty_body),
+                    modifier = Modifier.fillMaxSize(),
+                )
             }
 
             is TodayUiState.Habits -> Column(Modifier.fillMaxSize().padding(insets)) {
@@ -100,36 +99,5 @@ private fun HabitList(state: TodayUiState.Habits, onToggle: (HabitId, Boolean, L
                 onToggle = { onToggle(row.id, row.completed, state.logicalDate) },
             )
         }
-    }
-}
-
-@Composable
-private fun EmptyToday(modifier: Modifier = Modifier) {
-    Notice(
-        title = R.string.today_empty_title,
-        body = R.string.today_empty_body,
-        modifier = modifier,
-    )
-}
-
-/** Centred two-line copy — the shape both the empty and the failed states take. */
-@Composable
-private fun Notice(@StringRes title: Int, @StringRes body: Int, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier.padding(GawiSpacing.Row),
-        verticalArrangement = Arrangement.spacedBy(GawiSpacing.Gap, Alignment.CenterVertically),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(
-            text = stringResource(title),
-            style = MaterialTheme.typography.titleMedium,
-            textAlign = TextAlign.Center,
-        )
-        Text(
-            text = stringResource(body),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
     }
 }
