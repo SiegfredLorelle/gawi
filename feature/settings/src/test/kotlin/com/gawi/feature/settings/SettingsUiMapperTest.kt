@@ -1,5 +1,6 @@
 package com.gawi.feature.settings
 
+import com.gawi.core.data.backup.ExportStatus
 import com.gawi.core.data.backup.ImportResult
 import com.gawi.core.data.settings.UserSettings
 import org.junit.Assert.assertEquals
@@ -35,6 +36,128 @@ class SettingsUiMapperTest {
             state,
         )
     }
+
+    // --- the last-export nudge (PRD §5) ----------------------------------
+
+    /**
+     * An absent stamp means two different things and the log decides which.
+     *
+     * This is the whole reason [recencyOf] exists rather than a null check at
+     * the call site: on a fresh install there is nothing to lose and a warning
+     * about it is noise, and on a log with events it is exactly the case the
+     * nudge was asked for.
+     */
+    @Test
+    fun `never exported over an empty log says nothing`() {
+        assertEquals(ExportRecency.NothingYet, recencyOf(ExportStatus(daysSinceExport = null, hasEvents = false)))
+    }
+
+    @Test
+    fun `never exported over a log with something in it is the case the nudge is for`() {
+        assertEquals(ExportRecency.Never, recencyOf(ExportStatus(daysSinceExport = null, hasEvents = true)))
+    }
+
+    /** Nought days is an answer, not a count. "0 days ago" is arithmetic. */
+    @Test
+    fun `an export today reads as today rather than as nought days`() {
+        assertEquals(ExportRecency.Today, recencyOf(status(days = 0)))
+    }
+
+    @Test
+    fun `a day count is carried through`() {
+        assertEquals(ExportRecency.DaysAgo(1), recencyOf(status(days = 1)))
+        assertEquals(ExportRecency.DaysAgo(34), recencyOf(status(days = 34)))
+    }
+
+    /**
+     * The threshold PRD §5 names, in literal days on both sides of itself.
+     *
+     * **Written as 29, 30 and 31 and not as the constant plus or minus one.**
+     * The first draft of these used `EXPORT_NUDGE_DAYS - 1`, which moves with
+     * the constant and therefore passes at any threshold — a vacuous boundary
+     * test, caught by moving the constant to 31 and watching nothing redden.
+     * The number is pinned separately, below.
+     *
+     * Asserted through [exportHelp] rather than a private predicate, because
+     * which sentence the row shows is the only part of this a user can see.
+     */
+    @Test
+    fun `twenty-nine days is not yet overdue`() {
+        assertEquals(R.string.settings_export_help, exportHelp(RowActivity.Live, ExportRecency.DaysAgo(29)))
+    }
+
+    @Test
+    fun `thirty days is overdue`() {
+        assertEquals(R.string.settings_export_overdue_help, exportHelp(RowActivity.Live, ExportRecency.DaysAgo(30)))
+    }
+
+    @Test
+    fun `thirty-one days stays overdue`() {
+        assertEquals(R.string.settings_export_overdue_help, exportHelp(RowActivity.Live, ExportRecency.DaysAgo(31)))
+    }
+
+    /** The PRD's own number, so the three above cannot drift away from it together. */
+    @Test
+    fun `the threshold is the thirty days the PRD asks for`() {
+        assertEquals(30, EXPORT_NUDGE_DAYS)
+    }
+
+    @Test
+    fun `never exported is overdue and an empty log is not`() {
+        assertEquals(R.string.settings_export_overdue_help, exportHelp(RowActivity.Live, ExportRecency.Never))
+        assertEquals(R.string.settings_export_help, exportHelp(RowActivity.Live, ExportRecency.NothingYet))
+        assertEquals(R.string.settings_export_help, exportHelp(RowActivity.Live, ExportRecency.Today))
+    }
+
+    /**
+     * A row writing a file right now has no business saying there is no backup.
+     *
+     * Running wins over overdue, and the overdue case is the one that makes the
+     * order visible — with the plain help line as the loser either way, a
+     * reversed precedence would look correct.
+     */
+    @Test
+    fun `a running export says so rather than nudging`() {
+        assertEquals(R.string.settings_export_running, exportHelp(RowActivity.Running, ExportRecency.Never))
+        assertEquals(R.string.settings_export_overdue_help, exportHelp(RowActivity.Blocked, ExportRecency.Never))
+    }
+
+    @Test
+    fun `the import row has a status and no nudge`() {
+        assertEquals(R.string.settings_import_running, importHelp(RowActivity.Running))
+        assertEquals(R.string.settings_import_help, importHelp(RowActivity.Live))
+        assertEquals(R.string.settings_import_help, importHelp(RowActivity.Blocked))
+    }
+
+    /**
+     * Both rows go dead while either runs, and they differ only in which one is
+     * announced. The row that is *not* running is the easy one to leave live.
+     */
+    @Test
+    fun `a task makes its own row running and the other one blocked`() {
+        assertEquals(RowActivity.Live, activityOf(DataTask.Idle, DataTask.Exporting))
+        assertEquals(RowActivity.Live, activityOf(DataTask.Idle, DataTask.Importing))
+        assertEquals(RowActivity.Running, activityOf(DataTask.Exporting, DataTask.Exporting))
+        assertEquals(RowActivity.Blocked, activityOf(DataTask.Exporting, DataTask.Importing))
+        assertEquals(RowActivity.Running, activityOf(DataTask.Importing, DataTask.Importing))
+        assertEquals(RowActivity.Blocked, activityOf(DataTask.Importing, DataTask.Exporting))
+    }
+
+    @Test
+    fun `the state carries the recency it was given`() {
+        val state = UserSettings().toUiState(exportRecency = ExportRecency.DaysAgo(34)) as SettingsUiState.Settings
+
+        assertEquals(ExportRecency.DaysAgo(34), state.exportRecency)
+    }
+
+    @Test
+    fun `the state defaults to saying nothing about exports`() {
+        val state = UserSettings().toUiState() as SettingsUiState.Settings
+
+        assertEquals(ExportRecency.NothingYet, state.exportRecency)
+    }
+
+    private fun status(days: Int) = ExportStatus(daysSinceExport = days.toLong(), hasEvents = true)
 
     @Test
     fun `the defaults are the PRD's own`() {

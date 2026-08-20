@@ -1,18 +1,12 @@
 package com.gawi.feature.settings
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.LiveRegionMode
-import androidx.compose.ui.semantics.liveRegion
-import androidx.compose.ui.semantics.semantics
 import com.gawi.core.ui.theme.GawiSpacing
 
 // Export and import: the two rows on this screen that are not settings.
@@ -33,34 +27,52 @@ import com.gawi.core.ui.theme.GawiSpacing
  * No divider. The heading carries the separation on its own over there, a rule
  * and a heading are two devices doing one job, and there is no
  * `HorizontalDivider` anywhere in this app to be consistent with.
+ *
+ * The export row is a [SettingRow] with a real stored value — how long ago the
+ * log was last written to a file — and the import row is the same composable
+ * with none, because there is nothing an import leaves behind for a row to
+ * report. That is the convergence docs/ux/settings.md §6 predicted, arriving one
+ * step further along than it expected: one row composable rather than two.
  */
 @Composable
-internal fun DataSection(dataTask: DataTask, actions: SettingsActions) {
-    // Both rows go dead while either runs. Exporting midway through an import
-    // reads a log that is half-merged; importing during an export writes a file
-    // that is half-written. Neither is worth allowing to save a tap.
-    val idle = dataTask == DataTask.Idle
+internal fun DataSection(dataTask: DataTask, recency: ExportRecency, actions: SettingsActions) {
+    val exporting = activityOf(dataTask, DataTask.Exporting)
+    val importing = activityOf(dataTask, DataTask.Importing)
 
     SectionHeader(stringResource(R.string.settings_data_header))
-    ActionRow(
+    SettingRow(
         label = stringResource(R.string.settings_export_label),
-        help = statusOr(dataTask, DataTask.Exporting, R.string.settings_export_running, R.string.settings_export_help),
-        running = dataTask == DataTask.Exporting,
-        enabled = idle,
+        value = exportValue(recency),
+        help = stringResource(exportHelp(exporting, recency)),
+        activity = exporting,
         onClick = actions.onExport,
     )
-    ActionRow(
+    SettingRow(
         label = stringResource(R.string.settings_import_label),
-        help = statusOr(dataTask, DataTask.Importing, R.string.settings_import_running, R.string.settings_import_help),
-        running = dataTask == DataTask.Importing,
-        enabled = idle,
+        value = null,
+        help = stringResource(importHelp(importing)),
+        activity = importing,
         onClick = actions.onImport,
     )
 }
 
+/**
+ * The export row's value line, or null when there is nothing worth saying.
+ *
+ * Only resolving here; which of the four cases applies was decided by
+ * [recencyOf], where it can be tested without rendering anything. A `<plurals>`
+ * rather than one string with a `%d` in it, because this sentence has exactly one
+ * number in it and "1 days ago" is not a thing to ship — which is the case §6's
+ * argument against quantity resources explicitly does not cover, that one being
+ * about a sentence with two independent counts.
+ */
 @Composable
-private fun statusOr(dataTask: DataTask, running: DataTask, runningRes: Int, helpRes: Int): String =
-    stringResource(if (dataTask == running) runningRes else helpRes)
+private fun exportValue(recency: ExportRecency): String? = when (recency) {
+    ExportRecency.NothingYet -> null
+    ExportRecency.Never -> stringResource(R.string.settings_export_never)
+    ExportRecency.Today -> stringResource(R.string.settings_export_today)
+    is ExportRecency.DaysAgo -> pluralStringResource(R.plurals.settings_export_days_ago, recency.days, recency.days)
+}
 
 @Composable
 private fun SectionHeader(text: String) {
@@ -70,48 +82,4 @@ private fun SectionHeader(text: String) {
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(horizontal = GawiSpacing.Row, vertical = GawiSpacing.Gap),
     )
-}
-
-/**
- * One thing you can do, and what it does.
- *
- * `SettingRow`'s sibling, and deliberately not `SettingRow` with an empty
- * value. That middle line is `titleMedium` in the primary colour and it means
- * "this is what the setting is set to" — three rows have taught the reader that
- * before they reach this one. "Export a copy" is not a value, and a row that
- * put an action verb where the others put a state would borrow the wrong
- * emphasis.
- *
- * When the 30-day nudge lands, the export row gains a real stored value and
- * *becomes* a `SettingRow`; this does not grow a `value` parameter. The import
- * row will never have one.
- *
- * Disabled rather than hidden while the work runs, the way the habit editor's
- * Save is: a control that vanishes takes its explanation with it. [running]
- * marks the row whose help line has been replaced by a status, so a screen
- * reader is told rather than left tapping something silent.
- */
-@Composable
-private fun ActionRow(label: String, help: String, running: Boolean, enabled: Boolean, onClick: () -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(enabled = enabled, onClickLabel = label, onClick = onClick)
-            .padding(horizontal = GawiSpacing.Row, vertical = GawiSpacing.Gap),
-        verticalArrangement = Arrangement.spacedBy(GawiSpacing.Line),
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyLarge,
-            // A colour rather than an alpha: no magic number to name, and dark
-            // mode needs no second thought.
-            color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            text = help,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = if (running) Modifier.semantics { liveRegion = LiveRegionMode.Polite } else Modifier,
-        )
-    }
 }

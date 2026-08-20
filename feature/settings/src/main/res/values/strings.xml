@@ -37,14 +37,33 @@
     <string name="settings_confirm">Set</string>
     <string name="settings_cancel">Cancel</string>
 
-    <!-- The Data section. Nothing in it is a setting: these rows have no
-         stored value, so they say what the action does rather than what it is
-         set to. The export row gains a value line when the 30-day nudge lands
-         and there is a stored date to put in it (PRD §5). -->
+    <!-- The Data section. Neither row is a setting, and only one of them has
+         anything set: the export row's value line is how long ago the log was
+         last written to a file, which is the 30-day nudge PRD §5 asks for. The
+         import row has no value and never will — nothing an import leaves
+         behind is a thing to report. -->
     <string name="settings_data_header">Data</string>
 
     <string name="settings_export_label">Export a copy</string>
     <string name="settings_export_help">Writes every habit and everything you have logged to a JSON file, wherever you choose to put it. Nothing is sent anywhere — moving that file off this phone is up to you, and it is the only backup there is.</string>
+
+    <!-- The value line. Nothing here is shown on a log with no events in it: a
+         fresh install has nothing to lose, and warning it about that is noise.
+         A quantity resource rather than one %d string, because this sentence
+         has exactly one number in it — unlike the import result below, which
+         has two and therefore cannot be one. -->
+    <string name="settings_export_never">Never exported</string>
+    <string name="settings_export_today">Last exported today</string>
+    <plurals name="settings_export_days_ago">
+        <item quantity="one">Last exported %d day ago</item>
+        <item quantity="other">Last exported %d days ago</item>
+    </plurals>
+
+    <!-- The nudge itself, in place of the help line once a backup is overdue.
+         Gentle, per PRD §5, and in-app only — this app has no notification
+         permission and asks for none. It carries no number, because the value
+         line directly above it already does. -->
+    <string name="settings_export_overdue_help">There is no other copy of your history on this phone or anywhere else. Export one and keep it somewhere you would still have it if you lost this phone.</string>
 
     <string name="settings_import_label">Import a file</string>
     <string name="settings_import_help">Adds what a Gawi export holds to what is already here. Nothing is replaced and nothing is removed, so importing the same file twice changes nothing the second time.</string>
