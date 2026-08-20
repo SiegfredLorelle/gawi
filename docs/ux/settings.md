@@ -8,8 +8,9 @@ it — so this document is where the screen those four words imply is decided.
 
 **Status:** decided and built 2026-08-20, with `:feature:settings`. **Export and
 import** landed the same day, as a labelled section below the three settings
-(§6). The rest of PRD §5's data row — a CSV of completions, and the nudge when
-no export has been made for 30 days — is still unbuilt; see §7.
+(§6). **The 30-day nudge landed 2026-08-21** and turned the export row into a
+`SettingRow` with a real stored value (§6). The rest of PRD §5's data row — a
+CSV of completions — is still unbuilt; see §7.
 
 Written after the screens, like [habits.md](habits.md) and unlike
 [today-view.md](today-view.md). Little here was open: the fields are fixed by
@@ -143,15 +144,43 @@ would mean inventing a word for "the three settings", and every candidate
 either: a rule and a heading are two devices doing one job, and there is no
 `HorizontalDivider` anywhere in this app to be consistent with.
 
-**`ActionRow`, not `SettingRow` with an empty value.** A `SettingRow`'s middle
-line is `titleMedium` in the primary colour and it means *this is what the
-setting is set to*; three rows teach a reader that before they reach these two.
-"Export a copy" is not a value. It was tempting to pre-stage the 30-day nudge by
-writing "Last exported: never" there, and that would be copy the store cannot
-back — the one thing §2 argues against. The convergence goes the other way: when
-the nudge lands and there is a stored date, the export row *becomes* a
-`SettingRow`, one call site and one mapper function. The import row will never
-have a value.
+**One row composable, and a nullable value.** A `SettingRow`'s middle line is
+`titleMedium` in the primary colour and it means *this is what the setting is set
+to*; three rows teach a reader that before they reach these two. "Export a copy"
+is not a value, and pre-staging the nudge by writing "Last exported: never" there
+before anything stored it would have been copy the store cannot back — the one
+thing §2 argues against.
+
+The nudge then landed and the convergence went one step further than this section
+predicted. It said the export row would *become* a `SettingRow` and that
+`ActionRow` would keep the import row; in the event `ActionRow` was deleted and
+`SettingRow` took both call sites, with `value: String?`. **The argument above is
+what makes that safe rather than what it overrides**: a null draws no middle line
+at all, not an empty one, so the import row still puts no action verb where the
+three settings above it put a state — and it never will, because nothing an
+import leaves behind is a thing to report. What changed is only that keeping two
+composables would have meant maintaining one `Column` twice to express one
+difference. It also retires half of §7's duplication bullet.
+
+**The nudge is words, not a colour, and it replaces the help line rather than
+joining it.** The value line says how long it has been; the help line underneath
+says why that matters, once it has been thirty days or once there are events and
+no export at all. An alarm-coloured caption is not the "gentle" PRD §5 asks for,
+two paragraphs of caption under one row is worse than one, and the precedence has
+to put a running export above both — a row writing a file right now has no
+business saying there is no file.
+
+**A log with no events in it says nothing at all.** `lastExportedAt` being absent
+means two different things and the log decides which: on a fresh install there is
+nothing to lose, and a nudge there is a warning about losing nothing; on a log
+that holds something it is exactly the case the nudge exists for, and it is
+overdue immediately rather than thirty days later. That second signal is why the
+stamp is not a `UserSettings` field — see §7.
+
+**There is no "not now".** A nudge that can be dismissed for thirty days is a
+nudge that says nothing, and it would have needed a seventh `SettingsActions`
+property, which is one past detekt's constructor threshold. The row that shows it
+is the row that fixes it.
 
 **The system picker is this section's "pick, then confirm" (§3), so there is no
 dialog.** Cancelling it returns a null `Uri` and nothing happens and nothing is
@@ -210,11 +239,42 @@ cases where a count is zero get their own string rather than reading "0 added".
   event log and the only thing an import can rebuild from, while the CSV is a
   view of the completions projection for a spreadsheet. It is not a recovery
   path and must not be described as one.
-- **The 30-day nudge is not built**, and it is the piece of PRD §5 that belongs
-  on this screen rather than beside it. It needs a stored `lastExportedAt`,
-  which is a fourth `UserSettings` field and so a `:core:data` change with its
-  own tests — and it is what turns the export row into a `SettingRow` with a
-  real value, per §6.
+- ~~**The 30-day nudge is not built.**~~ **Built 2026-08-21**, and one thing
+  this bullet said about it turned out to be wrong in a way worth recording.
+  `lastExportedAt` is **not** a fourth `UserSettings` field. Two reasons, both
+  written up on `ExportJournal`. `OfflineFirstHabitRepository` dedupes the Today
+  query on the `(settings, logical date)` pair, so a `UserSettings` field that
+  changed on every export would make that dedupe miss and restart the streak
+  sweep under an open screen — the churn `DataStoreSettingsSource`'s
+  `distinctUntilChanged` exists to prevent. And the nudge needs a second signal
+  `UserSettings` cannot carry at all, whether the log holds anything, so a flow
+  of its own was needed either way and folding the stamp into it cost nothing.
+  It shares the preferences *file*, which is safe because `update` assigns only
+  its own three keys, and two tests pin that in both directions. The three
+  preferences are what the user set; when an export last happened is a record of
+  what the app did — the same distinction §6 draws about the two rows.
+- **The last-export age is counted at emission, so it can go stale on an open
+  screen.** A screen left open across midnight shows yesterday's count until it
+  re-subscribes, which `WhileSubscribed(5_000)` makes a five-second staleness on
+  any real return to the screen. Likewise, the log is counted per emission and
+  an import does not touch the stamp, so importing into a previously empty log
+  does not switch the row from silent to "Never exported" until the flow
+  restarts. Both are cheap to fix with a clock tick and neither is worth one.
+- **An unreadable preferences file reads as never-exported, and therefore
+  nudges.** The safe direction, and the same asymmetry this section already
+  records for the three settings: the settings store refuses the command path
+  and guesses on the read path, and this guesses on both because nothing
+  validates against it. It is guarded twice on purpose — `ExportJournal` decides
+  what an unreadable file *means*, and the ViewModel guarantees that no failure
+  in that flow can reach `Unavailable`, because that branch would take the only
+  recovery path on the device off the screen over its own caption.
+- **The stamp is written after the output stream closes, and no JVM test covers
+  that ordering.** It has to mean "a file landed" rather than "a write was
+  attempted", or the nudge goes quiet for thirty days over a document that was
+  truncated and never filled. Testing it means substituting a `ContentResolver`,
+  which needs a Robolectric shadow that nothing in this project uses yet, and
+  `EventLogArchive` is split out from the `Uri` side precisely so the decisions
+  are testable without one. Checked on a device instead (docs/running.md §4).
 - **Leaving the screen the instant you tap Save can still leave an empty file,
   and the export is tied to the screen's lifetime.** Two of the three ways this
   used to go wrong are fixed and the third is not, so it is worth separating
@@ -308,3 +368,8 @@ cases where a count is zero get their own string rather than reading "0 added".
   `LazyColumn` item and takes no modifier — so it is a second occurrence rather
   than a copy, which is exactly the threshold this bullet exists to track.
   Whenever the glyph button moves to `:core:ui`, this should move with it.
+
+  **The row duplication is gone**, which is the one thing on this backlog the
+  nudge actually removed: `ActionRow` and `SettingRow` were the same `Column`
+  differing in a middle line and a pair of booleans, and there is now one of
+  them with five call sites (§6). The glyph button is untouched and still five.
