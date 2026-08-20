@@ -9,6 +9,7 @@ import com.gawi.core.data.db.dao.EventDao
 import com.gawi.core.data.time.DeviceClock
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import java.io.IOException
@@ -40,8 +41,16 @@ import javax.inject.Inject
  * and that is the rule the whole class is arranged around. This value only ever
  * decides whether to warn someone that they may have no backup, so a wrong
  * warning costs an export nobody needed and a wrong silence costs the warning
- * the PRD asked for. The read, the write and a nonsensical stored value are all
- * handled that way below, individually.
+ * the PRD asked for. Four failures are handled that way below, individually: the
+ * preferences read, the log count, the write, and a nonsensical stored value.
+ *
+ * The count was the one that got away. It used to run inside the `map` over the
+ * preferences flow, under a `catch` that tests `IOException` — and Room throws
+ * `SQLiteException`, which is a `RuntimeException`. So a corrupt, locked or full
+ * database went straight past this class's guard and was answered two layers up
+ * with "nothing to lose", silencing the nudge on a device whose database was
+ * failing. A PR reviewer found it. The two reads have separate guards now,
+ * because they fail for separate reasons.
  *
  * Not a sixth constructor parameter on [EventLogArchive], which already has
  * five — detekt's `LongParameterList` fires *at* six.
@@ -103,15 +112,51 @@ internal class ExportJournal @Inject constructor(
      * run again on each of those — what this stops is an identical answer
      * reaching `combine` and recomposing the screen behind it.
      */
-    fun observe(): Flow<ExportStatus> = dataStore.data
-        .catch { cause -> if (cause is IOException) emit(emptyPreferences()) else throw cause }
-        .map { preferences -> statusFor(preferences.long(LAST_EXPORTED_AT)) }
-        .distinctUntilChanged()
+    fun observe(): Flow<ExportStatus> = combine(storedStamp(), hasEvents()) { storedMillis, hasEvents ->
+        ExportStatus(
+            daysSinceExport = storedMillis?.let { daysSince(Instant.ofEpochMilli(it)) },
+            hasEvents = hasEvents,
+        )
+    }.distinctUntilChanged()
 
-    private suspend fun statusFor(storedMillis: Long?): ExportStatus = ExportStatus(
-        daysSinceExport = storedMillis?.let { daysSince(Instant.ofEpochMilli(it)) },
-        hasEvents = events.count() > 0,
-    )
+    /**
+     * The stored stamp, or null if there is none to read.
+     *
+     * **An unreadable file reads as "never exported" rather than propagating**,
+     * exactly as `DataStoreSettingsSource`'s read path degrades to the defaults,
+     * and for a sharper reason: this is the one value on the screen whose absence
+     * *hides* a warning. Note what the fallback deliberately does not do — it
+     * substitutes empty preferences rather than a finished answer, so the log is
+     * still counted alongside it and a device with events on it still gets
+     * nudged.
+     *
+     * Not a blanket catch, for the reason the settings store gives: anything that
+     * is not a read failure is a bug and swallowing it would hide it behind a
+     * plausible answer. The caller guards that case separately, because a caption
+     * must not be able to take the screen down either way.
+     */
+    private fun storedStamp(): Flow<Long?> = dataStore.data
+        .catch { cause -> if (cause is IOException) emit(emptyPreferences()) else throw cause }
+        .map { preferences -> preferences.long(LAST_EXPORTED_AT) }
+
+    /**
+     * Whether the log holds anything, which is what keeps a fresh install from
+     * being nudged about losing nothing.
+     *
+     * **A failed count reads as "there is something here", because that is the
+     * reading that nudges.** Room throws `SQLiteException` — a `RuntimeException`,
+     * unrelated to `IOException` — so a corrupt, locked or full database lands
+     * here and nowhere else. Answering false would hide the warning on precisely
+     * the device that most needs it; answering true costs an export nobody
+     * needed, and on a broken database that export fails loudly, which tells the
+     * user more than silence would.
+     *
+     * Mapped to a `Boolean` before the catch, so the fallback can be written as
+     * the decision it is rather than as a sentinel count.
+     */
+    private fun hasEvents(): Flow<Boolean> = events.observeCount()
+        .map { it > 0 }
+        .catch { emit(true) }
 
     /**
      * Whole days between two wall-clock dates in the device's zone, or null if
@@ -132,12 +177,20 @@ internal class ExportJournal @Inject constructor(
      * instead, and the export that follows replaces the bad stamp. Note this
      * compares *dates*, so it takes a whole day of skew to trigger and clock
      * jitter around a fresh export cannot.
+     *
+     * **A count too large for the UI's `Int` is refused the same way**, and that
+     * is not hypothetical arithmetic: a stored `Long.MIN_VALUE` dates the stamp
+     * to the year -292275055, which is 106,752,011,854 days and narrows to
+     * -622,170,546 — a negative age, which reads as not-overdue and silences the
+     * nudge. Measured, not reasoned about. Bounding it here rather than clamping
+     * at the call site is what makes `recencyOf`'s `Long`-to-`Int` narrowing safe
+     * by construction instead of by luck.
      */
     private fun daysSince(exportedAt: Instant): Long? {
         val zone = clock.zone()
         val days = ChronoUnit.DAYS
             .between(exportedAt.atZone(zone).toLocalDate(), clock.now().atZone(zone).toLocalDate())
-        return days.takeIf { it >= 0 }
+        return days.takeIf { it in 0..Int.MAX_VALUE.toLong() }
     }
 
     /** The stored [key], or null if it is absent *or* holds something else. */
