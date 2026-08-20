@@ -1,5 +1,6 @@
 package com.gawi.core.data.backup
 
+import com.gawi.core.data.db.entity.ProjectionMetaEntity
 import com.gawi.core.data.testsupport.FakeDeviceClock
 import com.gawi.core.data.testsupport.FakeSettingsSource
 import com.gawi.core.data.testsupport.TestStore
@@ -244,6 +245,58 @@ class EventLogImportTest {
         } finally {
             other.close()
         }
+    }
+
+    /**
+     * The rebuild is skipped, not merely made cheap.
+     *
+     * Observed through `computed_for_date`, the one derived column that moves
+     * with the clock rather than with the log: winding the day on and
+     * re-importing a file the log already holds would re-stamp every streak row
+     * if the refold still ran. It must not. Nothing arrived, so nothing derived
+     * from the log moved — and repairing a date the read path sweeps on every
+     * collection is not an import's job (docs/ux/settings.md §6).
+     */
+    @Test
+    fun `re-importing a file that adds nothing rewrites no derived rows`() = runTest {
+        store.repository.createHabit(metadata(name = "read"))
+        store.repository.addCompletion(habitOnScreen(), store.today())
+        val file = store.exportText()
+        store.import(file)
+        clock.advanceDays(1)
+        val before = store.snapshot()
+
+        assertEquals(ImportResult.Merged(store.log().size, 0), store.import(file))
+
+        assertEquals(before, store.snapshot())
+    }
+
+    /**
+     * The `state == null` half of the guard, which is the half about safety
+     * rather than cost.
+     *
+     * A process that has not folded has not checked the projection version
+     * either, so the tables in front of it may have been written by a build
+     * whose rules have since changed. Skipping on the insert count alone would
+     * leave those tables in place under a stamp saying they are current — the
+     * failure `initialised()`'s publish-after-repair ordering exists to
+     * prevent, reached from the other side.
+     *
+     * Mutation-checked: dropping `&& carried != null` reddens this alone.
+     */
+    @Test
+    fun `an import that adds nothing still repairs a stale projection`() = runTest {
+        store.repository.createHabit(metadata(name = "read"))
+        val file = store.exportText()
+        val events = store.log().size
+        store.database.projectionMetaDao().upsert(ProjectionMetaEntity(projectionVersion = 0))
+        store.database.habitProjectionDao().deleteAll()
+
+        val restarted = TestStore.createOver(store.database, clock, settings)
+        val result = restarted.import(file)
+
+        assertEquals(ImportResult.Merged(events, 0), result)
+        assertEquals(1, restarted.snapshot().habits.size)
     }
 
     /**

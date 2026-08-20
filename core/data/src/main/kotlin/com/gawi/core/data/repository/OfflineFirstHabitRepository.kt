@@ -264,6 +264,11 @@ internal class OfflineFirstHabitRepository @Inject constructor(
      * life of the process. Every derived table would still look right, and the
      * first undo on an imported cell would report `CompletionNotFound` against
      * a row the user is looking at.
+     *
+     * The refold is skipped outright when the insert added nothing and this
+     * process has already folded — see [mergeLocked]. It cannot change what it
+     * would produce, and re-importing one's own file is the common case rather
+     * than the corner.
      */
     internal suspend fun mergeEvents(incoming: List<EncodedEvent>): Int = mutex.withLock {
         val settings = settings.current()
@@ -285,18 +290,62 @@ internal class OfflineFirstHabitRepository @Inject constructor(
      * would leave `state` short of the entire import, with nothing to notice.
      */
     private suspend fun mergeLocked(rows: List<EventEntity>, today: LocalDate, weekStart: DayOfWeek): Int = withContext(NonCancellable) {
+        // Read out here rather than inside the transaction. Not for visibility
+        // — the caller holds the mutex and `state` is only ever touched under
+        // it — but because the guard below is a claim about this *process*,
+        // not about the rows the transaction opens over.
+        val carried = state
         val (added, refolded) = database.withTransaction {
             val inserted = events.insertMerging(rows).count { it != ROW_NOT_INSERTED }
-            // Read on this dispatcher and fold off it. A dao call from
-            // inside the switched context would escape Room's transaction
-            // dispatcher, which is a deadlock rather than a slow path.
-            val stored = events.loadAll()
-            val folded = withContext(Dispatchers.Default) { Projector.rebuild(stored.map { it.toDomain(codec) }) }
-            writeRebuild(folded, today, weekStart)
+            // Nothing inserted means the log is exactly what `carried` was
+            // folded from. `events` has no update and no delete, its two
+            // inserts are both behind this mutex, the repository is a process
+            // singleton and there is no second process, so no writer can have
+            // moved it in between. The fold is a function of the log, and the
+            // derived tables were written from that fold.
+            //
+            // `carried != null` is the load-bearing half, not a null-safety
+            // formality. A null state is a process that has not been through
+            // `initialised()`, so the projection version has *not* been checked
+            // and the tables in front of it may have been written by a build
+            // whose rules have since changed — and the long path is the only
+            // one that upserts PROJECTION_VERSION. That is exactly the
+            // cold-start restore path, `pm clear` then import, so it has to
+            // take the long road. Do not "simplify" by calling `initialised()`
+            // first either: that folds the largest log there will ever be
+            // twice.
+            //
+            // Deliberately *not* repaired here: `today` and `weekStart`. Only
+            // the streak rows depend on them, they carry the date they were
+            // computed for, no query binds it, and the read path sweeps on
+            // every collection and every week-start edit. An import that
+            // changed nothing is not a moment at which "when" moved, and
+            // making it one would turn this row into a streak-repair button
+            // nobody asked for.
+            val folded = if (inserted == 0 && carried != null) carried else refoldLocked(today, weekStart)
             inserted to folded
         }
+        // A self-assignment on the short path, and left that way on purpose:
+        // one exit, and the publish stays visibly paired with the commit.
         state = refolded
         added
+    }
+
+    /**
+     * Reads the whole log, folds it, and writes the derived tables from
+     * scratch.
+     *
+     * Without a transaction of its own, like [writeRebuild] and for the same
+     * reason: the caller has to commit the insert and this as one unit.
+     */
+    private suspend fun refoldLocked(today: LocalDate, weekStart: DayOfWeek): ProjectedState {
+        // Read on this dispatcher and fold off it. A dao call from inside the
+        // switched context would escape Room's transaction dispatcher, which
+        // is a deadlock rather than a slow path.
+        val stored = events.loadAll()
+        val folded = withContext(Dispatchers.Default) { Projector.rebuild(stored.map { it.toDomain(codec) }) }
+        writeRebuild(folded, today, weekStart)
+        return folded
     }
 
     /**
