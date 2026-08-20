@@ -244,6 +244,22 @@ Do not "upgrade" this to exact alarms.
   (which state is emitted). Being unit tests, they need no device and change
   nothing below. Aim them at wiring and at rules a reader could delete by
   accident; the logic itself is already covered above.
+- `:app`: one **navigation test** that launches the real `MainActivity` under
+  Robolectric with `HiltTestApplication`. It is the only test of the production
+  Hilt graph — a missing binding is a runtime failure, so nothing below it can
+  catch one — and it asserts that each route leads where it says. Driving the
+  real activity is forced rather than chosen: feature screens and ViewModels are
+  `internal` to their modules, and `hiltViewModel()` needs an
+  `@AndroidEntryPoint` host.
+  **Journeys that write are deliberately not here.** Room's `InvalidationTracker`
+  does not deliver in this setup, so a screen never re-reads after a write;
+  measured by calling the repository directly, which succeeds while the screen
+  stays stale. Such a test passes only when a `WhileSubscribed` window happens to
+  lapse between two assertions, which is a pass that proves nothing. Replacing
+  the database would fix it and `@TestInstallIn` cannot reach it, because the
+  modules binding it are `internal` to `:core:data`. Until that changes, the
+  command path stays covered by `:core:data`'s tests and by `docs/running.md` §5
+  on a device.
 - Widget, notifications, and OEM battery behavior: **physical device only**
   (PRD §7). No emulator in CI.
 - CI runs unit tests only; instrumented tests are a manual, on-device
