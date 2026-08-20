@@ -215,12 +215,25 @@ cases where a count is zero get their own string rather than reading "0 added".
   which is a fourth `UserSettings` field and so a `:core:data` change with its
   own tests — and it is what turns the export row into a `SettingRow` with a
   real value, per §6.
-- **An export cancelled by leaving the screen leaves a truncated file.** The
-  write itself is non-cancellable, so navigating away mid-export still finishes
-  it, but `viewModelScope` is gone by then and the snackbar is lost — so a user
-  who backs out is told nothing either way. Doing this properly means an
-  application-scoped coroutine or WorkManager, both of which are decisions
-  above this module.
+- **An export survives leaving the screen, but still says nothing.** The log is
+  read and encoded before the document is opened — opening truncates it, so the
+  irreversible step goes last — and the open, write and close run under
+  `NonCancellable`. Backing out mid-export therefore finishes the file rather
+  than leaving the zero-byte one `"wt"` would otherwise leave under a plausible
+  name. `viewModelScope` is gone by then and the snackbar with it, so the backup
+  is whole and the user has no way to know it. Process death is *not* survived:
+  a force-stop or a low-memory kill mid-write leaves whatever the provider had.
+  That much is bounded rather than dangerous — truncated JSON does not parse and
+  `event_count` would not match what follows it, so the import path refuses such
+  a file as damaged instead of restoring part of it. Closing the last of the gap
+  means an application-scoped coroutine or WorkManager, both of which are
+  decisions above this module.
+
+  This bullet used to claim the write was already non-cancellable. It was not;
+  the doc was describing an intention the code never carried, which a PR
+  reviewer caught as a self-contradiction. Recorded because the failure mode —
+  a doc that reads like a decision and is actually a wish — is one this project
+  has now hit twice.
 - **The Data section is inside the `Settings` branch**, so a non-IO read
   failure takes the recovery path off the screen along with the settings.
   `Unavailable` is a bug-shaped state that IO cannot produce — `observe()`

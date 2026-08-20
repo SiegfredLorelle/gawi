@@ -408,6 +408,29 @@ the shape the 4b bug took. Wording itself is still yours to read.
       and neither row answers a tap until it finishes. On a small log this is
       over before you can see it — that is expected, and `SettingsScreenTest`
       covers it instead.
+- [ ] **Backing out mid-export still leaves a whole file.** With a log big
+      enough for the check above to be visible, tap **Export a copy**, save into
+      Downloads, and press Back out of Settings the moment the row reads
+      *Writing the file…*. No snackbar appears — expected, and the gap
+      `docs/ux/settings.md` §7 still records. Then check the tail:
+
+      ```sh
+      adb shell 'cat /sdcard/Download/gawi-export-*.json | tail -c 120'
+      ```
+
+      It ends in a closing brace rather than mid-token, and importing it back
+      reports the same event count the log holds. Proves the write survives
+      `viewModelScope` being cancelled — the claim §7 used to make and the code
+      did not keep. Without it the file is *zero bytes*, not partial: `"wt"`
+      truncates at open and the only cancellable moment is the log read after.
+- [ ] **Process death mid-export is not survived, and the file is refused rather
+      than half-restored.** Repeat the check above but run
+      `adb shell am force-stop com.gawi.app` instead of pressing Back. The file
+      is empty or truncated — expected; `NonCancellable` survives cancellation,
+      not a killed process. Now import it: the snackbar says it is damaged.
+      Proves the residual gap is bounded, because truncated JSON does not parse
+      and `event_count` would not match, so a half-written backup can never be
+      silently restored as a partial one.
 - [ ] **The count snackbar is readable before it goes.** Import an export
       holding habits this install does not have and read the whole line without
       hurrying; it uses the default short duration, and if that is too fast
