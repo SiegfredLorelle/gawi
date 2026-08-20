@@ -58,10 +58,18 @@ the dependency rule — in particular that domain logic never lands in a module
 where it can import Android.
 
 Built so far: `:app`, `:core:domain`, `:core:data`, `:core:ui`,
-`:feature:today` and `:feature:habits`. `:feature:settings` and `:widget` do
-not exist yet, which is why a debug-only activity in `app/src/debug/` still
-sets the day cutoff and the reminder time — delete that directory when
-`:feature:settings` lands.
+`:feature:today`, `:feature:habits` and `:feature:settings`. `:widget` does not
+exist yet. `app/src/debug/` is gone: the debug-only activity that set the day
+cutoff and the reminder time over `adb` was deleted when `:feature:settings`
+landed, as this paragraph used to promise, and there is no debug source set
+anywhere in the project now.
+
+`:feature:settings` is built to the three preferences the data layer holds —
+day boundary, week start and reminder time. **Export is the part of its row in
+the table above that is not built yet**, and it is deliberately its own piece
+of work rather than a fourth row on that screen: it is the only
+disaster-recovery path there is, `allowBackup` is off (§6), and the event log
+cannot be reconstructed from anything.
 
 **`:app` owns navigation, and no other module depends on a navigation
 library.** A feature module exposes Route composables taking plain lambdas, so
@@ -181,8 +189,14 @@ The correctness core of the app. All of it lives in `:core:domain`.
 - `logical_date = f(instant, day-boundary cutoff, timezone)` — e.g. with a
   03:00 cutoff, 01:30 on the 16th belongs to the 15th.
 - **Stored at log time.** The completion event carries the `logical_date` the
-  user saw when they tapped. Changing the day-boundary or week-start setting
-  later applies **prospectively only**; past events never re-bucket.
+  user saw when they tapped. Changing the **day-boundary** setting later applies
+  **prospectively only**; past events never re-bucket.
+- **Week start is not the same rule**, and the difference is user-visible. No
+  event stores a week, so week bucketing is derived from `logical_date` at read
+  time — changing the week start therefore re-counts weeks that have already
+  happened, including the one currently on screen. `TodayQueryTest`'s *"changing
+  the week start re-buckets a screen that is already open"* pins it, and
+  docs/ux/settings.md §2 is why the two settings carry different copy.
 - Week bucketing uses the configurable week start (default Monday). Weekly
   habits are `n` completions anywhere in the week — not tied to specific days.
 - Streaks are computed from completions: **day-streaks** for daily habits,
@@ -258,7 +272,7 @@ Do not "upgrade" this to exact alarms.
   lapse between two assertions, which is a pass that proves nothing. Replacing
   the database would fix it and `@TestInstallIn` cannot reach it, because the
   modules binding it are `internal` to `:core:data`. Until that changes, the
-  command path stays covered by `:core:data`'s tests and by `docs/running.md` §5
+  command path stays covered by `:core:data`'s tests and by `docs/running.md` §4
   on a device.
 - Widget, notifications, and OEM battery behavior: **physical device only**
   (PRD §7). No emulator in CI.
