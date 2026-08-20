@@ -1,9 +1,13 @@
 package com.gawi.core.data.testsupport
 
 import androidx.room.Room
+import com.gawi.core.data.backup.AppVersion
+import com.gawi.core.data.backup.EventLogArchive
+import com.gawi.core.data.backup.ImportResult
 import com.gawi.core.data.db.GawiDatabase
 import com.gawi.core.data.db.dao.CompletionProjectionDao
 import com.gawi.core.data.db.entity.CompletionEntity
+import com.gawi.core.data.db.entity.EventEntity
 import com.gawi.core.data.db.entity.HabitEntity
 import com.gawi.core.data.db.entity.HabitStreakEntity
 import com.gawi.core.data.projection.ProjectionWriter
@@ -13,10 +17,13 @@ import com.gawi.core.data.settings.UserSettings
 import com.gawi.core.data.time.DeviceClock
 import com.gawi.core.domain.id.UuidV7Generator
 import com.gawi.core.domain.serialization.EventCodec
+import com.gawi.core.domain.serialization.export.EventLogCodec
 import com.gawi.core.domain.time.logicalDate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.robolectric.RuntimeEnvironment
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.time.Instant
 import java.time.LocalDate
@@ -117,6 +124,7 @@ internal class HookedCompletionDao(private val delegate: CompletionProjectionDao
 internal class TestStore private constructor(
     val database: GawiDatabase,
     val repository: OfflineFirstHabitRepository,
+    val archive: EventLogArchive,
     val clock: FakeDeviceClock,
     val settings: FakeSettingsSource,
 ) {
@@ -131,7 +139,19 @@ internal class TestStore private constructor(
 
     fun close() = database.close()
 
+    /** The whole log as an export file. */
+    suspend fun exportText(): String = ByteArrayOutputStream().also { archive.export(it) }.toString(Charsets.UTF_8.name())
+
+    /** Imports [text] as if it had come off a document the user picked. */
+    suspend fun import(text: String): ImportResult = archive.import(ByteArrayInputStream(text.toByteArray()))
+
+    /** Every event row, for the assertions that are about the log itself. */
+    suspend fun log(): List<EventEntity> = database.eventDao().loadAll()
+
     companion object {
+        /** Fixed, so an exported envelope is comparable between two runs. */
+        const val APP_VERSION = "0.0.0-test"
+
         fun create(
             clock: FakeDeviceClock = FakeDeviceClock(),
             settings: FakeSettingsSource = FakeSettingsSource(),
@@ -176,7 +196,14 @@ internal class TestStore private constructor(
                 clock = clock,
                 settings = settings,
             )
-            return TestStore(database, repository, clock, settings)
+            val archive = EventLogArchive(
+                events = database.eventDao(),
+                store = repository,
+                codec = EventLogCodec(EventCodec()),
+                clock = clock,
+                appVersion = AppVersion(APP_VERSION),
+            )
+            return TestStore(database, repository, archive, clock, settings)
         }
     }
 }

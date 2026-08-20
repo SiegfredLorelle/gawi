@@ -1,5 +1,7 @@
 package com.gawi.core.data.di
 
+import com.gawi.core.data.backup.ContentResolverEventArchive
+import com.gawi.core.data.backup.EventArchive
 import com.gawi.core.data.repository.HabitRepository
 import com.gawi.core.data.repository.OfflineFirstHabitRepository
 import com.gawi.core.data.settings.DataStoreSettingsSource
@@ -31,4 +33,11 @@ internal abstract class DataBindsModule {
 
     @Binds
     abstract fun deviceClock(implementation: SystemDeviceClock): DeviceClock
+
+    /**
+     * Unscoped: it holds nothing. The state a merge touches lives on the
+     * repository singleton it delegates to.
+     */
+    @Binds
+    abstract fun eventArchive(implementation: ContentResolverEventArchive): EventArchive
 }
