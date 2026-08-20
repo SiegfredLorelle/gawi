@@ -11,19 +11,21 @@ import com.gawi.core.domain.serialization.export.ExportRead
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import java.io.ByteArrayOutputStream
-import java.io.OutputStream
 
 /**
  * What an export puts in the file.
  *
  * These assertions read the file back through [EventLogCodec] rather than
- * parsing it, and the two that cannot do that use plain substrings. That is
+ * parsing it, and the two that cannot do that use plain substrings.
+ *
+ * There used to be a test that export left the caller's stream open. It is gone
+ * because the property is now structural rather than behavioural: [encode]
+ * hands bytes back and never receives a stream to leave open. A guarantee the
+ * signature makes needs no test. That is
  * deliberate: `:core:data` has no kotlinx-serialization on its classpath — main
  * or test — because the export format lives in `:core:domain`, and a JSON
  * dependency appearing here is the signal that the boundary has been crossed.
@@ -97,19 +99,6 @@ class EventLogExportTest {
         assertTrue(text, text.contains("\"app_version\": \"${TestStore.APP_VERSION}\""))
     }
 
-    /**
-     * The stream belongs to whoever opened it — here that is the
-     * `ContentResolver` wrapper, whose own `use {}` would double-close it.
-     */
-    @Test
-    fun `export leaves the stream open`() = runTest {
-        val sink = RecordingStream()
-
-        store.archive.export(sink)
-
-        assertFalse(sink.closed)
-    }
-
     private fun readBack(text: String): List<EncodedEvent> = when (val read = codec.decode(text)) {
         is ExportRead.Events -> read.events
         is ExportRead.Refused -> error("the export was refused: ${read.reason}")
@@ -123,16 +112,4 @@ class EventLogExportTest {
         tzOffsetMin = 0,
         payload = """{"whither":"elsewhere"}""",
     )
-
-    private class RecordingStream : OutputStream() {
-        private val bytes = ByteArrayOutputStream()
-        var closed = false
-            private set
-
-        override fun write(b: Int) = bytes.write(b)
-
-        override fun close() {
-            closed = true
-        }
-    }
 }

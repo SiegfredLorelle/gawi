@@ -10,7 +10,6 @@ import com.gawi.core.domain.serialization.export.ExportRead
 import com.gawi.core.domain.serialization.export.ExportRejection
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
-import java.io.OutputStream
 import java.nio.charset.CharacterCodingException
 import javax.inject.Inject
 
@@ -25,14 +24,19 @@ import javax.inject.Inject
 internal data class AppVersion(val value: String)
 
 /**
- * Export and import over plain streams — [EventArchive] minus the document.
+ * The content of an export, and what to do with one — [EventArchive] minus the
+ * document.
  *
  * Split out from the `Uri` side so the part with the decisions in it is
- * testable against a `ByteArrayOutputStream`. This project hand-writes every
- * fake and has no mocking library; substituting a `ContentResolver` would mean
- * reaching for a Robolectric shadow, which nothing here does yet.
+ * testable against plain bytes. This project hand-writes every fake and has no
+ * mocking library; substituting a `ContentResolver` would mean reaching for a
+ * Robolectric shadow, which nothing here does yet.
  *
- * Streams are neither opened nor closed here. The caller owns them.
+ * The two directions are deliberately asymmetric. [import] takes a stream and
+ * neither opens nor closes it, because reading a document destroys nothing.
+ * [encode] hands bytes back rather than taking a stream, because opening a
+ * document for writing truncates it — so the caller has to own the moment that
+ * becomes irreversible, and should leave it as late as possible.
  */
 internal class EventLogArchive @Inject constructor(
     private val events: EventDao,
@@ -49,11 +53,18 @@ internal class EventLogArchive @Inject constructor(
     private val appVersion: AppVersion,
 ) {
 
-    suspend fun export(destination: OutputStream) {
+    /**
+     * The whole log as the bytes an export file holds.
+     *
+     * Bytes rather than a stream, and asymmetric with [import] on purpose.
+     * Reading a document destroys nothing, so an import can stream and stay
+     * cancellable. Writing one truncates it the instant it opens, so this hands
+     * the finished bytes back and lets the caller decide when to make that
+     * irreversible — which it should do last.
+     */
+    suspend fun encode(): ByteArray {
         val log = events.loadAll().map { it.toEncoded() }
-        val text = codec.encode(log, ExportMeta(clock.now(), appVersion.value))
-        destination.write(text.encodeToByteArray())
-        destination.flush()
+        return codec.encode(log, ExportMeta(clock.now(), appVersion.value)).encodeToByteArray()
     }
 
     /**

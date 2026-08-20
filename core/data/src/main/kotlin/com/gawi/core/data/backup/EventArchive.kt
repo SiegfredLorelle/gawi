@@ -20,7 +20,7 @@ import android.net.Uri
  * main thread.
  *
  * A file the user picked can be the wrong file, and that is not a failure —
- * it is a thing people do. Those come back as [ImportResult.Rejected], the
+ * it is a thing people do. Those come back as [ImportResult.Refused], the
  * same way a command models refusal as a value. Exceptions stay for real
  * failures: a revoked grant, a full disk, SQLite.
  */
