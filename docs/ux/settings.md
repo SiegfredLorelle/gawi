@@ -151,3 +151,20 @@ next thing that recomposes catches up anyway.
   `:core:data` change and a wider one than it looks.
 - **No timezone setting**, per §1. Recorded here so it reads as a decision
   rather than an omission.
+- **`GlyphButton` wants a home in `:core:ui`, and this screen made that worse.**
+  Five composables now wrap an `IconButton` around a `Text` glyph named by a
+  `contentDescription`, and two of them —
+  `feature/settings/.../SettingsScreen.kt` and
+  `feature/habits/.../HabitListScreen.kt` — are byte-for-byte identical
+  including the KDoc. The other three are `ManageHabitsButton` and
+  `SettingsButton` in `feature/today/.../TodayScreen.kt` and an un-extracted
+  copy in `HabitEditorScreen.kt`; `HabitEditorPickers.kt`'s `StepperButton` is
+  the same shape plus an `enabled`. **This module added two of the five**, so
+  the duplication is partly this screen's own doing. Architecture §2 names
+  `:core:ui` as the home for shared composables and `Notice` is the precedent,
+  so the destination is not in question. What is: three of the five live in
+  files the settings change never touched, so extracting properly pulls
+  `:feature:habits` into a diff that has no other business there. Next
+  cleanup rather than this one — and §4's argument about the glyph carrying no
+  meaning on its own is written in three places now, which is usually the signal
+  that the component wants extracting.
