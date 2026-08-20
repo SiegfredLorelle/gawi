@@ -499,7 +499,11 @@ build on each other, and the third is the one that has no JVM test behind it.
       Gawi's settings: **Last exported 31 days ago**, with the nudge underneath.
       **Put the date back and re-enable automatic time afterwards**; a 31-day
       jump also sweeps every streak, so any check above this one has to be
-      re-run from a clean state rather than after this.
+      re-run from a clean state rather than after this. **Do not export while
+      the date is forward.** That leaves a stamp dated in the future, which the
+      journal deliberately reads as no stamp at all — so the row goes back to
+      **Never exported** once the date is restored, which is correct behaviour
+      and looks like a bug if you were not expecting it.
 - [ ] **A settings edit does not reset the clock.** With a stamp in place,
       change the week start and come back. The value line has not moved. Proves
       the export stamp shares a preferences file with the three settings and

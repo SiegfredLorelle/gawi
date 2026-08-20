@@ -260,14 +260,49 @@ cases where a count is zero get their own string rather than reading "0 added".
   an import does not touch the stamp, so importing into a previously empty log
   does not switch the row from silent to "Never exported" until the flow
   restarts. Both are cheap to fix with a clock tick and neither is worth one.
-- **An unreadable preferences file reads as never-exported, and therefore
-  nudges.** The safe direction, and the same asymmetry this section already
-  records for the three settings: the settings store refuses the command path
-  and guesses on the read path, and this guesses on both because nothing
-  validates against it. It is guarded twice on purpose — `ExportJournal` decides
-  what an unreadable file *means*, and the ViewModel guarantees that no failure
-  in that flow can reach `Unavailable`, because that branch would take the only
-  recovery path on the device off the screen over its own caption.
+- **Every failure resolves towards nudging rather than towards silence**, and
+  that rule is what `ExportJournal` is arranged around. This value only ever
+  decides whether to warn someone they may have no backup, so a wrong warning
+  costs an export nobody needed and a wrong silence costs the warning PRD §5
+  asked for. Three places apply it, and each one had to be decided separately:
+
+  An **unreadable preferences file** substitutes empty preferences and carries
+  on, so the log is still counted and a device with events on it is still
+  nudged. Not a blanket catch — anything that is not a read failure is a bug and
+  propagates, the same split the settings store makes over the same file. It is
+  then guarded a second time in the ViewModel, narrowly, so that no failure in
+  that flow can reach `Unavailable`: that branch is correct for settings you
+  cannot read and would be absurd here, taking the only recovery path on the
+  device off the screen over its own caption.
+
+  A **stamp dated after today** reads as no stamp at all rather than being
+  clamped to nought. A device whose clock was ahead when the export happened and
+  correct afterwards leaves a stamp that can never count upwards, so clamping
+  would pin the row to "Last exported today" for the life of the install and
+  kill the nudge silently. It compares dates, so a whole day of skew is needed
+  and jitter around a fresh export cannot trigger it.
+
+  A **failed write of the stamp** does not fail the export. `edit` reads before
+  it writes, so it throws on the same file the read path degrades over, and
+  letting it out would report a complete document with copy that tells the user
+  to delete a good backup rather than trust it. The residual is self-healing:
+  the old stamp stands, so the row keeps nudging, and the next export tries
+  again.
+
+  **This bullet used to claim the first of those and the code did the opposite.**
+  The fallback was a fixed "nothing to lose", which silenced the nudge over a
+  preferences read — the one failure the feature exists to prevent — and the
+  doc, written in the same sitting, described the intention rather than the code.
+  A reviewer caught it. That makes four times in this project; the tell each
+  time has been a doc sentence explaining *why* something is safe, written before
+  the thing was.
+- **A caught read completes the flow, so a recovered status is not picked up
+  until the screen re-subscribes.** `Flow.catch` emits and then ends, which
+  `combine` treats as a flow that will never speak again — the same property
+  `DataStoreSettingsSource.observe()` and `TodayViewModel`'s `catch` already
+  have, and carried here rather than fixed for consistency with them. Bounded by
+  `WhileSubscribed(5_000)`, and the frozen value is the nudging one, so it fails
+  on the safe side. A bounded `retryWhen` is the fix for all three at once.
 - **The stamp is written after the output stream closes, and no JVM test covers
   that ordering.** It has to mean "a file landed" rather than "a write was
   attempted", or the nudge goes quiet for thirty days over a document that was

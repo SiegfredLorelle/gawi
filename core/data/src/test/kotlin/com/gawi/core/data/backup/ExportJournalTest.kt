@@ -20,6 +20,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -52,11 +53,11 @@ class ExportJournalTest {
     @After
     fun tearDown() = store.close()
 
-    /** A store whose reads fail, which no real DataStore lets a test arrange. */
+    /** A store whose reads and writes both fail, which no real DataStore lets a test arrange. */
     private fun throwing(cause: Throwable) = object : DataStore<Preferences> {
         override val data: Flow<Preferences> = flow { throw cause }
 
-        override suspend fun updateData(transform: suspend (Preferences) -> Preferences) = error("not used")
+        override suspend fun updateData(transform: suspend (Preferences) -> Preferences): Preferences = throw cause
     }
 
     private fun TestScope.preferences(name: String = "settings"): DataStore<Preferences> =
@@ -115,12 +116,37 @@ class ExportJournalTest {
         assertEquals(31L, journal.observe().first().daysSinceExport)
     }
 
+    /**
+     * A stamp dated after today is not trustworthy, and must not be clamped.
+     *
+     * This is the case where clamping to nought is actively dangerous rather
+     * than merely wrong: a device whose clock was ahead when the export happened
+     * leaves a stamp that can never count upwards, so "Last exported today"
+     * would stick for the life of the install and the nudge would never fire
+     * again. Reading it as unknown nudges instead, and the next export replaces
+     * the bad stamp.
+     */
     @Test
-    fun `a clock wound backwards reads as today rather than as a negative count`() = runTest {
+    fun `a stamp dated in the future reads as no stamp at all`() = runTest {
         val journal = journalOver(preferences())
+        store.repository.createHabit(metadata(name = "read"))
         journal.record()
 
         clock.instant = Instant.parse("2026-08-10T09:00:00Z")
+
+        val status = journal.observe().first()
+        assertNull(status.daysSinceExport)
+        assertEquals(true, status.hasEvents)
+    }
+
+    /** A whole day of skew is needed, so jitter around a fresh export cannot trigger it. */
+    @Test
+    fun `a stamp a few hours ahead still reads as today`() = runTest {
+        clock.instant = Instant.parse("2026-08-17T20:00:00Z")
+        val journal = journalOver(preferences())
+        journal.record()
+
+        clock.instant = Instant.parse("2026-08-17T09:00:00Z")
 
         assertEquals(0L, journal.observe().first().daysSinceExport)
     }
@@ -157,23 +183,69 @@ class ExportJournalTest {
         assertNull(journalOver(dataStore).observe().first().daysSinceExport)
     }
 
+    /**
+     * **An unreadable file still nudges a device that has something to lose.**
+     *
+     * The point of the fallback is what it does *not* do. Answering with a fixed
+     * "nothing to lose" would have silenced the nudge over a preferences read —
+     * the one failure this feature exists to prevent — so the fallback
+     * substitutes empty preferences and carries on, which leaves the log counted.
+     * Mutation-checked: hand back a fixed `(null, false)` and this reddens while
+     * the empty-log case beside it stays green.
+     */
     @Test
-    fun `an unreadable file answers rather than throwing`() = runTest {
-        // The opposite of what the settings store does with the same file, and
-        // deliberately so: a cutoff is an input to a command, this is a caption.
-        // Throwing here puts the settings screen in Unavailable, which takes the
-        // only recovery path off the screen over the text above the button.
+    fun `an unreadable file still counts the log, so a device with events is nudged`() = runTest {
+        store.repository.createHabit(metadata(name = "read"))
+
+        val status = journalOver(throwing(IOException("unreadable"))).observe().first()
+
+        assertNull(status.daysSinceExport)
+        assertEquals(true, status.hasEvents)
+    }
+
+    @Test
+    fun `an unreadable file over an empty log still says nothing`() = runTest {
         val status = journalOver(throwing(IOException("unreadable"))).observe().first()
 
         assertNull(status.daysSinceExport)
         assertEquals(false, status.hasEvents)
     }
 
+    /**
+     * A bug is not a bad disk. It propagates here and is caught one layer up, so
+     * that it cannot hide behind a plausible answer — the same split the settings
+     * store makes with the same file.
+     */
     @Test
-    fun `a bug in the read is answered too, rather than reaching the screen`() = runTest {
-        val status = journalOver(throwing(IllegalStateException("a bug"))).observe().first()
+    fun `anything that is not a read failure still propagates`() = runTest {
+        val thrown = runCatching {
+            journalOver(throwing(IllegalStateException("a bug"))).observe().first()
+        }.exceptionOrNull()
 
-        assertNull(status.daysSinceExport)
+        assertTrue(thrown is IllegalStateException)
+    }
+
+    /**
+     * **An unwritable file must not fail an export that worked.**
+     *
+     * `edit` reads before it writes, so this throws on the same file the read
+     * path degrades over — and letting it out fails an `exportTo` whose document
+     * is complete, which the caller reports with copy telling the user to delete
+     * a good backup rather than trust it.
+     */
+    @Test
+    fun `a write that fails does not fail the export it was recording`() = runTest {
+        val thrown = runCatching { journalOver(throwing(IOException("read-only"))).record() }.exceptionOrNull()
+
+        assertNull(thrown)
+    }
+
+    /** Again: a bug stays loud, even on the path that swallows a bad disk. */
+    @Test
+    fun `a bug in the write is not swallowed`() = runTest {
+        val thrown = runCatching { journalOver(throwing(IllegalStateException("a bug"))).record() }.exceptionOrNull()
+
+        assertTrue(thrown is IllegalStateException)
     }
 
     @Test
