@@ -10,6 +10,8 @@ import com.gawi.core.domain.command.CommandResult
 import com.gawi.core.domain.model.HabitId
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -54,7 +56,7 @@ internal class TodayViewModel @Inject constructor(private val habits: HabitRepos
         // will right itself. A bounded retryWhen would make that recovery
         // deliberate instead of incidental; deferred, not overlooked.
         .catch { cause ->
-            Log.e("TodayViewModel", "the today read failed", cause)
+            Log.e(TAG, "the today read failed", cause)
             emit(TodayUiState.Unavailable)
         }
         .stateIn(
@@ -96,14 +98,48 @@ internal class TodayViewModel @Inject constructor(private val habits: HabitRepos
             // repository already guards the commit itself, and a second guard
             // would keep work alive past this ViewModel and make the first one
             // impossible to test.
-            val result =
+            val result = commandOrNull {
                 if (completed) habits.undoCompletion(habitId, logicalDate) else habits.addCompletion(habitId, logicalDate)
-            if (result is CommandResult.Rejected) report(result.error)
+            }
+            when {
+                // Threw rather than rejected. Uncaught in viewModelScope that is
+                // process death on the app's most-used tap; observeToday above is
+                // catch-guarded against the very same failure.
+                result == null -> messages.send(TodayMessage(R.string.today_error_unexpected))
+
+                result is CommandResult.Rejected -> report(result.error)
+            }
         }
     }
 
     private suspend fun report(error: CommandError) {
         messageFor(error)?.let { messages.send(TodayMessage(it)) }
+    }
+
+    /**
+     * Runs a completion command, turning anything it throws into a `null`.
+     *
+     * Rejections are values, which is what makes the remaining exceptions worth
+     * catching: `appendLocked` consults `SettingsSource.current()` on every
+     * write and that refuses to guess a cutoff when the preferences file cannot
+     * be read, and a corrupt log and SQLite have the same shape.
+     * `viewModelScope` has no exception handler, so uncaught they reach the
+     * thread's default handler — [uiState] is `.catch`-guarded for precisely
+     * this and the write path was not.
+     *
+     * A copy of `:feature:habits`' `commandOrNull` rather than a shared helper:
+     * feature modules do not depend on one another, and `:core:ui` is for
+     * composables rather than coroutine utilities.
+     */
+    @Suppress("TooGenericExceptionCaught")
+    private suspend fun <T> commandOrNull(command: suspend () -> T): T? = try {
+        command()
+    } catch (failure: Exception) {
+        // Cancellation is not a failure. ensureActive() rethrows it, and
+        // doing it that way keeps detekt's RethrowCaughtException quiet.
+        currentCoroutineContext().ensureActive()
+        Log.e(TAG, "the completion command failed", failure)
+        null
     }
 
     /**
@@ -126,5 +162,6 @@ internal class TodayViewModel @Inject constructor(private val habits: HabitRepos
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L
+        const val TAG = "TodayViewModel"
     }
 }

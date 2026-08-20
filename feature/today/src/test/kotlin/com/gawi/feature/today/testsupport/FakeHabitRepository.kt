@@ -37,6 +37,15 @@ class FakeHabitRepository : HabitRepository {
     var result: CommandResult<Unit> = CommandResult.Accepted(Unit)
 
     /**
+     * Set to make the next command *throw* rather than reject.
+     *
+     * The write path can: `appendLocked` consults `SettingsSource.current()` on
+     * every write, and that refuses to guess when the preferences file cannot be
+     * read. Distinct from [result], which is the rejection-as-a-value path.
+     */
+    var commandFailure: Throwable? = null
+
+    /**
      * Emits once the ViewModel is really collecting.
      *
      * Consuming the Loading state does not prove that: it is `stateIn`'s cached
@@ -57,11 +66,13 @@ class FakeHabitRepository : HabitRepository {
     override fun observeToday(): Flow<TodaySnapshot> = failure?.let { flow<TodaySnapshot> { throw it } } ?: snapshots
 
     override suspend fun addCompletion(habitId: HabitId, logicalDate: LocalDate, note: String?): CommandResult<Unit> {
+        commandFailure?.let { throw it }
         toggles += Toggle(habitId, logicalDate, undo = false)
         return result
     }
 
     override suspend fun undoCompletion(habitId: HabitId, logicalDate: LocalDate): CommandResult<Unit> {
+        commandFailure?.let { throw it }
         toggles += Toggle(habitId, logicalDate, undo = true)
         return result
     }
