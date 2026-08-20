@@ -13,7 +13,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
  * The Today view, wired up. This is what `:app` shows first.
  *
  * Takes no modifier: it is a whole screen and `:app` has nothing to pass it.
- * The two callbacks are plain lambdas rather than anything navigational, which
+ * The callbacks are plain lambdas rather than anything navigational, which
  * is what keeps every Compose and navigation type out of this module's public
  * surface — and why `:core:ui` can still be an implementation dependency here.
  * What this screen reports is what happened to it; `:app` decides where it goes.
@@ -25,7 +25,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
  * what stops it outliving the screen it belongs to.
  */
 @Composable
-fun TodayRoute(onAddHabit: () -> Unit, onManageHabits: () -> Unit) {
+fun TodayRoute(onAddHabit: () -> Unit, onManageHabits: () -> Unit, onOpenSettings: () -> Unit) {
     val viewModel: TodayViewModel = hiltViewModel()
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -45,6 +45,7 @@ fun TodayRoute(onAddHabit: () -> Unit, onManageHabits: () -> Unit) {
             onToggle = viewModel::onToggle,
             onAddHabit = onAddHabit,
             onManageHabits = onManageHabits,
+            onOpenSettings = onOpenSettings,
         ),
         snackbarHostState = snackbarHostState,
     )

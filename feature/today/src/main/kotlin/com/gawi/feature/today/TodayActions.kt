@@ -6,7 +6,7 @@ import java.time.LocalDate
 /**
  * What the Today screen can do, as one parameter.
  *
- * A holder rather than three lambdas in the signature, for the same reason
+ * A holder rather than four lambdas in the signature, for the same reason
  * [HabitRowUi] is a model rather than eight arguments: it keeps the composable
  * inside detekt's parameter limit, and adding an action does not re-thread every
  * preview and test.
@@ -20,4 +20,6 @@ internal data class TodayActions(
     val onAddHabit: () -> Unit,
     /** To the habit list, where editing and archiving live. */
     val onManageHabits: () -> Unit,
+    /** To the three preferences that decide how a day and a week are counted. */
+    val onOpenSettings: () -> Unit,
 )

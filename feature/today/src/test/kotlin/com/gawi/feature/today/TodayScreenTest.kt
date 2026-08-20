@@ -213,7 +213,7 @@ class TodayScreenTest {
     }
 
     /**
-     * The way to the habit list, which is the only way off this screen.
+     * One of the two ways off this screen.
      *
      * Deliberately not offered as a second add button: adding a habit is rare
      * and completing one is daily, so Today keeps one affordance for each and
@@ -237,6 +237,34 @@ class TodayScreenTest {
         assertEquals(1, managed)
     }
 
+    /**
+     * The other way off, and the reason the two are told apart by name.
+     *
+     * Both app bar actions are glyphs, so nothing but the content description
+     * distinguishes them to a test or to a screen reader. This asserts that
+     * tapping the one named "Settings" reports settings and not the habit list
+     * — which is the mistake the two buttons are one glyph apart from making.
+     */
+    @Test
+    fun settingsButton_isNamedAndLeadsToSettings() {
+        var opened = 0
+        var managed = 0
+        compose.setContent {
+            GawiTheme {
+                TodayScreen(
+                    state = HABITS,
+                    actions = NO_ACTIONS.copy(onOpenSettings = { opened++ }, onManageHabits = { managed++ }),
+                    snackbarHostState = SnackbarHostState(),
+                )
+            }
+        }
+
+        compose.onNodeWithContentDescription(string(R.string.today_settings)).performClick()
+
+        assertEquals(1, opened)
+        assertEquals(0, managed)
+    }
+
     /** And the add button is not on the populated screen, only the empty one. */
     @Test
     fun populatedScreen_doesNotOfferTheEmptyStatesAddButton() {
@@ -255,6 +283,7 @@ class TodayScreenTest {
             onToggle = { _, _, _ -> },
             onAddHabit = {},
             onManageHabits = {},
+            onOpenSettings = {},
         )
 
         /** Completed, so a tap on it must report `true`. */

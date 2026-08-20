@@ -104,6 +104,7 @@ private val PREVIEW_ACTIONS = TodayActions(
     onToggle = { _, _, _ -> },
     onAddHabit = {},
     onManageHabits = {},
+    onOpenSettings = {},
 )
 
 @Preview(name = "habits", showBackground = true)
