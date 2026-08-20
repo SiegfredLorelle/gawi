@@ -92,7 +92,7 @@ internal class HabitEditorViewModel @AssistedInject constructor(
                         .observeHabit(habitId)
                         .map { it?.habit?.toForm() ?: HabitEditorUiState.Unavailable }
                         .catch { cause ->
-                            Log.e("HabitEditorViewModel", "reading the habit to edit failed", cause)
+                            Log.e(TAG, "reading the habit to edit failed", cause)
                             emit(HabitEditorUiState.Unavailable)
                         }
                         .first()
@@ -103,6 +103,10 @@ internal class HabitEditorViewModel @AssistedInject constructor(
     /** Every field edit, as one call: the form is the state, so it replaces it. */
     fun onEdit(edited: HabitEditorUiState.Form) {
         form.value = edited
+    }
+
+    private companion object {
+        const val TAG = "HabitEditorViewModel"
     }
 
     /**
@@ -146,12 +150,20 @@ internal class HabitEditorViewModel @AssistedInject constructor(
             return HabitEditorEvent.Rejected(HabitsMessage(R.string.habits_error_blank_name))
         }
         val metadata = current.toMetadata()
-        val result: CommandResult<*> = when (habitId) {
-            null -> habits.createHabit(metadata)
-            else -> habits.updateHabit(habitId, metadata)
+        val result: CommandResult<*>? = commandOrNull(TAG) {
+            when (habitId) {
+                null -> habits.createHabit(metadata)
+                else -> habits.updateHabit(habitId, metadata)
+            }
         }
         return when (result) {
+            // Threw rather than rejected. Reported as a rejection so the user
+            // sees something, and so the saving latch is released by the branch
+            // in onSave that already handles one.
+            null -> HabitEditorEvent.Rejected(HabitsMessage(R.string.habits_error_unexpected))
+
             is CommandResult.Rejected -> HabitEditorEvent.Rejected(HabitsMessage(messageFor(result.error)))
+
             is CommandResult.Accepted -> HabitEditorEvent.Saved
         }
     }

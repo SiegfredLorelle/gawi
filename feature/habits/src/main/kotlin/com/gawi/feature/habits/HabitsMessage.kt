@@ -1,7 +1,10 @@
 package com.gawi.feature.habits
 
+import android.util.Log
 import androidx.annotation.StringRes
 import com.gawi.core.domain.command.CommandError
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 
 /**
  * A rejection worth telling the user about, once.
@@ -38,4 +41,37 @@ internal fun messageFor(error: CommandError): Int = when (error) {
     CommandError.FutureLogicalDate,
     CommandError.CompletionNotFound,
     -> R.string.habits_error_unexpected
+}
+
+/**
+ * Runs a write command, turning anything it throws into a `null`.
+ *
+ * Rejections are values, which is exactly what makes the remaining exceptions
+ * worth catching. What is left to throw is the real failures the repository
+ * documents: an unreadable settings store — `SettingsSource.current()` refuses
+ * to guess a cutoff rather than serve a plausible default, and
+ * `appendLocked` consults it on **every** write — a corrupt log
+ * (`EventCodecException`), and SQLite itself.
+ *
+ * Without this they escape. `viewModelScope` is a `SupervisorJob` with no
+ * `CoroutineExceptionHandler`, so an exception out of a `launch` reaches the
+ * thread's default handler: process death on a Save or an Archive tap rather
+ * than a snackbar. Both read paths in this module are `.catch`-guarded for
+ * precisely this failure mode; the write paths were not, which was the whole
+ * asymmetry.
+ *
+ * Returns `null` rather than a `Result`, because the caller has nothing to do
+ * with the throwable beyond what has already been logged — it maps to one
+ * message either way.
+ */
+@Suppress("TooGenericExceptionCaught")
+internal suspend fun <T> commandOrNull(tag: String, command: suspend () -> T): T? = try {
+    command()
+} catch (failure: Exception) {
+    // Cancellation is not a failure, and must not be reported as one:
+    // ensureActive() rethrows it. Doing it this way rather than with a bare
+    // `throw failure` also keeps detekt's RethrowCaughtException quiet.
+    currentCoroutineContext().ensureActive()
+    Log.e(tag, "the command failed", failure)
+    null
 }
