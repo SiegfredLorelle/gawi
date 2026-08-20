@@ -334,13 +334,18 @@ the shape the 4b bug took. Wording itself is still yours to read.
       `files/datastore/settings.preferences_pb` appears after the **first
       write**, not the first read, so it will not exist until you do. Then
       force-stop, relaunch and reopen the screen: it reads the stored value
-      back, not the default.
-- [ ] **Day rollover, against a real clock.** Set the cutoff a couple of minutes
-      ahead in Settings, then go back to Today: "today" becomes yesterday, so a
-      completed row reads unticked. Leave the screen alone; when the boundary
-      passes the row flips back on its own. This is still the cheapest way to
-      force a boundary — `adb shell date` needs `adb root` and is refused on
-      the Play images this project uses.
+      back, not the default. **Put the cutoff back to midnight before moving
+      on** — the next two checks both start from it, and neither restores it.
+- [ ] **Day rollover, against a real clock.** Start from a cutoff at or before
+      the current time — midnight does, which is why the check above restores it
+      — and tick a habit, so there is a completion on today's logical date.
+      *Then* set the cutoff a couple of minutes ahead and go back to Today:
+      "today" becomes yesterday, so that row reads unticked. Leave the screen
+      alone; when the boundary passes it flips back on its own. Getting the
+      order wrong is what makes this pass vacuously: with the cutoff already
+      ahead of now, the row is unticked before you change anything. This is
+      still the cheapest way to force a boundary — `adb shell date` needs
+      `adb root` and is refused on the Play images this project uses.
 - [ ] **The mascot follows the clock, not just the data.** With something
       outstanding, set *Day is nearly over at* to a time just past now. The
       panel changes with no habit touched and no interaction — and the habit
