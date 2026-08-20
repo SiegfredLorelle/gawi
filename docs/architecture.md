@@ -40,11 +40,11 @@ Now-in-Android convention: Gradle version catalog
 |---|---|
 | `:app` | MainActivity, navigation graph, Hilt app wiring, WorkManager scheduling for the end-of-day reminder |
 | `:core:domain` | Pure Kotlin/JVM: event types, projection logic, logical-date rules, streak computation, UUIDv7 generator, event and export JSON codecs |
-| `:core:data` | Repositories, event store, Room database + DAOs, DataStore settings, export/import plumbing and the CSV of completions |
+| `:core:data` | Repositories, event store, Room database + DAOs, DataStore settings and the last-export stamp, export/import plumbing and the CSV of completions |
 | `:core:ui` | Theme, shared composables |
 | `:feature:today` | Today view (app home screen, Momo's habitat) |
 | `:feature:habits` | Create/edit/archive habit, habit detail |
-| `:feature:settings` | Day boundary, week start, reminder time, export and import |
+| `:feature:settings` | Day boundary, week start, reminder time, export and import, the 30-day export nudge |
 | `:widget` | Glance home-screen widget |
 
 Dependency rule: `feature → core`, `widget → core`, `app → everything`,
@@ -69,9 +69,10 @@ boundary, week start and reminder time — and, below them in a labelled section
 of their own, **export and import**. They are a section rather than a fourth
 setting row because they are not settings: they have no stored value and they
 are the only disaster-recovery path there is, `allowBackup` being off (§6) and
-the event log reconstructible from nothing. **The CSV of completions PRD §5 also
-asks for is not built**, nor is its nudge when no export has been made for 30
-days.
+the event log reconstructible from nothing. The export row does now carry one
+stored value — how long ago it last wrote a file — which is §6's compensating
+control and the whole of PRD §5's nudge; `docs/ux/settings.md` §6 has the copy
+decisions. **The CSV of completions PRD §5 also asks for is not built.**
 
 **The export codec is in `:core:domain`, not `:core:data`**, which is the one
 place this table's `:core:data` row would once have said otherwise. An export
@@ -245,7 +246,18 @@ Documented cost: disabling it also disables OS device-to-device transfer, so
 until Phase 2 sync ships, **export/import is the only migration and disaster-
 recovery path**. Compensating control: a gentle in-app nudge when no export
 has been made for 30 days (local check only, surfaced in-app — never a
-notification).
+notification). **Built 2026-08-21**, as a value line and a help line on the
+export row itself rather than as a banner or a second surface.
+
+**What records the export is not a setting**, and the boundary is worth stating
+because the obvious place is wrong. The stamp lives in the settings preferences
+file under its own key, read and written by `ExportJournal`, and deliberately
+*not* as a fourth `UserSettings` field: that type is compared to decide whether
+`observeToday()` has to re-run, so a field changing on every export would
+restart the streak sweep under an open screen. The nudge also needs to know
+whether the log holds anything at all, which is not a preference in any reading,
+so one flow carries both. Settings are still not events (§3) and this is still
+not a setting.
 
 ## 7. Tech choices
 
