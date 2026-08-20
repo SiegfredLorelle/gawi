@@ -1,11 +1,14 @@
 package com.gawi.core.data.backup
 
+import android.database.sqlite.SQLiteException
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import app.cash.turbine.test
+import com.gawi.core.data.db.dao.EventDao
+import com.gawi.core.data.db.entity.EventEntity
 import com.gawi.core.data.settings.DataStoreSettingsSource
 import com.gawi.core.data.settings.UserSettings
 import com.gawi.core.data.settings.settingsDataStore
@@ -151,6 +154,30 @@ class ExportJournalTest {
         assertEquals(0L, journal.observe().first().daysSinceExport)
     }
 
+    /**
+     * **A stamp too old for the UI's `Int` reads as no stamp, not as a wrapped
+     * one.**
+     *
+     * `recencyOf` narrows the day count to an `Int` for the quantity resource.
+     * `Long.MIN_VALUE` millis dates the stamp to the year -292275055, which is
+     * 106,752,011,854 days and narrows to -622,170,546 — a negative age, which
+     * reads as not-overdue and silences the nudge. Only reachable by a garbage
+     * value in the app's own preferences file, but it is the same wrong-silence
+     * as the other two, and bounding it here is what makes the narrowing safe by
+     * construction rather than by luck.
+     */
+    @Test
+    fun `a stamp too old for the day count reads as no stamp at all`() = runTest {
+        val dataStore = preferences()
+        store.repository.createHabit(metadata(name = "read"))
+        dataStore.edit { it[longPreferencesKey("last_exported_at_epoch_milli")] = Long.MIN_VALUE }
+
+        val status = journalOver(dataStore).observe().first()
+
+        assertNull(status.daysSinceExport)
+        assertEquals(true, status.hasEvents)
+    }
+
     @Test
     fun `a settings write leaves the export stamp alone`() = runTest {
         // update() assigns all three of its keys unconditionally, so it reads as
@@ -186,12 +213,12 @@ class ExportJournalTest {
     /**
      * **An unreadable file still nudges a device that has something to lose.**
      *
-     * The point of the fallback is what it does *not* do. Answering with a fixed
-     * "nothing to lose" would have silenced the nudge over a preferences read —
-     * the one failure this feature exists to prevent — so the fallback
-     * substitutes empty preferences and carries on, which leaves the log counted.
-     * Mutation-checked: hand back a fixed `(null, false)` and this reddens while
-     * the empty-log case beside it stays green.
+     * The point of the fallback is what it does *not* do. Answering with a
+     * finished "nothing to lose" would have silenced the nudge over a preferences
+     * read — the one failure this feature exists to prevent — so the fallback
+     * substitutes empty *preferences* and lets the count carry on in the other
+     * half of the `combine`. Mutation-checked: make the catch hand back a whole
+     * status and this reddens while the empty-log case beside it stays green.
      */
     @Test
     fun `an unreadable file still counts the log, so a device with events is nudged`() = runTest {
@@ -281,6 +308,75 @@ class ExportJournalTest {
         }
     }
 
+    // --- the log half of the answer -------------------------------------
+
+    /**
+     * **The reported two-tap path, on first run.**
+     *
+     * Fresh install, open Settings, import a backup from another phone. The log
+     * now holds events and there is still no stamp, so the row must say "Never
+     * exported" — and it did not, because the count used to be recomputed only
+     * when the *preferences* file emitted, and an import writes no preference.
+     * `WhileSubscribed(5_000)` made it recover eventually, which is what hid it.
+     *
+     * Note what this test does not do: it never touches DataStore after
+     * subscribing. Room's invalidation on `events` is the only thing that can
+     * make the second item arrive, which is the same property
+     * `AllHabitsQueryTest` relies on.
+     */
+    @Test
+    fun `an import into an empty log flips hasEvents with no preferences write`() = runTest {
+        val donor = TestStore.create(idSeed = 2)
+        donor.repository.createHabit(metadata(name = "from another phone"))
+        val backup = donor.exportText()
+        donor.close()
+        val journal = journalOver(preferences())
+
+        journal.observe().test {
+            assertEquals(false, awaitItem().hasEvents)
+
+            store.import(backup)
+
+            assertEquals(true, awaitItem().hasEvents)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    /** The other path the same fix closes: a habit created on another screen. */
+    @Test
+    fun `a habit created while the row is open flips hasEvents`() = runTest {
+        val journal = journalOver(preferences())
+
+        journal.observe().test {
+            assertEquals(false, awaitItem().hasEvents)
+
+            store.repository.createHabit(metadata(name = "read"))
+
+            assertEquals(true, awaitItem().hasEvents)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    /**
+     * **A log that cannot be counted reads as having something to lose.**
+     *
+     * Room throws `SQLiteException`, which is a `RuntimeException` and unrelated
+     * to `IOException` — verified from the platform jar — so a corrupt, locked or
+     * full database slipped past the preferences guard entirely and was answered
+     * two layers up with "nothing to lose". That silenced the nudge on precisely
+     * the device that most needs it. A PR reviewer found it.
+     */
+    @Test
+    fun `a log that cannot be counted reads as having something to lose`() = runTest {
+        val journal = ExportJournal(
+            dataStore = preferences(),
+            events = UncountableEventDao(store.database.eventDao(), SQLiteException("database disk image is malformed")),
+            clock = clock,
+        )
+
+        assertEquals(true, journal.observe().first().hasEvents)
+    }
+
     @Test
     fun `the stamp is stored as epoch millis under a name a later reader can find`() = runTest {
         // Pinned rather than left to the implementation, because this is the one
@@ -303,4 +399,24 @@ class ExportJournalTest {
 
         assertEquals(3L, journalOver(dataStore).observe().first().daysSinceExport)
     }
+}
+
+/**
+ * An [EventDao] whose count fails the way a corrupt or locked database makes it
+ * fail, delegating everything else so the real DAO still does the real work.
+ *
+ * The shape `HookedCompletionDao` uses in `TestStore.kt`: this project hand-writes
+ * every fake and has no mocking library.
+ */
+private class UncountableEventDao(private val delegate: EventDao, private val cause: Throwable) : EventDao {
+
+    override suspend fun insertAll(events: List<EventEntity>) = delegate.insertAll(events)
+
+    override suspend fun insertMerging(events: List<EventEntity>): List<Long> = delegate.insertMerging(events)
+
+    override suspend fun loadAll(): List<EventEntity> = delegate.loadAll()
+
+    override suspend fun count(): Int = throw cause
+
+    override fun observeCount(): Flow<Int> = flow { throw cause }
 }

@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.gawi.core.data.db.entity.EventEntity
+import kotlinx.coroutines.flow.Flow
 
 /**
  * Reads and appends the event log. There is no update and no delete: fixes and
@@ -49,6 +50,23 @@ internal interface EventDao {
 
     @Query("SELECT COUNT(*) FROM events")
     suspend fun count(): Int
+
+    /**
+     * The same count, observed — whether there is anything here to lose.
+     *
+     * **The only `Flow` query outside `ReadModelDao`, and deliberately so.** That
+     * interface serves screens with projected rows; this is a fact about the log
+     * itself, and its one reader is the export nudge
+     * ([com.gawi.core.data.backup.ExportJournal]), which is not a projection of
+     * anything.
+     *
+     * A `Flow` rather than [count] because the alternative was recomputing it
+     * whenever the *preferences* file emitted, which both misses a write to this
+     * table and re-runs on writes that cannot have changed it. Room invalidates
+     * per table, so this wakes on any append and on nothing else.
+     */
+    @Query("SELECT COUNT(*) FROM events")
+    fun observeCount(): Flow<Int>
 }
 
 /** What [EventDao.insertMerging] returns for a row an existing id displaced. */
