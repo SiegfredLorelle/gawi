@@ -22,6 +22,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
 import com.gawi.core.ui.theme.GawiSpacing
+import com.gawi.core.ui.theme.glyphColorOn
 
 /**
  * One habit, as §5 draws it: a colour-tinted icon, the name, a weekly habit's

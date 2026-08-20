@@ -1,6 +1,5 @@
 package com.gawi.feature.today
 
-import androidx.compose.ui.graphics.Color
 import com.gawi.core.domain.mascot.Mood
 import com.gawi.core.domain.model.Schedule
 import com.gawi.core.domain.streak.StreakSnapshot
@@ -17,8 +16,6 @@ import java.time.LocalDate
 class TodayUiMapperTest {
 
     private val daily = Schedule.Daily
-    private val lightBackground = Color(0xFFFFFBFE)
-    private val darkBackground = Color(0xFF141218)
     private val weekly = Schedule.Weekly(3)
 
     @Test
@@ -64,40 +61,6 @@ class TodayUiMapperTest {
     }
 
     @Test
-    fun `a habit colour is parsed in both lengths and survives anything else`() {
-        // Unvalidated off the event log, so the row degrades rather than crashes.
-        assertEquals(Color(0xFFAABBCC), parseHabitColor("#aabbcc"))
-        assertEquals(Color(0x80AABBCC), parseHabitColor("#80aabbcc"))
-        assertNull(parseHabitColor("aabbcc"))
-        assertNull(parseHabitColor("#abc"))
-        assertNull(parseHabitColor("#gggggg"))
-        assertNull(parseHabitColor(""))
-    }
-
-    @Test
-    fun `the glyph contrasts with an opaque habit colour`() {
-        // The case that broke: a theme content role would be invisible on both.
-        assertEquals(Color.White, glyphColorOn(Color(0xFF000000), lightBackground))
-        assertEquals(Color.Black, glyphColorOn(Color(0xFFFFFFFF), lightBackground))
-    }
-
-    @Test
-    fun `the glyph contrasts with what a translucent colour renders as`() {
-        // luminance() reads RGB and ignores alpha, so a transparent white is
-        // "bright" on paper while what shows through is the background. Judged
-        // on the tint alone, both of these would pick black.
-        assertEquals(Color.White, glyphColorOn(Color(0x00FFFFFF), darkBackground))
-        assertEquals(Color.Black, glyphColorOn(Color(0x00FFFFFF), lightBackground))
-    }
-
-    @Test
-    fun `a half-transparent colour is judged on the blend, not the tint`() {
-        // White at 50% over black renders mid-grey, which sits below the pivot
-        // and so still wants a light glyph.
-        assertEquals(Color.White, glyphColorOn(Color(0x80FFFFFF), darkBackground))
-    }
-
-    @Test
     fun `no habits at all is its own state, not an empty list`() {
         // §4's rule 0 is load-bearing: a first run must not read as thriving.
         assertEquals(TodayUiState.Empty(Mood.CONTENT), todaySnapshot().toUiState())
@@ -134,15 +97,6 @@ class TodayUiMapperTest {
         ).toUiState() as TodayUiState.Habits
         assertEquals(Mood.THRIVING, thriving.mood)
         assertEquals(0, thriving.remaining)
-    }
-
-    @Test
-    fun `a signed hex string is not a colour`() {
-        // toLongOrNull accepts a leading sign, so this is six digits that parse
-        // to a negative number and mask into an arbitrary opaque colour.
-        assertNull(parseHabitColor("#-abcde"))
-        assertNull(parseHabitColor("#-abcdefa"))
-        assertNull(parseHabitColor("#+abcde"))
     }
 
     @Test

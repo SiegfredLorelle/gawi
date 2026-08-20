@@ -21,4 +21,9 @@ dependencies {
     // isSystemInDarkTheme only; nothing here puts a foundation type in a
     // signature.
     implementation(libs.androidx.compose.foundation)
+
+    // Plain JVM, no Robolectric: the colour rules here are arithmetic over a
+    // string, which is why parseHabitColor is hand-rolled instead of calling
+    // android.graphics.Color and dragging a framework into this module's tests.
+    testImplementation(libs.junit)
 }
