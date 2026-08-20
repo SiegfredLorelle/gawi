@@ -5,7 +5,9 @@ import com.gawi.core.data.PROJECTION_VERSION
 import com.gawi.core.data.db.GawiDatabase
 import com.gawi.core.data.db.dao.EventDao
 import com.gawi.core.data.db.dao.ProjectionMetaDao
+import com.gawi.core.data.db.dao.ROW_NOT_INSERTED
 import com.gawi.core.data.db.dao.ReadModelDao
+import com.gawi.core.data.db.entity.EventEntity
 import com.gawi.core.data.db.entity.ProjectionMetaEntity
 import com.gawi.core.data.db.mapper.toDomain
 import com.gawi.core.data.db.mapper.toEntity
@@ -27,6 +29,7 @@ import com.gawi.core.domain.projection.HabitState
 import com.gawi.core.domain.projection.ProjectedState
 import com.gawi.core.domain.projection.Projector
 import com.gawi.core.domain.serialization.EventCodec
+import com.gawi.core.domain.serialization.export.EncodedEvent
 import com.gawi.core.domain.time.logicalDate
 import com.gawi.core.domain.time.reminderOn
 import com.gawi.core.domain.time.weekStartOn
@@ -244,6 +247,59 @@ internal class OfflineFirstHabitRepository @Inject constructor(
     }
 
     /**
+     * Merges events that came from outside — an import today, sync later —
+     * and returns how many of them the log did not already hold.
+     *
+     * Not on [HabitRepository]. That interface promises nothing above it knows
+     * events exist, and a merge is not something a user does to a habit; it is
+     * the store being handed part of another store. It also never touches
+     * `Commands`: the three-day retroactive window is a *command* rule, and an
+     * import carries months-old events that replay must accept unconditionally
+     * (architecture §5).
+     *
+     * **A refold, not a rebuild.** `rebuildProjections()` replays the
+     * *in-memory* state, which after an out-of-band insert is precisely the
+     * thing that is wrong — `state` is non-null, so `initialised()`
+     * short-circuits and the command authority stays behind the log for the
+     * life of the process. Every derived table would still look right, and the
+     * first undo on an imported cell would report `CompletionNotFound` against
+     * a row the user is looking at.
+     */
+    internal suspend fun mergeEvents(incoming: List<EncodedEvent>): Int = mutex.withLock {
+        val settings = settings.current()
+        mergeLocked(incoming.map { it.toEntity() }, todayFor(clock.now(), settings), settings.weekStart)
+    }
+
+    /**
+     * The insert, the refold and the rebuild, as one unit in both senses.
+     *
+     * One *transaction*, because two would let a process death land between
+     * them: the log would hold the imported events, the derived tables would
+     * not, and `projection_meta` would still read the current version — so the
+     * repair in `initialised()` finds no mismatch and never runs. Permanently
+     * wrong tables under a matching version is the worst of the available
+     * failures.
+     *
+     * One *non-cancellable* unit, for the reason `appendLocked` records and
+     * more so here: cancellation landing between the commit and the publish
+     * would leave `state` short of the entire import, with nothing to notice.
+     */
+    private suspend fun mergeLocked(rows: List<EventEntity>, today: LocalDate, weekStart: DayOfWeek): Int = withContext(NonCancellable) {
+        val (added, refolded) = database.withTransaction {
+            val inserted = events.insertMerging(rows).count { it != ROW_NOT_INSERTED }
+            // Read on this dispatcher and fold off it. A dao call from
+            // inside the switched context would escape Room's transaction
+            // dispatcher, which is a deadlock rather than a slow path.
+            val stored = events.loadAll()
+            val folded = withContext(Dispatchers.Default) { Projector.rebuild(stored.map { it.toDomain(codec) }) }
+            writeRebuild(folded, today, weekStart)
+            inserted to folded
+        }
+        state = refolded
+        added
+    }
+
+    /**
      * Folds the log if that has not happened yet, and repairs the derived
      * tables if they were written by a different projection version.
      */
@@ -383,10 +439,16 @@ internal class OfflineFirstHabitRepository @Inject constructor(
     private suspend fun rebuildLocked(current: ProjectedState) {
         val settings = settings.current()
         val today = todayFor(clock.now(), settings)
-        database.withTransaction {
-            writer.rebuild(current, today, settings.weekStart)
-            meta.upsert(ProjectionMetaEntity(projectionVersion = PROJECTION_VERSION))
-        }
+        database.withTransaction { writeRebuild(current, today, settings.weekStart) }
+    }
+
+    /**
+     * The drop-and-replay itself, without a transaction of its own, so a
+     * caller that has to write something else in the same one can.
+     */
+    private suspend fun writeRebuild(current: ProjectedState, today: LocalDate, weekStart: DayOfWeek) {
+        writer.rebuild(current, today, weekStart)
+        meta.upsert(ProjectionMetaEntity(projectionVersion = PROJECTION_VERSION))
     }
 
     private suspend fun commit(decide: suspend (ProjectedState) -> CommandResult<List<EventPayload>>): CommandResult<Unit> =

@@ -3,7 +3,9 @@ package com.gawi.core.data.db.mapper
 import com.gawi.core.data.db.entity.EventEntity
 import com.gawi.core.domain.event.Event
 import com.gawi.core.domain.id.EventId
+import com.gawi.core.domain.serialization.EncodedPayload
 import com.gawi.core.domain.serialization.EventCodec
+import com.gawi.core.domain.serialization.export.EncodedEvent
 import java.time.Instant
 
 /**
@@ -35,4 +37,39 @@ internal fun EventEntity.toDomain(codec: EventCodec): Event = Event(
     occurredAt = Instant.ofEpochMilli(occurredAt),
     tzOffsetMin = tzOffsetMin,
     payload = codec.decode(type, schemaVersion, payload),
+)
+
+/**
+ * A row for an event that arrived from outside — an import today, sync later.
+ *
+ * The payload text, its type and its schema version are copied verbatim, and
+ * this exists **only** so that they are. Reaching for [Event.toEntity] instead
+ * would re-encode through the current wire DTO, which upcasts an older payload
+ * to the current schema version and drops every key this build does not know:
+ * the log migrated in place, which architecture §3 forbids. The two look
+ * duplicative and must not be merged.
+ */
+internal fun EncodedEvent.toEntity(): EventEntity = EventEntity(
+    id = id.value,
+    type = payload.type,
+    schemaVersion = payload.schemaVersion,
+    occurredAt = occurredAt.toEpochMilli(),
+    tzOffsetMin = tzOffsetMin,
+    payload = payload.json,
+)
+
+/**
+ * A row on its way out to an export. Never decodes, so a log holding an event
+ * type this build does not know still exports — which is the log you most need
+ * off the device, not a corner case to tolerate.
+ *
+ * The id is still validated on the way through, because a non-canonical id in
+ * *local* storage is corruption rather than foreign input, and this module has
+ * been loud about that since the log was built.
+ */
+internal fun EventEntity.toEncoded(): EncodedEvent = EncodedEvent(
+    id = EventId(id),
+    occurredAt = Instant.ofEpochMilli(occurredAt),
+    tzOffsetMin = tzOffsetMin,
+    payload = EncodedPayload(type, schemaVersion, payload),
 )
