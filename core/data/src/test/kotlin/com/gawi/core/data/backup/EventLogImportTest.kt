@@ -5,7 +5,6 @@ import com.gawi.core.data.testsupport.FakeSettingsSource
 import com.gawi.core.data.testsupport.TestStore
 import com.gawi.core.data.testsupport.metadata
 import com.gawi.core.domain.command.CommandResult
-import com.gawi.core.domain.serialization.export.ExportRejection
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -166,7 +165,7 @@ class EventLogImportTest {
 
         val result = store.import("""{"format":"gawi.event-log","format_version":1,"nonsense":true}""")
 
-        assertTrue("$result", (result as ImportResult.Rejected).reason is ExportRejection.Malformed)
+        assertTrue("$result", result is ImportResult.Refused.Damaged)
         assertEquals(before, store.snapshot())
         assertEquals(log, store.log())
     }
@@ -188,7 +187,7 @@ class EventLogImportTest {
 
             val result = other.import(corrupted)
 
-            assertTrue("$result", (result as ImportResult.Rejected).reason is ExportRejection.Malformed)
+            assertTrue("$result", result is ImportResult.Refused.Damaged)
             assertEquals(emptyList<Any>(), other.log())
         } finally {
             other.close()
@@ -202,10 +201,7 @@ class EventLogImportTest {
 
         val result = store.import(store.exportText().replace(""""format_version": 1""", """"format_version": 2"""))
 
-        assertEquals(
-            ExportRejection.UnsupportedFormatVersion(found = 2, supported = 1),
-            (result as ImportResult.Rejected).reason,
-        )
+        assertEquals(ImportResult.Refused.FromANewerVersion(formatVersion = 2), result)
         assertEquals(log, store.log())
     }
 

@@ -1,7 +1,6 @@
 package com.gawi.core.data.backup
 
 import android.net.Uri
-import com.gawi.core.domain.serialization.export.ExportRejection
 
 /**
  * Export and import of the event log (PRD §5, architecture §6).
@@ -48,6 +47,27 @@ sealed interface ImportResult {
     /** [read] events in the file, [added] of which this device did not have. */
     data class Merged(val read: Int, val added: Int) : ImportResult
 
-    /** The file was refused and the log was not touched. */
-    data class Rejected(val reason: ExportRejection) : ImportResult
+    /**
+     * The file was refused and the log was not touched.
+     *
+     * Spelled out here rather than handing back the codec's own rejection type,
+     * so that a caller can tell a user *which* of these happened without
+     * knowing that `:core:domain` exists. The three are genuinely different
+     * things to be told: the wrong file, a file from the future, and a file
+     * that is broken.
+     */
+    sealed interface Refused : ImportResult {
+
+        /** Readable, but not one of ours. Usually the wrong file in the picker. */
+        data object NotAnExport : Refused
+
+        /**
+         * A Gawi export written by a newer build. The file is intact and the
+         * fix is to update the app, so this must never be reported as damage.
+         */
+        data class FromANewerVersion(val formatVersion: Int) : Refused
+
+        /** Ours, and unreadable. [detail] names the offending event. */
+        data class Damaged(val detail: String) : Refused
+    }
 }
