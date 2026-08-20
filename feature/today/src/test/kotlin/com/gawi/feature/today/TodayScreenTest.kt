@@ -3,6 +3,7 @@ package com.gawi.feature.today
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.gawi.core.domain.mascot.Mood
@@ -36,8 +37,8 @@ import java.time.LocalDate
  * Deliberately aimed at [TodayScreen] rather than [TodayRoute]: the stateless
  * composable is the whole of what is under test, so no Hilt graph, no
  * ViewModel and no substituted clock are involved in a red result. Driving the
- * wired route belongs with the first real journey, when there is a create form
- * to start one from.
+ * wired route belongs with the cross-module journey tests, which need a Hilt
+ * test graph and a substituted clock and so are their own piece of work.
  *
  * Strings are resolved from the test context rather than written out here, so
  * these assertions survive a copy edit and fail only on a behaviour change.
@@ -64,7 +65,7 @@ class TodayScreenTest {
     @Test
     fun emptyState_doesNotClaimNothingLeft() {
         compose.setContent {
-            GawiTheme { TodayScreen(TodayUiState.Empty(Mood.CONTENT), NO_TOGGLE, SnackbarHostState()) }
+            GawiTheme { TodayScreen(TodayUiState.Empty(Mood.CONTENT), NO_ACTIONS, SnackbarHostState()) }
         }
 
         compose.onNodeWithText(string(R.string.today_mood_empty)).assertIsDisplayed()
@@ -94,7 +95,9 @@ class TodayScreenTest {
             GawiTheme {
                 TodayScreen(
                     state = HABITS,
-                    onToggle = { id, completed, date -> reported = Triple(id, completed, date) },
+                    actions = NO_ACTIONS.copy(
+                        onToggle = { id, completed, date -> reported = Triple(id, completed, date) },
+                    ),
                     snackbarHostState = SnackbarHostState(),
                 )
             }
@@ -113,7 +116,9 @@ class TodayScreenTest {
             GawiTheme {
                 TodayScreen(
                     state = HABITS,
-                    onToggle = { id, completed, date -> reported = Triple(id, completed, date) },
+                    actions = NO_ACTIONS.copy(
+                        onToggle = { id, completed, date -> reported = Triple(id, completed, date) },
+                    ),
                     snackbarHostState = SnackbarHostState(),
                 )
             }
@@ -135,7 +140,7 @@ class TodayScreenTest {
     @Test
     fun unavailable_tellsTheUserToReopen() {
         compose.setContent {
-            GawiTheme { TodayScreen(TodayUiState.Unavailable, NO_TOGGLE, SnackbarHostState()) }
+            GawiTheme { TodayScreen(TodayUiState.Unavailable, NO_ACTIONS, SnackbarHostState()) }
         }
 
         compose.onNodeWithText(string(R.string.today_unavailable_title)).assertIsDisplayed()
@@ -156,7 +161,7 @@ class TodayScreenTest {
     @Test
     fun allDone_saysNothingLeftWithoutSoundingEmpty() {
         compose.setContent {
-            GawiTheme { TodayScreen(ALL_DONE, NO_TOGGLE, SnackbarHostState()) }
+            GawiTheme { TodayScreen(ALL_DONE, NO_ACTIONS, SnackbarHostState()) }
         }
 
         compose.onNodeWithText(string(R.string.today_remaining_none)).assertIsDisplayed()
@@ -174,18 +179,83 @@ class TodayScreenTest {
     @Test
     fun loading_claimsNothingEitherWay() {
         compose.setContent {
-            GawiTheme { TodayScreen(TodayUiState.Loading, NO_TOGGLE, SnackbarHostState()) }
+            GawiTheme { TodayScreen(TodayUiState.Loading, NO_ACTIONS, SnackbarHostState()) }
         }
 
         compose.onNodeWithText(string(R.string.today_empty_title)).assertDoesNotExist()
         compose.onNodeWithText(string(R.string.today_mood_empty)).assertDoesNotExist()
     }
 
+    /**
+     * The empty state's button, which is the shortest path from a fresh install
+     * to a first habit.
+     *
+     * `today_empty_body` has said "Add a habit and it starts here" since 4b with
+     * nothing to tap. Until the habits module existed there was nowhere for it to
+     * go, so this is the assertion that the sentence is now true.
+     */
+    @Test
+    fun emptyState_offersTheAddItPromises() {
+        var added = 0
+        compose.setContent {
+            GawiTheme {
+                TodayScreen(
+                    state = TodayUiState.Empty(Mood.CONTENT),
+                    actions = NO_ACTIONS.copy(onAddHabit = { added++ }),
+                    snackbarHostState = SnackbarHostState(),
+                )
+            }
+        }
+
+        compose.onNodeWithText(string(R.string.today_add_habit)).performClick()
+
+        assertEquals(1, added)
+    }
+
+    /**
+     * The way to the habit list, which is the only way off this screen.
+     *
+     * Deliberately not offered as a second add button: adding a habit is rare
+     * and completing one is daily, so Today keeps one affordance for each and
+     * the rows keep the room PRD §6.1 wants for a single tap.
+     */
+    @Test
+    fun manageButton_isNamedAndLeadsToTheHabitList() {
+        var managed = 0
+        compose.setContent {
+            GawiTheme {
+                TodayScreen(
+                    state = HABITS,
+                    actions = NO_ACTIONS.copy(onManageHabits = { managed++ }),
+                    snackbarHostState = SnackbarHostState(),
+                )
+            }
+        }
+
+        compose.onNodeWithContentDescription(string(R.string.today_manage_habits)).performClick()
+
+        assertEquals(1, managed)
+    }
+
+    /** And the add button is not on the populated screen, only the empty one. */
+    @Test
+    fun populatedScreen_doesNotOfferTheEmptyStatesAddButton() {
+        compose.setContent {
+            GawiTheme { TodayScreen(HABITS, NO_ACTIONS, SnackbarHostState()) }
+        }
+
+        compose.onNodeWithText(string(R.string.today_add_habit)).assertDoesNotExist()
+    }
+
     private fun string(id: Int): String = resources.getString(id)
 
     private companion object {
         val LOGICAL_DATE: LocalDate = LocalDate.parse("2026-08-17")
-        val NO_TOGGLE: (HabitId, Boolean, LocalDate) -> Unit = { _, _, _ -> }
+        val NO_ACTIONS = TodayActions(
+            onToggle = { _, _, _ -> },
+            onAddHabit = {},
+            onManageHabits = {},
+        )
 
         /** Completed, so a tap on it must report `true`. */
         val READ = HabitRowUi(

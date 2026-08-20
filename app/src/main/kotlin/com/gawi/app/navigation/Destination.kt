@@ -1,0 +1,43 @@
+package com.gawi.app.navigation
+
+import kotlinx.serialization.Serializable
+
+/**
+ * Every place the app can be.
+ *
+ * Type-safe routes: each destination is a `@Serializable` class rather than a
+ * string template, so an argument that changes shape is a compile error instead
+ * of a null at runtime. kotlinx-serialization was already a project dependency
+ * for the event log's wire format, which is what makes this the cheap option.
+ *
+ * Namespaced inside one interface rather than declared as three top-level types,
+ * because the feature modules already own the names — `TodayRoute`,
+ * `HabitListRoute`, `HabitEditorRoute` — and a route called `Today` beside a
+ * composable called `TodayRoute` reads as though one were the other.
+ *
+ * This file is the whole vocabulary. Architecture §2 gives `:app` the navigation
+ * graph, and no feature module has navigation on its classpath, so a screen
+ * cannot route itself somewhere — it reports what happened and this decides.
+ */
+@Serializable
+internal sealed interface Destination {
+
+    /** The home screen (PRD §6.2), and the start destination. */
+    @Serializable
+    data object Today : Destination
+
+    /** Managing habits: the list, with archived ones reachable. */
+    @Serializable
+    data object Habits : Destination
+
+    /**
+     * The editor. A null [habitId] creates; anything else edits that habit.
+     *
+     * A `String` rather than a `HabitId`, because `HabitId` rejects a
+     * non-canonical UUIDv7 by throwing and a route argument is exactly where an
+     * unexpected value can arrive. It is validated inside the editor's
+     * ViewModel, which turns a bad route into a state the screen can draw.
+     */
+    @Serializable
+    data class HabitEditor(val habitId: String? = null) : Destination
+}
