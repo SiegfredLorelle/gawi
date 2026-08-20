@@ -93,7 +93,13 @@ internal val COLOR_LABELS = listOf(
 internal fun ColorPicker(form: HabitEditorUiState.Form, onEdit: (HabitEditorUiState.Form) -> Unit) {
     FlowingRow(HabitPalette.Colors.withIndex().toList()) { (index, hex) ->
         val selected = hex == form.color
-        val label = stringResource(COLOR_LABELS[index])
+        // getOrNull, not [index]. The palette lives in :core:ui while these
+        // labels live here, so whoever adds a swatch is in the other module and
+        // will not see HabitsUiMapperTest's length assertion until CI. Reading
+        // the hex aloud is a poor announcement; taking the editor down with an
+        // IndexOutOfBoundsException is worse.
+        val labelRes = COLOR_LABELS.getOrNull(index)
+        val label = if (labelRes != null) stringResource(labelRes) else hex
         // Never null for a palette entry — HabitColorTest pins that — so the
         // fallback here is for a colour that arrived from somewhere else.
         val tint = parseHabitColor(hex) ?: MaterialTheme.colorScheme.secondaryContainer
