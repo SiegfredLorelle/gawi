@@ -14,6 +14,7 @@ hilt = "2.60.1"
 # stable, so this one is too.
 navigation = "2.9.8"
 androidxHilt = "1.4.0"
+androidxTestExtJunit = "1.3.0"
 kotlinxSerializationJson = "1.11.0"
 room = "2.8.4"
 datastore = "1.2.1"
@@ -96,6 +97,14 @@ robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "
 turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
 hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 hilt-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt" }
+# Only :app has these. A journey test drives the real graph through the real
+# MainActivity, because every feature screen and ViewModel is internal to its
+# module and hiltViewModel() needs an @AndroidEntryPoint host.
+hilt-android-testing = { group = "com.google.dagger", name = "hilt-android-testing", version.ref = "hilt" }
+# Declared rather than left transitive. createAndroidComposeRule's return type
+# names ActivityScenarioRule, which lives here and only arrives through
+# ui-test-junit4 by accident — the same trap ApplicationProvider was.
+androidx-test-ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidxTestExtJunit" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 # build-logic classpath only

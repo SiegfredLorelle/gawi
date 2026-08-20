@@ -28,4 +28,15 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
 
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
+
+    // The journey tests. Robolectric supplies the framework, Hilt supplies the
+    // real graph, and the compose rule drives the real MainActivity — which is
+    // the only way in, since every feature screen and ViewModel is internal to
+    // its own module and hiltViewModel() needs an @AndroidEntryPoint host.
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    testImplementation(libs.androidx.test.ext.junit)
+    testImplementation(libs.hilt.android.testing)
+    kspTest(libs.hilt.compiler)
 }
