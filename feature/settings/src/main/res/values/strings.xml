@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Resource merging is flat across the whole app, so every name here carries a
+  settings_ prefix rather than risking a collision with :app's, :feature:today's
+  or :feature:habits'.
+-->
+<resources>
+    <string name="settings_title">Settings</string>
+    <string name="settings_back">Back</string>
+
+    <string name="settings_unavailable_title">Can\'t open your settings</string>
+    <string name="settings_unavailable_body">Something went wrong reading them. Close the app and open it again to retry.</string>
+
+    <!-- The three settings. Each help line says what the setting changes and,
+         where it is not obvious, what it does not change — the day cutoff in
+         particular does not re-file anything already logged (architecture §5). -->
+    <string name="settings_day_cutoff_label">Day starts at</string>
+    <string name="settings_day_cutoff_help">Habits logged before this time count as the previous day. Changing it affects new entries only — what you have already logged stays on the day it was logged.</string>
+
+    <string name="settings_week_start_label">Week starts on</string>
+    <string name="settings_week_start_help">Which day weekly habits count from. Changing it re-counts the current week straight away.</string>
+
+    <string name="settings_reminder_label">Day is nearly over at</string>
+    <string name="settings_reminder_help">When Momo starts looking worried about anything still outstanding. The end-of-day notification will use this time too, once it is built.</string>
+
+    <!-- Day names as resources rather than DayOfWeek.getDisplayName, so the
+         tests read the same strings the screen renders and the copy is
+         translatable in the one place every other string here is. -->
+    <string name="settings_day_monday">Monday</string>
+    <string name="settings_day_tuesday">Tuesday</string>
+    <string name="settings_day_wednesday">Wednesday</string>
+    <string name="settings_day_thursday">Thursday</string>
+    <string name="settings_day_friday">Friday</string>
+    <string name="settings_day_saturday">Saturday</string>
+    <string name="settings_day_sunday">Sunday</string>
+
+    <string name="settings_confirm">Set</string>
+    <string name="settings_cancel">Cancel</string>
+
+    <!-- The only failure this screen can report. A settings write validates
+         nothing and refuses nothing, so the only way it fails is by throwing. -->
+    <string name="settings_error_unexpected">That did not save. Try again.</string>
+</resources>
