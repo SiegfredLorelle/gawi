@@ -3,6 +3,7 @@ package com.gawi.core.data.db.dao
 import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Query
+import com.gawi.core.data.db.entity.HabitEntity
 import com.gawi.core.data.db.entity.TodayHabitRow
 import kotlinx.coroutines.flow.Flow
 
@@ -87,6 +88,25 @@ internal interface ReadModelDao {
         """,
     )
     fun observeHabit(habitId: String, today: String, weekStart: String, weekEnd: String): Flow<TodayHabitRow?>
+
+    /**
+     * Every habit, archived included, as it was configured — no completion
+     * state, no week count and no streak.
+     *
+     * The management list is the one screen that has to show archived habits,
+     * because unarchiving has to be reachable from somewhere. It is also the
+     * one screen that shows no progress: PRD §6.6 scopes streaks to the Today
+     * view, the widget and habit detail, so joining for them here would buy
+     * columns nothing draws.
+     *
+     * Ordered by name rather than by `habit_id`, because this list is read to
+     * find a habit rather than to work through one. `COLLATE NOCASE` so a
+     * capitalised name does not sort into its own block, with `habit_id` as
+     * the tiebreak so duplicate names hold a stable order instead of
+     * swapping places between emissions.
+     */
+    @Query("SELECT * FROM habits ORDER BY name COLLATE NOCASE, habit_id")
+    fun observeAllHabits(): Flow<List<HabitEntity>>
 
     /**
      * The completed cells in a date range, with their displayed notes — the

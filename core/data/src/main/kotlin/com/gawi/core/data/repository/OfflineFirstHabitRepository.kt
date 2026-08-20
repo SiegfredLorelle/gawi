@@ -23,6 +23,7 @@ import com.gawi.core.domain.event.EventPayload
 import com.gawi.core.domain.id.UuidV7Generator
 import com.gawi.core.domain.model.HabitId
 import com.gawi.core.domain.projection.HabitMetadata
+import com.gawi.core.domain.projection.HabitState
 import com.gawi.core.domain.projection.ProjectedState
 import com.gawi.core.domain.projection.Projector
 import com.gawi.core.domain.serialization.EventCodec
@@ -190,6 +191,16 @@ internal class OfflineFirstHabitRepository @Inject constructor(
                         .observeHabit(habitId.value, today.toString(), week.first.toString(), week.second.toString())
                         .map { row -> row?.toDomain() }
                 }
+                .distinctUntilChanged(),
+        )
+    }
+
+    override fun observeAllHabits(): Flow<List<HabitState>> = flow {
+        ensureProjectionCurrent()
+        emitAll(
+            readModel
+                .observeAllHabits()
+                .map { rows -> rows.map { it.toDomain() } }
                 .distinctUntilChanged(),
         )
     }

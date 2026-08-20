@@ -6,6 +6,7 @@ import com.gawi.core.data.repository.HabitRepository
 import com.gawi.core.domain.command.CommandResult
 import com.gawi.core.domain.model.HabitId
 import com.gawi.core.domain.projection.HabitMetadata
+import com.gawi.core.domain.projection.HabitState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
@@ -76,6 +77,8 @@ class FakeHabitRepository : HabitRepository {
     override suspend fun unarchiveHabit(habitId: HabitId): CommandResult<Unit> = unused()
 
     override suspend fun updateNote(habitId: HabitId, logicalDate: LocalDate, text: String): CommandResult<Unit> = unused()
+
+    override fun observeAllHabits(): Flow<List<HabitState>> = unused()
 
     override fun observeHabit(habitId: HabitId): Flow<TodayHabit?> = unused()
 
