@@ -252,6 +252,50 @@ class HabitEditorViewModelTest {
     }
 
     /**
+     * A command that throws is reported, not escaped.
+     *
+     * `appendLocked` consults `SettingsSource.current()` on every write, and
+     * that refuses to guess when the preferences file cannot be read. Uncaught,
+     * it leaves `viewModelScope` — which has no exception handler — and reaches
+     * the thread's default handler, so this is process death on a Save tap
+     * rather than a snackbar. The read path was already guarded for exactly this.
+     */
+    @Test
+    fun `a save that throws is reported rather than crashing`() = runTest {
+        repository.commandFailure = IllegalStateException("the settings file cannot be read")
+        val editor = editorFor(null)
+        editor.onEdit((editor.uiState.value as HabitEditorUiState.Form).copy(name = "read"))
+
+        editor.events.test {
+            editor.onSave()
+            assertEquals(HabitEditorEvent.Rejected(HabitsMessage(R.string.habits_error_unexpected)), awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    /**
+     * And it releases the latch, so the screen is not left unsaveable.
+     *
+     * A throw produces no event of its own, so without reporting it as a
+     * rejection the `saving` guard would never be released and Save would stay
+     * dead with no way back but leaving the screen.
+     */
+    @Test
+    fun `a save that throws can be retried once the failure clears`() = runTest {
+        repository.commandFailure = IllegalStateException("the settings file cannot be read")
+        val editor = editorFor(null)
+        editor.onEdit((editor.uiState.value as HabitEditorUiState.Form).copy(name = "read"))
+
+        editor.onSave()
+        assertTrue(repository.created.isEmpty())
+
+        repository.commandFailure = null
+        editor.onSave()
+
+        assertEquals(1, repository.created.size)
+    }
+
+    /**
      * The weekly clamp, from the ViewModel's side.
      *
      * The stepper stops at seven, so this is the case where something else set

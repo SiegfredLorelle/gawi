@@ -32,7 +32,7 @@ internal class HabitListViewModel @Inject constructor(private val habits: HabitR
         .observeAllHabits()
         .map { it.toListUiState() }
         .catch { cause ->
-            Log.e("HabitListViewModel", "the habit list read failed", cause)
+            Log.e(TAG, "the habit list read failed", cause)
             emit(HabitListUiState.Unavailable)
         }
         .stateIn(
@@ -54,12 +54,21 @@ internal class HabitListViewModel @Inject constructor(private val habits: HabitR
      */
     fun onArchiveToggle(habitId: HabitId, archived: Boolean) {
         viewModelScope.launch {
-            val result = if (archived) habits.unarchiveHabit(habitId) else habits.archiveHabit(habitId)
-            if (result is CommandResult.Rejected) messages.send(HabitsMessage(messageFor(result.error)))
+            val result = commandOrNull(TAG) {
+                if (archived) habits.unarchiveHabit(habitId) else habits.archiveHabit(habitId)
+            }
+            when {
+                // Threw rather than rejected, and uncaught that is a crash on an
+                // Archive tap. The read above is guarded for the same reason.
+                result == null -> messages.send(HabitsMessage(R.string.habits_error_unexpected))
+
+                result is CommandResult.Rejected -> messages.send(HabitsMessage(messageFor(result.error)))
+            }
         }
     }
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L
+        const val TAG = "HabitListViewModel"
     }
 }

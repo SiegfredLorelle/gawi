@@ -116,6 +116,25 @@ class HabitListViewModelTest {
         }
     }
 
+    /**
+     * An archive that throws is reported, not escaped.
+     *
+     * `archiveHabit` reaches the same `appendLocked` and the same
+     * `SettingsSource.current()` as any other write, so it can throw rather than
+     * return a rejection. Uncaught in `viewModelScope` that is a crash on an
+     * Archive tap; the read above is `.catch`-guarded for the same reason.
+     */
+    @Test
+    fun `an archive that throws is reported rather than crashing`() = runTest {
+        repository.commandFailure = IllegalStateException("the settings file cannot be read")
+
+        viewModel.events.test {
+            viewModel.onArchiveToggle(habitId(1), archived = false)
+            assertEquals(HabitsMessage(R.string.habits_error_unexpected), awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
     @Test
     fun `an accepted archive says nothing`() = runTest {
         viewModel.events.test {

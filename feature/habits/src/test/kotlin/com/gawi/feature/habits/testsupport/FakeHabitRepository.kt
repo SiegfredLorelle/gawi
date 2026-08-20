@@ -67,6 +67,19 @@ class FakeHabitRepository : HabitRepository {
     /** What the next command returns. Rejections are values, so this is one. */
     var result: CommandResult<Unit> = CommandResult.Accepted(Unit)
 
+    /**
+     * Set to make the next command *throw* rather than reject.
+     *
+     * The write path can: `appendLocked` consults `SettingsSource.current()` on
+     * every write, and that refuses to guess when the preferences file cannot be
+     * read. Distinct from [result], which is the rejection-as-a-value path.
+     */
+    var commandFailure: Throwable? = null
+
+    private fun failIfAsked() {
+        commandFailure?.let { throw it }
+    }
+
     /** The id a create hands back, so a caller could navigate to it. */
     var mintedId: HabitId = habitId(99)
 
@@ -76,21 +89,25 @@ class FakeHabitRepository : HabitRepository {
     }
 
     override suspend fun createHabit(metadata: HabitMetadata): CommandResult<HabitId> {
+        failIfAsked()
         created += metadata
         return resultOf(mintedId)
     }
 
     override suspend fun updateHabit(habitId: HabitId, metadata: HabitMetadata): CommandResult<Unit> {
+        failIfAsked()
         updated += habitId to metadata
         return result
     }
 
     override suspend fun archiveHabit(habitId: HabitId): CommandResult<Unit> {
+        failIfAsked()
         archived += habitId
         return result
     }
 
     override suspend fun unarchiveHabit(habitId: HabitId): CommandResult<Unit> {
+        failIfAsked()
         unarchived += habitId
         return result
     }
