@@ -13,7 +13,7 @@ hilt = "2.60.1"
 # 2.10.0 is still rc at the time of writing; every other version here is
 # stable, so this one is too.
 navigation = "2.9.8"
-hiltNavigationCompose = "1.4.0"
+androidxHilt = "1.4.0"
 kotlinxSerializationJson = "1.11.0"
 room = "2.8.4"
 datastore = "1.2.1"
@@ -68,16 +68,22 @@ androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-
 # navigation-compose's type-safe routes are @Serializable classes, so :app
 # applies the kotlin-serialization plugin the way :core:domain already does.
 #
-# hilt-navigation-compose was deliberately absent while there was one screen,
-# because viewModel() resolves the same Hilt factory through the
-# @AndroidEntryPoint activity. With a back stack that stops being true: the
-# store owner becomes the destination rather than the activity, which is the
-# one case where hiltViewModel() differs, and it is the difference that stops a
-# ViewModel outliving the screen that owns it. It also carries
-# hiltViewModel(creationCallback), which is how the habit editor receives its
-# habit id without :feature:habits depending on navigation at all.
+# hiltViewModel() was deliberately absent while there was one screen, because
+# viewModel() resolves the same Hilt factory through the @AndroidEntryPoint
+# activity. With a back stack that stops being true: the store owner becomes the
+# destination rather than the activity, which is the one case where the two
+# differ, and it is the difference that stops a ViewModel outliving the screen
+# that owns it. It also carries hiltViewModel(creationCallback), which is how
+# the habit editor is handed the habit it is editing.
+#
+# hilt-lifecycle-viewmodel-compose, not hilt-navigation-compose. As of 1.4.0 the
+# navigation artifact only re-exports these as deprecated aliases, and its pom
+# drags navigation in — which a feature module has no business having on its
+# classpath, since :app owns the graph. This one's pom is compose, lifecycle and
+# hilt and nothing else, so the claim that no feature module knows what a
+# NavController is stays true rather than aspirational.
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation" }
-androidx-hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
+androidx-hilt-lifecycle-viewmodel-compose = { group = "androidx.hilt", name = "hilt-lifecycle-viewmodel-compose", version.ref = "androidxHilt" }
 androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 androidx-lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "lifecycle" }
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }

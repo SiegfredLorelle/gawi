@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Resource merging is flat across the whole app, so every name here carries a
+  habits_ prefix rather than risking a collision with :app's or :feature:today's.
+-->
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- The list -->
+    <string name="habits_title">Habits</string>
+    <string name="habits_back">Back</string>
+    <string name="habits_add">Add habit</string>
+    <string name="habits_empty_title">No habits yet</string>
+    <string name="habits_empty_body">Add one and it starts showing up on Today.</string>
+    <string name="habits_unavailable_title">Can\'t open your habits</string>
+    <string name="habits_unavailable_body">Something went wrong reading them. Close the app and open it again to retry.</string>
+    <string name="habits_archived_header">Archived</string>
+    <string name="habits_archive">Archive</string>
+    <string name="habits_unarchive">Bring back</string>
+    <string name="habits_edit">Edit</string>
+
+    <!-- A schedule, as the list summarises it. Not a plural: the weekly form is
+         a target rather than a count of a noun, and "1 times a week" is a case
+         the stepper can reach, so the copy has to read for it. -->
+    <string name="habits_schedule_daily">Every day</string>
+    <string name="habits_schedule_weekly" tools:ignore="PluralsCandidate">%d× a week</string>
+
+    <!-- The editor -->
+    <string name="habits_new_title">New habit</string>
+    <string name="habits_edit_title">Edit habit</string>
+    <string name="habits_cancel">Cancel</string>
+    <string name="habits_save">Save</string>
+    <string name="habits_name_label">Name</string>
+    <string name="habits_name_error">Give it a name.</string>
+    <string name="habits_icon_label">Icon</string>
+    <string name="habits_color_label">Colour</string>
+    <string name="habits_tag_label">Tag (optional)</string>
+    <string name="habits_schedule_label">Schedule</string>
+    <string name="habits_schedule_daily_option">Daily</string>
+    <string name="habits_schedule_weekly_option">Weekly</string>
+    <!-- Same reasoning as habits_schedule_weekly. -->
+    <string name="habits_weekly_target" tools:ignore="PluralsCandidate">%d× a week</string>
+    <string name="habits_target_fewer">One fewer</string>
+    <string name="habits_target_more">One more</string>
+    <string name="habits_editor_unavailable_title">Can\'t open that habit</string>
+    <string name="habits_editor_unavailable_body">It could not be read. Go back and try again.</string>
+
+    <!-- Rejections. The domain rejects a blank name and nothing else about a
+         habit's metadata, so the third is a backstop for errors this module
+         cannot actually produce rather than copy anyone should see. -->
+    <string name="habits_error_blank_name">Give the habit a name before saving.</string>
+    <string name="habits_error_habit_missing">That habit no longer exists.</string>
+    <string name="habits_error_unexpected">That did not work. Try again.</string>
+</resources>
