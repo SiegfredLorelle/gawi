@@ -57,6 +57,28 @@ created when its first screen is built. What is non-negotiable from day one is
 the dependency rule — in particular that domain logic never lands in a module
 where it can import Android.
 
+Built so far: `:app`, `:core:domain`, `:core:data`, `:core:ui`,
+`:feature:today` and `:feature:habits`. `:feature:settings` and `:widget` do
+not exist yet, which is why a debug-only activity in `app/src/debug/` still
+sets the day cutoff and the reminder time — delete that directory when
+`:feature:settings` lands.
+
+**`:app` owns navigation, and no other module depends on a navigation
+library.** A feature module exposes Route composables taking plain lambdas, so
+a screen reports what happened to it and `:app` decides where that goes. Two
+things follow, and both are worth keeping: a feature's tests never need a
+`NavController`, and a screen cannot navigate somewhere its own module has no
+business knowing about. Concretely, feature modules take
+`androidx.hilt:hilt-lifecycle-viewmodel-compose` for `hiltViewModel()` and not
+`hilt-navigation-compose`, whose pom would put navigation on their classpath.
+
+Routes are **type-safe** — `@Serializable` classes in
+`app/src/main/kotlin/com/gawi/app/navigation/`, not string templates — so an
+argument that changes shape is a compile error rather than a null at runtime.
+Habit ids cross that boundary as `String`, because `HabitId` rejects a
+non-canonical UUIDv7 by throwing and a route argument is exactly where an
+unexpected value arrives; it is validated inside the screen's ViewModel.
+
 ## 3. Event model
 
 One `events` table, append-only:
@@ -196,6 +218,7 @@ notification).
 | Persistence | Room over SQLite; DataStore for preferences |
 | Serialization | kotlinx.serialization (event payloads, JSON export) |
 | Time | java.time (minSdk 29 ⇒ no desugaring) |
+| Navigation | Compose Navigation, type-safe `@Serializable` routes, single activity |
 | Widget | Jetpack Glance |
 | Reminder | WorkManager + notification via PendingIntents |
 | IDs | UUIDv7, hand-rolled in `:core:domain` |
