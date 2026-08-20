@@ -2,6 +2,7 @@ package com.gawi.core.data.db
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import com.gawi.core.data.db.dao.CompletionExportDao
 import com.gawi.core.data.db.dao.CompletionProjectionDao
 import com.gawi.core.data.db.dao.EventDao
 import com.gawi.core.data.db.dao.HabitProjectionDao
@@ -48,6 +49,8 @@ internal abstract class GawiDatabase : RoomDatabase() {
     abstract fun habitProjectionDao(): HabitProjectionDao
 
     abstract fun completionProjectionDao(): CompletionProjectionDao
+
+    abstract fun completionExportDao(): CompletionExportDao
 
     abstract fun habitStreakDao(): HabitStreakDao
 
