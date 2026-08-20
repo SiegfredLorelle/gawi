@@ -1,6 +1,7 @@
 package com.gawi.core.data.backup
 
 import android.net.Uri
+import kotlinx.coroutines.flow.Flow
 
 /**
  * Export and import of the event log (PRD §5, architecture §6).
@@ -44,7 +45,28 @@ interface EventArchive {
      * so a file refused for one bad event leaves the log untouched.
      */
     suspend fun importFrom(source: Uri): ImportResult
+
+    /**
+     * What is known about the last export, for the 30-day nudge (PRD §5).
+     *
+     * A flow rather than a one-shot read, because a successful export has to
+     * change the row that offered it while the user is still looking at it.
+     */
+    fun observeExportStatus(): Flow<ExportStatus>
 }
+
+/**
+ * When the log was last exported, and whether there is a log to export.
+ *
+ * A hint on a row and never an input to a command, which is what lets an
+ * unreadable file answer this rather than refuse it — see `ExportJournal`.
+ *
+ * [daysSinceExport] is null when no export has ever been recorded, and counts
+ * whole wall-clock days otherwise, so a backup taken an hour ago and one taken
+ * this morning both read as nought. [hasEvents] is what keeps a fresh install
+ * from being nudged about losing nothing.
+ */
+data class ExportStatus(val daysSinceExport: Long?, val hasEvents: Boolean)
 
 /** What an import did, or why it did nothing. */
 sealed interface ImportResult {

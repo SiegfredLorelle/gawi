@@ -35,8 +35,9 @@ internal abstract class DataBindsModule {
     abstract fun deviceClock(implementation: SystemDeviceClock): DeviceClock
 
     /**
-     * Unscoped: it holds nothing. The state a merge touches lives on the
-     * repository singleton it delegates to.
+     * Unscoped: it holds nothing itself. What a merge touches lives on the
+     * repository singleton it delegates to, and the export stamp lives in the
+     * singleton `DataStore`.
      */
     @Binds
     abstract fun eventArchive(implementation: ContentResolverEventArchive): EventArchive

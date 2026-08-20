@@ -19,6 +19,13 @@ import java.time.LocalTime
  * Timezone behaviour, the fourth preference the PRD lists, is still absent on
  * purpose: it is "use the device zone", which
  * [com.gawi.core.data.time.DeviceClock] already supplies per call.
+ *
+ * The 30-day nudge's `lastExportedAt` is deliberately not a fourth field here
+ * either, and that reverses what docs/ux/settings.md §7 predicted. Two reasons,
+ * both in [com.gawi.core.data.backup.ExportJournal]'s KDoc: this type is
+ * dedupe-compared to decide whether to re-run the Today query, and the nudge
+ * needs a second signal that is not a preference at all. These three are what
+ * the user set; when an export last happened is a record of what the app did.
  */
 data class UserSettings(
     val dayCutoff: LocalTime = LocalTime.MIDNIGHT,
