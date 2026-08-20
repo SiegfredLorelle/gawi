@@ -271,6 +271,13 @@ The clock-dependent checks below used to need an `adb` call into a debug
 activity. They drive the settings screen now, which is the same code path a user
 takes — so what they verify is the app rather than a test fixture beside it.
 
+**The Storage Access Framework cannot be exercised off a device.** No test in
+this repo opens a file picker — the export and import checks below are the only
+thing that verifies a file is actually written and read. `SettingsScreenTest`
+covers the Data section's rows, their disabled state and their status copy, and
+`SettingsDataViewModelTest` covers what the ViewModel does with the `Uri` the
+picker returns, but nothing above those knows whether a picker appears at all.
+
 **What `make test` now covers on its own.** `TodayScreenTest`,
 `HabitListScreenTest`, `HabitEditorScreenTest` and `SettingsScreenTest` render
 those screens under Robolectric, so the empty, loading and unavailable states,
@@ -358,6 +365,60 @@ the shape the 4b bug took. Wording itself is still yours to read.
       recomputed on read.
 - [ ] A cancelled tap still commits: tap, immediately press Back, relaunch, and
       the completion is there.
+- [ ] **Export writes a file you can read back.** Settings → scroll to
+      **Data** → **Export a copy**. Keep the offered name, save it into
+      Downloads, confirm the snackbar, then:
+
+      ```sh
+      adb shell cat /sdcard/Download/gawi-export-*.json | head -c 400
+      ```
+
+      It prints JSON with your habits in it. Note the contrast with the
+      database check above: SAF wrote outside app-private storage, so this
+      needs no `run-as`. Nothing in the app points at that file, so delete it
+      when you are done. This one observation covers the whole Storage Access
+      Framework path — the picker, the grant, the `ContentResolver` stream and
+      the serializer — none of which any test touches, because no test in this
+      repo can open a picker.
+- [ ] **The offered name is today's date, not yesterday's.** Set the day cutoff
+      to 03:00, wait until after midnight — or simply check the name is today's
+      while the cutoff is at 03:00 and the clock reads before it — and the save
+      dialog still offers `gawi-export-<today>.json`. Proves the file name uses
+      the wall clock rather than the logical date. **Put the cutoff back to
+      midnight afterwards**; the rollover checks above start from it.
+- [ ] **Cancelling the picker does nothing and says nothing.** Tap **Export a
+      copy**, then press Back out of the save dialog. No snackbar, no file, and
+      the row is still tappable. Proves the null-`Uri` path is a no-op rather
+      than an error, which is the rule every Cancel on this screen follows.
+- [ ] **Importing what you just exported changes nothing.** **Import a file** →
+      pick the export from above. The snackbar says nothing was new, and Today
+      is unchanged — same rows, same ticks, same streaks. Proves the dedupe by
+      event id, and that an import is a merge and not a replace. It restores
+      nothing because it changes nothing, which is the point.
+- [ ] **A file that is not an export is refused without changing anything.**
+      Import → pick a photo or any text file. The snackbar says it is not a
+      Gawi export, and Today is unchanged. Proves a refusal is a message rather
+      than a crash or a half-written log.
+- [ ] **The export is visible in the import picker** without needing a "show
+      all files" step. The one thing the type filter can get wrong that no test
+      can see: a filter that hides someone's own backup from them is worse than
+      one that shows a few extra files.
+- [ ] **Both rows go quiet while the work runs.** With a log big enough to take
+      a moment, the tapped row's explanation is replaced by *Writing the file…*
+      and neither row answers a tap until it finishes. On a small log this is
+      over before you can see it — that is expected, and `SettingsScreenTest`
+      covers it instead.
+- [ ] **The count snackbar is readable before it goes.** Import an export
+      holding habits this install does not have and read the whole line without
+      hurrying; it uses the default short duration, and if that is too fast
+      that is a real finding. The habits it adds cannot be deleted afterwards,
+      only archived, so do this on a scratch install or be ready to archive
+      them.
+- [ ] **The whole recovery claim, end to end.** Export, then
+      `adb shell pm clear com.gawi.app`, relaunch to the empty state, and
+      import the file. Every habit, completion and streak comes back. This is
+      the promise architecture §6 makes on behalf of `allowBackup="false"`, and
+      it is the only check that tests it as a user would need it.
 
 **Physical device only** — nothing here is built yet, so these are placeholders
 that come alive with the widget and the reminder (architecture §8, PRD §7):
