@@ -34,6 +34,7 @@ import java.io.IOException
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalTime
+import java.time.ZoneId
 
 /**
  * What the app remembers about exports.
@@ -142,16 +143,40 @@ class ExportJournalTest {
         assertEquals(true, status.hasEvents)
     }
 
-    /** A whole day of skew is needed, so jitter around a fresh export cannot trigger it. */
+    /**
+     * **Six minutes of backwards clock correction, across local midnight.**
+     *
+     * The zone is set deliberately and the test is worthless without it. This
+     * used to run at `FakeDeviceClock`'s default UTC, where 20:00Z and 09:00Z
+     * share a local date, so it passed while demonstrating nothing about the size
+     * of the skew — at `+08:00` the very same instants straddle midnight and the
+     * old assertion failed. A reviewer found that; the fix is the one-day
+     * tolerance, and this is what pins it.
+     */
     @Test
-    fun `a stamp a few hours ahead still reads as today`() = runTest {
-        clock.instant = Instant.parse("2026-08-17T20:00:00Z")
+    fun `a backwards clock correction across midnight still reads as today`() = runTest {
+        clock.moveToZone(ZoneId.of("+08:00"))
+        clock.instant = Instant.parse("2026-08-20T16:03:00Z") // 2026-08-21 00:03 +08:00
         val journal = journalOver(preferences())
         journal.record()
 
-        clock.instant = Instant.parse("2026-08-17T09:00:00Z")
+        clock.instant = Instant.parse("2026-08-20T15:57:00Z") // 2026-08-20 23:57 +08:00
 
         assertEquals(0L, journal.observe().first().daysSinceExport)
+    }
+
+    /** The far edge of that tolerance: one day ahead is jitter, two is a wrong clock. */
+    @Test
+    fun `a stamp two days ahead is refused rather than tolerated`() = runTest {
+        val journal = journalOver(preferences())
+        store.repository.createHabit(metadata(name = "read"))
+        journal.record()
+
+        clock.advanceDays(-2)
+
+        val status = journal.observe().first()
+        assertNull(status.daysSinceExport)
+        assertEquals(true, status.hasEvents)
     }
 
     /**

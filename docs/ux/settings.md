@@ -287,12 +287,25 @@ cases where a count is zero get their own string rather than reading "0 added".
   cannot read and would be absurd here, taking the only recovery path on the
   device off the screen over its own caption.
 
-  A **stamp dated after today** reads as no stamp at all rather than being
+  A **stamp dated well after today** reads as no stamp at all rather than being
   clamped to nought. A device whose clock was ahead when the export happened and
   correct afterwards leaves a stamp that can never count upwards, so clamping
   would pin the row to "Last exported today" for the life of the install and
-  kill the nudge silently. It compares dates, so a whole day of skew is needed
-  and jitter around a fresh export cannot trigger it.
+  kill the nudge silently. **One day of tolerance**, because the comparison is on
+  local dates: without it a backwards clock correction of a few *minutes* across
+  midnight — export at 00:03, NTP pulls back to 23:57 — reads as a future stamp
+  and flips the row to "Never exported" moments after a successful export. The
+  safe direction, but it looks like a bug on the one row whose job is to be
+  believed. A day ahead is jitter; two days is a wrong clock.
+
+  This bullet also claimed a whole day of skew was needed and that jitter could
+  not trigger it. Neither was true, and the test that pinned it passed only
+  because the fake clock defaults to UTC, where the two instants share a date —
+  at `+08:00`, the zone this app is actually developed in, it failed. **That is
+  the fifth time on this feature**, and the third time in the same bullet, that a
+  sentence explaining why something is safe was written before it was. The test
+  now sets the zone explicitly, and dropping that line makes it pass trivially,
+  which is the check worth keeping.
 
   A **failed write of the stamp** does not fail the export. `edit` reads before
   it writes, so it throws on the same file the read path degrades over, and

@@ -168,15 +168,26 @@ internal class ExportJournal @Inject constructor(
      * is stale. Under an 03:00 cutoff a backup taken at 01:00 is otherwise a day
      * older than it is.
      *
-     * **A stamp dated after today reads as no stamp at all, and that is not the
-     * same as clamping it to nought.** A device whose clock was ahead when the
-     * export happened, and correct afterwards, leaves a stamp that can never
+     * **A stamp dated well after today reads as no stamp at all, and that is not
+     * the same as clamping it to nought.** A device whose clock was ahead when
+     * the export happened, and correct afterwards, leaves a stamp that can never
      * count upwards — so clamping would pin the row to "Last exported today" and
      * kill the nudge for the life of the install, silently, which is precisely
      * the failure this feature exists to prevent. Reading it as unknown nudges
-     * instead, and the export that follows replaces the bad stamp. Note this
-     * compares *dates*, so it takes a whole day of skew to trigger and clock
-     * jitter around a fresh export cannot.
+     * instead, and the export that follows replaces the bad stamp.
+     *
+     * **One day of tolerance, and it is not decoration.** This compares local
+     * *dates*, so without it a backwards clock correction of a few *minutes*
+     * across local midnight — export at 00:03, NTP pulls back to 23:57 — reads
+     * as -1 and flips the row from "Last exported today" to "Never exported"
+     * moments after a successful export. That is the safe direction but it looks
+     * like a bug, and it undermines the one row whose job is to be believed. A
+     * whole day ahead is jitter; two days is a wrong clock.
+     *
+     * This paragraph previously claimed a whole day of skew was needed and that
+     * jitter could not trigger it. Both were false, and the test that pinned it
+     * passed only because the fake clock defaults to UTC, where the two instants
+     * share a date — at `+08:00` it failed. Caught by a reviewer.
      *
      * **A count too large for the UI's `Int` is refused the same way**, and that
      * is not hypothetical arithmetic: a stored `Long.MIN_VALUE` dates the stamp
@@ -190,7 +201,11 @@ internal class ExportJournal @Inject constructor(
         val zone = clock.zone()
         val days = ChronoUnit.DAYS
             .between(exportedAt.atZone(zone).toLocalDate(), clock.now().atZone(zone).toLocalDate())
-        return days.takeIf { it in 0..Int.MAX_VALUE.toLong() }
+        return when {
+            days in 0..Int.MAX_VALUE.toLong() -> days
+            days == -SKEW_TOLERANCE_DAYS -> 0
+            else -> null
+        }
     }
 
     /** The stored [key], or null if it is absent *or* holds something else. */
@@ -198,5 +213,8 @@ internal class ExportJournal @Inject constructor(
 
     private companion object {
         val LAST_EXPORTED_AT = longPreferencesKey("last_exported_at_epoch_milli")
+
+        /** How far ahead of today a stamp may be dated and still read as "just now". */
+        const val SKEW_TOLERANCE_DAYS = 1L
     }
 }
