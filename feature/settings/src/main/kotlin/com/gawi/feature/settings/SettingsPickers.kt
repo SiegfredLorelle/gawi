@@ -1,5 +1,6 @@
 package com.gawi.feature.settings
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -57,13 +58,19 @@ import java.time.LocalTime
  * slot in a `weight(1f, fill = false)` box with no scrolling, so a ~400dp clock
  * dial is *clipped* rather than scrolled on a short viewport — and since the
  * activity is not locked to portrait and the open dialog survives rotation, a
- * user could confirm a time whose minute ring they could not reach. This
- * dialog carries a display-mode toggle instead, and opens on the text input
- * when the window is shorter than the dial needs.
+ * user could confirm a time whose minute ring they could not reach. This dialog
+ * sizes itself, and its display-mode toggle puts the text entry one tap away
+ * when the dial still does not fit.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun TimeDialog(titleRes: Int, initial: LocalTime, is24Hour: Boolean, onConfirm: (LocalTime) -> Unit, onDismiss: () -> Unit) {
+internal fun TimeDialog(
+    @StringRes titleRes: Int,
+    initial: LocalTime,
+    is24Hour: Boolean,
+    onConfirm: (LocalTime) -> Unit,
+    onDismiss: () -> Unit,
+) {
     val picker = rememberTimePickerState(
         initialHour = initial.hour,
         initialMinute = initial.minute,
