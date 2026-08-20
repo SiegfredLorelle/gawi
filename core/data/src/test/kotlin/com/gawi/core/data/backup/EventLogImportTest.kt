@@ -205,6 +205,46 @@ class EventLogImportTest {
         assertEquals(log, store.log())
     }
 
+    /**
+     * Only a version *above* ours means "update the app". A file claiming
+     * version 0 is a number this app has never written, so advising an update
+     * would be advice that can never come true — and separating these cases at
+     * all is only worth it if the reassuring one is right.
+     */
+    @Test
+    fun `a version below ours is damaged rather than newer`() = runTest {
+        store.repository.createHabit(metadata(name = "read"))
+        val log = store.log()
+
+        val result = store.import(store.exportText().replace(""""format_version": 1""", """"format_version": 0"""))
+
+        assertTrue("$result", result is ImportResult.Refused.Damaged)
+        assertEquals(log, store.log())
+    }
+
+    /**
+     * A byte order mark does not make a backup unreadable.
+     *
+     * `EF BB BF` decodes to U+FEFF without error and the JSON lexer does not
+     * count it as whitespace, so an untouched file would fail to parse at
+     * offset zero. Reachable along exactly the path the open format invites:
+     * hand-repair the file on Windows and the editor adds one.
+     */
+    @Test
+    fun `a byte order mark does not stop a file importing`() = runTest {
+        val other = TestStore.create(clock, settings, idSeed = 23)
+        try {
+            other.repository.createHabit(metadata(name = "stretch"))
+            val events = other.log().size
+
+            val result = store.import("\uFEFF" + other.exportText())
+
+            assertEquals(ImportResult.Merged(events, events), result)
+        } finally {
+            other.close()
+        }
+    }
+
     private suspend fun habitOnScreen() = store.repository.observeAllHabits().first().single().id
 
     private companion object {

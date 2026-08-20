@@ -177,6 +177,41 @@ class EventLogCodecTest {
         assertEquals(ExportRejection.NotAnExport, refusalFrom("""{"format":"gawi.event-log"}"""))
     }
 
+    /**
+     * A file that carries our marker and a version we cannot read is ours and
+     * broken, not somebody else's file. A future envelope writing `2.0` would
+     * otherwise be turned away with the least useful message available.
+     */
+    @Test
+    fun `a version that is not a whole number is malformed rather than foreign`() {
+        val text = """{"format":"gawi.event-log","format_version":2.0,"events":[]}"""
+
+        val refusal = refusalFrom(text)
+
+        assertTrue("$refusal", refusal is ExportRejection.Malformed)
+    }
+
+    /** A quoted version is not a version either, and says so honestly. */
+    @Test
+    fun `a version written as a string is malformed`() {
+        val refusal = refusalFrom("""{"format":"gawi.event-log","format_version":"1","events":[]}""")
+
+        assertTrue("$refusal", refusal is ExportRejection.Malformed)
+    }
+
+    /**
+     * Below ours is still unsupported, and the rejection carries both numbers
+     * so a caller can tell the two directions apart. `EventLogArchive` is where
+     * that matters — telling someone to update for a version we never wrote
+     * would be advice that cannot come true.
+     */
+    @Test
+    fun `a version below ours reports both numbers`() {
+        val refusal = refusalFrom(fileWith(formatVersion = 0))
+
+        assertEquals(ExportRejection.UnsupportedFormatVersion(found = 0, supported = 1), refusal)
+    }
+
     @Test
     fun `an event count that disagrees with the array is malformed`() {
         val refusal = refusalFrom(fileWith(eventCount = 7))

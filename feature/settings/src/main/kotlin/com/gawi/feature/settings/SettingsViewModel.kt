@@ -113,12 +113,18 @@ internal class SettingsViewModel @Inject constructor(private val settings: Setti
         dataTask.value = task
         viewModelScope.launch {
             try {
-                val message = commandOrNull(TAG, work)
+                val message = commandOrNull(TAG, task.describe(), work)
                 messages.send(message ?: SettingsMessage(failureFor(task)))
             } finally {
                 dataTask.value = DataTask.Idle
             }
         }
+    }
+
+    private fun DataTask.describe(): String = when (this) {
+        DataTask.Exporting -> "the export"
+        DataTask.Importing -> "the import"
+        DataTask.Idle -> "the data task"
     }
 
     @StringRes
@@ -145,7 +151,7 @@ internal class SettingsViewModel @Inject constructor(private val settings: Setti
         viewModelScope.launch {
             // Threw rather than rejected — there is no rejection here — and
             // uncaught that is a crash on tapping a time rather than a snackbar.
-            if (commandOrNull(TAG) { settings.update(transform) } == null) {
+            if (commandOrNull(TAG, "the settings write") { settings.update(transform) } == null) {
                 messages.send(SettingsMessage(R.string.settings_error_unexpected))
             }
         }

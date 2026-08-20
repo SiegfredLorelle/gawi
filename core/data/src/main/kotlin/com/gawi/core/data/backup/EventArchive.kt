@@ -14,6 +14,11 @@ import android.net.Uri
  * is one concern and it lives here, where the trap below only has to be
  * written down once. Nothing above this needs a `ContentResolver`.
  *
+ * **Both calls are main-safe**: they move themselves off the caller's
+ * dispatcher. A document can live in a cloud provider, so reading or writing
+ * one is IO that may block on the network, and the caller is a ViewModel on the
+ * main thread.
+ *
  * A file the user picked can be the wrong file, and that is not a failure —
  * it is a thing people do. Those come back as [ImportResult.Rejected], the
  * same way a command models refusal as a value. Exceptions stay for real
