@@ -19,8 +19,15 @@ dependencies {
     implementation(project(":core:domain"))
     implementation(project(":core:ui"))
 
-    implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
+    // hiltViewModel() rather than viewModel(). Both resolved the same factory
+    // while this was the only screen and the store owner was the activity; now
+    // that it is a back-stack destination the owner is the entry, and scoping
+    // the ViewModel to it is what stops it outliving the screen.
+    //
+    // The lifecycle artifact, not hilt-navigation-compose, whose pom would put
+    // navigation on a feature module's classpath. :app owns the graph.
+    implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

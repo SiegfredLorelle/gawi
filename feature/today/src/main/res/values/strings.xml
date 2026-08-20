@@ -46,6 +46,11 @@
     <string name="today_remaining" tools:ignore="PluralsCandidate">%1$d of %2$d left today</string>
     <string name="today_remaining_none">Nothing left today</string>
 
+    <!-- The empty state's call to action, and the way to the habit list. The
+         body copy has promised the first of these since the screen was built. -->
+    <string name="today_add_habit">Add a habit</string>
+    <string name="today_manage_habits">Manage habits</string>
+
     <string name="today_complete">Mark done</string>
     <string name="today_undo">Mark not done</string>
 </resources>

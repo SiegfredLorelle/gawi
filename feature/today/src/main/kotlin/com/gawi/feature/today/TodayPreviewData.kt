@@ -99,11 +99,18 @@ private val PREVIEW_STATE = TodayUiState.Habits(
     logicalDate = LocalDate.parse("2026-08-17"),
 )
 
+/** Inert: a preview has nowhere to navigate and nothing to write. */
+private val PREVIEW_ACTIONS = TodayActions(
+    onToggle = { _, _, _ -> },
+    onAddHabit = {},
+    onManageHabits = {},
+)
+
 @Preview(name = "habits", showBackground = true)
 @Composable
 private fun TodayHabitsPreview() {
     GawiTheme {
-        TodayScreen(PREVIEW_STATE, { _, _, _ -> }, SnackbarHostState())
+        TodayScreen(PREVIEW_STATE, PREVIEW_ACTIONS, SnackbarHostState())
     }
 }
 
@@ -111,7 +118,7 @@ private fun TodayHabitsPreview() {
 @Composable
 private fun TodayHabitsDarkPreview() {
     GawiTheme {
-        TodayScreen(PREVIEW_STATE, { _, _, _ -> }, SnackbarHostState())
+        TodayScreen(PREVIEW_STATE, PREVIEW_ACTIONS, SnackbarHostState())
     }
 }
 
@@ -119,7 +126,7 @@ private fun TodayHabitsDarkPreview() {
 @Composable
 private fun TodayEmptyPreview() {
     GawiTheme {
-        TodayScreen(TodayUiState.Empty(Mood.CONTENT), { _, _, _ -> }, SnackbarHostState())
+        TodayScreen(TodayUiState.Empty(Mood.CONTENT), PREVIEW_ACTIONS, SnackbarHostState())
     }
 }
 
@@ -127,6 +134,6 @@ private fun TodayEmptyPreview() {
 @Composable
 private fun TodayLoadingPreview() {
     GawiTheme {
-        TodayScreen(TodayUiState.Loading, { _, _, _ -> }, SnackbarHostState())
+        TodayScreen(TodayUiState.Loading, PREVIEW_ACTIONS, SnackbarHostState())
     }
 }
