@@ -54,5 +54,17 @@ internal fun Project.configureAndroid(extension: CommonExtension) {
         // §8 puts the correctness weight on JVM tests, so a module that starts
         // leaning on framework behaviour wants Robolectric rather than this.
         testOptions.unitTests.isReturnDefaultValues = true
+        // The Robolectric SDK pin, shared. Robolectric reads
+        // robolectric.properties off the unit-test classpath, so handing every
+        // module the same directory is what stops the ceiling being rediscovered
+        // per module — it was already copied once, and the copy's own comment
+        // told the reader to go and read the original.
+        //
+        // Harmless on the modules that do not use Robolectric: nothing reads the
+        // file unless Robolectric is on their test classpath.
+        sourceSets.getByName("test").resources.srcDir(rootDir.resolve(ROBOLECTRIC_CONFIG))
     }
 }
+
+/** Read by Robolectric off the unit-test classpath; see the file's own header. */
+private const val ROBOLECTRIC_CONFIG = "config/robolectric"
