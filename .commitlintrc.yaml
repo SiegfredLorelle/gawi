@@ -44,8 +44,9 @@ rules:
   footer-max-line-length: [0]
 
   # This project's real areas. Module scopes get added when those modules are
-  # born (docs/architecture.md §2): today and habits exist, widget does not.
+  # born (docs/architecture.md §2): today, habits and settings exist, widget
+  # does not.
   scope-enum:
     - 2
     - always
-    - [app, domain, data, ui, today, habits, ux, gradle, quality, make, ci, deps, docs, stacks, repo, claude, arch, prd]
+    - [app, domain, data, ui, today, habits, settings, ux, gradle, quality, make, ci, deps, docs, stacks, repo, claude, arch, prd]
