@@ -43,11 +43,14 @@ internal fun TodayScreen(state: TodayUiState, actions: TodayActions, snackbarHos
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.today_title)) },
-                // The only way off this screen. Deliberately not a FAB as well:
-                // Today is for ticking habits off, and a second add affordance
+                // The two ways off this screen. Deliberately no FAB as well:
+                // Today is for ticking habits off, and a third affordance
                 // competing with the rows would crowd the one thing PRD §6.1
                 // wants to take a single tap.
-                actions = { ManageHabitsButton(actions.onManageHabits) },
+                actions = {
+                    ManageHabitsButton(actions.onManageHabits)
+                    SettingsButton(actions.onOpenSettings)
+                },
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -134,11 +137,27 @@ private fun EmptyToday(onAddHabit: () -> Unit, modifier: Modifier = Modifier) {
     }
 }
 
-/** Named for assistive technology; the glyph carries no meaning on its own. */
+/**
+ * Named for assistive technology; the glyph carries no meaning on its own.
+ *
+ * A list glyph rather than the gear this used to carry. The gear was fine while
+ * it was the only way off this screen, but it is the one symbol a reader will
+ * take to mean settings — and now that settings is a real destination beside
+ * it, leaving it here would point at the wrong one.
+ */
 @Composable
 private fun ManageHabitsButton(onManageHabits: () -> Unit) {
     val label = stringResource(R.string.today_manage_habits)
     IconButton(onClick = onManageHabits, modifier = Modifier.semantics { contentDescription = label }) {
+        Text(text = "\u2630", style = MaterialTheme.typography.titleLarge)
+    }
+}
+
+/** The gear, which now means what it looks like. */
+@Composable
+private fun SettingsButton(onOpenSettings: () -> Unit) {
+    val label = stringResource(R.string.today_settings)
+    IconButton(onClick = onOpenSettings, modifier = Modifier.semantics { contentDescription = label }) {
         Text(text = "\u2699", style = MaterialTheme.typography.titleLarge)
     }
 }
