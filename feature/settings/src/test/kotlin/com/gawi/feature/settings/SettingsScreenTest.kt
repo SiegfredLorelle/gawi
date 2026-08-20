@@ -116,6 +116,61 @@ class SettingsScreenTest {
         assertEquals(listOf(DayOfWeek.FRIDAY), picked)
     }
 
+    /**
+     * Opening a time picker at all.
+     *
+     * Thin-looking and it earns its place: nothing here opened the *time* dialog
+     * before, only the week-start one, and the gap let a crash reach a device.
+     * `TimePickerDisplayMode` is a value class over an `Int`, so holding one in
+     * `rememberSaveable` boxes it into something the default
+     * `SaveableStateRegistry` cannot put in a Bundle — and that throws when the
+     * dialog is *composed*, not when it is restored, so merely opening it was
+     * fatal. Rendering the dialog is the whole assertion.
+     */
+    @Test
+    fun openingTheDayCutoffPicker_rendersRatherThanThrowing() {
+        render(STORED)
+
+        compose.onNodeWithText(string(R.string.settings_day_cutoff_label)).performClick()
+
+        compose.onNodeWithText(string(R.string.settings_confirm)).assertIsDisplayed()
+        compose.onNodeWithText(string(R.string.settings_cancel)).assertIsDisplayed()
+    }
+
+    /** And the reminder row opens its own, with the state kept apart. */
+    @Test
+    fun openingTheReminderPicker_rendersRatherThanThrowing() {
+        render(STORED)
+
+        compose.onNodeWithText(string(R.string.settings_reminder_label)).performClick()
+
+        compose.onNodeWithText(string(R.string.settings_confirm)).assertIsDisplayed()
+    }
+
+    /** Dismissing a time picker writes nothing, the same rule the day list follows. */
+    @Test
+    fun cancellingTheDayCutoffPicker_writesNothing() {
+        val picked = mutableListOf<LocalTime>()
+        render(STORED, actions = NO_ACTIONS.copy(onDayCutoffChange = { picked += it }))
+
+        compose.onNodeWithText(string(R.string.settings_day_cutoff_label)).performClick()
+        compose.onNodeWithText(string(R.string.settings_cancel)).performClick()
+
+        assertEquals(emptyList<LocalTime>(), picked)
+    }
+
+    /** And confirming reports the time the picker opened on when nothing was touched. */
+    @Test
+    fun confirmingTheDayCutoffPicker_reportsThePickersTime() {
+        val picked = mutableListOf<LocalTime>()
+        render(STORED, actions = NO_ACTIONS.copy(onDayCutoffChange = { picked += it }))
+
+        compose.onNodeWithText(string(R.string.settings_day_cutoff_label)).performClick()
+        compose.onNodeWithText(string(R.string.settings_confirm)).performClick()
+
+        assertEquals(listOf(LocalTime.of(3, 0)), picked)
+    }
+
     @Test
     fun unavailable_saysSoRatherThanDrawingEmptyRows() {
         render(SettingsUiState.Unavailable)

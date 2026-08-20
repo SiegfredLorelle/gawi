@@ -259,6 +259,8 @@ adb tcpip 5555
 adb connect 192.168.1.50:5555
 ```
 
+---
+
 ## 4. Manual verification checklist
 
 Architecture §8 puts instrumented tests outside CI, so this is the substitute.
