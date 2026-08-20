@@ -1,22 +1,20 @@
 package com.gawi.core.data.di
 
 import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.room.Room
+import com.gawi.core.data.backup.AppVersion
 import com.gawi.core.data.db.DATABASE_NAME
 import com.gawi.core.data.db.GawiDatabase
-import com.gawi.core.data.db.dao.CompletionProjectionDao
-import com.gawi.core.data.db.dao.EventDao
-import com.gawi.core.data.db.dao.HabitProjectionDao
-import com.gawi.core.data.db.dao.HabitStreakDao
-import com.gawi.core.data.db.dao.ProjectionMetaDao
-import com.gawi.core.data.db.dao.ReadModelDao
 import com.gawi.core.data.settings.SETTINGS_NAME
 import com.gawi.core.data.settings.settingsDataStore
 import com.gawi.core.domain.id.UuidV7Generator
 import com.gawi.core.domain.serialization.EventCodec
+import com.gawi.core.domain.serialization.export.EventLogCodec
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -51,24 +49,6 @@ internal object DataModule {
         Room.databaseBuilder(context, GawiDatabase::class.java, DATABASE_NAME).build()
 
     @Provides
-    fun eventDao(database: GawiDatabase): EventDao = database.eventDao()
-
-    @Provides
-    fun habitProjectionDao(database: GawiDatabase): HabitProjectionDao = database.habitProjectionDao()
-
-    @Provides
-    fun completionProjectionDao(database: GawiDatabase): CompletionProjectionDao = database.completionProjectionDao()
-
-    @Provides
-    fun habitStreakDao(database: GawiDatabase): HabitStreakDao = database.habitStreakDao()
-
-    @Provides
-    fun projectionMetaDao(database: GawiDatabase): ProjectionMetaDao = database.projectionMetaDao()
-
-    @Provides
-    fun readModelDao(database: GawiDatabase): ReadModelDao = database.readModelDao()
-
-    @Provides
     @Singleton
     fun settingsDataStore(@ApplicationContext context: Context): DataStore<Preferences> =
         settingsDataStore { context.preferencesDataStoreFile(SETTINGS_NAME) }
@@ -80,4 +60,30 @@ internal object DataModule {
     @Provides
     @Singleton
     fun eventCodec(): EventCodec = EventCodec()
+
+    @Provides
+    @Singleton
+    fun eventLogCodec(payloads: EventCodec): EventLogCodec = EventLogCodec(payloads)
+
+    /**
+     * Stamped on an export so that a file which will not import can be traced
+     * to what wrote it. Nothing in the app reads it back — provenance for a
+     * human holding a broken backup, and the only thing there is to go on when
+     * `allowBackup` is off and that file is the only copy.
+     */
+    @Provides
+    @Singleton
+    fun appVersion(@ApplicationContext context: Context): AppVersion {
+        val manager = context.packageManager
+        val info = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            manager.getPackageInfo(context.packageName, PackageManager.PackageInfoFlags.of(0))
+        } else {
+            @Suppress("DEPRECATION")
+            manager.getPackageInfo(context.packageName, 0)
+        }
+        return AppVersion(info.versionName ?: UNKNOWN_APP_VERSION)
+    }
+
+    /** What an export says when the platform will not name the build. */
+    private const val UNKNOWN_APP_VERSION = "unknown"
 }
