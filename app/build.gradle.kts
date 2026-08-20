@@ -20,6 +20,7 @@ dependencies {
     implementation(project(":core:data"))
     implementation(project(":core:ui"))
     implementation(project(":feature:habits"))
+    implementation(project(":feature:settings"))
     implementation(project(":feature:today"))
 
     implementation(libs.androidx.activity.compose)

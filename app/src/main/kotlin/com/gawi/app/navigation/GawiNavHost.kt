@@ -8,10 +8,11 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.gawi.feature.habits.HabitEditorRoute
 import com.gawi.feature.habits.HabitListRoute
+import com.gawi.feature.settings.SettingsRoute
 import com.gawi.feature.today.TodayRoute
 
 /**
- * The graph. Three destinations, and every navigation decision the app makes.
+ * The graph. Four destinations, and every navigation decision the app makes.
  *
  * Each feature module exposes Route composables that take plain lambdas, so
  * what a screen reports is what happened to it — "the user wants to add a
@@ -49,6 +50,7 @@ internal fun GawiNavHost(navController: NavHostController = rememberNavControlle
             TodayRoute(
                 onAddHabit = { go(Destination.HabitEditor()) },
                 onManageHabits = { go(Destination.Habits) },
+                onOpenSettings = { go(Destination.Settings) },
             )
         }
 
@@ -58,6 +60,10 @@ internal fun GawiNavHost(navController: NavHostController = rememberNavControlle
                 onEditHabit = { habitId -> go(Destination.HabitEditor(habitId)) },
                 onBack = ::back,
             )
+        }
+
+        composable<Destination.Settings> {
+            SettingsRoute(onBack = ::back)
         }
 
         composable<Destination.HabitEditor> { entry ->
