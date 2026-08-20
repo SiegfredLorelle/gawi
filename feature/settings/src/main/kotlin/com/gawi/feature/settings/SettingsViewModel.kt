@@ -76,20 +76,29 @@ internal class SettingsViewModel @Inject constructor(private val settings: Setti
     /**
      * The last-export status, guarded so that it can never take the screen down.
      *
-     * `ExportJournal` already absorbs the expected failure — an unreadable
-     * preferences file — and decides what it *means* there, so reaching this
-     * catch is a bug in an archive rather than a bad disk. It is still caught,
-     * because the alternative is specific and bad: the two flows this is
-     * combined with go to [SettingsUiState.Unavailable] on failure, correctly,
-     * since settings you cannot read cannot be drawn. This one is a caption on a
-     * row, and one shared catch cannot tell them apart — so without this, a
-     * broken caption takes the only disaster-recovery path on the device off the
-     * screen with it (docs/ux/settings.md §7).
+     * `ExportJournal` absorbs both failures it can name — an unreadable
+     * preferences file and a log it cannot count — and decides what each one
+     * *means* there, so reaching this catch is a bug rather than a bad disk. It
+     * is still caught, because the alternative is specific and bad: the two flows
+     * this is combined with go to [SettingsUiState.Unavailable] on failure,
+     * correctly, since settings you cannot read cannot be drawn. This one is a
+     * caption on a row, and one shared catch cannot tell them apart — so without
+     * this, a broken caption takes the only disaster-recovery path on the device
+     * off the screen with it (docs/ux/settings.md §7).
+     *
+     * **`hasEvents = true`, so even the bug resolves towards nudging.** A wrong
+     * warning costs an export nobody needed; a wrong silence costs the warning
+     * PRD §5 asked for, on a device that may have no backup. A bug is exactly the
+     * situation in which there is nothing left to argue the choice from, so it
+     * takes the same direction the rest of the feature does. This claimed to be a
+     * bug-only path before it was one: `SQLiteException` from the log count is a
+     * `RuntimeException`, so it slipped past the journal's `IOException` guard and
+     * landed here, where the fallback was silence. A PR reviewer found it.
      */
     private fun exportStatus(): Flow<ExportStatus> = archive.observeExportStatus()
         .catch { cause ->
             Log.e(TAG, "the last-export status is unreadable", cause)
-            emit(ExportStatus(daysSinceExport = null, hasEvents = false))
+            emit(ExportStatus(daysSinceExport = null, hasEvents = true))
         }
 
     private val messages = Channel<SettingsMessage>(Channel.BUFFERED)
