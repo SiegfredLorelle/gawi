@@ -23,7 +23,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.robolectric.RuntimeEnvironment
 import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.time.Instant
 import java.time.LocalDate
@@ -140,7 +139,7 @@ internal class TestStore private constructor(
     fun close() = database.close()
 
     /** The whole log as an export file. */
-    suspend fun exportText(): String = ByteArrayOutputStream().also { archive.export(it) }.toString(Charsets.UTF_8.name())
+    suspend fun exportText(): String = archive.encode().decodeToString()
 
     /** Imports [text] as if it had come off a document the user picked. */
     suspend fun import(text: String): ImportResult = archive.import(ByteArrayInputStream(text.toByteArray()))
