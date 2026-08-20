@@ -105,10 +105,32 @@ internal class HabitEditorViewModel @AssistedInject constructor(
         form.value = edited
     }
 
+    /**
+     * Guards against a second save while the first is in flight.
+     *
+     * `createHabit` is the one non-idempotent command this module issues.
+     * Archive and unarchive converge under last-write-wins and a completion
+     * collapses per logical date, so nothing below deduplicates a create —
+     * two quick taps would append two `HabitCreated` events and leave two
+     * identical habits, and would also pop the back stack twice.
+     *
+     * Only ever touched from the main dispatcher, which `viewModelScope` uses,
+     * so it needs no synchronisation.
+     */
+    private var saving = false
+
     fun onSave() {
         val current = form.value
-        if (current !is HabitEditorUiState.Form) return
-        viewModelScope.launch { submit(current) }
+        if (saving || current !is HabitEditorUiState.Form) return
+        saving = true
+        viewModelScope.launch {
+            val event = outcomeOf(current)
+            // Released only on rejection. A rejected save has to be retryable
+            // once the name is fixed; an accepted one pops the screen, so
+            // staying latched is what stops a second create racing the pop.
+            if (event is HabitEditorEvent.Rejected) saving = false
+            messages.send(event)
+        }
     }
 
     /**
@@ -119,20 +141,18 @@ internal class HabitEditorViewModel @AssistedInject constructor(
      * button, because the button's `canSave` and the domain's `isBlank` are two
      * statements of the same rule and only one of them is enforced.
      */
-    private suspend fun submit(current: HabitEditorUiState.Form) {
+    private suspend fun outcomeOf(current: HabitEditorUiState.Form): HabitEditorEvent {
         if (!current.canSave) {
-            messages.send(HabitEditorEvent.Rejected(HabitsMessage(R.string.habits_error_blank_name)))
-            return
+            return HabitEditorEvent.Rejected(HabitsMessage(R.string.habits_error_blank_name))
         }
         val metadata = current.toMetadata()
         val result: CommandResult<*> = when (habitId) {
             null -> habits.createHabit(metadata)
             else -> habits.updateHabit(habitId, metadata)
         }
-        val event = when (result) {
+        return when (result) {
             is CommandResult.Rejected -> HabitEditorEvent.Rejected(HabitsMessage(messageFor(result.error)))
             is CommandResult.Accepted -> HabitEditorEvent.Saved
         }
-        messages.send(event)
     }
 }

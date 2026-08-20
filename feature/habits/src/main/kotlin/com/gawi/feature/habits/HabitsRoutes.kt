@@ -63,12 +63,15 @@ fun HabitListRoute(onAddHabit: () -> Unit, onEditHabit: (String) -> Unit, onBack
  *
  * [onSaved] and [onCancel] are separate even though both pop today, because
  * they are different events and a caller should be free to treat them so.
+ *
+ * No explicit ViewModel key. Each `NavBackStackEntry` owns its own
+ * `ViewModelStore`, so two editors are already two ViewModels — opening one
+ * habit and then another cannot show the first one's form.
  */
 @Composable
 fun HabitEditorRoute(habitId: String?, onSaved: () -> Unit, onCancel: () -> Unit) {
     val viewModel: HabitEditorViewModel =
         hiltViewModel<HabitEditorViewModel, HabitEditorViewModel.Factory>(
-            key = habitId ?: NEW_HABIT_KEY,
             creationCallback = { factory -> factory.create(habitId) },
         )
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -96,12 +99,3 @@ fun HabitEditorRoute(habitId: String?, onSaved: () -> Unit, onCancel: () -> Unit
         snackbarHostState = snackbarHostState,
     )
 }
-
-/**
- * Keyed by the habit being edited.
- *
- * Without a key the ViewModel store hands back the first editor it made for
- * this destination, so opening one habit and then another would show the first
- * one's form. Creating gets its own constant key for the same reason.
- */
-private const val NEW_HABIT_KEY = "new-habit"

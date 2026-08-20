@@ -1,23 +1,15 @@
 package com.gawi.feature.habits
 
 import androidx.annotation.StringRes
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -28,20 +20,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.unit.dp
-import com.gawi.core.domain.model.Schedule
 import com.gawi.core.ui.component.Notice
 import com.gawi.core.ui.theme.GawiSpacing
-import com.gawi.core.ui.theme.HabitPalette
-import com.gawi.core.ui.theme.glyphColorOn
-import com.gawi.core.ui.theme.parseHabitColor
 
 /**
  * The habit editor, stateless.
@@ -130,7 +114,12 @@ private fun EditorForm(form: HabitEditorUiState.Form, onEdit: (HabitEditorUiStat
             value = form.name,
             onValueChange = { onEdit(form.copy(name = it)) },
             label = { Text(stringResource(R.string.habits_name_label)) },
-            isError = !form.canSave,
+            // Only an error when editing. A habit that had a name and no longer
+            // does is wrong; an untouched create form is not wrong yet, and
+            // greeting a first habit with a red field is not validation. The
+            // disabled Save is what conveys the block in that case, which is all
+            // docs/ux/habits.md §3 claims for it.
+            isError = form.editing && !form.canSave,
             // The slot is always present so the field does not change height the
             // first time the name is cleared. It states the same rule canSave
             // does, next to the field that decides it.

@@ -134,6 +134,16 @@ class HabitsUiMapperTest {
         assertEquals(" read ", newHabitForm().copy(name = " read ").toMetadata().name)
     }
 
+    /**
+     * A swatch without a name would announce itself as raw hex, and the labels
+     * are matched to colours by position, so the two lists have to stay level.
+     */
+    @Test
+    fun `every palette colour has a name to be read out`() {
+        assertEquals(HabitPalette.Colors.size, COLOR_LABELS.size)
+        assertEquals(COLOR_LABELS.size, COLOR_LABELS.toSet().size)
+    }
+
     @Test
     fun `a form submits every field, because an update is not a patch`() {
         val metadata = newHabitForm()
