@@ -66,11 +66,22 @@ internal class EventLogArchive @Inject constructor(
             // not a disk failure.
             bytes.decodeToString(throwOnInvalidSequence = true)
         } catch (cause: CharacterCodingException) {
-            return ImportResult.Rejected(ExportRejection.Malformed("not UTF-8 text: ${cause.message}"))
+            return ImportResult.Refused.Damaged("not UTF-8 text: ${cause.message}")
         }
         return when (val read = codec.decode(text)) {
-            is ExportRead.Refused -> ImportResult.Rejected(read.reason)
+            is ExportRead.Refused -> read.reason.asResult()
             is ExportRead.Events -> ImportResult.Merged(read.events.size, store.mergeEvents(read.events))
         }
+    }
+
+    /**
+     * Restates the codec's refusal in this module's own terms, so nothing above
+     * `:core:data` has to name a `:core:domain` type to tell a user what
+     * happened.
+     */
+    private fun ExportRejection.asResult(): ImportResult = when (this) {
+        ExportRejection.NotAnExport -> ImportResult.Refused.NotAnExport
+        is ExportRejection.UnsupportedFormatVersion -> ImportResult.Refused.FromANewerVersion(found)
+        is ExportRejection.Malformed -> ImportResult.Refused.Damaged(detail)
     }
 }
