@@ -5,6 +5,7 @@ import android.net.Uri
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 import java.io.IOException
 import javax.inject.Inject
@@ -12,10 +13,9 @@ import javax.inject.Inject
 /**
  * [EventArchive] over the Storage Access Framework.
  *
- * Holds no state and keeps no `Uri`: the grant the picker returns belongs to
- * the activity that asked for it, and this reads or writes inside the call
- * rather than saving it for later. That is why nothing here takes a persistable
- * permission.
+ * Keeps no `Uri`: the grant the picker returns belongs to the activity that
+ * asked for it, and this reads or writes inside the call rather than saving it
+ * for later. That is why nothing here takes a persistable permission.
  *
  * **This is where main-safety and write-safety are provided**, and neither is
  * optional. A caller is a ViewModel on `Dispatchers.Main.immediate`, and the
@@ -28,6 +28,7 @@ import javax.inject.Inject
 internal class ContentResolverEventArchive @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val archive: EventLogArchive,
+    private val journal: ExportJournal,
 ) : EventArchive {
 
     /**
@@ -58,6 +59,20 @@ internal class ContentResolverEventArchive @Inject constructor(
      *
      * What this does not survive is the process dying mid-write. See
      * docs/ux/settings.md §7.
+     *
+     * **The export is recorded after the stream closes, and the ordering is the
+     * whole meaning of the stamp**: it has to say "a file landed", not "a write
+     * was attempted", because what it drives is the nudge telling the user they
+     * still have no backup. Recording before the write would silence that for
+     * thirty days on the strength of a document that was truncated and never
+     * filled. Inside the non-cancellable region for the same reason the write
+     * is, so leaving the screen cannot separate the two.
+     *
+     * This ordering is the one thing here that no JVM test covers — substituting
+     * a `ContentResolver` means a Robolectric shadow, which nothing in this
+     * project does yet, and [EventLogArchive] is split out precisely so the
+     * decisions are testable without one. It is checked on a device instead
+     * (docs/running.md §5).
      */
     override suspend fun exportTo(destination: Uri) = withContext(NonCancellable + Dispatchers.IO) {
         val bytes = archive.encode()
@@ -71,6 +86,7 @@ internal class ContentResolverEventArchive @Inject constructor(
             it.write(bytes)
             it.flush()
         }
+        journal.record()
     }
 
     override suspend fun importFrom(source: Uri): ImportResult = withContext(Dispatchers.IO) {
@@ -78,4 +94,8 @@ internal class ContentResolverEventArchive @Inject constructor(
             ?: throw IOException("the document provider would not open $source for reading")
         stream.use { archive.import(it) }
     }
+
+    // Straight through: the journal is already the flow this is meant to be,
+    // and there is no document involved in reading it.
+    override fun observeExportStatus(): Flow<ExportStatus> = journal.observe()
 }
