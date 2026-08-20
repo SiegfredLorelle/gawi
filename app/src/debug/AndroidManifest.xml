@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Debug variant only. Step 4b needs habits on the device to exercise the
-  tap -> event -> projection -> Flow -> UI loop, and :feature:habits does not
-  exist yet (architecture §2). Delete this whole directory when it does.
+  Debug variant only. What is left of it sets the day cutoff and the reminder
+  time, which no screen does yet; :feature:settings is where that goes
+  (architecture §2). Delete this whole directory when it exists. It used to seed
+  habits as well, which :feature:habits now does properly.
 
   Exported, because adb cannot start a component that is not: the shell runs as
   uid 2000 and does not hold START_ANY_ACTIVITY, so a non-exported activity is

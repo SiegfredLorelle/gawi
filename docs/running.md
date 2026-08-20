@@ -261,31 +261,37 @@ adb connect 192.168.1.50:5555
 
 ---
 
-## 4. Putting habits on a device
+## 4. Setting the two settings that have no screen
 
-> **Temporary.** There is no create-habit screen yet — `:feature:habits` does not
-> exist (architecture §2), so a fresh install can only show the empty state. This
-> whole section disappears with `app/src/debug/` when the create form lands.
+Habits are created in the app now — Today's empty state has a button, and its
+app bar leads to the habit list. What is left of `app/src/debug/` is the day
+cutoff and the reminder time, which `:feature:settings` does not exist to set
+yet (architecture §2).
 
-A debug-only activity seeds one daily and one weekly habit. It is in the debug
-source set, so it cannot ship, and it has no launcher entry — only `adb` reaches
-it:
+> **Temporary.** This section and `app/src/debug/` both disappear when
+> `:feature:settings` lands.
 
-```sh
-adb shell am start -n com.gawi.app/com.gawi.app.debug.SeedActivity
-adb logcat -d -s GawiSeed
-```
-
-It is re-runnable — habits already present are skipped. It also writes the two
-settings that have no screen yet, which is what makes §5's clock checks possible:
+A debug-only activity, in the debug source set so it cannot ship, with no
+launcher entry — only `adb` reaches it:
 
 ```sh
 adb shell am start -n com.gawi.app/com.gawi.app.debug.SeedActivity \
   --es cutoff 03:00 --es reminder 21:00
+adb logcat -d -s GawiSeed
 ```
 
-Start it **while the Today view is open**: it runs in its own task, so you watch
-rows arrive without a restart.
+Passing no extras reads the settings back without changing them, which is the
+only way to see their values: the stored file holds second-of-day varints, so
+dumping it shows the keys and not what they are set to.
+
+```sh
+adb shell am start -n com.gawi.app/com.gawi.app.debug.SeedActivity
+```
+
+The cutoff is also the cheapest way to force a day rollover against a real
+clock — set it a couple of minutes ahead and watch the rows flip — which is what
+§5's clock checks rely on. `adb shell date` needs `adb root` and is refused on
+the Play images this project uses.
 
 ---
 
@@ -295,12 +301,16 @@ Architecture §8 puts instrumented tests outside CI, so this is the substitute.
 Work through it for any change to the data path or the Today view; note in the PR
 which parts you ran.
 
-**What `make test` now covers on its own.** `TodayScreenTest` renders the Today
-screen under Robolectric, so the empty, loading and unavailable states, and the
-fact that a tap reports the tapped row's own date and completion, are checked
-without a device. They are still listed below because the checklist verifies
-them *through the real stack* — a tap that reaches Room and comes back — which a
-stateless render cannot.
+**What `make test` now covers on its own.** `TodayScreenTest`,
+`HabitListScreenTest` and `HabitEditorScreenTest` render those screens under
+Robolectric, so the empty, loading and unavailable states, the weekly target's
+bounds, the disabled save, the archived row's action, and the fact that a tap
+reports the tapped row's own date and completion, are all checked without a
+device. They are still listed below because the checklist verifies them *through
+the real stack* — a tap that reaches Room and comes back, and a habit that
+survives a process death — which a stateless render cannot. Nothing yet drives
+the wired Routes through the navigation graph; that is the cross-module journey
+test, and it needs a Hilt test graph.
 
 **Read the copy anyway.** The tests resolve every expected string from the same
 `R.string` the composable renders, so a reword cannot fail them — by design, so
@@ -311,9 +321,20 @@ the shape the 4b bug took. Wording itself is still yours to read.
 **On an emulator**
 
 - [ ] The app launches and `adb logcat -d -s AndroidRuntime:E` is empty.
-- [ ] Seed **while the screen is open** — rows appear with no restart. This one
-      observation covers Hilt building the data layer, the event log being
-      folded, the projection write, and the Room `Flow`.
+- [ ] From the empty state, tap **Add a habit**, name it, save. It appears on
+      Today with no restart. This one observation covers Hilt building the data
+      layer, the command path, the event log being folded, the projection write,
+      and the Room `Flow`.
+- [ ] Create a **weekly** habit and check the target stepper stops at 7 and at
+      1. Above 7 would throw out of `Schedule.Weekly`'s `require` rather than
+      being rejected, so this is a crash if it is wrong.
+- [ ] Open a habit from the list, change **only** its name, save. Its icon,
+      colour, schedule and tag survive — an update is a whole-record write, so
+      a field the form forgot to submit would come back as a default.
+- [ ] Archive a habit: it leaves Today, and appears under **Archived** on the
+      list with a *Bring back* action. Bring it back: it returns to Today.
+- [ ] The mascot's count follows archiving — an archived habit stops being
+      outstanding.
 - [ ] Tap a row: it ticks, and its streak appears. Tap again: it unticks. A
       daily streak reads as a count, a weekly one in weeks.
 - [ ] Force-stop and relaunch: completions and streaks are rebuilt from the log.
@@ -331,9 +352,9 @@ the shape the 4b bug took. Wording itself is still yours to read.
       written. A *missing* `-wal` is fine and means SQLite has checkpointed
       into the main file, so let that copy fail rather than chasing it.
 - [ ] Settings persist. `files/datastore/settings.preferences_pb` appears after
-      the **first write**, not the first read, so seed with `--es cutoff` first.
-      Then force-stop, relaunch, and re-run the seeder: it prints the stored
-      settings.
+      the **first write**, not the first read, so set one with `--es cutoff`
+      first. Then force-stop, relaunch, and run the debug activity with no
+      extras: it prints the stored settings back.
 - [ ] **Day rollover, against a real clock.** Set the cutoff a couple of minutes
       ahead (`--es cutoff HH:MM`): "today" becomes yesterday, so a completed row
       reads unticked. Leave the screen alone; when the boundary passes the row

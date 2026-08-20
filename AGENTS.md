@@ -57,6 +57,13 @@ Full guide with examples: `.github/COMMIT_CONVENTION.md`
 - **The dependency rule is non-negotiable**: `:core:domain` depends only on
   the Kotlin stdlib and kotlinx-serialization. Domain logic never lands in a
   module that can import Android.
+- **`:app` owns navigation; no other module depends on a navigation library.**
+  A feature module exposes Route composables taking plain lambdas, and `:app`'s
+  graph decides where each one leads. Feature modules take
+  `androidx.hilt:hilt-lifecycle-viewmodel-compose` for `hiltViewModel()`, never
+  `hilt-navigation-compose` — its pom would drag navigation onto their
+  classpath. Routes are type-safe `@Serializable` classes
+  (docs/architecture.md §2).
 - **Versions live only in `gradle/libs.versions.toml`.** Convention plugins
   in `build-logic/` own build configuration; module build files only apply
   `gawi.*` plugin ids and declare dependencies.
