@@ -171,6 +171,38 @@ class SettingsScreenTest {
         assertEquals(listOf(LocalTime.of(3, 0)), picked)
     }
 
+    /**
+     * The one wiring mistake this screen is shaped to make.
+     *
+     * `SettingsScreen`'s two `TimeDialog` blocks differ in three tokens, so
+     * pointing the reminder branch at `onDayCutoffChange` compiles, reads
+     * correctly at a glance, and stayed green through the whole suite — while
+     * silently moving the day boundary, which is the most expensive of the three
+     * settings to get wrong.
+     *
+     * Asserting 22:30 rather than any time also pins that the dialog opened on
+     * `STORED.reminderTime` and not on the cutoff's 03:00, so a swapped
+     * `initial` fails here too.
+     */
+    @Test
+    fun confirmingTheReminderPicker_reportsTheReminderAndNotTheCutoff() {
+        val reminders = mutableListOf<LocalTime>()
+        val cutoffs = mutableListOf<LocalTime>()
+        render(
+            STORED,
+            actions = NO_ACTIONS.copy(
+                onReminderTimeChange = { reminders += it },
+                onDayCutoffChange = { cutoffs += it },
+            ),
+        )
+
+        compose.onNodeWithText(string(R.string.settings_reminder_label)).performClick()
+        compose.onNodeWithText(string(R.string.settings_confirm)).performClick()
+
+        assertEquals(listOf(LocalTime.of(22, 30)), reminders)
+        assertEquals(emptyList<LocalTime>(), cutoffs)
+    }
+
     @Test
     fun unavailable_saysSoRatherThanDrawingEmptyRows() {
         render(SettingsUiState.Unavailable)
