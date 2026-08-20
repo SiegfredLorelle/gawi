@@ -1,14 +1,12 @@
 package com.gawi.feature.today
 
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.compositeOver
-import androidx.compose.ui.graphics.luminance
 import com.gawi.core.data.model.TodayHabit
 import com.gawi.core.data.model.TodaySnapshot
 import com.gawi.core.data.model.toMoodState
 import com.gawi.core.domain.mascot.Mascot
 import com.gawi.core.domain.model.Schedule
 import com.gawi.core.domain.streak.StreakSnapshot
+import com.gawi.core.ui.theme.parseHabitColor
 
 /**
  * The read model as the screen draws it — docs/ux/today-view.md §5's rules, in
@@ -69,60 +67,3 @@ internal fun StreakSnapshot.toUi(schedule: Schedule): StreakUi = when {
     brokenOn != null -> StreakUi.Broken(previous = previous, weekly = schedule is Schedule.Weekly)
     else -> StreakUi.None
 }
-
-/**
- * A habit's stored colour, or null if it is not one.
- *
- * `HabitState.color` is an unvalidated string off the event log — no command
- * checks it and no projection normalises it — so a row has to survive anything
- * in there rather than crash the screen. Hand-rolled because
- * `android.graphics.Color.parseColor` would put Robolectric on this module's
- * test classpath for what is a string parse.
- */
-internal fun parseHabitColor(hex: String): Color? {
-    val digits = hex.removePrefix("#")
-    // Every guard as one expression, because a hash, a length and a digit set
-    // are three ways of saying the same thing: this either is a colour or is
-    // not. toLongOrNull would otherwise accept a leading sign, making "#-abcde"
-    // six characters that parse negative and mask into an arbitrary opaque
-    // colour rather than falling back to a theme role.
-    val argb = when {
-        digits.length == hex.length -> null
-
-        !digits.all { it in '0'..'9' || it in 'a'..'f' || it in 'A'..'F' } -> null
-
-        // Color(Long) reads 0xAARRGGBB. Color(ULong) is the raw packed encoding
-        // and would read these digits as a different colour space entirely.
-        digits.length == RGB_DIGITS -> digits.toLongOrNull(radix = HEX_RADIX)?.or(OPAQUE_ALPHA)
-
-        digits.length == ARGB_DIGITS -> digits.toLongOrNull(radix = HEX_RADIX)
-
-        else -> null
-    }
-    return argb?.let { Color(it) }
-}
-
-/**
- * The colour a habit's icon glyph should take when it sits on [tint].
- *
- * Composited first, because [luminance] is WCAG relative luminance over the RGB
- * channels and ignores alpha entirely. A translucent tint would otherwise be
- * judged on the colour it nominally is rather than the colour it renders as —
- * translucent white reads as bright and picks a dark glyph, while what the user
- * sees is mostly [background] showing through, which in dark mode is nearly
- * black. Compositing makes a fully transparent tint fall out correctly too: it
- * resolves to [background] and the glyph contrasts against that.
- *
- * Here rather than in the composable because it is a decision, not layout — the
- * same reason the rest of §5's rules live in this file.
- */
-internal fun glyphColorOn(tint: Color, background: Color): Color =
-    if (tint.compositeOver(background).luminance() > CONTRAST_PIVOT) Color.Black else Color.White
-
-/** Above this, a background is light enough to want dark text on it. */
-private const val CONTRAST_PIVOT = 0.5f
-
-private const val HEX_RADIX = 16
-private const val RGB_DIGITS = 6
-private const val ARGB_DIGITS = 8
-private const val OPAQUE_ALPHA = 0xFF000000L

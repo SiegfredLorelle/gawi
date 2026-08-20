@@ -6,6 +6,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.gawi.core.domain.mascot.Mood
 import com.gawi.core.domain.model.HabitId
 import com.gawi.core.ui.theme.GawiTheme
+import com.gawi.core.ui.theme.parseHabitColor
 import java.time.LocalDate
 
 /**
