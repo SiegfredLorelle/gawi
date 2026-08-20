@@ -30,6 +30,10 @@ internal sealed interface Destination {
     @Serializable
     data object Habits : Destination
 
+    /** The three device-local preferences (PRD §5, architecture §2). */
+    @Serializable
+    data object Settings : Destination
+
     /**
      * The editor. A null [habitId] creates; anything else edits that habit.
      *

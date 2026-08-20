@@ -18,6 +18,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import com.gawi.feature.habits.R as HabitsR
+import com.gawi.feature.settings.R as SettingsR
 import com.gawi.feature.today.R as TodayR
 
 /**
@@ -167,6 +168,50 @@ class AppNavigationTest {
         awaitDescribed(string(HabitsR.string.habits_add)).performClick()
 
         awaitText(string(HabitsR.string.habits_new_title)).assertIsDisplayed()
+    }
+
+    /**
+     * The app bar's other action reaches settings.
+     *
+     * Both app bar actions are glyphs with no text, so the content description
+     * is the only thing telling them apart — and they were one symbol away from
+     * being told apart wrongly, since the gear that now opens settings used to
+     * open the habit list. Landing on the settings title rather than the habits
+     * one is what pins that.
+     */
+    @Test
+    fun todaysAppBarLeadsToSettings() {
+        awaitDescribed(string(TodayR.string.today_settings)).performClick()
+
+        awaitText(string(SettingsR.string.settings_title)).assertIsDisplayed()
+        compose.onNodeWithText(string(HabitsR.string.habits_title)).assertDoesNotExist()
+    }
+
+    /**
+     * And settings reads the real store, not a placeholder.
+     *
+     * The first read here goes through the production `DataStoreSettingsSource`
+     * — the same path `TodayViewModel` uses for the cutoff — so a settings
+     * screen that could not resolve its binding fails here rather than on a
+     * device. With nothing written yet it shows the PRD's defaults, and Monday
+     * is the one of the three that is a word rather than a formatted time.
+     */
+    @Test
+    fun settingsShowsTheStoredDefaults() {
+        awaitDescribed(string(TodayR.string.today_settings)).performClick()
+
+        awaitText(string(SettingsR.string.settings_day_monday)).assertIsDisplayed()
+    }
+
+    /** And its back button comes back. */
+    @Test
+    fun settingsReturnsToToday() {
+        awaitDescribed(string(TodayR.string.today_settings)).performClick()
+        awaitText(string(SettingsR.string.settings_title))
+
+        awaitDescribed(string(SettingsR.string.settings_back)).performClick()
+
+        awaitText(string(TodayR.string.today_empty_title)).assertIsDisplayed()
     }
 
     private companion object {
