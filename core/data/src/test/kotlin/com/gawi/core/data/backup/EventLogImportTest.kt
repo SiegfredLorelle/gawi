@@ -137,6 +137,16 @@ class EventLogImportTest {
         }
     }
 
+    /**
+     * A restart reads what the import wrote, and does not rewrite it.
+     *
+     * Both halves matter and they are different claims. That the *tables* are
+     * unchanged catches a restart whose `initialised()` finds a projection
+     * mismatch and rebuilds them into some other shape. That the fresh
+     * repository *shows* the habit catches the read path, which the table
+     * assertion cannot — `createOver` shares the database, so a snapshot taken
+     * through either store is literally the same three queries.
+     */
     @Test
     fun `a restart sees the tables the import wrote`() = runTest {
         val other = TestStore.create(clock, settings, idSeed = 13)
@@ -146,9 +156,10 @@ class EventLogImportTest {
             val afterImport = store.snapshot()
 
             val restarted = TestStore.createOver(store.database, clock, settings)
-            restarted.repository.observeToday().first()
+            val onScreen = restarted.repository.observeToday().first().habits.map { it.habit.name }
 
-            assertEquals(afterImport, store.snapshot())
+            assertEquals(listOf("stretch"), onScreen)
+            assertEquals(afterImport, restarted.snapshot())
         } finally {
             other.close()
         }

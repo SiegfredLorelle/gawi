@@ -1,5 +1,6 @@
 package com.gawi.core.data.db
 
+import android.database.sqlite.SQLiteConstraintException
 import androidx.room.Room
 import com.gawi.core.data.db.dao.ROW_NOT_INSERTED
 import com.gawi.core.data.db.entity.EventEntity
@@ -8,7 +9,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
-import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -51,12 +52,26 @@ class EventDaoMergeTest {
         assertEquals(1, events.count())
     }
 
-    /** The contrast that makes the new entry point necessary at all. */
+    /**
+     * The contrast that makes the new entry point necessary at all.
+     *
+     * `runCatching` rather than `assertThrows`, because `assertThrows` wants a
+     * non-suspending lambda and the obvious way to give it one — a nested
+     * `runTest` — makes the test assert nothing at all. The inner call binds to
+     * the `TestScope` extension overload, whose `enter()` throws
+     * "Only a single call to runTest can be performed during one test" *before*
+     * the insert runs; `assertThrows(Exception::class.java)` then catches that
+     * and passes. It passed against `OnConflictStrategy.IGNORE` too, which is
+     * the one thing it exists to rule out. Found in PR review.
+     */
     @Test
     fun `the original insert still aborts on a repeated id`() = runTest {
         events.insertAll(listOf(row(1)))
 
-        assertThrows(Exception::class.java) { runTest { events.insertAll(listOf(row(1))) } }
+        val failure = runCatching { events.insertAll(listOf(row(1))) }.exceptionOrNull()
+
+        assertTrue("was $failure", failure is SQLiteConstraintException)
+        assertEquals(1, events.count())
     }
 
     @Test
