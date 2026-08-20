@@ -1,6 +1,7 @@
 package com.gawi.core.data.di
 
 import com.gawi.core.data.db.GawiDatabase
+import com.gawi.core.data.db.dao.CompletionExportDao
 import com.gawi.core.data.db.dao.CompletionProjectionDao
 import com.gawi.core.data.db.dao.EventDao
 import com.gawi.core.data.db.dao.HabitProjectionDao
@@ -38,6 +39,9 @@ internal object DaoModule {
 
     @Provides
     fun completionProjectionDao(database: GawiDatabase): CompletionProjectionDao = database.completionProjectionDao()
+
+    @Provides
+    fun completionExportDao(database: GawiDatabase): CompletionExportDao = database.completionExportDao()
 
     @Provides
     fun habitStreakDao(database: GawiDatabase): HabitStreakDao = database.habitStreakDao()
