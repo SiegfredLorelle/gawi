@@ -682,11 +682,27 @@ the visible semantics invert while a render is stale: tapping a row drawn as
 stays checked and nothing looks undone. The log is correct; the render was not
 (docs/ux/widget.md §4).
 
-To provoke it, use the **Day rollover, against a real clock** check in §4 of this
-document — set the cutoff a couple of minutes ahead — and watch the widget lag
-the app. **Put the cutoff back to midnight afterwards**, for the reason that
-check gives about itself: §4's rollover steps start from midnight, and this
-section sits below them, so leaving it moved is how a later run passes vacuously.
+**Provoking it now takes deliberately stopping the wake, and that is the point of
+the change.** Moving the cutoff a couple of minutes ahead and waiting — which is
+what this paragraph used to tell you to do — will normally show the widget
+*refreshing*, because `RolloverWorker` runs. That validates the fix; it does not
+reproduce the fault. To see the stale render, stop the worker from running across
+the boundary:
+
+```console
+adb shell dumpsys deviceidle force-idle
+```
+
+Then move the cutoff ahead and wait past it. With the wake deferred, the widget
+keeps yesterday's ticks and the periodic update is the only thing left, which is
+the pre-2026-08-21 behaviour. `adb shell dumpsys deviceidle unforce` afterwards.
+
+Treat a lag *without* forcing Doze as a real finding rather than the expected
+result: it means the rollover wake is not being armed at all.
+
+**Put the cutoff back to midnight afterwards**, for the reason §4's own rollover
+check gives: those steps start from midnight, and this section sits below them, so
+leaving it moved is how a later run passes vacuously.
 
 ### The reminder
 
@@ -706,22 +722,22 @@ check gives about itself: leaving it moved is how a later run passes vacuously.
       the failure it guards against looks identical to success from the outside
       — so check it deliberately rather than assuming.
 - [ ] **One per day, and this is the one only a device can show.** After a
-      reminder has fired, make the work run again. WorkManager schedules through
-      JobScheduler, so find the job and force it:
+      reminder has fired, **re-arm the reminder by setting the reminder time a
+      couple of minutes ahead again** in Settings, and wait for it.
 
-      ```console
-      adb shell dumpsys jobscheduler | grep -A2 'com.gawi.app'
-      adb shell cmd jobscheduler run -f com.gawi.app <jobId>
-      ```
+      No second notification arrives — the journal has already stamped today.
 
-      The id is the number after `#u0a…/` in the dump. If nothing is listed the
-      wake has already run and been consumed — re-arm it by force-stopping and
-      relaunching the app (`adb shell am force-stop com.gawi.app`), which is the
-      chain's repair path and worth seeing work.
+      Do **not** try this by forcing the job out of `dumpsys jobscheduler`, which
+      is what this check used to say. Once `ReminderWorker` has succeeded its unique
+      work is finished and the only thing pending is the *rollover*, so the job you
+      would find and force is the wrong one: no second notification appears, the
+      check looks green, and nothing about the once-a-day rule was exercised.
+      Raised in PR review.
 
-      No second notification. `ReminderCheckTest` pins the decision on the JVM;
-      what only a device shows is that the journal survives the process ending in
-      between.
+      Editing the setting is what re-arms the reminder specifically, because
+      `ReminderScheduler` replaces that wake and only that wake when the reminder
+      time moves. `ReminderCheckTest` pins the decision on the JVM; what only a
+      device shows is that the journal survives the process ending in between.
 - [ ] **Notifications off is admitted, not hidden.** Turn the app's
       notifications off in system settings and come back to Settings. The reminder
       row shows *"Notifications are off, so this reminder will not arrive"* with a
