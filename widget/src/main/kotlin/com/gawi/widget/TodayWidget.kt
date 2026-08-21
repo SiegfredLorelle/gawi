@@ -41,7 +41,14 @@ import dagger.hilt.android.EntryPointAccessors
  * re-emits on both, so a live session follows them, but a widget with no session
  * shows the previous answer until `updatePeriodMillis` comes round. The
  * consequence for correctness is handled in the tap path instead, which re-reads
- * rather than trusting what was drawn (see [toggleHabit]).
+ * rather than trusting what was drawn (see [toggleHabit]) — though across a
+ * rollover that makes the tap's *visible* result invert, which
+ * docs/ux/widget.md §4 spells out.
+ *
+ * **And they do not cover each other when the read throws**, because `catch`
+ * terminates a flow and a push cannot re-enter this function. That is why
+ * [widgetContent] retries before it gives up; without the retry one transient
+ * failure would strand the widget on the error copy for the whole session.
  *
  * `internal` is a Kotlin visibility statement only — this class is instantiated
  * reflectively, so it compiles to a public JVM class with a no-arg constructor
