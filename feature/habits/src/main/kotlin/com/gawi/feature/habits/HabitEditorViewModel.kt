@@ -101,8 +101,8 @@ internal class HabitEditorViewModel @AssistedInject constructor(
 
                 else ->
                     habits
-                        .observeHabit(habitId)
-                        .map { it?.habit?.toForm() ?: HabitEditorUiState.Unavailable }
+                        .observeHabitDetail(habitId)
+                        .map { it?.habit?.habit?.toForm() ?: HabitEditorUiState.Unavailable }
                         .catch { cause ->
                             Log.e(TAG, "reading the habit to edit failed", cause)
                             emit(HabitEditorUiState.Unavailable)

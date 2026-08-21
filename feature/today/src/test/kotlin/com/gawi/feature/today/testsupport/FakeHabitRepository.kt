@@ -1,5 +1,6 @@
 package com.gawi.feature.today.testsupport
 
+import com.gawi.core.data.model.HabitDetail
 import com.gawi.core.data.model.TodayHabit
 import com.gawi.core.data.model.TodaySnapshot
 import com.gawi.core.data.repository.HabitRepository
@@ -91,7 +92,7 @@ class FakeHabitRepository : HabitRepository {
 
     override fun observeAllHabits(): Flow<List<HabitState>> = unused()
 
-    override fun observeHabit(habitId: HabitId): Flow<TodayHabit?> = unused()
+    override fun observeHabitDetail(habitId: HabitId): Flow<HabitDetail?> = unused()
 
     override fun observeCompletedDates(habitId: HabitId, from: LocalDate, to: LocalDate): Flow<Map<LocalDate, String?>> = unused()
 

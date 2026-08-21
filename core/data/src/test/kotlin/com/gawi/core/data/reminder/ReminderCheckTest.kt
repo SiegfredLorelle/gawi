@@ -109,7 +109,7 @@ class ReminderCheckTest {
 
             override fun observeAllHabits() = error("not used")
 
-            override fun observeHabit(habitId: HabitId) = error("not used")
+            override fun observeHabitDetail(habitId: HabitId) = error("not used")
 
             override fun observeCompletedDates(habitId: HabitId, from: LocalDate, to: LocalDate) = error("not used")
 

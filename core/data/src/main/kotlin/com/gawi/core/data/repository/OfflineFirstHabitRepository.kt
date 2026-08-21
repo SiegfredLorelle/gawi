@@ -11,6 +11,7 @@ import com.gawi.core.data.db.entity.EventEntity
 import com.gawi.core.data.db.entity.ProjectionMetaEntity
 import com.gawi.core.data.db.mapper.toDomain
 import com.gawi.core.data.db.mapper.toEntity
+import com.gawi.core.data.model.HabitDetail
 import com.gawi.core.data.model.TodayHabit
 import com.gawi.core.data.model.TodaySnapshot
 import com.gawi.core.data.projection.ProjectionListener
@@ -185,16 +186,37 @@ internal class OfflineFirstHabitRepository @Inject constructor(
         )
     }
 
-    override fun observeHabit(habitId: HabitId): Flow<TodayHabit?> = flow {
+    /**
+     * The habit and its recent cells, read against one date.
+     *
+     * Both halves come off the same [readContext] emission, so the strip's
+     * window, the completions in it and the streak beside them are all the same
+     * day's answer. Reading them as two subscriptions would let a rollover land
+     * between the two and pair a fresh window with yesterday's habit.
+     *
+     * `combine` rather than two `flow`s for the same reason `observeToday`
+     * combines its rows with the mood context: one emission per change, and no
+     * intermediate state where one half has updated and the other has not.
+     */
+    override fun observeHabitDetail(habitId: HabitId): Flow<HabitDetail?> = flow {
         ensureProjectionCurrent()
         emitAll(
             readContext()
                 .flatMapLatest { (today, weekStart) ->
                     sweepStreaks(today, weekStart)
                     val week = weekOf(today, weekStart)
-                    readModel
+                    val (from, to) = HabitDetail.stripWindow(today)
+                    val habit = readModel
                         .observeHabit(habitId.value, today.toString(), week.first.toString(), week.second.toString())
                         .map { row -> row?.toDomain() }
+                    val recent = readModel
+                        .observeCompletedDates(habitId.value, from.toString(), to.toString())
+                        .map { rows -> rows.associate { LocalDate.parse(it.logicalDate) to it.note } }
+                    combine(habit, recent) { row, cells ->
+                        // Null habit means null detail: there is no date worth
+                        // carrying for a habit that is not there.
+                        row?.let { HabitDetail(habit = it, today = today, recent = cells) }
+                    }
                 }
                 .distinctUntilChanged(),
         )
