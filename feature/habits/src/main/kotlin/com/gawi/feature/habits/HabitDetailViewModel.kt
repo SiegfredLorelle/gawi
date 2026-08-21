@@ -28,9 +28,10 @@ import kotlinx.coroutines.flow.stateIn
  *
  * Observed rather than read once, which is the opposite of the editor's choice
  * and for the opposite reason: there is no half-typed form here to overwrite,
- * and the streak has to follow the log. `observeHabit` re-emits on a day
+ * and the streak has to follow the log. `observeHabitDetail` re-emits on a day
  * rollover and sweeps a stale streak on the way through, so this screen never
- * holds a clock and never shows yesterday's number against today's tick.
+ * holds a clock and never shows yesterday's number against today's tick — and
+ * the retro strip shifts by a day on its own when the cutoff passes.
  *
  * The id is non-null, unlike the editor's: there is no "new habit" detail.
  */
@@ -73,8 +74,8 @@ internal class HabitDetailViewModel @AssistedInject constructor(
 
         else ->
             habits
-                .observeHabit(habitId)
-                .map { habit -> habit?.toDetailUiState() ?: HabitDetailUiState.Unavailable }
+                .observeHabitDetail(habitId)
+                .map { detail -> detail?.habit?.toDetailUiState() ?: HabitDetailUiState.Unavailable }
     }
 
     private companion object {

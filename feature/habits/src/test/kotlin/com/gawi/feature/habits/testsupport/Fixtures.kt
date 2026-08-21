@@ -13,6 +13,14 @@ import java.time.LocalDate
  * `HabitState`, where Today's builds read-model rows and the core modules' build
  * events and commands.
  */
+/**
+ * The logical date the detail tests read against.
+ *
+ * A Tuesday, matching docs/ux/today-view.md §5's worked example — with today at
+ * Tue 19, Sat 16 is the oldest open day and Fri 15 is the one drawn shut.
+ */
+val TODAY: LocalDate = LocalDate.parse("2026-08-18")
+
 fun habitId(n: Int): HabitId = HabitId("00000000-0000-7000-8000-" + n.toString(16).padStart(12, '0'))
 
 /**

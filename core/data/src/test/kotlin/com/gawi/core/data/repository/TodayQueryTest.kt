@@ -157,8 +157,8 @@ class TodayQueryTest {
         store.repository.addCompletion(habit, store.today())
         store.clock.advanceDays(2)
 
-        store.repository.observeHabit(habit).test {
-            assertEquals(0, awaitItem()?.streak?.current)
+        store.repository.observeHabitDetail(habit).test {
+            assertEquals(0, awaitItem()?.habit?.streak?.current)
             cancelAndIgnoreRemainingEvents()
         }
 
@@ -190,8 +190,8 @@ class TodayQueryTest {
         val a = createHabit("a")
         val b = createHabit("b")
 
-        store.repository.observeHabit(b).test {
-            assertEquals(b, awaitItem()?.habit?.id)
+        store.repository.observeHabitDetail(b).test {
+            assertEquals(b, awaitItem()?.habit?.habit?.id)
 
             // Room invalidates per table, so habit b's query does wake up here.
             // distinctUntilChanged is what keeps that off the UI.
@@ -204,8 +204,64 @@ class TodayQueryTest {
 
     @Test
     fun `observing an unknown habit emits null rather than failing`() = runTest {
-        store.repository.observeHabit(com.gawi.core.data.testsupport.habitId(404)).test {
+        store.repository.observeHabitDetail(com.gawi.core.data.testsupport.habitId(404)).test {
             assertNull(awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    /**
+     * Detail carries the date it was read for.
+     *
+     * The retro strip sizes its window against this and writes completions to
+     * it. Nothing above :core:data may resolve a logical date of its own — that
+     * needs a clock, a zone and the day cutoff — and a date one day stale falls
+     * *inside* the 3-day window, which accepts it rather than refusing, so a
+     * derived date would be a silent wrong answer.
+     */
+    @Test
+    fun `detail carries the logical date it was read for`() = runTest {
+        val habit = createHabit()
+
+        store.repository.observeHabitDetail(habit).test {
+            assertEquals(store.today(), awaitItem()?.today)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    /**
+     * The strip window is the retro window plus one day that is already shut.
+     *
+     * docs/ux/today-view.md §5 wants the refused day drawn rather than tapped
+     * and refused, so the read has to reach one day further back than the
+     * command will accept. A window of only the writable days would leave the
+     * screen nothing to draw shut; a wider one would offer history the MVP
+     * detail screen does not show (that is PRD Phase 1's heatmap).
+     */
+    @Test
+    fun `detail reads the retro window plus the day drawn shut`() = runTest {
+        val habit = createHabit()
+
+        // Written on the day each belongs to and the clock advanced between, so
+        // none of these needs the retro window to be accepted — which is the
+        // point: the window governs writing, and this is about reading back.
+        store.repository.addCompletion(habit, store.today()) // becomes today-5
+        store.clock.advanceDays(1)
+        store.repository.addCompletion(habit, store.today()) // becomes today-4, shut
+        store.clock.advanceDays(1)
+        store.repository.addCompletion(habit, store.today()) // becomes today-3, oldest open
+        store.clock.advanceDays(3)
+        store.repository.addCompletion(habit, store.today())
+
+        val today = store.today()
+        store.repository.observeHabitDetail(habit).test {
+            val recent = awaitItem()?.recent.orEmpty()
+            // today-4 is present though nothing may write to it: a day drawn
+            // shut still shows whether it was done. today-5 is off the strip.
+            assertEquals(
+                listOf(today.minusDays(4), today.minusDays(3), today),
+                recent.keys.sorted(),
+            )
             cancelAndIgnoreRemainingEvents()
         }
     }

@@ -1,5 +1,6 @@
 package com.gawi.feature.habits.testsupport
 
+import com.gawi.core.data.model.HabitDetail
 import com.gawi.core.data.model.TodayHabit
 import com.gawi.core.data.model.TodaySnapshot
 import com.gawi.core.data.repository.HabitRepository
@@ -47,15 +48,22 @@ class FakeHabitRepository : HabitRepository {
 
     override fun observeAllHabits(): Flow<List<HabitState>> = listFailure?.let { flow<List<HabitState>> { throw it } } ?: habits
 
-    /** What [observeHabit] resolves to. Null is "no habit with that id". */
+    /** What [observeHabitDetail] resolves to. Null is "no habit with that id". */
     var habit: TodayHabit? = null
+
+    /** The logical date the detail read is answering for. */
+    var today: LocalDate = TODAY
+
+    /** The completed cells in the strip window, mapped to the note on each. */
+    var recent: Map<LocalDate, String?> = emptyMap()
 
     /** Set to fail the single read the way the real one can. */
     var habitFailure: Throwable? = null
 
-    override fun observeHabit(habitId: HabitId): Flow<TodayHabit?> {
+    override fun observeHabitDetail(habitId: HabitId): Flow<HabitDetail?> {
         observedIds += habitId
-        return habitFailure?.let { flow<TodayHabit?> { throw it } } ?: flowOf(habit)
+        val detail = habit?.let { HabitDetail(habit = it, today = today, recent = recent) }
+        return habitFailure?.let { flow<HabitDetail?> { throw it } } ?: flowOf(detail)
     }
 
     val observedIds = mutableListOf<HabitId>()

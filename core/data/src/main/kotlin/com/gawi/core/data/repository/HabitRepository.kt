@@ -1,6 +1,6 @@
 package com.gawi.core.data.repository
 
-import com.gawi.core.data.model.TodayHabit
+import com.gawi.core.data.model.HabitDetail
 import com.gawi.core.data.model.TodaySnapshot
 import com.gawi.core.domain.command.CommandResult
 import com.gawi.core.domain.model.HabitId
@@ -74,8 +74,18 @@ interface HabitRepository {
      */
     fun observeAllHabits(): Flow<List<HabitState>>
 
-    /** One habit, archived or not — null once it no longer exists. */
-    fun observeHabit(habitId: HabitId): Flow<TodayHabit?>
+    /**
+     * One habit, archived or not, with the logical date it was read for and the
+     * recent cells the retro strip draws — null once it no longer exists.
+     *
+     * Archived habits are deliberately visible here where `observeToday` hides
+     * them: asking for one habit by id is how unarchiving stays reachable.
+     *
+     * Carries the date rather than leaving the caller to resolve one. A screen
+     * cannot: that needs a clock, a zone and the day cutoff (architecture §5),
+     * and a stale date lands inside the 3-day window, which *accepts* it.
+     */
+    fun observeHabitDetail(habitId: HabitId): Flow<HabitDetail?>
 
     /** Completed logical dates in a range, mapped to the note showing on each. */
     fun observeCompletedDates(habitId: HabitId, from: LocalDate, to: LocalDate): Flow<Map<LocalDate, String?>>
