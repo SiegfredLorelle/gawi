@@ -59,6 +59,12 @@ class ReminderCheck @Inject internal constructor(
      * ([TodaySnapshot]). Reading the clock or the settings again here would be a
      * second, independently-resolved "today" that could disagree with the rows.
      *
+     * **Archived habits are filtered here, not trusted from the query.**
+     * [Mascot.isOutstanding] does not check `archived` the way `Mascot.mood` does,
+     * and `TodayUiMapper` filters explicitly for exactly this reason rather than
+     * relying on `observeToday`'s SQL. Both counts below are therefore local
+     * properties of this function.
+     *
      * The count comes from [Mascot.isOutstanding] and is not recomputed. The
      * daily case is obvious and the weekly one is not — a weekly habit is only
      * outstanding once the week has too few days left to still finish it — and a
@@ -119,7 +125,17 @@ class ReminderCheck @Inject internal constructor(
         val snapshot = repository.observeToday().first()
         if (snapshot.outsideTheReminderWindow()) return ReminderDecision.Silent
 
-        val outstanding = snapshot.habits.count { row ->
+        // Filtered here rather than trusted from the query, which is the call
+        // TodayUiMapper.toUiState already makes and says why: Mascot.mood drops
+        // archived habits itself, Mascot.isOutstanding does NOT, and doing it here
+        // too is what makes the agreement this function's property rather than
+        // observeToday's — which filters in SQL. This was the one caller taking the
+        // coupling that mapper declines, and if that query ever changed, an
+        // archived incomplete daily habit would become a phantom outstanding here
+        // while the Today chip stayed right: exactly the disagreement this class's
+        // KDoc exists to prevent. Found by /code-review.
+        val live = snapshot.habits.filterNot { it.habit.archived }
+        val outstanding = live.count { row ->
             Mascot.isOutstanding(row.toMoodState(), snapshot.today, snapshot.weekStart)
         }
 
@@ -135,7 +151,7 @@ class ReminderCheck @Inject internal constructor(
 
             else -> {
                 journal.record(snapshot.today)
-                ReminderDecision.Remind(outstanding = outstanding, total = snapshot.habits.size)
+                ReminderDecision.Remind(outstanding = outstanding, total = live.size)
             }
         }
     }
