@@ -45,4 +45,10 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
+    // Glance's own unit-test harness, plus the framework it needs. This is the
+    // first test here that renders rather than deciding: everything else asserts
+    // on `body()`, which is why a widget drawing black text on a dark background
+    // stayed green for a whole phase.
+    testImplementation(libs.androidx.glance.appwidget.testing)
+    testImplementation(libs.robolectric)
 }

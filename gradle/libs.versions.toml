@@ -137,6 +137,9 @@ androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation" }
 androidx-hilt-lifecycle-viewmodel-compose = { group = "androidx.hilt", name = "hilt-lifecycle-viewmodel-compose", version.ref = "androidxHilt" }
 androidx-glance-appwidget = { group = "androidx.glance", name = "glance-appwidget", version.ref = "glance" }
+# Glance's own unit-test harness. Same version train as glance-appwidget, so it
+# rides the `glance` ref rather than a second one.
+androidx-glance-appwidget-testing = { group = "androidx.glance", name = "glance-appwidget-testing", version.ref = "glance" }
 # work-runtime, not work-runtime-ktx. CoroutineWorker lives in the core
 # artifact; the ktx one adds extensions nothing here calls, and Glance's pom
 # pulls both in anyway.
