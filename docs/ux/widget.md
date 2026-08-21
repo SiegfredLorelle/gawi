@@ -214,7 +214,7 @@ returning "dirty". **Run the control in the same pass, always.**
 
 Excluding `androidx.work` compiled cleanly and then failed at runtime:
 
-```
+```text
 java.lang.NoClassDefFoundError: Failed resolution of: Landroidx/work/CoroutineWorker;
   at androidx.glance.appwidget.GlanceAppWidget.<init>(GlanceAppWidget.kt:57)
   at com.gawi.widget.TodayWidget.<init>
@@ -259,6 +259,16 @@ all either `exported="false"` or guarded by `DUMP` / `BIND_JOB_SERVICE`.
   widget with no session shows the previous day's ticks until the update period
   comes round. Recorded rather than fixed, because the fix is the same scheduled
   refresh the boundary wants.
+- **`glance-appwidget-testing` was considered and declined.** PR review
+  suggested it for pinning what the widget draws. Not taken: `Message` resolves
+  its copy through `LocalContext.current.getString(...)`, so the Glance unit
+  harness would need Robolectric or resource plumbing before it could assert a
+  string at all, and it brings ten transitive artifacts. The thing actually
+  worth pinning — *which* state draws *which* copy — is now a pure
+  `WidgetContent.body()` tested with plain JUnit, in the shape `TodayUiMapper`
+  and `TodayMessage(@StringRes val text: Int)` already set. Swapping the two
+  copies reddens two tests; a no-op control in the same run reddens nothing.
+  Revisit only if the *rendering* itself ever needs pinning.
 - **"A write in the app moves the widget" has no automated test, and one was
   attempted.** The pieces are each covered — `ProjectionListenerTest` proves the
   repository makes the call (mutation-checked), and `WidgetHostTest` proves
@@ -271,10 +281,17 @@ all either `exported="false"` or guarded by `DUMP` / `BIND_JOB_SERVICE`.
   it was not worth more time than that against a check `docs/running.md` already
   covers by hand. Worth retrying from a plain `ActivityScenario` driven by UI
   Automator rather than the Compose rule.
-- **The reminder's permissions are a bigger question than they looked.** Taking
-  WorkManager deliberately reintroduces the four permissions above, including
-  `ACCESS_NETWORK_STATE`, *before* `POST_NOTIFICATIONS` is even considered. So
-  that step opens against PRD §5 and not only against the manifest comment.
+- **What the reminder actually still has to answer.** An earlier draft of this
+  bullet said taking WorkManager would "reintroduce the four permissions"; that
+  was left over from believing it had been excluded, and it is wrong twice.
+  WorkManager is **already here**, so `WAKE_LOCK`, `RECEIVE_BOOT_COMPLETED` and
+  `FOREGROUND_SERVICE` are already in the merged manifest, and
+  `ACCESS_NETWORK_STATE` is already removed. What is genuinely open for that
+  step is `POST_NOTIFICATIONS` — the app's first runtime permission — and one
+  specific risk: a `WorkRequest` that takes a **network constraint** would make
+  WorkManager need `ACCESS_NETWORK_STATE` again and force the
+  `tools:node="remove"` line out. `ManifestPermissionTest` is the tripwire for
+  exactly that.
 - **Size variants.** The provider declares no API 31 attributes
   (`targetCellWidth/Height`, `description`, `previewLayout`): minSdk is 29, lint
   reports each as `UnusedAttribute`, and `warningsAsErrors` makes that a failed
