@@ -39,7 +39,9 @@ private const val TAG = "RolloverWorker"
  * module rule (`widget → core`) is untouched — the Glance implementation is
  * reached through the binding `:widget` already provides.
  *
- * **Arms the reminder, not itself** — [ReminderScheduler]'s KDoc has the reason.
+ * **Arms the reminder, not itself, and with `REPLACE`** — [ReminderScheduler]'s
+ * KDoc has both halves. This is the direction that guarantees forward progress, so
+ * it is the one that may cancel; `ReminderWorker` is the one that may not.
  */
 internal class RolloverWorker(context: Context, parameters: WorkerParameters) : CoroutineWorker(context, parameters) {
 
@@ -51,16 +53,19 @@ internal class RolloverWorker(context: Context, parameters: WorkerParameters) : 
             entryPoint.habitRepository().refreshStreaks()
             entryPoint.projectionListener().onProjectionChanged()
         } catch (cause: Throwable) {
-            // As ReminderWorker: cancellation is rethrown, an Error is not
-            // allowed to escape, and the arming below still runs.
+            // As ReminderWorker: cancellation is rethrown and an Error is not
+            // allowed to escape. Rethrowing means the arming below is skipped when
+            // this worker is *stopped*, which is safe — a stop leaves the work
+            // enqueued for a retry. It still runs after an ordinary failure.
             currentCoroutineContext().ensureActive()
             Log.w(TAG, "the day-rollover refresh failed", cause)
         }
 
-        // KEEP, never REPLACE: this must not cancel the other wake, only
-        // ensure one exists. See ReminderScheduler's KDoc — REPLACE here
-        // destroyed an overdue reminder wake that was about to re-arm this one.
-        entryPoint.reminderScheduler().armReminder(ExistingWorkPolicy.KEEP)
+        // REPLACE, and this is the one direction that must replace. KEEP here
+        // no-ops against an overdue or running reminder — KEEP treats RUNNING as
+        // pending — which left the reminder's unique name empty after both wakes
+        // came due at once. ReminderScheduler's KDoc has both orderings.
+        entryPoint.reminderScheduler().armReminder(ExistingWorkPolicy.REPLACE)
         return Result.success()
     }
 }
