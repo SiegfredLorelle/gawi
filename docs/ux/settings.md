@@ -71,6 +71,16 @@ happen — which is exactly the kind of silent half-working the honest copy abov
 existed to avoid. So an error line appears under the row, with its own target
 that leads to the permission or to system settings.
 
+**One combination is refused**, and it is the first settings write on this screen
+that can be: the reminder time may not equal the day cutoff. `reminderOn`
+resolves that pair to the logical day's *start* rather than its end, so it is
+meaningless rather than merely odd — and once the notification existed it meant
+one posted at the top of every day, which also used up that day's one reminder.
+Refused from **both** rows, since either can create the collision.
+[reminder.md](reminder.md) §1 and §3 have the argument, including why
+`SettingsMessage`'s KDoc was right that a picker cannot express an invalid time
+and wrong that this made refusal impossible.
+
 It is its **own** target and not a state on the row, because the row's tap
 already means "change the time" and that stays worth doing while notifications
 are off. [reminder.md](reminder.md) §3 has the rest, including why the copy names

@@ -384,8 +384,17 @@ docs/ux/reminder.md §1.
 **Two wakes, and they arm each other.** The reminder arms the rollover refresh
 and the rollover arms the reminder; neither re-enqueues its own unique work,
 because `enqueueUniqueWork` with `REPLACE` cancels a run in progress and a worker
-re-arming itself would cancel itself every time. `Application.onCreate` re-arms
-both, which is the chain's repair path. **The reminder does not use
+re-arming itself would cancel itself every time. The workers arm with **`KEEP`**
+rather than `REPLACE` — "make sure the other exists", which cannot cancel
+anything — because `REPLACE` there let a late reminder destroy the overdue
+rollover that was about to re-arm it, losing a day's reminder. Only a settings
+edit uses `REPLACE`, where moving the pending wake is the point.
+`Application.onCreate` re-arms both, which is the chain's repair path.
+
+**The reminder time may not equal the day cutoff.** `reminderOn` resolves that
+pair to the logical day's *start*, so `:feature:settings` refuses it and
+`ReminderCheck` refuses to act on a stored one — the first refusable settings
+write in the app. docs/ux/reminder.md §1 and §3. **The reminder does not use
 `androidx.hilt:hilt-work`**: a `Configuration.Provider` on the `Application`
 would govern Glance's `SessionWorker` too, so the widget's rendering path would
 sit behind a change made for the reminder. An `@EntryPoint` is used instead, the
