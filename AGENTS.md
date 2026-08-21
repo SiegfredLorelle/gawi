@@ -50,10 +50,15 @@ Full guide with examples: `.github/COMMIT_CONVENTION.md`
 
 ## Conventions
 
-- **Modules** (docs/architecture.md §2): `:app` (wiring, navigation),
-  `:core:domain` (pure Kotlin/JVM), `:core:data` (Room, DataStore,
-  repositories). Feature modules and `:core:ui` are created when their first
-  screen is built.
+- **Modules**: `:app` (wiring, navigation), `:core:domain` (pure Kotlin/JVM),
+  `:core:data` (Room, DataStore, repositories), `:core:ui` (theme, shared
+  composables), `:feature:today`, `:feature:habits`, `:feature:settings` and
+  `:widget` (Glance). **All eight exist as of Phase 0** — this bullet used to
+  say the feature modules and `:core:ui` "are created when their first screen is
+  built", which stopped being true on 2026-08-21, and `:widget` is not a screen
+  at all. **`docs/architecture.md` §2 owns the contents of each and the full
+  dependency rule** — read it rather than trusting this summary, which is the
+  drift this file warns about everywhere else.
 - **The dependency rule is non-negotiable**: `:core:domain` depends only on
   the Kotlin stdlib and kotlinx-serialization. Domain logic never lands in a
   module that can import Android.
