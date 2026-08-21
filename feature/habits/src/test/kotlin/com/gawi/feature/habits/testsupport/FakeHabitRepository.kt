@@ -124,9 +124,23 @@ class FakeHabitRepository : HabitRepository {
     // these from a habits screen is a mistake worth failing the test that made it.
     override fun observeToday(): Flow<TodaySnapshot> = unused()
 
-    override suspend fun addCompletion(habitId: HabitId, logicalDate: LocalDate, note: String?): CommandResult<Unit> = unused()
+    /** Completions added, in order, with the note each carried. */
+    val completed = mutableListOf<Pair<LocalDate, String?>>()
 
-    override suspend fun undoCompletion(habitId: HabitId, logicalDate: LocalDate): CommandResult<Unit> = unused()
+    /** Completions undone, in order. */
+    val undone = mutableListOf<LocalDate>()
+
+    override suspend fun addCompletion(habitId: HabitId, logicalDate: LocalDate, note: String?): CommandResult<Unit> {
+        failIfAsked()
+        completed += logicalDate to note
+        return result
+    }
+
+    override suspend fun undoCompletion(habitId: HabitId, logicalDate: LocalDate): CommandResult<Unit> {
+        failIfAsked()
+        undone += logicalDate
+        return result
+    }
 
     override suspend fun updateNote(habitId: HabitId, logicalDate: LocalDate, text: String): CommandResult<Unit> = unused()
 

@@ -10,14 +10,20 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -81,6 +87,7 @@ internal fun HabitDetailScreen(
 
             is HabitDetailUiState.Detail -> HabitDetail(
                 state = state,
+                actions = actions,
                 modifier = Modifier.fillMaxSize().padding(insets),
             )
         }
@@ -88,7 +95,17 @@ internal fun HabitDetailScreen(
 }
 
 @Composable
-private fun HabitDetail(state: HabitDetailUiState.Detail, modifier: Modifier = Modifier) {
+private fun HabitDetail(state: HabitDetailUiState.Detail, actions: HabitDetailActions, modifier: Modifier = Modifier) {
+    // The cell awaiting the honesty prompt, as an epoch day.
+    //
+    // A LocalDate cannot go in a Bundle, so rememberSaveable stores the Long and
+    // the cell is looked back up from the state — the same trap SettingsPickers
+    // documents for a value class over an Int. Only the date is held: whether
+    // that day is completed comes from the strip, so a write in flight from
+    // elsewhere cannot leave the prompt confirming a stale intent.
+    var pendingDay by rememberSaveable { mutableLongStateOf(NO_PENDING_DAY) }
+    val pending = state.strip.firstOrNull { it.date.toEpochDay() == pendingDay }
+
     Column(
         modifier = modifier.padding(GawiSpacing.Row),
         verticalArrangement = Arrangement.spacedBy(GawiSpacing.Row),
@@ -96,7 +113,58 @@ private fun HabitDetail(state: HabitDetailUiState.Detail, modifier: Modifier = M
         HabitHeader(state)
         StreakPanel(state.streak)
         TodayLine(state)
+        RetroStrip(
+            strip = state.strip,
+            // Today writes straight through; PRD §6.4 keeps same-day logging and
+            // undo frictionless. Any earlier day is an edit to the past and takes
+            // the prompt, whichever direction it goes in.
+            onCell = { cell ->
+                if (cell.isToday) {
+                    actions.onToggle(state.id, cell.date, cell.completed)
+                } else {
+                    pendingDay = cell.date.toEpochDay()
+                }
+            },
+        )
     }
+
+    if (pending != null) {
+        HonestyPrompt(
+            onConfirm = {
+                actions.onToggle(state.id, pending.date, pending.completed)
+                pendingDay = NO_PENDING_DAY
+            },
+            onDismiss = { pendingDay = NO_PENDING_DAY },
+        )
+    }
+}
+
+/**
+ * PRD §5's confirmation, in PRD §5's words.
+ *
+ * §6.4 asks retroactive edits to "carry deliberate friction but stay possible".
+ * It is friction and nothing more: architecture §5 is explicit that the 3-day
+ * window is a *command* validation and that this prompt has nothing enforcing
+ * it, so dismissing has to leave the log untouched rather than merely
+ * postponing a write.
+ *
+ * Shown for an undo as well as a completion. Both are edits to a day that has
+ * already passed, and un-ticking a day you did do is as much a rewrite of the
+ * record as ticking one you did not.
+ */
+@Composable
+private fun HonestyPrompt(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.habits_retro_title)) },
+        text = { Text(stringResource(R.string.habits_retro_body)) },
+        confirmButton = {
+            TextButton(onClick = onConfirm) { Text(stringResource(R.string.habits_retro_confirm)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.habits_cancel)) }
+        },
+    )
 }
 
 /** The habit's identity: its colour, its icon, its name, and what it asks for. */
@@ -269,3 +337,6 @@ private fun TodayLine(state: HabitDetailUiState.Detail) {
         }
     }
 }
+
+/** No cell is awaiting confirmation. Not a valid epoch day for any real date drawn here. */
+private const val NO_PENDING_DAY = Long.MIN_VALUE

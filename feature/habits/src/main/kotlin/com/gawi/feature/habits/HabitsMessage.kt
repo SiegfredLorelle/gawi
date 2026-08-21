@@ -18,13 +18,22 @@ import kotlinx.coroutines.ensureActive
 internal data class HabitsMessage(@StringRes val text: Int)
 
 /**
- * Every rejection a habit-metadata command can produce.
+ * Every rejection this module's commands can produce.
  *
- * The first two are the reachable ones. `BlankName` comes from create and
- * update, and `HabitNotFound` from update, archive and unarchive. The other
- * four are completion errors — this module writes no completions, so they
- * cannot arrive here, but the `when` is exhaustive rather than defaulted so
- * that adding a seventh error is a compile error and not a silent fallback.
+ * All six are reachable since habit detail's retro strip landed. `BlankName`
+ * comes from create and update and `HabitNotFound` from update, archive and
+ * unarchive; the other four are completion errors, which this module used to be
+ * unable to produce and now can. The `when` is exhaustive rather than defaulted
+ * so that adding a seventh error is a compile error and not a silent fallback.
+ *
+ * `RetroWindowExceeded` should be unreachable *in practice* rather than in
+ * principle: the strip draws the day outside the window shut and gives it no
+ * click at all (docs/ux/today-view.md §5). It still gets real copy, because the
+ * day can roll over between the strip being drawn and a tap landing on it, and
+ * a stale cell refused in silence would look like a tap that did nothing.
+ *
+ * `FutureLogicalDate` is genuinely unreachable — the strip ends at today — but
+ * shares the same copy rather than pretending to be impossible.
  *
  * Note what is deliberately absent: there is no "already archived" error.
  * Archiving an archived habit is accepted and converges under last-write-wins,
@@ -36,11 +45,13 @@ internal fun messageFor(error: CommandError): Int = when (error) {
 
     CommandError.HabitNotFound -> R.string.habits_error_habit_missing
 
-    CommandError.HabitIsArchived,
+    CommandError.HabitIsArchived -> R.string.habits_error_archived
+
     CommandError.RetroWindowExceeded,
     CommandError.FutureLogicalDate,
-    CommandError.CompletionNotFound,
-    -> R.string.habits_error_unexpected
+    -> R.string.habits_error_retro_window
+
+    CommandError.CompletionNotFound -> R.string.habits_error_completion_missing
 }
 
 /**

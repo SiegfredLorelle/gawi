@@ -1,11 +1,15 @@
 package com.gawi.feature.habits
 
 import app.cash.turbine.test
+import com.gawi.core.domain.command.CommandError
+import com.gawi.core.domain.command.CommandResult
 import com.gawi.feature.habits.testsupport.FakeHabitRepository
 import com.gawi.feature.habits.testsupport.MainDispatcherRule
+import com.gawi.feature.habits.testsupport.TODAY
 import com.gawi.feature.habits.testsupport.habitId
 import com.gawi.feature.habits.testsupport.habitState
 import com.gawi.feature.habits.testsupport.todayHabit
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -117,6 +121,79 @@ class HabitDetailViewModelTest {
 
         detailFor(habitId(1).value).uiState.test {
             assertTrue((awaitItem() as HabitDetailUiState.Detail).archived)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    // ---- writing from the strip ----
+
+    private suspend fun TestScope.detailWriting(): HabitDetailViewModel {
+        repository.habit = todayHabit(habitState(id = habitId(1)))
+        return detailFor(habitId(1).value)
+    }
+
+    /**
+     * A tap writes to the date the cell carried, not to today.
+     *
+     * The 3-day window *accepts* a date one day stale rather than refusing it,
+     * so a ViewModel that re-derived "now" would log the wrong day and report
+     * success. That is why the date travels with the tap.
+     */
+    @Test
+    fun `completing a past day writes to that day`() = runTest {
+        val detail = detailWriting()
+
+        detail.onToggle(habitId(1), TODAY.minusDays(2), completed = false)
+
+        assertEquals(listOf(TODAY.minusDays(2) to null), repository.completed)
+        assertTrue(repository.undone.isEmpty())
+    }
+
+    /** And the state the cell was drawn in decides the direction. */
+    @Test
+    fun `un-completing a day undoes rather than adding again`() = runTest {
+        val detail = detailWriting()
+
+        detail.onToggle(habitId(1), TODAY.minusDays(2), completed = true)
+
+        assertEquals(listOf(TODAY.minusDays(2)), repository.undone)
+        assertTrue(repository.completed.isEmpty())
+    }
+
+    /**
+     * A rejection reaches the user as its own message.
+     *
+     * All six CommandErrors are reachable from this module now. Before the
+     * strip, the four completion errors were mapped to one "that did not work",
+     * which would have said nothing about a day gone out of range.
+     */
+    @Test
+    fun `a rejected write is reported with the error's own copy`() = runTest {
+        val detail = detailWriting()
+        repository.result = CommandResult.Rejected(CommandError.RetroWindowExceeded)
+
+        detail.events.test {
+            detail.onToggle(habitId(1), TODAY.minusDays(2), completed = false)
+            assertEquals(HabitsMessage(R.string.habits_error_retro_window), awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    /**
+     * A throwing write is reported, not fatal.
+     *
+     * appendLocked consults SettingsSource.current() on every write, and that
+     * refuses to guess when the preferences file cannot be read. Uncaught, that
+     * is process death on tapping a day.
+     */
+    @Test
+    fun `a throwing write is reported rather than crashing`() = runTest {
+        val detail = detailWriting()
+        repository.commandFailure = IllegalStateException("settings unreadable")
+
+        detail.events.test {
+            detail.onToggle(habitId(1), TODAY, completed = false)
+            assertEquals(HabitsMessage(R.string.habits_error_unexpected), awaitItem())
             cancelAndIgnoreRemainingEvents()
         }
     }

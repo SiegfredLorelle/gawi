@@ -1,6 +1,7 @@
 package com.gawi.feature.habits
 
 import com.gawi.core.domain.model.HabitId
+import java.time.LocalDate
 
 /**
  * What each habits screen can do, as one parameter apiece.
@@ -27,11 +28,22 @@ internal data class HabitListActions(
 )
 
 /**
- * Detail's two, both of them navigation.
+ * Detail's actions: two navigations and one write.
  *
- * Nothing here writes: the screen is read-only until the retro strip and the
- * note sheet land beside it.
+ * [onToggle] carries the cell's own date and the state it was drawn in, the
+ * same rule the Today row follows — what is transmitted is the intent the cell
+ * expressed, not a date or a state read back a moment later. That matters more
+ * here than anywhere: the 3-day window *accepts* a date one day stale, so a
+ * re-read date would write to the wrong day silently.
+ *
+ * The honesty prompt is not modelled here. It is friction on the way to
+ * [onToggle] and lives in the screen, because architecture §5 is explicit that
+ * the retro window is a command validation and the confirmation is UI only.
  */
-internal data class HabitDetailActions(val onEdit: (HabitId) -> Unit, val onBack: () -> Unit)
+internal data class HabitDetailActions(
+    val onEdit: (HabitId) -> Unit,
+    val onToggle: (HabitId, LocalDate, Boolean) -> Unit,
+    val onBack: () -> Unit,
+)
 
 internal data class HabitEditorActions(val onEdit: (HabitEditorUiState.Form) -> Unit, val onSave: () -> Unit, val onCancel: () -> Unit)
