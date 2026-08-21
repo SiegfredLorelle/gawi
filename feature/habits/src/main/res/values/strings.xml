@@ -107,12 +107,15 @@
     <string name="habits_strip_complete">Mark done</string>
     <string name="habits_strip_undo">Mark not done</string>
     <string name="habits_strip_note">Add or edit note</string>
+    <!-- Appended to a cell's spoken label when that day carries a note. The dot
+         beside the tick says the same thing to anyone who can see it. -->
+    <string name="habits_strip_has_note">has a note</string>
 
     <!-- The note sheet (PRD §5's optional note per completion, §6.3: never in
          the way of the base flow, so it is behind a long-press on a day already
          logged). Clear is its own button and not a disabled Save -
          docs/ux/today-view.md §5 - because an empty note is a real write. -->
-    <string name="habits_note_title">Note for %1$s</string>
+    <string name="habits_note_title">Note for day %1$d</string>
     <string name="habits_note_label">Note (optional)</string>
     <string name="habits_note_clear">Clear note</string>
 

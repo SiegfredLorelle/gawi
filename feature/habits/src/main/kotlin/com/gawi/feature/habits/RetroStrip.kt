@@ -103,11 +103,22 @@ private fun RowScope.RetroCell(cell: RetroCellUi, onCell: (RetroCellUi) -> Unit,
                 else -> MaterialTheme.colorScheme.outline
             },
         )
+        // A note is otherwise invisible: it reaches the cell but only the sheet
+        // reads it, so an annotated day looked exactly like a bare one and the
+        // long-press had nothing advertising it. A text glyph rather than a
+        // drawn dot, like the tick above and for the same reason — no icon pack
+        // is a dependency — and it is what lets a test see the marker at all.
+        // The spoken label carries the same fact; see cellAction.
+        Text(
+            text = if (cell.hasNote) NOTE_GLYPH else "",
+            style = MaterialTheme.typography.labelSmall,
+            color = if (cell.open) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+        )
     }
 }
 
 /**
- * Today is the only cell with a filled ground; the rest are outlined.
+ * Today is the only *open* cell with a filled ground; the rest are outlined.
  *
  * A shut cell's outline is dimmed rather than dashed. §5 asks for "struck
  * through and dashed", and a true dash needs a drawn stroke rather than a
@@ -118,9 +129,14 @@ private fun RowScope.RetroCell(cell: RetroCellUi, onCell: (RetroCellUi) -> Unit,
 private fun Modifier.cellSurface(cell: RetroCellUi): Modifier {
     val shape = RoundedCornerShape(CELL_CORNER)
     return when {
+        // Shut wins over today. An archived habit's cells are all shut, today's
+        // included, and a filled ground there would be the one cell on a
+        // read-only screen still advertising a tap.
+        !cell.open -> border(BorderStroke(CELL_BORDER, MaterialTheme.colorScheme.outlineVariant), shape)
+
         cell.isToday -> background(MaterialTheme.colorScheme.secondaryContainer, shape)
-        cell.open -> border(BorderStroke(CELL_BORDER, MaterialTheme.colorScheme.outline), shape)
-        else -> border(BorderStroke(CELL_BORDER, MaterialTheme.colorScheme.outlineVariant), shape)
+
+        else -> border(BorderStroke(CELL_BORDER, MaterialTheme.colorScheme.outline), shape)
     }
 }
 
@@ -158,6 +174,7 @@ private fun Modifier.cellAction(cell: RetroCellUi, onCell: (RetroCellUi) -> Unit
     )
     val action = stringResource(if (cell.completed) R.string.habits_strip_undo else R.string.habits_strip_complete)
     val noteLabel = stringResource(R.string.habits_strip_note)
+    val hasNote = if (cell.hasNote) ". " + stringResource(R.string.habits_strip_has_note) else ""
     // Inside the open branch below, so completion is the only condition left
     // to ask about: a shut cell never reaches it.
     val notable = cell.completed
@@ -168,7 +185,7 @@ private fun Modifier.cellAction(cell: RetroCellUi, onCell: (RetroCellUi) -> Unit
             onLongClickLabel = noteLabel.takeIf { notable },
             onLongClick = if (notable) ({ onCellNote(cell) }) else null,
         ).semantics {
-            contentDescription = if (notable) "$label. $action. $noteLabel" else "$label. $action"
+            contentDescription = if (notable) "$label$hasNote. $action. $noteLabel" else "$label$hasNote. $action"
             toggleableState = ToggleableState(cell.completed)
         }
     } else {
@@ -177,7 +194,9 @@ private fun Modifier.cellAction(cell: RetroCellUi, onCell: (RetroCellUi) -> Unit
         // explain is four TalkBack stops — its description, then the weekday,
         // the date and the glyph — where every other cell is one.
         semantics(mergeDescendants = true) {
-            contentDescription = label
+            // A shut day still reports its note, the same way it still reports
+            // whether it was done: refused, not hidden.
+            contentDescription = "$label$hasNote"
             disabled()
         }
     }
@@ -185,6 +204,9 @@ private fun Modifier.cellAction(cell: RetroCellUi, onCell: (RetroCellUi) -> Unit
 
 private const val DONE_GLYPH = "✓"
 private const val EMPTY_GLYPH = "·"
+
+/** Marks a day that carries a note. Distinct from EMPTY_GLYPH, which means "not done". */
+private const val NOTE_GLYPH = "•"
 private val TOUCH_TARGET = 48.dp
 private val CELL_CORNER = 8.dp
 private val CELL_BORDER = 1.dp
