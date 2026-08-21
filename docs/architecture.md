@@ -40,7 +40,7 @@ Now-in-Android convention: Gradle version catalog
 |---|---|
 | `:app` | MainActivity, navigation graph, Hilt app wiring, WorkManager scheduling and the reminder notification |
 | `:core:domain` | Pure Kotlin/JVM: event types, projection logic, logical-date rules, streak computation, UUIDv7 generator, event and export JSON codecs |
-| `:core:data` | Repositories, event store, Room database + DAOs, DataStore settings and the last-export stamp, export/import plumbing and the CSV of completions |
+| `:core:data` | Repositories, event store, Room database + DAOs, DataStore settings and the last-export stamp, export/import plumbing and the CSV of completions, and the end-of-day reminder's decision (whether to remind, and when the next wake falls) |
 | `:core:ui` | Theme, shared composables |
 | `:feature:today` | Today view (app home screen, Momo's habitat) |
 | `:feature:habits` | Create/edit/archive habit, habit detail |
@@ -364,8 +364,11 @@ claiming. `ManifestPermissionTest` asserts the whole requested set, so a Glance
 upgrade that reintroduces the network permission fails a test rather than
 shipping.
 
-**Reminder timing is deliberately inexact.** The end-of-day reminder fires
-within WorkManager's flex window; the `SCHEDULE_EXACT_ALARM` permission
+**Reminder timing is deliberately inexact.** Both wakes are one-time requests
+with an initial delay — **not** periodic work, so there is no flex interval to
+quote, which an earlier version of this paragraph did. `setInitialDelay` makes a
+wake *eligible* once the delay elapses and nothing bounds how long after that it
+runs. The `SCHEDULE_EXACT_ALARM` permission
 (Android 12+, Play-policy scrutiny) is **deliberately avoided** — a "habits left
 today" nudge does not need exact delivery. The scheduled time just needs enough
 margin before the day boundary to absorb the delay. Do not "upgrade" this to
@@ -373,10 +376,11 @@ exact alarms, and do not use `setExpedited` either, which pulls
 foreground-service behaviour into a background nudge.
 
 There is **no ceiling to state** on how late it can be, and an earlier version of
-this paragraph implied one by quoting "~15 min": WorkManager defers work under
-Doze and App Standby and does not wake a device to deliver it, so the window is a
-likelihood rather than a bound — the same correction docs/ux/widget.md §4 already
-carries about `updatePeriodMillis`. What *is* bounded is the damage: a wake that
+this paragraph implied one twice over — first by quoting "~15 min", then by
+calling it a flex window. WorkManager defers work under Doze and App Standby and
+does not wake a device to deliver it, so lateness is a likelihood rather than a
+bound — the same correction docs/ux/widget.md §4 already carries about
+`updatePeriodMillis`. What *is* bounded is the damage: a wake that
 arrives after the day cutoff is refused rather than posted, because it would
 otherwise remind about a fresh logical day and consume that day's one reminder.
 docs/ux/reminder.md §1.

@@ -312,6 +312,15 @@ register for the shade, and the count reuses `today_remaining`'s exact phrasing 
 *"2 of 5 left today"* — so the shade and the app agree about the number instead
 of describing it two ways.
 
+The small icon is a **vector in this app's own resources**, not a framework
+drawable. It started as `android.R.drawable.ic_popup_reminder` and that was wrong:
+since API 21 a small icon is drawn from its *alpha channel only* and tinted by the
+system, so a legacy full-colour bitmap renders as a silhouette at best and a filled
+blob at worst — and a platform `android.R.drawable` is not a stable appearance
+contract across API levels or OEM skins. Raised in PR review. The **launcher** icon
+is still `@android:drawable/sym_def_app_icon` and deliberately untouched; that one
+is waiting for a real design pass and this was a defect fix.
+
 `IMPORTANCE_DEFAULT`, which makes a sound. A habit nudge that arrives silently is
 one the user finds the next morning, which is the whole point missed;
 `IMPORTANCE_HIGH` would be an interruption for something that is not urgent. Both
@@ -366,7 +375,36 @@ possible form: run the control, in the same pass.
 
 ---
 
-### What the review round found, which was code this time
+### What the second review round found
+
+Three reviewers on the PR. **Four more valid findings, and one of them was a hole
+in a fix made during the round before it** — the switch from `REPLACE` to `KEEP`
+closed the bug it aimed at and opened two orderings that lose a day's reminder,
+because `KEEP` no-ops against `RUNNING` as well as `ENQUEUED`. §2 has the resolution
+and the invariant that replaced the reasoning.
+
+The other three: the workers' arming is not unconditional (cancellation skips it,
+and a KDoc said otherwise); `ReminderCheck` was the one caller of
+`Mascot.isOutstanding` trusting the query to filter archived, which `TodayUiMapper`
+explicitly declines to do; and a settings edit replaced both wakes when only one
+had moved. Plus the notification icon in §4, and two manual checks in
+`docs/running.md` §4 that would have passed without testing anything.
+
+**Two findings were rejected**, recorded so they are not re-litigated: a
+markdownlint MD046 report (markdownlint is not in this repo's toolchain, and the
+blocks in question are already fenced), and a suggestion to bump `androidxCore` to
+1.19.0 (that entry is deliberately pinned to the version which already resolves, so
+that declaring it changes no resolution — the catalog comment says so).
+
+**And two of the new tests were caught being vacuous before they were trusted**,
+which is the habit that matters more than any single finding here. The
+two-worker test passed under the bug twice — first because the reminder work never
+finished, then because the assertion ran while it was still `RUNNING` — and the
+archived-filter test passed with the filter deleted, because `observeToday`'s SQL
+makes the guard unreachable through the real repository. Both were rewritten until
+the mutation reddened them.
+
+### What the first review round found, which was code this time
 
 The three above were caught before review. `/code-review` then found five things,
 and the shape of them is worth recording because it is **not** the shape of the
@@ -400,7 +438,9 @@ mutation-checked against the code before the fix.
 - **Quick-complete actions** (PRD §4, OQ-2). Deferred to Phase 1 on the PRD's own
   terms; §4 above has the reasoning.
 - **The wake can drift, and nothing measures how far.** Delivery is inside
-  WorkManager's flex window, which architecture §7 calls *deliberately inexact* —
+  eligibility rather than delivery — architecture §7 calls it *deliberately
+  inexact*, and there is no flex interval to quote because these are one-time
+  requests with an initial delay, not periodic work —
   there is no ceiling to state here, only a likelihood, and the threshold check
   in §1 is what stops drift becoming a *wrong* reminder rather than a late one.
   A user who never opens the app relies entirely on the mutual chain in §2.
