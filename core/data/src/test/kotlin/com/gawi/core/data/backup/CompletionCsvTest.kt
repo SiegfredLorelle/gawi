@@ -123,6 +123,50 @@ class CompletionCsvTest {
         assertTrue(text, text.contains("\"'\r=1+1\""))
     }
 
+    /**
+     * A sigil behind a leading space is the same attack wearing a disguise.
+     *
+     * Found by review of this change. The guard used to test the *first*
+     * character against a set that included TAB and CR but not space, which was
+     * an inconsistency rather than a policy — if leading whitespace is skipped
+     * before a cell is typed, then all of it has to be looked through. Several
+     * readers strip it outright on import: LibreOffice offers "Trim spaces",
+     * Google Sheets does it, `pandas` does it under `skipinitialspace`.
+     *
+     * Note the space itself survives, because neutralising must not edit the
+     * user's text — only the apostrophe is added.
+     */
+    @Test
+    fun `a sigil behind a leading space is neutralised`() {
+        assertEquals("\"' =1+1\",2026-08-16,", lines(row(habit = " =1+1"))[1])
+    }
+
+    @Test
+    fun `a sigil behind several kinds of leading whitespace is neutralised`() {
+        assertEquals("\"'  \t@SUM\",2026-08-16,", lines(row(habit = "  \t@SUM"))[1])
+        assertEquals("read,2026-08-16,\"' -1\"", lines(row(note = " -1"))[1])
+    }
+
+    /**
+     * Quoting is not the guard, and this is the assertion that says so. A CSV
+     * parser strips quotes and *then* the cell is typed, so a quoted `=1+1`
+     * evaluates in Excel exactly as a bare one does — which is why every
+     * neutralised field carries the apostrophe as well as the quotes.
+     */
+    @Test
+    fun `a neutralised field carries the apostrophe and not merely quotes`() {
+        val field = lines(row(habit = " =1+1"))[1].substringBefore(",2026")
+
+        assertTrue("expected quotes: $field", field.startsWith("\"") && field.endsWith("\""))
+        assertTrue("expected the apostrophe guard inside them: $field", field.startsWith("\"'"))
+    }
+
+    /** Leading whitespace with nothing dangerous behind it is left as it is. */
+    @Test
+    fun `leading whitespace alone is quoted but not neutralised`() {
+        assertEquals("\" read\",2026-08-16,", lines(row(habit = " read"))[1])
+    }
+
     /** A note is free text too, so the same guard has to cover it. */
     @Test
     fun `a note is neutralised the same way a name is`() {
