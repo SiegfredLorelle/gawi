@@ -792,6 +792,66 @@ check gives about itself: leaving it moved is how a later run passes vacuously.
       today"* is the bug: it describes a brand-new day, and it would consume that
       day's one reminder so the real 21:00 one never comes.
 
+### Habit detail
+
+Built 2026-08-21, and the first time PRD §5's retro window and per-completion
+note are reachable by hand at all (docs/ux/habits.md §7). `make test` covers what
+the screen draws and what a tap reports; what it cannot cover is a write going
+all the way to Room and coming back, which is most of this list.
+
+Open a habit from the **Habits** list — the row's name, not the Archive button.
+
+- [ ] **The streak matches the Today row's.** Tick a habit on Today, open it, and
+      the number agrees. A daily habit reads as a count and a weekly one in weeks
+      with a `w`. Two screens drawing one habit's streak differently is the
+      failure docs/ux/today-view.md §5 exists to prevent, and the shared
+      `StreakUi` is what should make it impossible — this is the check that the
+      sharing actually reaches both.
+- [ ] **An unfinished daily habit still shows its live streak.** Open a habit with
+      a run going, before ticking it today. It must not read `0`.
+- [ ] **The oldest cell is drawn shut, and does nothing.** The leftmost of the
+      five cells is struck through and dimmed. Tap it: nothing happens — no
+      snackbar, no prompt, no tick. **The absence of a snackbar is the check**;
+      a refusal message would mean the cell is being tapped and refused, which is
+      exactly what §5 says not to do.
+- [ ] **A past day asks first, and cancelling changes nothing.** Tap one of the
+      three open past cells. The honesty prompt appears. Cancel, and the cell is
+      unchanged. Force-stop and reopen: still unchanged. Cancelling has to leave
+      the log untouched rather than defer a write, and only a restart proves the
+      event was never appended.
+- [ ] **Confirming writes to that day, not to today.** Tap a past cell, confirm,
+      and the tick lands on *that* cell. Then go back to Today: the habit is
+      **not** ticked there. This is the one worth running slowly — the 3-day
+      window *accepts* a date one day off rather than refusing it, so a wrong date
+      here looks like success and is only visible by checking which day moved.
+- [ ] **Un-ticking a past day prompts too.** Tap a completed past cell: the same
+      prompt. Confirm, and it clears.
+- [ ] **Today's cell writes with no prompt.** Tap the rightmost cell: it ticks
+      immediately. PRD §6.4 wants same-day logging and undo frictionless, so a
+      prompt here is a bug.
+- [ ] **A note survives a restart.** Long-press a completed cell, type a note,
+      Save. Force-stop and reopen the habit, then long-press that cell again: the
+      note is in the field. Force-stop matters — an in-memory projection would
+      hold the note without it ever reaching the log.
+- [ ] **Clear removes it, and that also survives.** Long-press the same cell,
+      **Clear note**, force-stop, reopen: the field is empty. An empty note is a
+      real write, so a clear that was skipped as a no-op would let the old note
+      come back on the next read.
+- [ ] **Long-press offers nothing on a day with no tick.** Long-press an empty
+      open cell, and on the shut cell. Neither opens the sheet.
+- [ ] **Creating a habit opens it.** Add a habit and save: you land on its detail
+      screen, not back on the list. Press Back **once** — you reach the habit
+      list, not the create form you just filled in.
+- [ ] **The strip follows the day rollover.** With detail open, set the **day
+      cutoff** a couple of minutes ahead and wait past it. The strip shifts by one
+      day and today's cell moves with it, with nothing tapped. **Put the cutoff
+      back to midnight afterwards.**
+- [ ] **An archived habit still opens.** Archive a habit, then open it from the
+      Archived section: it shows, and says it is archived. Unarchiving has to stay
+      reachable, so a detail screen that refused to show one would be a trap.
+
+---
+
 ### The day-rollover refresh
 
 Also built 2026-08-21, and the same mechanism (docs/ux/reminder.md §2). This is
