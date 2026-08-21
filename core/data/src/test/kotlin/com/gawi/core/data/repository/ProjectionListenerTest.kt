@@ -1,5 +1,6 @@
 package com.gawi.core.data.repository
 
+import com.gawi.core.data.testsupport.RecordingProjectionListener
 import com.gawi.core.data.testsupport.TestStore
 import com.gawi.core.data.testsupport.metadata
 import com.gawi.core.domain.command.CommandResult
@@ -85,6 +86,30 @@ class ProjectionListenerTest {
 
         assertTrue(result is CommandResult.Rejected)
         assertEquals(0, store.listener.calls)
+    }
+
+    /**
+     * The invariant the call-site guard exists for.
+     *
+     * The listener runs after the commit and inside `NonCancellable`, so a throw
+     * would come back out of a command that had already written its event — the
+     * measured incident behind this guard reported a saved habit as a failed save
+     * (docs/ux/widget.md §5). `NoClassDefFoundError` is the actual escapee, and
+     * an `Error` rather than an `Exception` on purpose: that is what walked past
+     * the first, narrower guard.
+     */
+    @Test
+    fun `a listener that throws cannot fail the command that committed`() = runTest {
+        val exploding = TestStore.create(listener = RecordingProjectionListener(NoClassDefFoundError("glance")))
+        try {
+            val result = exploding.repository.createHabit(metadata("read"))
+
+            assertTrue("the command must still succeed", result is CommandResult.Accepted)
+            assertEquals("and the listener must really have been called", 1, exploding.listener.calls)
+            assertEquals("and the event must really be in the log", 1, exploding.log().size)
+        } finally {
+            exploding.close()
+        }
     }
 
     /**

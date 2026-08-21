@@ -64,13 +64,14 @@ class FakeDeviceClock(var instant: Instant = Instant.parse("2026-08-17T09:00:00Z
  * looks exactly like one nobody has placed. So the notification is asserted
  * here rather than left to a device observation.
  */
-class RecordingProjectionListener : ProjectionListener {
+class RecordingProjectionListener(private val failWith: Throwable? = null) : ProjectionListener {
 
     var calls = 0
         private set
 
     override suspend fun onProjectionChanged() {
         calls++
+        failWith?.let { throw it }
     }
 }
 
