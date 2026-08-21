@@ -122,17 +122,25 @@ class ManifestPermissionTest {
     }
 
     /**
-     * The reminder's permission is the *only* one the app declares itself.
+     * Exactly one requested permission is outside the set the libraries contribute.
      *
-     * Separate from the set above because it is a different claim, and the one
-     * that would rot first. The set says which five are requested; this says that
-     * four of them are consequences of a library and exactly one is a decision —
-     * so a permission arriving in `app/src/main/AndroidManifest.xml` by hand,
-     * which is the easy thing to do and the hard thing to notice, fails a test
-     * whose name says what went wrong.
+     * **This used to be called "the app declares one permission of its own", and
+     * that name claimed more than it can check.** `requestedPermissions` reads the
+     * *merged* manifest, which records what is requested and not which file asked
+     * for it — so a permission hand-declared in
+     * `app/src/main/AndroidManifest.xml` that happened to be one of the four below
+     * would pass, and the name would have been a lie. Provenance is not available
+     * to a unit test; the manifest merger's blame report is a build artefact, not a
+     * runtime one. Raised in PR review.
+     *
+     * Renamed rather than deleted, because the weaker claim is still worth pinning
+     * and is not the same as the exact-set assertion above: it says the *shape* of
+     * the set is four-plus-one, so a fifth library permission arriving would fail
+     * here with a name that points at the cause, rather than only failing the
+     * exact-set test with a diff to read.
      */
     @Test
-    fun `the app declares one permission of its own`() {
+    fun `exactly one requested permission is not contributed by a library`() {
         val fromLibraries = setOf(
             "android.permission.WAKE_LOCK",
             "android.permission.RECEIVE_BOOT_COMPLETED",
