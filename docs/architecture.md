@@ -240,7 +240,10 @@ read one snapshot and leaned on the push therefore froze for the life of the
 session. So the widget *also* collects `observeToday()` inside its content, and
 the two cover different cases: collecting keeps a live session tracking Room,
 and the listener is what starts a session when none is alive, which is the
-common case because sessions are short.
+common case because sessions are short. They do **not** cover each other when
+the read itself throws — `catch` terminates the flow and the push cannot
+re-enter `provideGlance` — so that read carries a bounded retry above the
+catch.
 
 **What neither can cover: a day rollover and a settings edit are not events.**
 Nothing commits at the cutoff, and changing the cutoff is a DataStore write —
