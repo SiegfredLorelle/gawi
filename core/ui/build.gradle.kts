@@ -8,6 +8,13 @@ android {
 }
 
 dependencies {
+    // api, because StreakUi's mapper takes a StreakSnapshot and a Schedule in
+    // its signature, so a consumer calling it compiles against both. This is
+    // the module graph's newest edge (architecture §2): :core:ui may know the
+    // domain, which is pure Kotlin and cannot import Android, so nothing about
+    // the non-negotiable direction changes.
+    api(project(":core:domain"))
+
     // The BOM again, as api this time. gawi.compose puts it on implementation,
     // which reaches runtimeElements but not apiElements, so the versionless
     // material3 below would leave a consumer's compile classpath unconstrained.
