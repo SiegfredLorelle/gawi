@@ -3,6 +3,7 @@ package com.gawi.app.testsupport
 import android.appwidget.AppWidgetHost
 import android.appwidget.AppWidgetHostView
 import android.appwidget.AppWidgetManager
+import android.appwidget.AppWidgetProviderInfo
 import android.content.ComponentName
 import android.content.Context
 import android.os.ParcelFileDescriptor
@@ -83,29 +84,43 @@ class WidgetHostBinding private constructor(
 
             val manager = AppWidgetManager.getInstance(context)
             val provider = ComponentName(context.packageName, RECEIVER)
-            val (host, widgetId) = allocate(context, manager, provider) ?: return null
+            val (host, widgetId, info) = allocate(context, manager, provider) ?: return null
 
             lateinit var view: AppWidgetHostView
             InstrumentationRegistry.getInstrumentation().runOnMainSync {
                 host.startListening()
-                view = host.createView(context, widgetId, manager.getAppWidgetInfo(widgetId))
+                view = host.createView(context, widgetId, info)
             }
             return WidgetHostBinding(host, widgetId, view)
         }
 
         /**
-         * Folded into one `when` rather than written as three guarded returns,
-         * because detekt's `ReturnCount` caps a function at two and this is the
-         * shape the codebase already uses for that.
+         * Allocates, binds, and resolves the provider info — or cleans up and
+         * returns null, so every failure path shares one teardown.
+         *
+         * The info is resolved here rather than by the caller because
+         * `AppWidgetHostView` dereferences it for its `initialLayout`: a null
+         * (the bind raced, or the provider is disabled) would otherwise surface
+         * as an NPE inside the framework on the main thread instead of the null
+         * this function's callers are documented to expect.
+         *
+         * Folded into one `when` rather than written as guarded returns, because
+         * detekt's `ReturnCount` caps a function at two and this is the shape the
+         * codebase already uses for that.
          */
-        private fun allocate(context: Context, manager: AppWidgetManager, provider: ComponentName): Pair<AppWidgetHost, Int>? = when {
+        private fun allocate(
+            context: Context,
+            manager: AppWidgetManager,
+            provider: ComponentName,
+        ): Triple<AppWidgetHost, Int, AppWidgetProviderInfo>? = when {
             manager.installedProviders.none { it.provider == provider } -> null
 
             else -> {
                 val host = AppWidgetHost(context, HOST_ID)
                 val widgetId = host.allocateAppWidgetId()
-                if (manager.bindAppWidgetIdIfAllowed(widgetId, provider)) {
-                    host to widgetId
+                val info = if (manager.bindAppWidgetIdIfAllowed(widgetId, provider)) manager.getAppWidgetInfo(widgetId) else null
+                if (info != null) {
+                    Triple(host, widgetId, info)
                 } else {
                     host.deleteAppWidgetId(widgetId)
                     host.deleteHost()
