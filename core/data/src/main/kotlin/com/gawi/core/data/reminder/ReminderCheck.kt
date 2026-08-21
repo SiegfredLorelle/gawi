@@ -65,6 +65,19 @@ class ReminderCheck @Inject internal constructor(
      * notification that counted differently from the app-bar chip would be worse
      * than one that did not exist.
      *
+     * **A reminder set equal to the day cutoff is refused outright**, and it has
+     * to be. [reminderOn] resolves that combination to the logical day's *start*
+     * rather than its end — its KDoc says so, and says a settings screen is where
+     * the combination should be prevented. Without this guard the wake at the top
+     * of every logical day would find nothing completed yet and post *"N of N left
+     * today"*, then stamp the day, so the evening would be silent as well: the
+     * worst of both. `:feature:settings` refuses the combination now, but a value
+     * already stored by an older build can still reach here, so refusing it in the
+     * layer that decides is what actually makes it safe.
+     *
+     * Note this makes such a configuration produce no reminder at all, which is
+     * why preventing it in the UI is the real fix and this is the backstop.
+     *
      * **The threshold is re-checked, and that is not belt-and-braces.** A wake can
      * be deferred — Doze, a powered-off device, a vendor battery policy — and one
      * deferred past the day cutoff arrives inside the *next* logical day, where
@@ -104,8 +117,7 @@ class ReminderCheck @Inject internal constructor(
      */
     suspend fun evaluate(): ReminderDecision {
         val snapshot = repository.observeToday().first()
-        val threshold = reminderOn(snapshot.today, snapshot.reminderTime, snapshot.dayCutoff)
-        if (snapshot.now.isBefore(threshold.minus(EARLY_TOLERANCE))) return ReminderDecision.Silent
+        if (snapshot.outsideTheReminderWindow()) return ReminderDecision.Silent
 
         val outstanding = snapshot.habits.count { row ->
             Mascot.isOutstanding(row.toMoodState(), snapshot.today, snapshot.weekStart)
@@ -126,6 +138,25 @@ class ReminderCheck @Inject internal constructor(
                 ReminderDecision.Remind(outstanding = outstanding, total = snapshot.habits.size)
             }
         }
+    }
+
+    /**
+     * Whether now is not a moment this logical day's reminder may be posted at.
+     *
+     * Two reasons, both of which mean "say nothing", and named here rather than
+     * inlined as guard clauses so that neither can be read as the other's
+     * duplicate. The KDoc on [evaluate] argues both at length.
+     */
+    private fun TodaySnapshot.outsideTheReminderWindow(): Boolean {
+        val threshold = reminderOn(today, reminderTime, dayCutoff)
+
+        // A reminder set equal to the cutoff resolves to the day's *start*, so
+        // there is no end-of-day moment for it at all.
+        if (threshold == LocalDateTime.of(today, dayCutoff)) return true
+
+        // Woken before the threshold: either a drifted schedule, or a wake
+        // deferred so far that it landed in the following logical day.
+        return now.isBefore(threshold.minus(EARLY_TOLERANCE))
     }
 
     /**
@@ -168,16 +199,27 @@ class ReminderCheck @Inject internal constructor(
      * The logical date `D` runs from its cutoff to the next, so `D`'s boundary is
      * the cutoff on `D + 1` — the same arithmetic `Mascot.nearBoundary` does as
      * `dayStart.plusDays(1)`, and consistent with [logicalDate]'s rule that a
-     * wall time exactly at the cutoff begins the new day. That rule is also why
-     * this needs no strictly-ahead fallback the way [untilNextReminder] does: the
-     * boundary of the date `now` resolves to is always strictly after `now`.
+     * wall time exactly at the cutoff begins the new day.
+     *
+     * **It takes the same strictly-ahead fallback as [untilNextReminder], and an
+     * earlier version of this KDoc claimed it needed none** — on the reasoning
+     * that the boundary of the date `now` resolves to is always after `now`. That
+     * is false in exactly one place, and [logicalDate]'s own KDoc names it: a
+     * cutoff strictly inside a DST fall-back's repeated hour makes "today" regress
+     * to "yesterday" for the rewound stretch. With a 01:30 cutoff and clocks going
+     * 02:00 back to 01:00, the second pass through 01:15 resolves to `D - 1`, whose
+     * boundary is 01:30 on `D` — an instant already behind us, because `atZone`
+     * takes the earlier of the repeated offsets. Once a year, for one hour, this
+     * would have armed a wake in the past.
      */
     suspend fun untilNextCutoff(): Duration {
         val now = clock.now()
         val cutoff = settings.observe().first().dayCutoff
         val today = logicalDate(now, cutoff, clock.zone())
+        val at = LocalDateTime.of(today.plusDays(1), cutoff).atInstant()
+        val next = if (at.isAfter(now)) at else LocalDateTime.of(today.plusDays(2), cutoff).atInstant()
 
-        return Duration.between(now, LocalDateTime.of(today.plusDays(1), cutoff).atInstant())
+        return Duration.between(now, next)
     }
 
     /**

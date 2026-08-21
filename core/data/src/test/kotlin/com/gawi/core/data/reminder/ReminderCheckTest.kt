@@ -23,6 +23,7 @@ import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
+import java.time.ZoneId
 
 /**
  * PRD §6.1.5 — *"one reminder max per day; silent when all done"* — as assertions,
@@ -264,6 +265,57 @@ class ReminderCheckTest {
         val check = check(clock = FakeDeviceClock(Instant.parse("2026-08-18T01:00:00Z")), settings = settings)
 
         assertEquals(Duration.ofHours(2), check.untilNextCutoff())
+    }
+
+    /**
+     * A reminder set equal to the day cutoff is refused, not honoured.
+     *
+     * `reminderOn` resolves that pair to the logical day's **start**, so without
+     * the guard the wake at the top of every logical day finds nothing completed
+     * yet, posts "N of N left today", and stamps the day — which silences the
+     * evening as well. `:feature:settings` refuses the combination now; this is
+     * what protects a value an older build already stored. Found by /code-review.
+     */
+    @Test
+    fun `a reminder equal to the day cutoff says nothing at the day's start`() = runTest {
+        val settings = FakeSettingsSource(UserSettings(dayCutoff = LocalTime.of(3, 0), reminderTime = LocalTime.of(3, 0)))
+        val check = check(clock = FakeDeviceClock(Instant.parse("2026-08-17T03:00:00Z")), settings = settings)
+        createHabit()
+
+        assertEquals(ReminderDecision.Silent, check.evaluate())
+    }
+
+    /** And it stays silent later in that day too, rather than merely being early. */
+    @Test
+    fun `a reminder equal to the day cutoff says nothing all day`() = runTest {
+        val settings = FakeSettingsSource(UserSettings(dayCutoff = LocalTime.of(3, 0), reminderTime = LocalTime.of(3, 0)))
+        val check = check(clock = FakeDeviceClock(Instant.parse("2026-08-17T21:00:00Z")), settings = settings)
+        createHabit()
+
+        assertEquals(ReminderDecision.Silent, check.evaluate())
+    }
+
+    /**
+     * The DST fall-back hour, where "the boundary of today" is behind us.
+     *
+     * `logicalDate` documents this anomaly and accepts it: a cutoff strictly
+     * inside a repeated hour makes today regress to yesterday for the rewound
+     * stretch. Europe/London goes 02:00 -> 01:00 on 2026-10-25, so with a 01:30
+     * cutoff the second pass through 01:15 resolves to the 24th, whose boundary is
+     * 01:30 on the 25th at the *earlier* offset — already past. An earlier KDoc
+     * claimed this could not happen. Found by /code-review.
+     */
+    @Test
+    fun `the next cutoff is never in the past across a DST fall-back`() = runTest {
+        val settings = FakeSettingsSource(UserSettings(dayCutoff = LocalTime.of(1, 30)))
+        val london = ZoneId.of("Europe/London")
+        // 01:15 GMT is the *second* pass through 01:15 local, after the rewind.
+        val clock = FakeDeviceClock(Instant.parse("2026-10-25T01:15:00Z"), london)
+        val check = check(clock = clock, settings = settings)
+
+        val until = check.untilNextCutoff()
+
+        assert(!until.isNegative) { "armed a wake $until in the past" }
     }
 
     /** Both wakes are always in the future, which is what keeps a delay non-negative. */
