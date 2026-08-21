@@ -69,12 +69,13 @@ boundary, week start and reminder time — and, below them in a labelled section
 of their own, **export and import**. They are a section rather than two more
 setting rows because they are not settings: they have no stored value, and
 between them they are the only disaster-recovery path there is, `allowBackup`
-being off (§6) and the event log reconstructible from nothing. The export row does now carry one
-stored value — how long ago it last wrote a file — which is §6's compensating
-control and the whole of PRD §5's nudge; `docs/ux/settings.md` §6 has the copy
-decisions. **The CSV of completions is built too**, as of 2026-08-21, which
-completes PRD §5's data row — a third row in the same section, deliberately not
-a recovery path, and the one row there whose help line has to say so.
+being off (§6) and the event log reconstructible from nothing. The export row
+does now carry one stored value — how long ago it last wrote a file — which is
+§6's compensating control and the whole of PRD §5's nudge;
+`docs/ux/settings.md` §6 has the copy decisions. **The CSV of completions is
+built too**, as of 2026-08-21, which completes PRD §5's data row — a third row
+in the same section, deliberately not a recovery path, and the one row there
+whose help line has to say so.
 
 The CSV lives in `:core:data` as this table's row for that module says, and its
 being there rather than in `:core:domain` is worth one sentence: unlike the
