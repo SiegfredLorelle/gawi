@@ -43,9 +43,11 @@ internal class ToggleHabitAction : ActionCallback {
  * come from this fresh read. That is a deliberate difference from
  * `TodayScreen`, where the snapshot is live through its `Flow` and the date
  * handed to a tap is current by construction — the rule
- * `HabitRepository.observeToday`'s KDoc states. A widget's render is not live,
- * so a rendered `logicalDate` would be exactly the value most likely to be
- * stale, and writing to it would put a completion on yesterday: something the
+ * `HabitRepository.observeToday`'s KDoc states. A widget's render is live only
+ * while a Glance session is, and sessions are short — so a widget sitting on a
+ * launcher is usually collecting nothing, which makes a rendered `logicalDate`
+ * exactly the value most likely to be stale. Writing to it would put a
+ * completion on yesterday, which is something the
  * 3-day retroactive window (architecture §5) *accepts* rather than rejects, and
  * so a silent wrong answer rather than a refusal. Re-reading means a stale
  * render can mislead the eye and never the log.

@@ -20,12 +20,35 @@ import com.gawi.core.data.model.TodaySnapshot
 internal data class WidgetRow(val habitId: String, val name: String, val completed: Boolean)
 
 /**
+ * What the widget has to draw right now.
+ *
+ * Three states rather than a nullable [WidgetUiState], because "not read yet"
+ * and "could not be read" have to look different on a widget. Collapsing them
+ * would flash the failure copy on every cold render, and drawing an empty list
+ * for a broken database is the failure-towards-silence the export nudge took
+ * three review rounds to stamp out.
+ */
+internal sealed interface WidgetContent {
+
+    /** Before the first emission arrives. */
+    data object Loading : WidgetContent
+
+    /** The read threw. `SQLiteException` is a `RuntimeException`, and the
+     *  settings store refuses to guess a cutoff, so neither is hypothetical. */
+    data object Unavailable : WidgetContent
+
+    data class Ready(val state: WidgetUiState) : WidgetContent
+}
+
+/**
  * Everything the widget draws, and nothing else.
  *
- * Carries no logical date on purpose. A widget's render is a snapshot rather
- * than a live `Flow` (see [TodayWidget]), so a date held here would be the one
- * thing on screen guaranteed to go stale — and the tap path deliberately does
- * not trust it (see `toggleHabit`).
+ * Carries no logical date on purpose. The content *is* backed by a collected
+ * flow ([TodayWidget] explains why it has to be), but only while a Glance
+ * session is alive — and a session is short-lived, so a widget sitting on a
+ * launcher is usually not collecting anything. A date held here would therefore
+ * be the one value on screen most likely to be stale, and the tap path
+ * deliberately does not trust it (see `toggleHabit`).
  */
 internal data class WidgetUiState(val rows: List<WidgetRow>)
 

@@ -33,10 +33,16 @@ package com.gawi.core.data.projection
  * deliberately does not show (PRD OQ-5, docs/ux/widget.md §2) — if that decision
  * is ever reversed, this is the omission to revisit first.
  *
- * **What it cannot cover: a day rollover is not an event.** Nothing commits at
- * the cutoff, so no push can be made for one. That gap is answered by the
- * provider's update period and, for correctness rather than appearance, by the
- * widget's tap re-reading instead of trusting the date it drew.
+ * **What it cannot cover, because neither is an event.** A day rollover commits
+ * nothing at the cutoff. Neither does a **settings edit** — and that one is
+ * easier to miss and matters more, because the day cutoff is what the logical
+ * date is derived from, so moving it changes every `completedToday` without
+ * writing anything to the log. Found by `/code-review`. A consumer that needs to
+ * follow either has to observe for itself rather than wait to be told, which is
+ * what the widget does by collecting `observeToday()` inside its content; the
+ * push is what starts it when nothing is listening. The residual gap is answered
+ * by the provider's update period and, for correctness rather than appearance, by
+ * the widget's tap re-reading instead of trusting the date it drew.
  *
  * **Implementations must be main-safe and quick.** This is called from inside
  * the command mutex and inside a `NonCancellable` region, so blocking here
