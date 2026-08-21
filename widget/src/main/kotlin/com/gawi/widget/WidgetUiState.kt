@@ -1,66 +1,117 @@
 package com.gawi.widget
 
+import androidx.annotation.StringRes
 import com.gawi.core.data.model.TodaySnapshot
+import com.gawi.core.data.repository.HabitRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.map
 
 /**
  * One habit as the widget draws it: a name and whether today's cell is ticked.
  *
- * The id is a plain [String], not a [com.gawi.core.domain.model.HabitId], and
- * that is deliberate rather than lazy. It travels to the tap callback through
- * `ActionParameters`, which holds only bundle-able types — and `HabitId`'s
- * constructor *throws* on anything that is not a canonical UUIDv7, so building
- * one from a parameter would move that throw into a broadcast receiver. The
- * callback matches this string against the log instead, so a malformed
- * parameter is a habit that does not exist rather than an exception.
+ * The id is a plain [String], not a [com.gawi.core.domain.model.HabitId]. It
+ * travels to the tap callback through `ActionParameters`, which holds only
+ * bundle-able types — and `HabitId`'s constructor *throws* on anything that is
+ * not a canonical UUIDv7, so building one from a parameter would move that throw
+ * into a broadcast receiver. The callback matches this string against the log
+ * instead, so a malformed parameter is a habit that does not exist.
  *
- * No streak. PRD OQ-5 is settled minimal (docs/ux/widget.md §2), and leaving the
+ * No streak: PRD OQ-5 is settled minimal (docs/ux/widget.md §2), and leaving the
  * field out of the type is what keeps that decision from being undone by an
  * accident of what was in scope.
  */
 internal data class WidgetRow(val habitId: String, val name: String, val completed: Boolean)
 
+/** Everything the widget draws, and nothing else. */
+internal data class WidgetUiState(val rows: List<WidgetRow>)
+
 /**
  * What the widget has to draw right now.
  *
  * Three states rather than a nullable [WidgetUiState], because "not read yet"
- * and "could not be read" have to look different on a widget. Collapsing them
- * would flash the failure copy on every cold render, and drawing an empty list
- * for a broken database is the failure-towards-silence the export nudge took
- * three review rounds to stamp out.
+ * and "could not be read" have to look different: collapsing them would flash
+ * the failure copy on every cold render, and drawing an empty list for a broken
+ * database is the failure-towards-silence the export nudge took three review
+ * rounds to stamp out.
  */
 internal sealed interface WidgetContent {
 
     /** Before the first emission arrives. */
     data object Loading : WidgetContent
 
-    /** The read threw. `SQLiteException` is a `RuntimeException`, and the
-     *  settings store refuses to guess a cutoff, so neither is hypothetical. */
+    /**
+     * The read threw. `SQLiteException` is a `RuntimeException` and the settings
+     * store refuses to guess a cutoff, so neither is hypothetical.
+     */
     data object Unavailable : WidgetContent
 
     data class Ready(val state: WidgetUiState) : WidgetContent
 }
 
 /**
- * Everything the widget draws, and nothing else.
+ * The one thing the widget's body draws, chosen from [WidgetContent].
  *
- * Carries no logical date on purpose. The content *is* backed by a collected
- * flow ([TodayWidget] explains why it has to be), but only while a Glance
- * session is alive — and a session is short-lived, so a widget sitting on a
- * launcher is usually not collecting anything. A date held here would therefore
- * be the one value on screen most likely to be stale, and the tap path
- * deliberately does not trust it (see `toggleHabit`).
+ * This exists so the choice is a value rather than a branch inside a composable.
+ * Which copy a broken database gets is exactly the kind of rule a later edit can
+ * invert by accident — swapping two `Message` calls used to be a one-character
+ * change no test could catch — and it is now decided in [body], which is tested.
  */
-internal data class WidgetUiState(val rows: List<WidgetRow>)
+internal sealed interface WidgetBodyContent {
+
+    data class Rows(val rows: List<WidgetRow>) : WidgetBodyContent
+
+    data class Copy(@StringRes val text: Int) : WidgetBodyContent
+
+    /**
+     * Nothing at all. The first frame of a cold render, replaced as soon as the
+     * flow emits; a "loading" line would be the only text most renders showed.
+     */
+    data object Blank : WidgetBodyContent
+}
 
 /**
- * The whole of the widget's read logic, as a pure function so it is tested
- * without Glance, a device or a Robolectric shadow.
+ * Which of the three the user sees. Pure, so it is tested without Glance.
  *
- * A straight projection of the snapshot, in its order, including habits that are
- * already done. Two consequences, both wanted: a completed row can be tapped
- * again to undo it, and the widget has no rule of its own about which habits are
- * worth showing — it shows what the Today screen shows. `observeToday()` has
- * already dropped archived habits, so nothing here filters.
+ * A res id rather than a resolved string, so a test asserts the same
+ * `R.string` constant the composable reads — the convention
+ * `TodayMessage(@StringRes val text: Int)` already sets in `:feature:today`.
+ */
+internal fun WidgetContent.body(): WidgetBodyContent = when (this) {
+    WidgetContent.Unavailable -> WidgetBodyContent.Copy(R.string.widget_unavailable)
+
+    WidgetContent.Loading -> WidgetBodyContent.Blank
+
+    is WidgetContent.Ready ->
+        if (state.rows.isEmpty()) WidgetBodyContent.Copy(R.string.widget_no_habits) else WidgetBodyContent.Rows(state.rows)
+}
+
+/**
+ * The widget's read, as a flow of what to draw.
+ *
+ * Assembled here rather than inside `provideContent`, because flow operators
+ * must not be invoked in composition — they allocate a new flow per
+ * recomposition, and Android Lint's `FlowOperatorInvokedInComposition` is fatal
+ * under `warningsAsErrors`. Being a function also makes it reachable from a
+ * test, which is how the failure branch is covered.
+ *
+ * The `catch` sits after the `map`, so a failed read replaces the whole content
+ * rather than one row — which is what [WidgetContent.Unavailable] means. Same
+ * accepted pattern as `TodayViewModel`, including that a caught read completes
+ * the flow (docs/ux/settings.md §7).
+ */
+internal fun HabitRepository.widgetContent(): Flow<WidgetContent> = observeToday()
+    .map<TodaySnapshot, WidgetContent> { WidgetContent.Ready(it.toWidgetState()) }
+    .catch { emit(WidgetContent.Unavailable) }
+
+/**
+ * The snapshot as rows. Pure, so it is tested without Glance or a device.
+ *
+ * A straight projection in query order, including habits that are already done.
+ * Two consequences, both wanted: a completed row can be tapped again to undo it,
+ * and the widget has no rule of its own about which habits are worth showing —
+ * it shows what the Today screen shows. `observeToday()` has already dropped
+ * archived habits, so nothing here filters.
  */
 internal fun TodaySnapshot.toWidgetState(): WidgetUiState =
     WidgetUiState(rows = habits.map { WidgetRow(habitId = it.habit.id.value, name = it.habit.name, completed = it.completedToday) })
