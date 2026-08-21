@@ -103,6 +103,17 @@ minute. The costs are not comparable. A wake a second early that is refused
 means no reminder *at all* that day, because the next armed wake is tomorrow's;
 a wake a minute early means a nudge a minute early, which nobody perceives.
 
+**A reminder set equal to the day cutoff is refused outright**, which is the
+other half of the same check. `reminderOn` resolves that pair to the logical
+day's *start* rather than its end — its KDoc has always said so, and said that a
+settings screen was where the combination should be prevented. Nothing prevented
+it, and while the setting only drove Momo's face the cost was invisible: a mascot
+that looked worried all day reads as a mood, not a bug. With a notification
+behind the same threshold it became a *"N of N left today"* at the top of every
+logical day which *also* consumed that day's one reminder, so the evening was
+silent too — the worst of both. `:feature:settings` refuses the combination now
+(§3); this refuses to act on a value an older build already stored.
+
 `reminderOn`'s threshold is the one used, so it is the same instant the mascot's
 `nearBoundary` turns on at. `nearBoundary`'s *upper* bound is deliberately not
 repeated — it exists there to protect a caller holding a stale date, and the
@@ -128,9 +139,27 @@ Neither re-enqueues its own name, and that is not a stylistic choice.
 **including a run in progress** — so a worker that re-armed itself would cancel
 itself every time, leaving the tail of its own `doWork` running inside a
 cancelled coroutine and its completion recorded as `CANCELLED`. Correct-looking
-and racy. Arming the *other* name has no such race, because the other name
-provably is not running: the reminder falls strictly inside a logical day and the
-cutoff ends it.
+and racy.
+
+**And the workers arm with `KEEP`, not `REPLACE`.** This is the second half of
+the design, and the first draft got it wrong in a way that lost a whole day's
+reminder. `KEEP` means *"make sure the other wake exists"*: pending work is left
+alone, and completed work is not pending, so the next occurrence is enqueued
+normally. With `REPLACE` there was a real hole — a reminder wake deferred past
+the cutoff (device off overnight) runs late, correctly decides to stay silent,
+and then **destroyed the overdue rollover work that was about to re-arm it**. So
+nothing was left under the reminder's name, and that whole day had no reminder;
+the chain only resumed at the *next* cutoff. Found by `/code-review`.
+
+`KEEP` also disposes of a race the first draft's prose called impossible. It
+claimed the other name is *provably* not running, since the reminder falls
+strictly inside a logical day and the cutoff ends it — and that a reminder set
+equal to the cutoff would leave the two "a whole day apart". **That was simply
+wrong**: day `D + 1`'s start *is* day `D`'s boundary, so equal times put both
+wakes on the same instant, and under `REPLACE` each worker would have cancelled
+the other mid-run. §3 now prevents that setting and §1 refuses to act on a stored
+one, but `KEEP` is what makes the coincidence harmless rather than merely
+unlikely.
 
 So the chain alternates — 21:00 arms midnight, midnight arms 21:00 — and if
 either link is ever lost, `ReminderScheduler.start()` re-arms both on the next
@@ -249,6 +278,19 @@ user switched notifications off and system settings is where they go back on —
 "allow the permission" would be wrong on some versions and jargon on all of them.
 It says what is not happening and offers to fix it, which is true everywhere.
 
+### The one settings combination that is refused
+
+The reminder time may not equal the day cutoff, from either row. It is the first
+**refusable** settings write in the app, and `SettingsMessage`'s KDoc used to
+argue that no such thing could exist: *"a fixed picker cannot express an invalid
+time"*. That was sound and incomplete — a picker cannot express an invalid time,
+but it can express a valid time that is invalid *against another setting*, which
+is a validation the store cannot do because it sees one field at a time.
+
+Guarded from both rows, because either can create the collision and a screen that
+refused it from one side while allowing it from the other would be worse than one
+that did neither.
+
 The notice is its **own** target below the row rather than a state on it.
 `SettingRow`'s rule is that the whole row is the target, and the row's tap
 already means "change the time" — which stays worth doing while notifications are
@@ -323,6 +365,30 @@ was corrected to what the run said. Same lesson as the two above, in the smalles
 possible form: run the control, in the same pass.
 
 ---
+
+### What the review round found, which was code this time
+
+The three above were caught before review. `/code-review` then found five things,
+and the shape of them is worth recording because it is **not** the shape of the
+last step's rounds: 11a's findings were all prose overclaiming with correct code
+behind it, and three of these were real defects.
+
+- **A reminder equal to the day cutoff** posted "N of N left today" at the top of
+  every logical day and consumed that day's reminder (§1, §3). Latent in the
+  mascot since step 4a; the notification is what made it bite.
+- **`REPLACE` in the workers lost a whole day's reminder** after a wake deferred
+  past the cutoff (§2). The subtlety is that the late worker destroyed the
+  *other* pending work that would have repaired it.
+- **`untilNextCutoff` could arm a wake in the past**, once a year, for one hour:
+  a cutoff inside a DST fall-back's repeated hour makes "today" regress, which
+  `logicalDate`'s KDoc documents and this had not accounted for.
+- Two smaller ones: an unguarded `startActivity` for a system settings action
+  that need not resolve, and a KDoc claim about strictness that was false.
+
+Two of my own KDoc paragraphs asserted the exact properties that were broken —
+"provably not running" and "always strictly after `now`". Both read as reasoning
+and neither had a test. The three that were real defects now do, each
+mutation-checked against the code before the fix.
 
 ## 6. Still open
 
