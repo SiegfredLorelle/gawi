@@ -44,8 +44,8 @@ rules:
   footer-max-line-length: [0]
 
   # This project's real areas. Module scopes get added when those modules are
-  # born (docs/architecture.md §2): today, habits and settings exist, widget
-  # does not.
+  # born (docs/architecture.md §2). today, habits, settings and widget all
+  # exist; add the next one here before using it, or the commit is rejected.
   scope-enum:
     - 2
     - always
