@@ -619,10 +619,65 @@ Clean up with `adb shell 'rm -f /sdcard/Download/*.csv'` — **quote the glob**,
 or zsh expands it on the host first and the command looks like it ran while the
 files stay put.
 
-**Physical device only** — nothing here is built yet, so these are placeholders
-that come alive with the widget and the reminder (architecture §8, PRD §7):
+### Before running `make itest` — read this
 
-- [ ] Home-screen widget: renders, taps complete, refreshes after an in-app change.
+**`make itest` destroys the app's data on the device it runs against.**
+`connectedAndroidTest` uninstalls the app when it finishes, and an uninstall
+deletes `/data/data`: the event log, every habit, the settings and the export
+stamp. `allowBackup` is off (architecture §6), so there is no OS copy — the JSON
+export is the only way back. **Export first, or use a throwaway AVD.** This was
+measured rather than predicted: one run wiped an emulator holding 345 events and
+30 habits.
+
+What it buys is real, so this is a warning and not a discouragement: the write
+journey it runs (create a habit, complete it, undo it, read back through the
+real database) is the one Robolectric cannot do, and the widget-host check is
+the only automated proof that Glance renders at all.
+
+### The widget — *launcher only, and mostly not automatable*
+
+**Built 2026-08-21.** The widget's logic is JVM-tested (`:widget`) and the write
+journey is covered by `make itest`, so what is left here is the part that needs a
+real launcher: **pinning a widget requires the user**, so no test can place one.
+Decisions and reasoning are in [docs/ux/widget.md](ux/widget.md).
+
+- [ ] **It is offered at all.** (Automated: `WidgetHostTest` binds the provider
+      to a real `AppWidgetHost` and asserts Glance renders text into it, so a
+      failure here usually means the launcher rather than the app.)
+      Long-press the home screen → *Widgets* → **Gawi**
+      → *Today*. If it is missing, the provider did not merge: read
+      `app/build/intermediates/packaged_manifests/debug/.../AndroidManifest.xml`
+      for `com.gawi.widget.TodayWidgetReceiver` (needs `--rerun-tasks`; a stale
+      merged manifest reports the old answer).
+- [ ] **It draws today's habits** — each active habit's name with a checkbox,
+      ticked to match the Today screen. **No streak**, deliberately (PRD OQ-5).
+- [ ] **A tap completes.** Tap an unticked row: it ticks. Open the app — Today
+      agrees, and the mascot has reacted if that was the last one.
+- [ ] **A tap again undoes.** Tap the ticked row: it unticks, and Today agrees.
+      This is the half that separates the widget from a complete-only one.
+- [ ] **A write in the app moves the widget.** This is the only check that
+      exercises `ProjectionListener`, and nothing else can: complete a habit *in
+      the app*, then go to the home screen **without tapping the widget**. It
+      shows the tick. If it does not, the push is broken even though every JVM
+      test passes — `ProjectionListenerTest` proves the call happens, not that
+      Glance acted on it.
+- [ ] **An empty install says so.** With no active habits the widget reads *"No
+      habits yet"*, not a blank box. (Archive every habit rather than using
+      `pm clear`, which destroys the log.)
+- [ ] **Resizing keeps it usable.** Drag the handles: rows reflow and the list
+      scrolls rather than clipping.
+
+Known and expected, not a bug: a widget left on the launcher **across the day
+cutoff shows yesterday's ticks** until the framework's 30-minute update period
+comes round. A tap is still safe — it re-reads and writes to the current logical
+date, never the drawn one (docs/ux/widget.md §4). To see it, move the cutoff a
+couple of minutes ahead (§4's rollover trick) and watch the widget lag the app.
+
+### The reminder — *not built*
+
+Placeholders that come alive with the end-of-day reminder
+(architecture §8, PRD §7):
+
 - [ ] End-of-day reminder fires, and stays silent when everything is done.
 - [ ] Survives doze and the vendor's battery optimiser.
 
