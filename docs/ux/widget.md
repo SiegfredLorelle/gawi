@@ -167,8 +167,9 @@ manifest then contributes four permissions to an app that had none of its own:
   signature-level permission for a non-exported dynamic receiver, and it
   predates the widget. Corrected to say what is true.
 - *"One exported component"*, which three security reviews leaned on, was also
-  already false: `PreviewActivity` (Compose tooling) and `ProfileInstallReceiver`
-  (guarded by `android.permission.DUMP`) were both exported before this branch.
+  already false: `PreviewActivity` (Compose tooling) and
+  `ProfileInstallReceiver` (guarded by `android.permission.DUMP`) were both
+  exported before this branch.
 
 ### The measurement that was wrong, and why it is worth writing down
 
@@ -200,10 +201,11 @@ java.lang.NoClassDefFoundError: Failed resolution of: Landroidx/work/CoroutineWo
 ```
 
 `NoClassDefFoundError` is an `Error`, and `GlanceProjectionListener` caught
-`Exception` — so it escaped, propagated out of `appendLocked`'s `NonCancellable`
-region, and **failed a habit creation that had already been committed to the
-log**. On screen the editor simply sat there as though Save were dead. Same
-class as the recorded "an `OutOfMemoryError` slips past every guard in this app".
+`Exception` — so it escaped, propagated out of `appendLocked`'s
+`NonCancellable` region, and **failed a habit creation that had already been
+committed to the log**. On screen the editor simply sat there as though Save
+were dead. Same class as the recorded "an `OutOfMemoryError` slips past every
+guard in this app".
 
 The guard now catches `Throwable` and rethrows cancellation. That is not
 overreach: this listener runs strictly *after* the commit, so there is nothing
@@ -228,6 +230,18 @@ all either `exported="false"` or guarded by `DUMP` / `BIND_JOB_SERVICE`.
 
 - **A boundary refresh** (§4). The reminder step brings WorkManager and should
   schedule one at the cutoff. Until then, staleness is bounded by 30 minutes.
+- **"A write in the app moves the widget" has no automated test, and one was
+  attempted.** The pieces are each covered — `ProjectionListenerTest` proves the
+  repository makes the call (mutation-checked), and `WidgetHostTest` proves
+  Glance renders for a real host — but nothing proves Glance *acted on the
+  push*. A test binding a widget host inside `WriteJourneyTest`, writing through
+  the UI and waiting for the widget to follow, was written and **removed**: the
+  widget rendered no text at all for the full timeout there, while the same
+  binding renders immediately in `WidgetHostTest`, which has no Compose test
+  rule. The likely cause is the rule and an `AppWidgetHost` not co-existing, and
+  it was not worth more time than that against a check `docs/running.md` already
+  covers by hand. Worth retrying from a plain `ActivityScenario` driven by UI
+  Automator rather than the Compose rule.
 - **The reminder's permissions are a bigger question than they looked.** Taking
   WorkManager deliberately reintroduces the four permissions above, including
   `ACCESS_NETWORK_STATE`, *before* `POST_NOTIFICATIONS` is even considered. So
