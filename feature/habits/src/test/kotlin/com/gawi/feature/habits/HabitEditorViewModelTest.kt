@@ -86,14 +86,22 @@ class HabitEditorViewModelTest {
         assertEquals("read", (editor.uiState.value as HabitEditorUiState.Form).name)
     }
 
+    /**
+     * A create reports the id the repository minted, not just that it happened.
+     *
+     * `createHabit`'s KDoc promises the id back "so the caller can navigate to
+     * it", and `:app` navigates to that habit's detail screen. An event that
+     * carried the wrong id — or the `Saved` an update reports — would open
+     * somebody else's habit, or nothing.
+     */
     @Test
-    fun `saving a new habit creates it and says so`() = runTest {
+    fun `saving a new habit creates it and reports its id`() = runTest {
         val editor = editorFor(null)
         editor.onEdit((editor.uiState.value as HabitEditorUiState.Form).copy(name = "read"))
 
         editor.events.test {
             editor.onSave()
-            assertEquals(HabitEditorEvent.Saved, awaitItem())
+            assertEquals(HabitEditorEvent.Created(repository.mintedId.value), awaitItem())
             cancelAndIgnoreRemainingEvents()
         }
         assertEquals("read", repository.created.single().name)
@@ -106,7 +114,9 @@ class HabitEditorViewModelTest {
      * A create that fell through to `updateHabit` would be rejected with
      * `HabitNotFound`, and an update that fell through to `createHabit` would
      * silently make a second habit — so this is the one branch worth pinning
-     * from both sides.
+     * from both sides. The two also report different events now, an update
+     * popping where a create goes on to detail, so the event is asserted as
+     * well as the command.
      */
     @Test
     fun `saving an existing habit updates it rather than creating a second`() = runTest {

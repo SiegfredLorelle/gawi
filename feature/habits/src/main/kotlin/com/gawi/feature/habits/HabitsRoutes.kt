@@ -61,15 +61,18 @@ fun HabitListRoute(onAddHabit: () -> Unit, onOpenHabit: (String) -> Unit, onBack
  * validating inside the ViewModel turns a malformed route into a state the
  * screen can draw rather than a crash on the way to it.
  *
- * [onSaved] and [onCancel] are separate even though both pop today, because
- * they are different events and a caller should be free to treat them so.
+ * [onCreated], [onSaved] and [onCancel] are three rather than one because they
+ * are three different events and a caller should be free to treat them so —
+ * which `:app` now does: a create goes on to the new habit's detail screen and
+ * the other two pop. [onCreated] is what finally consumes the id `createHabit`
+ * mints and returns.
  *
  * No explicit ViewModel key. Each `NavBackStackEntry` owns its own
  * `ViewModelStore`, so two editors are already two ViewModels — opening one
  * habit and then another cannot show the first one's form.
  */
 @Composable
-fun HabitEditorRoute(habitId: String?, onSaved: () -> Unit, onCancel: () -> Unit) {
+fun HabitEditorRoute(habitId: String?, onCreated: (String) -> Unit, onSaved: () -> Unit, onCancel: () -> Unit) {
     val viewModel: HabitEditorViewModel =
         hiltViewModel<HabitEditorViewModel, HabitEditorViewModel.Factory>(
             creationCallback = { factory -> factory.create(habitId) },
@@ -81,6 +84,8 @@ fun HabitEditorRoute(habitId: String?, onSaved: () -> Unit, onCancel: () -> Unit
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
             when (event) {
+                is HabitEditorEvent.Created -> onCreated(event.habitId)
+
                 HabitEditorEvent.Saved -> onSaved()
 
                 is HabitEditorEvent.Rejected ->

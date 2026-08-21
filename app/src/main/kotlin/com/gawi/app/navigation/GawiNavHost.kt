@@ -21,9 +21,10 @@ import com.gawi.feature.today.TodayRoute
  * `:feature:today` and `:feature:habits` have no navigation dependency at all,
  * and what makes their tests need no `NavController`.
  *
- * Saving and cancelling both pop today. They are separate callbacks anyway,
- * because they are different events and a future undo snackbar or a
- * navigate-to-the-new-habit would only need one of them.
+ * Cancelling pops, and so does saving an edit. Creating does not: it goes on to
+ * the new habit's detail screen, which is what `createHabit`'s minted id was
+ * always for. Keeping the three as separate callbacks is what made that a change
+ * here rather than one inside `:feature:habits`.
  */
 @Composable
 internal fun GawiNavHost(navController: NavHostController = rememberNavController()) {
@@ -44,6 +45,18 @@ internal fun GawiNavHost(navController: NavHostController = rememberNavControlle
      */
     fun back() {
         if (navController.previousBackStackEntry != null) navController.popBackStack()
+    }
+
+    /**
+     * A new habit's detail screen, with the form it came from removed.
+     *
+     * `popUpTo` inclusive rather than a plain navigate: without it, Back from
+     * the new habit's detail lands in the editor that made it — a filled-in
+     * create form that would append a second identical habit if saved again.
+     */
+    fun openCreatedHabit(habitId: String) = navController.navigate(Destination.HabitDetail(habitId)) {
+        popUpTo(Destination.HabitEditor()) { inclusive = true }
+        launchSingleTop = true
     }
 
     NavHost(navController = navController, startDestination = Destination.Today) {
@@ -70,6 +83,7 @@ internal fun GawiNavHost(navController: NavHostController = rememberNavControlle
         composable<Destination.HabitEditor> { entry ->
             HabitEditorRoute(
                 habitId = entry.toRoute<Destination.HabitEditor>().habitId,
+                onCreated = ::openCreatedHabit,
                 onSaved = ::back,
                 onCancel = ::back,
             )

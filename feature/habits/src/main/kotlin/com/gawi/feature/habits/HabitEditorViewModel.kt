@@ -24,7 +24,19 @@ import kotlinx.coroutines.launch
 /** What the editor tells the Route about, once. */
 internal sealed interface HabitEditorEvent {
 
-    /** Saved. The Route pops; the list is already observing the write. */
+    /**
+     * A new habit exists, and this is its id.
+     *
+     * Separate from [Saved] because the two outcomes go different places, and
+     * because this is what `createHabit`'s minted id was always for — its KDoc
+     * says it returns the id "so the caller can navigate to it", and until
+     * habit detail existed there was nowhere to navigate. `:app` sends this to
+     * detail and an edit back to where it came from; the screen only reports
+     * which happened.
+     */
+    data class Created(val habitId: String) : HabitEditorEvent
+
+    /** An existing habit was updated. The Route pops; the list is already observing the write. */
     data object Saved : HabitEditorEvent
 
     data class Rejected(val message: HabitsMessage) : HabitEditorEvent
@@ -150,21 +162,35 @@ internal class HabitEditorViewModel @AssistedInject constructor(
             return HabitEditorEvent.Rejected(HabitsMessage(R.string.habits_error_blank_name))
         }
         val metadata = current.toMetadata()
-        val result: CommandResult<*>? = commandOrNull(TAG) {
-            when (habitId) {
-                null -> habits.createHabit(metadata)
-                else -> habits.updateHabit(habitId, metadata)
+        // Branching on which command to run, rather than running one and asking
+        // the payload afterwards: only createHabit returns an id, and a
+        // star-projected CommandResult would need a cast to get at it.
+        return when (habitId) {
+            null -> eventFor(commandOrNull(TAG) { habits.createHabit(metadata) }) { minted ->
+                HabitEditorEvent.Created(minted.value)
+            }
+
+            else -> eventFor(commandOrNull(TAG) { habits.updateHabit(habitId, metadata) }) {
+                HabitEditorEvent.Saved
             }
         }
-        return when (result) {
-            // Threw rather than rejected. Reported as a rejection so the user
-            // sees something, and so the saving latch is released by the branch
-            // in onSave that already handles one.
-            null -> HabitEditorEvent.Rejected(HabitsMessage(R.string.habits_error_unexpected))
+    }
 
-            is CommandResult.Rejected -> HabitEditorEvent.Rejected(HabitsMessage(messageFor(result.error)))
+    /**
+     * The two failure branches, which are the same for both commands.
+     *
+     * [onAccepted] is what differs: a create has a minted id to carry and an
+     * update has nothing. Shared so that a rejection cannot be reported one way
+     * on create and another on update.
+     */
+    private fun <T> eventFor(result: CommandResult<T>?, onAccepted: (T) -> HabitEditorEvent): HabitEditorEvent = when (result) {
+        // Threw rather than rejected. Reported as a rejection so the user
+        // sees something, and so the saving latch is released by the branch
+        // in onSave that already handles one.
+        null -> HabitEditorEvent.Rejected(HabitsMessage(R.string.habits_error_unexpected))
 
-            is CommandResult.Accepted -> HabitEditorEvent.Saved
-        }
+        is CommandResult.Rejected -> HabitEditorEvent.Rejected(HabitsMessage(messageFor(result.error)))
+
+        is CommandResult.Accepted -> onAccepted(result.payload)
     }
 }
