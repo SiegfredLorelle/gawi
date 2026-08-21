@@ -32,6 +32,23 @@ dependencies {
     implementation(project(":widget"))
 
     implementation(libs.androidx.activity.compose)
+    // WorkManager, for the reminder and rollover workers (docs/ux/reminder.md).
+    //
+    // NOT a new dependency in the app — Glance has required it since the widget
+    // shipped, and architecture §7 records why it cannot be excluded. What is
+    // new is that :app *compiles* against it. :widget takes Glance on
+    // `implementation`, so work-runtime reaches this module's runtime classpath
+    // and never its compile one; a CoroutineWorker here does not build without
+    // this line.
+    //
+    // Declaring it also pins the version, which was Glance's 2.7.1 by default.
+    // See the catalog comment: the risk a bump carries is the merged manifest,
+    // not the build, and ManifestPermissionTest is what measures it.
+    implementation(libs.androidx.work.runtime)
+    // NotificationCompat and the channel. Declared rather than left to arrive
+    // through hilt-android's fragment dependency, which is the same accident
+    // ApplicationProvider and ActivityScenarioRule were.
+    implementation(libs.androidx.core.ktx)
     // The navigation graph lives here and only here (architecture §2). No
     // feature module depends on navigation, so a screen cannot navigate itself.
     implementation(libs.androidx.navigation.compose)
@@ -48,6 +65,12 @@ dependencies {
     testImplementation(libs.androidx.test.ext.junit)
     testImplementation(libs.hilt.android.testing)
     kspTest(libs.hilt.compiler)
+    // WorkManager does not initialise itself under Robolectric — its
+    // androidx.startup provider does not run, so WorkManager.getInstance throws
+    // IllegalStateException. Measured, not assumed. This supplies
+    // WorkManagerTestInitHelper, which is the only way the reminder's scheduling
+    // is assertable without a device.
+    testImplementation(libs.androidx.work.testing)
 
     // Instrumented tests. Deliberately NOT Hilt-testing: these drive the real
     // installed app with the real graph and the real database, which is the

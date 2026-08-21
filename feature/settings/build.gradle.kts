@@ -30,6 +30,11 @@ dependencies {
     // down through the navigation graph, which would put this screen's file
     // handling in a module with no other reason to know about it.
     implementation(libs.androidx.activity.compose)
+    // NotificationManagerCompat and ActivityCompat, for the reminder row's
+    // "notifications are off" state. Declared rather than left to arrive through
+    // hilt-android's fragment dependency: this module names both types directly,
+    // and the reminder row is the whole reason it does.
+    implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
     // hiltViewModel() rather than viewModel(): this is a back-stack
     // destination, so the store owner is the entry rather than the activity.
