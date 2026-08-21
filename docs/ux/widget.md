@@ -7,8 +7,9 @@ without opening the app"* — and leaves what it draws as an open question. This
 document is where both are decided.
 
 **Status:** decided and built 2026-08-21, as `:widget`. The **end-of-day
-reminder is deliberately a separate step**; §4 and §6 say what that step
-inherits.
+reminder was deliberately a separate step** and shipped the same day; what §4 and
+§6 handed it — a scheduled wake at the day boundary — is built, and
+[reminder.md](reminder.md) §2 is where it now lives.
 
 Written after the screen, like [habits.md](habits.md) and
 [settings.md](settings.md). What was genuinely decided: what the widget shows
@@ -101,8 +102,12 @@ things follow:
   there is no ceiling here to quote, and an earlier draft of this bullet
   claimed one. An exact refresh at the cutoff wants a scheduled wake, which
   means a WorkManager **worker** — WorkManager itself is already a dependency,
-  because Glance requires it (§5). **The reminder step should schedule that
-  worker**; it is the cheapest thing it can do for this one.
+  because Glance requires it (§5). **The reminder step built that worker**, as
+  `RolloverWorker` (reminder.md §2): it wakes at the cutoff, sweeps the streaks
+  and pushes `ProjectionListener`, so a widget on a launcher follows the rollover
+  without being tapped. The periodic update is still what covers a device that
+  denied the wake, so this shortens the stale window a great deal and still does
+  not bound it.
 - **The tap does not trust the render.** This is the part that matters for
   correctness rather than appearance. A rendered row carries only a habit id;
   the logical date and the completion state both come from a read taken at tap
@@ -209,10 +214,13 @@ manifest then contributes four permissions to an app that had none of its own:
   the property §1 is really claiming, and it is unchanged.
 - `ManifestPermissionTest` asserts the **exact** set, so anything arriving
   through any library's manifest fails a test rather than being noticed later.
-  When the reminder schedules work of its own — WorkManager is already here, so
-  what that step adds is a worker, not the dependency — this test is the
-  decision point: if a `WorkRequest` ever carries a network constraint, the
-  removal line is the first thing that has to go.
+  The reminder schedules work of its own as of 2026-08-21 — a worker, not a new
+  dependency — and it changed this set by exactly one permission,
+  `POST_NOTIFICATIONS`, which is the app's own. Pinning WorkManager to 2.11.2 in
+  the same step changed it by nothing, measured separately and *before* the
+  permission went in, so that the assertion could be seen failing. If a
+  `WorkRequest` ever carries a network constraint, the removal line is still the
+  first thing that has to go.
 
 **Two corrections that fell out of measuring it:**
 
@@ -282,19 +290,22 @@ all either `exported="false"` or guarded by `DUMP` / `BIND_JOB_SERVICE`.
 
 ## 6. Still open
 
-- **A boundary refresh** (§4). WorkManager is already a dependency, because
-  Glance requires it (§5), so what the reminder step adds is a *worker*
-  scheduled at the cutoff. Until then the only thing shortening the stale
-  window is the provider's periodic update, which is best-effort — so there is
-  no ceiling to state, only a likelihood.
-- **A settings edit is not an event either**, and it is the easier one to miss.
-  Changing the **day cutoff** changes the logical date, and therefore every
-  `completedToday`, without writing anything to the log — so no
-  `ProjectionListener` push can fire for it. Found by `/code-review`. A live
-  session follows it, because `observeToday()` re-emits on a settings change; a
-  widget with no session shows the previous day's ticks until the next periodic
-  update gets through. Recorded rather than fixed, because the fix is the same
-  scheduled worker the boundary wants.
+- ~~**A boundary refresh** (§4).~~ **Built 2026-08-21** with the reminder, as
+  `RolloverWorker` (reminder.md §2). A widget on a launcher now follows the day
+  rollover without being tapped. What has not changed is that this is still
+  best-effort rather than a deadline — a wake WorkManager defers is a redraw that
+  arrives late, and the provider's periodic update remains the only other thing
+  shortening the window. There is still no ceiling to state here, only a much
+  better likelihood.
+- ~~**A settings edit is not an event either.**~~ **Built the same day, and by
+  the same mechanism**, which is why the two were listed together. Changing the
+  **day cutoff** changes the logical date and therefore every `completedToday`
+  without writing anything to the log, so no `ProjectionListener` push can fire
+  for it (found by `/code-review`). `ReminderScheduler` collects
+  `SettingsSource.observe()` and re-arms both wakes when the cutoff or the
+  reminder time moves, so a cutoff edit re-schedules the boundary refresh along
+  with it — reminder.md §2. The gap that remains is the interval *between* the
+  edit and the next wake, which is the same best-effort caveat as above.
 - **`glance-appwidget-testing` was considered and declined.** PR review
   suggested it for pinning what the widget draws. Not taken: `Message` resolves
   its copy through `LocalContext.current.getString(...)`, so the Glance unit
@@ -317,7 +328,11 @@ all either `exported="false"` or guarded by `DUMP` / `BIND_JOB_SERVICE`.
   it was not worth more time than that against a check `docs/running.md` already
   covers by hand. Worth retrying from a plain `ActivityScenario` driven by UI
   Automator rather than the Compose rule.
-- **What the reminder actually still has to answer.** An earlier draft of this
+- **What the reminder had left to answer, and what it answered.** *Resolved
+  2026-08-21 — see reminder.md §3 and §5.* `POST_NOTIFICATIONS` went in as the
+  app's first runtime permission, requested from the settings reminder row; no
+  `WorkRequest` took a network constraint, so the `tools:node="remove"` line
+  stayed. The rest of this bullet is the record of getting there. An earlier draft
   bullet said taking WorkManager would "reintroduce the four permissions"; that
   was left over from believing it had been excluded, and it is wrong twice.
   WorkManager is **already here**, so `WAKE_LOCK`, `RECEIVE_BOOT_COMPLETED` and

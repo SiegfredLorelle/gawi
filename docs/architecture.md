@@ -38,7 +38,7 @@ Now-in-Android convention: Gradle version catalog
 
 | Module | Contents |
 |---|---|
-| `:app` | MainActivity, navigation graph, Hilt app wiring, WorkManager scheduling for the end-of-day reminder |
+| `:app` | MainActivity, navigation graph, Hilt app wiring, WorkManager scheduling and the reminder notification |
 | `:core:domain` | Pure Kotlin/JVM: event types, projection logic, logical-date rules, streak computation, UUIDv7 generator, event and export JSON codecs |
 | `:core:data` | Repositories, event store, Room database + DAOs, DataStore settings and the last-export stamp, export/import plumbing and the CSV of completions |
 | `:core:ui` | Theme, shared composables |
@@ -249,12 +249,19 @@ catch.
 Nothing commits at the cutoff, and changing the cutoff is a DataStore write —
 yet it decides the logical date and so every `completedToday`. `observeToday()`
 re-emits on both, so a live session follows them; a widget with no session
-shows the previous answer until `updatePeriodMillis` comes round. That is why
+showed the previous answer until `updatePeriodMillis` came round. That is why
 the tap path re-reads rather than trusting the date it drew: writing to a stale
 logical date is something §5's 3-day retro window *accepts* rather than
-refuses, so it would be silent. docs/ux/widget.md §4 has the whole argument; a
-scheduled refresh at the boundary wants WorkManager and belongs with the
-reminder.
+refuses, so it would be silent. docs/ux/widget.md §4 has the whole argument.
+
+**Both are now covered by a scheduled wake instead** (2026-08-21, with the
+reminder). `RolloverWorker` wakes at the cutoff, sweeps the streaks and calls
+`ProjectionListener` by hand — making it that interface's third caller, and the
+first that follows the *absence* of a commit rather than one. A settings edit is
+covered by the same mechanism from the other end: `ReminderScheduler` collects
+`SettingsSource` and re-arms the wake when the cutoff moves. Neither is a
+deadline — a deferred wake is a late redraw — so the tap-path rule above is
+unchanged and still load-bearing. docs/ux/reminder.md §2.
 
 At this app's data volume (~2k events/year) a full rebuild is milliseconds,
 so `rebuildProjections()` is cheap enough to reach for whenever in doubt.
@@ -328,7 +335,7 @@ not a setting.
 | Time | java.time (minSdk 29 ⇒ no desugaring) |
 | Navigation | Compose Navigation, type-safe `@Serializable` routes, single activity |
 | Widget | Jetpack Glance |
-| Reminder | WorkManager + notification via PendingIntents |
+| Reminder | WorkManager + notification via PendingIntents (built 2026-08-21) |
 | IDs | UUIDv7, hand-rolled in `:core:domain` |
 
 **Glance pins to the newest stable, and brings WorkManager with it.** Glance is
@@ -358,11 +365,38 @@ upgrade that reintroduces the network permission fails a test rather than
 shipping.
 
 **Reminder timing is deliberately inexact.** The end-of-day reminder fires
-within WorkManager's flex window (~15 min); the `SCHEDULE_EXACT_ALARM`
-permission (Android 12+, Play-policy scrutiny) is **deliberately avoided** —
-a "habits left today" nudge does not need exact delivery. The scheduled time
-just needs enough margin before the day boundary to absorb the flex window.
-Do not "upgrade" this to exact alarms.
+within WorkManager's flex window; the `SCHEDULE_EXACT_ALARM` permission
+(Android 12+, Play-policy scrutiny) is **deliberately avoided** — a "habits left
+today" nudge does not need exact delivery. The scheduled time just needs enough
+margin before the day boundary to absorb the delay. Do not "upgrade" this to
+exact alarms, and do not use `setExpedited` either, which pulls
+foreground-service behaviour into a background nudge.
+
+There is **no ceiling to state** on how late it can be, and an earlier version of
+this paragraph implied one by quoting "~15 min": WorkManager defers work under
+Doze and App Standby and does not wake a device to deliver it, so the window is a
+likelihood rather than a bound — the same correction docs/ux/widget.md §4 already
+carries about `updatePeriodMillis`. What *is* bounded is the damage: a wake that
+arrives after the day cutoff is refused rather than posted, because it would
+otherwise remind about a fresh logical day and consume that day's one reminder.
+docs/ux/reminder.md §1.
+
+**Two wakes, and they arm each other.** The reminder arms the rollover refresh
+and the rollover arms the reminder; neither re-enqueues its own unique work,
+because `enqueueUniqueWork` with `REPLACE` cancels a run in progress and a worker
+re-arming itself would cancel itself every time. `Application.onCreate` re-arms
+both, which is the chain's repair path. **The reminder does not use
+`androidx.hilt:hilt-work`**: a `Configuration.Provider` on the `Application`
+would govern Glance's `SessionWorker` too, so the widget's rendering path would
+sit behind a change made for the reminder. An `@EntryPoint` is used instead, the
+way `:widget` already reaches the graph. docs/ux/reminder.md §2.
+
+**WorkManager is pinned, not inherited.** Glance's pom asks for 2.7.1 (2021) and
+nothing else requested it, so that is what the widget shipped with; `:widget`
+takes Glance on `implementation`, so `:app` had to declare `work-runtime` to
+compile a worker at all. It is pinned to the newest stable, and the bump was
+measured against `ManifestPermissionTest` on its own, before any permission of
+this app's was added — both versions declare the same four.
 
 ## 8. Testing strategy
 

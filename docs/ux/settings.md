@@ -58,10 +58,24 @@ called *"changing the week start re-buckets a screen that is already open"*.
 Both settings look alike on this screen and behave differently underneath, so
 saying "prospective only" over both would be false about one of them.
 
-The reminder line admits what is not built. The time already feeds the mascot's
-`nearBoundary` mood (docs/ux/today-view.md §4), so the setting does something
-today — but the end-of-day notification it is named for does not exist yet, and
-copy that implied otherwise would be promising a notification that never comes.
+The reminder line names both things the time does, because as of 2026-08-21
+there are two: the mascot's `nearBoundary` mood
+([today-view.md](today-view.md) §4) and the end-of-day notification
+([reminder.md](reminder.md)). It used to admit the second was unbuilt, which was
+the right copy while it was.
+
+**And the row has a fourth state the other two cannot have: notifications
+switched off.** The time is still set, still drawn and still drives the mascot,
+so the screen looks entirely correct while the feature it is named for cannot
+happen — which is exactly the kind of silent half-working the honest copy above
+existed to avoid. So an error line appears under the row, with its own target
+that leads to the permission or to system settings.
+
+It is its **own** target and not a state on the row, because the row's tap
+already means "change the time" and that stays worth doing while notifications
+are off. [reminder.md](reminder.md) §3 has the rest, including why the copy names
+no permission and why the escalation is decided in the request callback rather
+than before it.
 
 ## 3. Pick, then confirm
 
@@ -543,9 +557,15 @@ cases where a count is zero get their own string rather than reading "0 added".
   row redrawing from the store is the feedback, and a snackbar on every tap
   would be noise. The failure path does speak. Worth revisiting only if the
   redraw ever stops being immediate.
-- **The reminder time has no notification behind it.** §2's copy is honest
-  about that, but honest copy is a stopgap for a setting that is half-wired.
-  It resolves with the WorkManager reminder (PRD §5, architecture §7).
+- **A muted channel is not detected.** *Resolved the bigger half of this
+  2026-08-21:* the reminder time now has a notification behind it
+  ([reminder.md](reminder.md)), and the row admits it when notifications are off.
+  What is left is narrower and still real — `areNotificationsEnabled()` does not
+  see notifications-on-but-this-channel-set-to-None, so the row would promise a
+  reminder that never arrives. Checking it needs the channel id, which belongs to
+  `:app`, and coupling this module to it for one edge case was declined. Recorded
+  here beside the 12/24-hour gap, which is recorded the same way for the same
+  kind of reason.
 - **An unreadable preferences file shows the defaults, not an error.**
   `SettingsSource.observe()` absorbs `IOException` into `emptyPreferences()`
   deliberately — a query bound to a guessed cutoff shows the wrong day's rows,
