@@ -641,9 +641,10 @@ journey is covered by `make itest`, so what is left here is the part that needs 
 real launcher: **pinning a widget requires the user**, so no test can place one.
 Decisions and reasoning are in [docs/ux/widget.md](ux/widget.md).
 
-- [ ] **It is offered at all.** (Automated: `WidgetHostTest` binds the provider
-      to a real `AppWidgetHost` and asserts Glance renders text into it, so a
-      failure here usually means the launcher rather than the app.)
+- [ ] **It is offered at all.** (`WidgetHostTest` covers provider binding and
+      that Glance renders — *not* launcher discovery, which nothing automated
+      reaches. So if that test passes and this step still fails, the launcher is
+      the thing to suspect; if it fails too, the problem is below the launcher.)
       Long-press the home screen → *Widgets* → **Gawi**
       → *Today*. If it is missing, the provider did not merge: read
       `app/build/intermediates/packaged_manifests/debug/.../AndroidManifest.xml`
