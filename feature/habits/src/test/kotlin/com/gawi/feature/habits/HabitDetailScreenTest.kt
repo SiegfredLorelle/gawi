@@ -9,13 +9,16 @@ import androidx.compose.ui.test.performClick
 import com.gawi.core.domain.model.HabitId
 import com.gawi.core.ui.streak.StreakUi
 import com.gawi.core.ui.theme.GawiTheme
+import com.gawi.feature.habits.testsupport.TODAY
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
+import java.time.LocalDate
 
 /**
  * What habit detail draws, and what its one action reports.
@@ -157,11 +160,135 @@ class HabitDetailScreenTest {
         compose.onNodeWithText(string(R.string.habits_detail_archived)).assertIsDisplayed()
     }
 
+    // ---- the retro strip and the honesty prompt ----
+
+    private fun cellLabel(back: Long, shut: Boolean = false, done: Boolean = false): String {
+        val day = TODAY.minusDays(back).dayOfMonth
+        val id = when {
+            shut -> R.string.habits_strip_shut
+            done -> R.string.habits_strip_done
+            else -> R.string.habits_strip_not_done
+        }
+        val label = resources.getString(id, day)
+        if (shut) return label
+        val action = string(if (done) R.string.habits_strip_undo else R.string.habits_strip_complete)
+        return "$label. $action"
+    }
+
+    /**
+     * The day outside the window is drawn, and tapping it does nothing at all.
+     *
+     * docs/ux/today-view.md §5: days outside the retro window are "drawn shut,
+     * not tapped and refused". Both halves are asserted, because either alone
+     * passes under the wrong implementation — a cell that is absent is also
+     * never tapped, and a cell that reports a rejection is also on screen.
+     */
+    @Test
+    fun theShutDay_isDrawnAndReportsNothing() {
+        val writes = mutableListOf<LocalDate>()
+        render(detail(), NO_ACTIONS.copy(onToggle = { _, date, _ -> writes += date }))
+
+        compose.onNodeWithContentDescription(cellLabel(back = 4, shut = true)).assertIsDisplayed()
+        compose.onNodeWithContentDescription(cellLabel(back = 4, shut = true)).performClick()
+
+        assertTrue(writes.isEmpty())
+        compose.onNodeWithText(string(R.string.habits_retro_title)).assertDoesNotExist()
+    }
+
+    /**
+     * A past day asks before it writes, and asking is not writing.
+     *
+     * PRD §6.4 wants retroactive edits to carry deliberate friction. The write
+     * being absent at this point is the whole assertion: a prompt that appeared
+     * *after* the log had already changed would be theatre.
+     */
+    @Test
+    fun aPastDay_promptsBeforeItWrites() {
+        val writes = mutableListOf<LocalDate>()
+        render(detail(), NO_ACTIONS.copy(onToggle = { _, date, _ -> writes += date }))
+
+        compose.onNodeWithContentDescription(cellLabel(back = 2)).performClick()
+
+        compose.onNodeWithText(string(R.string.habits_retro_body)).assertIsDisplayed()
+        assertTrue(writes.isEmpty())
+    }
+
+    /** Confirming writes to the cell's own date, not to today. */
+    @Test
+    fun confirmingThePrompt_writesToThatCellsDate() {
+        var written: Pair<LocalDate, Boolean>? = null
+        render(detail(), NO_ACTIONS.copy(onToggle = { _, date, completed -> written = date to completed }))
+
+        compose.onNodeWithContentDescription(cellLabel(back = 2)).performClick()
+        compose.onNodeWithText(string(R.string.habits_retro_confirm)).performClick()
+
+        assertEquals(TODAY.minusDays(2) to false, written)
+        compose.onNodeWithText(string(R.string.habits_retro_body)).assertDoesNotExist()
+    }
+
+    /**
+     * Cancelling means nothing happened.
+     *
+     * The prompt is UI friction with nothing enforcing it (architecture §5), so
+     * dismissing has to leave the log untouched rather than defer a write.
+     */
+    @Test
+    fun dismissingThePrompt_writesNothing() {
+        val writes = mutableListOf<LocalDate>()
+        render(detail(), NO_ACTIONS.copy(onToggle = { _, date, _ -> writes += date }))
+
+        compose.onNodeWithContentDescription(cellLabel(back = 2)).performClick()
+        compose.onNodeWithText(string(R.string.habits_cancel)).performClick()
+
+        assertTrue(writes.isEmpty())
+        compose.onNodeWithText(string(R.string.habits_retro_body)).assertDoesNotExist()
+    }
+
+    /**
+     * Un-completing a past day prompts too.
+     *
+     * PRD §5 says "editing a past day" triggers the confirmation, and removing a
+     * completion is as much a rewrite of the record as adding one. §6.4's
+     * frictionless case is same-day undo, which is the next test.
+     */
+    @Test
+    fun undoingAPastDay_promptsAsWell() {
+        var written: Pair<LocalDate, Boolean>? = null
+        render(
+            detail(strip = strip(completed = setOf(TODAY.minusDays(2)))),
+            NO_ACTIONS.copy(onToggle = { _, date, completed -> written = date to completed }),
+        )
+
+        compose.onNodeWithContentDescription(cellLabel(back = 2, done = true)).performClick()
+        compose.onNodeWithText(string(R.string.habits_retro_body)).assertIsDisplayed()
+        compose.onNodeWithText(string(R.string.habits_retro_confirm)).performClick()
+
+        // completed = true, so the ViewModel undoes rather than adds.
+        assertEquals(TODAY.minusDays(2) to true, written)
+    }
+
+    /**
+     * Today writes straight through, with no prompt.
+     *
+     * PRD §6.4: "same-day undo is frictionless". A prompt here would put
+     * friction on the flow the whole app is built around.
+     */
+    @Test
+    fun todaysCell_writesWithoutAsking() {
+        var written: Pair<LocalDate, Boolean>? = null
+        render(detail(), NO_ACTIONS.copy(onToggle = { _, date, completed -> written = date to completed }))
+
+        compose.onNodeWithContentDescription(cellLabel(back = 0)).performClick()
+
+        assertEquals(TODAY to false, written)
+        compose.onNodeWithText(string(R.string.habits_retro_body)).assertDoesNotExist()
+    }
+
     private companion object {
         val HABIT = HabitId("00000000-0000-7000-8000-000000000001")
         val OTHER = HabitId("00000000-0000-7000-8000-000000000002")
 
-        val NO_ACTIONS = HabitDetailActions(onEdit = {}, onBack = {})
+        val NO_ACTIONS = HabitDetailActions(onEdit = {}, onToggle = { _, _, _ -> }, onBack = {})
 
         /**
          * Suppressed here for the reason the fixture builders elsewhere are: every
@@ -177,6 +304,7 @@ class HabitDetailScreenTest {
             completedToday: Boolean = false,
             weekProgress: HabitWeekProgress? = null,
             streak: StreakUi = StreakUi.None,
+            strip: List<RetroCellUi> = strip(),
         ) = HabitDetailUiState.Detail(
             id = id,
             name = name,
@@ -188,6 +316,27 @@ class HabitDetailScreenTest {
             completedToday = completedToday,
             weekProgress = weekProgress,
             streak = streak,
+            strip = strip,
         )
+
+        /**
+         * Five cells ending on [TODAY], with `today - 4` shut, exactly as the
+         * mapper builds them. Built here rather than by calling the mapper so a
+         * screen test stays a statement about drawing and not about mapping.
+         */
+        fun strip(completed: Set<LocalDate> = emptySet(), notes: Map<LocalDate, String> = emptyMap()) = (0L..4L).reversed().map { back ->
+            val date = TODAY.minusDays(back)
+            RetroCellUi(
+                date = date,
+                dayLabel = R.string.habits_day_mon,
+                dayOfMonth = date.dayOfMonth,
+                completed = date in completed,
+                note = notes[date],
+                open = back <= RETRO_WINDOW,
+                isToday = back == 0L,
+            )
+        }
+
+        const val RETRO_WINDOW = 3L
     }
 }

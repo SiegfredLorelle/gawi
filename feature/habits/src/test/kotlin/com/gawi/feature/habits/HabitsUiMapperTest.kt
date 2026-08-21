@@ -4,7 +4,10 @@ import androidx.compose.ui.graphics.Color
 import com.gawi.core.domain.model.Schedule
 import com.gawi.core.ui.streak.StreakUi
 import com.gawi.core.ui.theme.HabitPalette
+import com.gawi.feature.habits.testsupport.TODAY
 import com.gawi.feature.habits.testsupport.broken
+import com.gawi.feature.habits.testsupport.daysAgo
+import com.gawi.feature.habits.testsupport.habitDetail
 import com.gawi.feature.habits.testsupport.habitId
 import com.gawi.feature.habits.testsupport.habitState
 import com.gawi.feature.habits.testsupport.running
@@ -171,8 +174,8 @@ class HabitsUiMapperTest {
      */
     @Test
     fun `a detail streak is counted in the habit's own unit`() {
-        val daily = todayHabit(habitState(schedule = Schedule.Daily), streak = running(4))
-        val weekly = todayHabit(habitState(schedule = Schedule.Weekly(3)), streak = running(4))
+        val daily = habitDetail(todayHabit(habitState(schedule = Schedule.Daily), streak = running(4)))
+        val weekly = habitDetail(todayHabit(habitState(schedule = Schedule.Weekly(3)), streak = running(4)))
 
         assertEquals(StreakUi.Days(4), daily.toDetailUiState().streak)
         assertEquals(StreakUi.Weeks(4), weekly.toDetailUiState().streak)
@@ -180,7 +183,7 @@ class HabitsUiMapperTest {
 
     @Test
     fun `a broken detail streak keeps what was lost`() {
-        val habit = todayHabit(habitState(schedule = Schedule.Daily), streak = broken(previous = 4))
+        val habit = habitDetail(todayHabit(habitState(schedule = Schedule.Daily), streak = broken(previous = 4)))
 
         assertEquals(StreakUi.Broken(previous = 4, weekly = false), habit.toDetailUiState().streak)
     }
@@ -188,8 +191,8 @@ class HabitsUiMapperTest {
     /** Only a weekly habit carries week progress — the Today row's rule, kept in step. */
     @Test
     fun `only a weekly habit carries week progress on detail`() {
-        val weekly = todayHabit(habitState(schedule = Schedule.Weekly(3)), weekCount = 2)
-        val daily = todayHabit(habitState(schedule = Schedule.Daily), weekCount = 2)
+        val weekly = habitDetail(todayHabit(habitState(schedule = Schedule.Weekly(3)), weekCount = 2))
+        val daily = habitDetail(todayHabit(habitState(schedule = Schedule.Daily), weekCount = 2))
 
         assertEquals(HabitWeekProgress(done = 2, target = 3), weekly.toDetailUiState().weekProgress)
         assertNull(daily.toDetailUiState().weekProgress)
@@ -204,14 +207,84 @@ class HabitsUiMapperTest {
      */
     @Test
     fun `a blank tag is dropped rather than drawn`() {
-        assertNull(todayHabit(habitState(tag = "  ")).toDetailUiState().tag)
-        assertEquals("focus", todayHabit(habitState(tag = "focus")).toDetailUiState().tag)
+        assertNull(habitDetail(todayHabit(habitState(tag = "  "))).toDetailUiState().tag)
+        assertEquals("focus", habitDetail(todayHabit(habitState(tag = "focus"))).toDetailUiState().tag)
     }
 
     /** Detail shows archived habits, so the flag has to survive the mapping. */
     @Test
     fun `detail carries the archived flag rather than hiding the habit`() {
-        assertTrue(todayHabit(habitState(archived = true)).toDetailUiState().archived)
-        assertFalse(todayHabit(habitState(archived = false)).toDetailUiState().archived)
+        assertTrue(habitDetail(todayHabit(habitState(archived = true))).toDetailUiState().archived)
+        assertFalse(habitDetail(todayHabit(habitState(archived = false))).toDetailUiState().archived)
+    }
+
+    /**
+     * The strip is five cells: the writable window, plus the day drawn shut.
+     *
+     * docs/ux/today-view.md §5 wants the limit readable before it is hit, which
+     * needs one refused day on screen. Four cells would draw only legal writes
+     * and say nothing about the edge; six would start being the Phase 1 heatmap.
+     */
+    @Test
+    fun `the strip runs from the shut day to today`() {
+        val strip = habitDetail().toDetailUiState().strip
+
+        assertEquals((0L..4L).map { daysAgo(it) }.reversed(), strip.map { it.date })
+        assertEquals(TODAY, strip.last().date)
+        assertTrue(strip.last().isToday)
+    }
+
+    /**
+     * Exactly the oldest cell is shut, and the boundary is the domain's own.
+     *
+     * `Commands.addCompletion` accepts `today - 3` and rejects `today - 4`, so
+     * those are the two cells worth naming: one either side of the rule the
+     * strip exists to make visible.
+     */
+    @Test
+    fun `only the day outside the retro window is drawn shut`() {
+        val strip = habitDetail().toDetailUiState().strip.associateBy { it.date }
+
+        assertFalse(strip.getValue(daysAgo(4)).open)
+        assertTrue(strip.getValue(daysAgo(3)).open)
+        assertTrue(strip.getValue(TODAY).open)
+        assertEquals(1, strip.values.count { !it.open })
+    }
+
+    /** A refused day still reports whether it was done. It is shut, not hidden. */
+    @Test
+    fun `a shut day still shows that it was completed`() {
+        val detail = habitDetail(recent = mapOf(daysAgo(4) to null))
+
+        val shut = detail.toDetailUiState().strip.single { it.date == daysAgo(4) }
+        assertFalse(shut.open)
+        assertTrue(shut.completed)
+    }
+
+    /**
+     * Absent means not completed; a null value means completed with no note.
+     *
+     * The read maps a cell with a cleared note to null, so conflating the two
+     * would draw a day someone had deliberately un-annotated as a day they had
+     * never done.
+     */
+    @Test
+    fun `a completed day with no note is not the same as a missing day`() {
+        val detail = habitDetail(recent = mapOf(daysAgo(1) to null, daysAgo(2) to "went far"))
+        val strip = detail.toDetailUiState().strip.associateBy { it.date }
+
+        assertTrue(strip.getValue(daysAgo(1)).completed)
+        assertNull(strip.getValue(daysAgo(1)).note)
+        assertTrue(strip.getValue(daysAgo(2)).completed)
+        assertEquals("went far", strip.getValue(daysAgo(2)).note)
+        assertFalse(strip.getValue(daysAgo(3)).completed)
+    }
+
+    /** Only today is today, whatever else is completed. */
+    @Test
+    fun `exactly one cell is today`() {
+        val strip = habitDetail().toDetailUiState().strip
+
+        assertEquals(listOf(TODAY), strip.filter { it.isToday }.map { it.date })
     }
 }

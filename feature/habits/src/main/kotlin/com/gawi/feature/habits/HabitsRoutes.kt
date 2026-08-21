@@ -117,9 +117,9 @@ fun HabitEditorRoute(habitId: String?, onCreated: (String) -> Unit, onSaved: () 
  * [onEdit] hands the id back rather than closing over the one passed in, so
  * what is edited is the habit the screen is actually showing.
  *
- * No `SnackbarHostState` collection loop: nothing on this screen writes yet, so
- * there are no rejections to report. The host is still created and passed, so
- * the retro strip and the note sheet have somewhere to put theirs.
+ * The strip writes, so rejections are collected and shown here the same way the
+ * list's are. `CompletionNotFound` and the rest are reachable from this screen
+ * now, which is why `messageFor` gives them real copy.
  */
 @Composable
 fun HabitDetailRoute(habitId: String, onEdit: (String) -> Unit, onBack: () -> Unit) {
@@ -129,11 +129,19 @@ fun HabitDetailRoute(habitId: String, onEdit: (String) -> Unit, onBack: () -> Un
         )
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val resources = LocalResources.current
+
+    LaunchedEffect(viewModel) {
+        viewModel.events.collect { message ->
+            snackbarHostState.showSnackbar(resources.getString(message.text))
+        }
+    }
 
     HabitDetailScreen(
         state = state,
         actions = HabitDetailActions(
             onEdit = { id -> onEdit(id.value) },
+            onToggle = viewModel::onToggle,
             onBack = onBack,
         ),
         snackbarHostState = snackbarHostState,

@@ -1,11 +1,14 @@
 package com.gawi.feature.habits
 
-import com.gawi.core.data.model.TodayHabit
+import androidx.annotation.StringRes
+import com.gawi.core.data.model.HabitDetail
+import com.gawi.core.domain.command.Commands
 import com.gawi.core.domain.model.Schedule
 import com.gawi.core.domain.projection.HabitState
 import com.gawi.core.ui.streak.toUi
 import com.gawi.core.ui.theme.HabitPalette
 import com.gawi.core.ui.theme.parseHabitColor
+import java.time.DayOfWeek
 
 /**
  * The read model as the habits screens draw it.
@@ -65,30 +68,81 @@ internal fun newHabitForm(): HabitEditorUiState.Form = HabitEditorUiState.Form(
 /**
  * One habit, as detail draws it.
  *
- * Reads a `TodayHabit` rather than a `HabitState`, which is what makes the
- * streak and the week count available at all — the management list's
- * `observeAllHabits` carries neither. `TodayHabit`'s own KDoc anticipated this:
- * detail reads the same shape as the Today row and differs only in that asking
- * for one habit by id can see an archived one, since unarchiving has to be
- * reachable.
+ * Reads a `HabitDetail` rather than a `HabitState`, which is what makes the
+ * streak, the week count and the strip available at all — the management list's
+ * `observeAllHabits` carries none of them. Detail sees archived habits where the
+ * Today list does not, since unarchiving has to stay reachable.
  *
  * The week-progress rule is Today's, deliberately: docs/ux/today-view.md §5
  * says only a weekly habit draws "2/3 this week", and a detail screen that
  * disagreed with the row that led to it would be its own bug.
  */
-internal fun TodayHabit.toDetailUiState(): HabitDetailUiState.Detail = HabitDetailUiState.Detail(
-    id = habit.id,
-    name = habit.name,
-    icon = habit.icon,
-    iconTint = parseHabitColor(habit.color),
-    schedule = habit.schedule.toUi(),
+internal fun HabitDetail.toDetailUiState(): HabitDetailUiState.Detail = HabitDetailUiState.Detail(
+    id = habit.habit.id,
+    name = habit.habit.name,
+    icon = habit.habit.icon,
+    iconTint = parseHabitColor(habit.habit.color),
+    schedule = habit.habit.schedule.toUi(),
     // Blank to null, the same translation toForm does in the other direction.
-    tag = habit.tag?.takeUnless { it.isBlank() },
-    archived = habit.archived,
-    completedToday = completedToday,
-    weekProgress = when (val schedule = habit.schedule) {
+    tag = habit.habit.tag?.takeUnless { it.isBlank() },
+    archived = habit.habit.archived,
+    completedToday = habit.completedToday,
+    weekProgress = when (val schedule = habit.habit.schedule) {
         Schedule.Daily -> null
-        is Schedule.Weekly -> HabitWeekProgress(done = weekCount, target = schedule.timesPerWeek)
+        is Schedule.Weekly -> HabitWeekProgress(done = habit.weekCount, target = schedule.timesPerWeek)
     },
-    streak = streak.toUi(habit.schedule),
+    streak = habit.streak.toUi(habit.habit.schedule),
+    strip = toStrip(),
 )
+
+/**
+ * The retro strip: every day from the oldest drawn to today, in order.
+ *
+ * Built from the read's own `today` and its own window, never from a date
+ * resolved here. `stripStart` is one day older than the oldest writable day, so
+ * exactly one cell comes back shut — docs/ux/today-view.md §5 wants the rule
+ * readable before it is hit, which needs a refused day on screen.
+ *
+ * `open` is decided against `Commands.RETRO_WINDOW_DAYS`, the same constant the
+ * domain rejects with, so what the strip offers and what a tap is allowed to do
+ * cannot drift apart.
+ *
+ * A missing key in `recent` is "not completed"; a null value is "completed, no
+ * note". Conflating them would draw a cleared note as a missing day.
+ */
+private fun HabitDetail.toStrip(): List<RetroCellUi> {
+    val oldestOpen = today.minusDays(Commands.RETRO_WINDOW_DAYS)
+    return generateSequence(stripStart) { day -> day.plusDays(1) }
+        .takeWhile { day -> !day.isAfter(today) }
+        .map { day ->
+            RetroCellUi(
+                date = day,
+                dayLabel = labelFor(day.dayOfWeek),
+                dayOfMonth = day.dayOfMonth,
+                completed = recent.containsKey(day),
+                note = recent[day],
+                open = !day.isBefore(oldestOpen),
+                isToday = day == today,
+            )
+        }
+        .toList()
+}
+
+/**
+ * A weekday's short label, from resources rather than `DayOfWeek`.
+ *
+ * `getDisplayName` would read the JVM's locale rather than the app's resource
+ * configuration, so a device set to one language could draw the strip in
+ * another. `:feature:settings` resolves its day names the same way and for the
+ * same reason.
+ */
+@StringRes
+internal fun labelFor(day: DayOfWeek): Int = when (day) {
+    DayOfWeek.MONDAY -> R.string.habits_day_mon
+    DayOfWeek.TUESDAY -> R.string.habits_day_tue
+    DayOfWeek.WEDNESDAY -> R.string.habits_day_wed
+    DayOfWeek.THURSDAY -> R.string.habits_day_thu
+    DayOfWeek.FRIDAY -> R.string.habits_day_fri
+    DayOfWeek.SATURDAY -> R.string.habits_day_sat
+    DayOfWeek.SUNDAY -> R.string.habits_day_sun
+}

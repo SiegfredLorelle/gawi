@@ -1,5 +1,6 @@
 package com.gawi.feature.habits.testsupport
 
+import com.gawi.core.data.model.HabitDetail
 import com.gawi.core.data.model.TodayHabit
 import com.gawi.core.domain.model.HabitId
 import com.gawi.core.domain.model.Schedule
@@ -13,6 +14,8 @@ import java.time.LocalDate
  * `HabitState`, where Today's builds read-model rows and the core modules' build
  * events and commands.
  */
+fun habitId(n: Int): HabitId = HabitId("00000000-0000-7000-8000-" + n.toString(16).padStart(12, '0'))
+
 /**
  * The logical date the detail tests read against.
  *
@@ -20,8 +23,6 @@ import java.time.LocalDate
  * Tue 19, Sat 16 is the oldest open day and Fri 15 is the one drawn shut.
  */
 val TODAY: LocalDate = LocalDate.parse("2026-08-18")
-
-fun habitId(n: Int): HabitId = HabitId("00000000-0000-7000-8000-" + n.toString(16).padStart(12, '0'))
 
 /**
  * Suppressed at the declaration: a fixture builder's parameters are its whole
@@ -72,3 +73,15 @@ fun running(current: Int): StreakSnapshot = StreakSnapshot(current = current, pr
 /** A run of [previous] that has since been lost, and reads zero as of [brokenOn]. */
 fun broken(previous: Int, brokenOn: LocalDate = LocalDate.parse("2026-08-16")): StreakSnapshot =
     StreakSnapshot(current = 0, previous = previous, brokenOn = brokenOn)
+
+/**
+ * What `observeHabitDetail` returns.
+ *
+ * [today] defaults to [TODAY] and [recent] to nothing completed, so a test that
+ * is about the header says nothing about the strip and vice versa.
+ */
+fun habitDetail(habit: TodayHabit = todayHabit(), today: LocalDate = TODAY, recent: Map<LocalDate, String?> = emptyMap()): HabitDetail =
+    HabitDetail(habit = habit, today = today, recent = recent)
+
+/** [TODAY] minus [back] days, for naming strip cells by their distance from today. */
+fun daysAgo(back: Long): LocalDate = TODAY.minusDays(back)

@@ -87,10 +87,44 @@
     <string name="habits_detail_streak_was_days">was %d</string>
     <string name="habits_detail_streak_was_weeks">was %dw</string>
 
-    <!-- Rejections. The domain rejects a blank name and nothing else about a
-         habit's metadata, so the third is a backstop for errors this module
-         cannot actually produce rather than copy anyone should see. -->
+    <!-- The retro strip (PRD §5's three-day window, docs/ux/today-view.md §5).
+         Short weekday labels, from resources rather than DayOfWeek.getDisplayName,
+         which reads the JVM locale instead of the app's configuration. -->
+    <string name="habits_day_mon">M</string>
+    <string name="habits_day_tue">T</string>
+    <string name="habits_day_wed">W</string>
+    <string name="habits_day_thu">T</string>
+    <string name="habits_day_fri">F</string>
+    <string name="habits_day_sat">S</string>
+    <string name="habits_day_sun">S</string>
+
+    <string name="habits_strip_title">Recent days</string>
+    <!-- Spoken labels. The date is the subject, so it leads; the two initials
+         M and T repeat across the week and cannot identify a cell on their own. -->
+    <string name="habits_strip_done">Day %1$d, done</string>
+    <string name="habits_strip_not_done">Day %1$d, not done</string>
+    <string name="habits_strip_shut">Day %1$d, too old to change</string>
+    <string name="habits_strip_complete">Mark done</string>
+    <string name="habits_strip_undo">Mark not done</string>
+    <string name="habits_strip_note">Note</string>
+
+    <!-- The honesty prompt. PRD §5 fixes this wording; §6.4 wants retroactive
+         edits to carry deliberate friction while staying possible. It is UI
+         friction only - architecture §5 is explicit that the window is a
+         command validation and this prompt has nothing enforcing it. -->
+    <string name="habits_retro_title">Logging for a previous day</string>
+    <string name="habits_retro_body">You\'re logging for a previous day — make sure this is accurate. Be true to yourself.</string>
+    <string name="habits_retro_confirm">Log it</string>
+
+    <!-- Rejections. All six CommandErrors are reachable from this module now
+         that the retro strip writes completions; before it, the four completion
+         errors could not arrive here at all. -->
     <string name="habits_error_blank_name">Give the habit a name before saving.</string>
     <string name="habits_error_habit_missing">That habit no longer exists.</string>
+    <string name="habits_error_archived">Bring this habit back before changing it.</string>
+    <!-- Reachable only if the day rolls over between the strip being drawn and
+         a tap landing, so it names the limit rather than blaming the tap. -->
+    <string name="habits_error_retro_window">You can only change the last few days.</string>
+    <string name="habits_error_completion_missing">That day is no longer logged.</string>
     <string name="habits_error_unexpected">That did not work. Try again.</string>
 </resources>
