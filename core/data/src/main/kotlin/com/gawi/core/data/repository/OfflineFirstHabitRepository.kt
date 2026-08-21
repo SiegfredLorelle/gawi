@@ -334,7 +334,7 @@ internal class OfflineFirstHabitRepository @Inject constructor(
         // Unconditionally, including when nothing was inserted: the guard above
         // is about whether the *fold* can be reused, and a widget that is
         // already correct is cheap to redraw, where one left stale is silent.
-        projectionListener.onProjectionChanged()
+        announceProjectionChanged()
         added
     }
 
@@ -564,8 +564,31 @@ internal class OfflineFirstHabitRepository @Inject constructor(
             // anyway and the user has just tapped, whereas notifying outside the
             // lock means doing it at every committing call site and losing the
             // single-place property architecture §4 relies on.
-            projectionListener.onProjectionChanged()
+            announceProjectionChanged()
         }
+    }
+
+    /**
+     * Tells the listener the read model moved, and **cannot fail the write that
+     * moved it.**
+     *
+     * The guard is here rather than only in the implementation, because the
+     * invariant belongs to the call site: this runs after the commit, inside
+     * `NonCancellable`, so a throw would propagate out of a command that had
+     * already succeeded and report a written event as a failure. That is not
+     * hypothetical — a `NoClassDefFoundError` out of the Glance listener did
+     * exactly that, and left a habit editor looking as though Save were dead
+     * (docs/ux/widget.md §5). Fixing it only inside that implementation left the
+     * rule enforced by convention, so a second listener, or an edit narrowing
+     * its catch, would bring the bug back.
+     *
+     * `runCatching` rather than a typed catch: `Error` is the class that escaped
+     * last time. Nothing is logged — `:core:data` has no logger by design — so
+     * an implementation that wants to report a failed push logs it itself, which
+     * `GlanceProjectionListener` does.
+     */
+    private suspend fun announceProjectionChanged() {
+        runCatching { projectionListener.onProjectionChanged() }
     }
 
     private fun todayFor(now: Instant, settings: UserSettings): LocalDate = logicalDate(now, settings.dayCutoff, clock.zone())
