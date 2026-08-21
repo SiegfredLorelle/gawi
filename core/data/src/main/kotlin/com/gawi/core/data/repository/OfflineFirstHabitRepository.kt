@@ -556,6 +556,14 @@ internal class OfflineFirstHabitRepository @Inject constructor(
             // case that leaves the home screen showing the opposite of the log.
             // The same lesson the zero-byte export taught, in the direction
             // where NonCancellable can actually help — the work has started.
+            //
+            // It is also inside the mutex, and what it awaits is not free: the
+            // Glance implementation does a DataStore read and a WorkManager
+            // enqueue, so a slow session start delays the next command. Accepted
+            // rather than unnoticed. Taps are serialised through this mutex
+            // anyway and the user has just tapped, whereas notifying outside the
+            // lock means doing it at every committing call site and losing the
+            // single-place property architecture §4 relies on.
             projectionListener.onProjectionChanged()
         }
     }
