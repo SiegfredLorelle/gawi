@@ -3,6 +3,7 @@ package com.gawi.app.reminder
 import android.content.Context
 import android.util.Log
 import androidx.work.CoroutineWorker
+import androidx.work.ExistingWorkPolicy
 import androidx.work.WorkerParameters
 import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.currentCoroutineContext
@@ -56,7 +57,10 @@ internal class RolloverWorker(context: Context, parameters: WorkerParameters) : 
             Log.w(TAG, "the day-rollover refresh failed", cause)
         }
 
-        entryPoint.reminderScheduler().armReminder()
+        // KEEP, never REPLACE: this must not cancel the other wake, only
+        // ensure one exists. See ReminderScheduler's KDoc — REPLACE here
+        // destroyed an overdue reminder wake that was about to re-arm this one.
+        entryPoint.reminderScheduler().armReminder(ExistingWorkPolicy.KEEP)
         return Result.success()
     }
 }

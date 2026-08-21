@@ -84,14 +84,14 @@ class ReminderSchedulerTest {
 
     @Test
     fun `arming the reminder enqueues it under its own name`() = runTest {
-        scheduler.armReminder()
+        scheduler.armReminder(ExistingWorkPolicy.REPLACE)
 
         assertEquals(listOf(WorkInfo.State.ENQUEUED), stateOf(REMINDER_WORK))
     }
 
     @Test
     fun `arming the rollover enqueues it under its own name`() = runTest {
-        scheduler.armRollover()
+        scheduler.armRollover(ExistingWorkPolicy.REPLACE)
 
         assertEquals(listOf(WorkInfo.State.ENQUEUED), stateOf(ROLLOVER_WORK))
     }
@@ -103,8 +103,8 @@ class ReminderSchedulerTest {
      */
     @Test
     fun `the reminder and the rollover are separate work`() = runTest {
-        scheduler.armReminder()
-        scheduler.armRollover()
+        scheduler.armReminder(ExistingWorkPolicy.REPLACE)
+        scheduler.armRollover(ExistingWorkPolicy.REPLACE)
 
         assertEquals(listOf(WorkInfo.State.ENQUEUED), stateOf(REMINDER_WORK))
         assertEquals(listOf(WorkInfo.State.ENQUEUED), stateOf(ROLLOVER_WORK))
@@ -123,7 +123,7 @@ class ReminderSchedulerTest {
      */
     @Test
     fun `the reminder is armed for the reminder time and not for now`() = runTest {
-        scheduler.armReminder()
+        scheduler.armReminder(ExistingWorkPolicy.REPLACE)
 
         val expected = check.untilNextReminder().toMillis()
         val actual = delayOf(REMINDER_WORK)
@@ -133,7 +133,7 @@ class ReminderSchedulerTest {
 
     @Test
     fun `the rollover is armed for the day boundary and not for now`() = runTest {
-        scheduler.armRollover()
+        scheduler.armRollover(ExistingWorkPolicy.REPLACE)
 
         val expected = check.untilNextCutoff().toMillis()
         val actual = delayOf(ROLLOVER_WORK)
@@ -148,7 +148,7 @@ class ReminderSchedulerTest {
      */
     @Test
     fun `keep does not move a wake that is already armed`() = runTest {
-        scheduler.armReminder()
+        scheduler.armReminder(ExistingWorkPolicy.REPLACE)
         val armedFor = delayOf(REMINDER_WORK)
 
         settings.update { it.copy(reminderTime = LocalTime.of(6, 30)) }
@@ -165,13 +165,51 @@ class ReminderSchedulerTest {
     @Test
     fun `replace moves the wake when the reminder time changes`() = runTest {
         settings.update { it.copy(reminderTime = LocalTime.of(23, 30)) }
-        scheduler.armReminder()
+        scheduler.armReminder(ExistingWorkPolicy.REPLACE)
         val before = delayOf(REMINDER_WORK)
 
         settings.update { it.copy(reminderTime = LocalTime.of(6, 30)) }
         scheduler.armReminder(ExistingWorkPolicy.REPLACE)
 
         assertTrue("the wake did not move: $before vs ${delayOf(REMINDER_WORK)}", before != delayOf(REMINDER_WORK))
+    }
+
+    /**
+     * The regression test for the hole `/code-review` found.
+     *
+     * A reminder wake deferred past the cutoff runs late, decides correctly to stay
+     * silent, and then arms the rollover — and with `REPLACE` that **destroyed the
+     * overdue rollover work which was about to re-arm the reminder**, so nothing was
+     * left under the reminder's name and that whole day's reminder was lost. The
+     * workers use `KEEP` for exactly this reason.
+     *
+     * Stated as the property that matters: arming with `KEEP` leaves a wake that is
+     * already pending exactly where it was, delay included. Switching either
+     * worker back to `REPLACE` reddens this.
+     */
+    @Test
+    fun `arming with keep leaves an already-pending wake untouched`() = runTest {
+        settings.update { it.copy(dayCutoff = LocalTime.of(4, 0)) }
+        scheduler.armRollover(ExistingWorkPolicy.REPLACE)
+        val overdue = delayOf(ROLLOVER_WORK)
+
+        // What ReminderWorker does at the end of a late run.
+        settings.update { it.copy(dayCutoff = LocalTime.of(23, 0)) }
+        scheduler.armRollover(ExistingWorkPolicy.KEEP)
+
+        assertEquals(listOf(WorkInfo.State.ENQUEUED), stateOf(ROLLOVER_WORK))
+        assertEquals("the pending wake was replaced, not kept", overdue, delayOf(ROLLOVER_WORK))
+    }
+
+    /**
+     * And KEEP still arms when nothing is pending, which is the other half — a
+     * policy that only ever preserved would end the chain after one run.
+     */
+    @Test
+    fun `arming with keep still arms when nothing is pending`() = runTest {
+        scheduler.armReminder(ExistingWorkPolicy.KEEP)
+
+        assertEquals(listOf(WorkInfo.State.ENQUEUED), stateOf(REMINDER_WORK))
     }
 
     private companion object {

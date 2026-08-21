@@ -53,16 +53,31 @@ private const val ROLLOVER_WORK = "gawi.reminder.day-rollover"
  * own `doWork` to run inside a cancelled coroutine and its completion to be
  * recorded as `CANCELLED`. Correct-looking and racy.
  *
- * Arming the other name has no such race, because the other name is provably not
- * running: the reminder falls strictly inside a logical day and the cutoff ends
- * it, so the two never coincide except when a user sets the reminder time exactly
- * equal to the cutoff — and [com.gawi.core.domain.time.reminderOn] resolves that
- * to the day's *start*, which leaves them a whole day apart rather than together.
+ * **The workers therefore arm with [ExistingWorkPolicy.KEEP], not `REPLACE`, and
+ * that is the second half of the design rather than a detail.** KEEP means "make
+ * sure the other wake exists", and it cannot cancel anything: pending work is
+ * left where it is, and completed work is not pending, so the next occurrence is
+ * enqueued normally. A first draft used `REPLACE` here and had a real hole in it.
+ * A reminder wake deferred past the cutoff — device off overnight — runs late,
+ * correctly decides to stay silent, and then **replaced the overdue rollover work
+ * that was about to re-arm it**, so nothing was left under the reminder's name and
+ * that whole day's reminder was lost. With KEEP the overdue rollover survives,
+ * runs, and re-arms the reminder for that evening. Found by `/code-review`.
+ *
+ * KEEP also removes a race the first draft's KDoc claimed was impossible. It said
+ * the other name is provably not running, because the reminder falls strictly
+ * inside a logical day and the cutoff ends it — and that a reminder set equal to
+ * the cutoff would leave them "a whole day apart". **That was wrong**: day `D + 1`'s
+ * start *is* day `D`'s boundary, so equal times make both wakes fall on the same
+ * instant, and with `REPLACE` each worker would have cancelled the other mid-run.
+ * `:feature:settings` now refuses that combination and `ReminderCheck` refuses to
+ * act on a stored one, but KEEP is what makes the coincidence harmless rather than
+ * merely unlikely.
  *
  * The chain therefore alternates: 21:00 arms midnight, midnight arms 21:00. If
- * either link is ever lost — a cancelled worker, a cleared app, a WorkManager
- * database migration — [start] re-arms both on the next process start, so the
- * chain has a repair path that does not depend on itself.
+ * either link is ever lost — a cleared app, a WorkManager database migration —
+ * [start] re-arms both on the next process start, so the chain has a repair path
+ * that does not depend on itself.
  */
 @Singleton
 class ReminderScheduler @Inject constructor(
@@ -118,13 +133,19 @@ class ReminderScheduler @Inject constructor(
         armRollover(policy)
     }
 
-    /** Arms the next reminder. Called by [RolloverWorker], never by [ReminderWorker]. */
-    suspend fun armReminder(policy: ExistingWorkPolicy = ExistingWorkPolicy.REPLACE) {
+    /**
+     * Arms the next reminder. Called by [RolloverWorker], never by [ReminderWorker].
+     *
+     * No default policy, deliberately: the two callers want opposite things — a
+     * worker wants [ExistingWorkPolicy.KEEP] and a settings edit wants `REPLACE` —
+     * and a default would let the wrong one be picked by omission.
+     */
+    suspend fun armReminder(policy: ExistingWorkPolicy) {
         enqueue(REMINDER_WORK, ReminderWorker::class.java, policy) { check.untilNextReminder() }
     }
 
     /** Arms the next rollover refresh. Called by [ReminderWorker], never by [RolloverWorker]. */
-    suspend fun armRollover(policy: ExistingWorkPolicy = ExistingWorkPolicy.REPLACE) {
+    suspend fun armRollover(policy: ExistingWorkPolicy) {
         enqueue(ROLLOVER_WORK, RolloverWorker::class.java, policy) { check.untilNextCutoff() }
     }
 
