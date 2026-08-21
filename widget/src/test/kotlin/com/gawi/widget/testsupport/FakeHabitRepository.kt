@@ -1,6 +1,7 @@
 package com.gawi.widget.testsupport
 
 import com.gawi.core.data.model.HabitDetail
+import com.gawi.core.data.model.TodayHabit
 import com.gawi.core.data.model.TodaySnapshot
 import com.gawi.core.data.repository.HabitRepository
 import com.gawi.core.domain.command.CommandResult
@@ -72,6 +73,8 @@ class FakeHabitRepository(
         error("not reached by the widget")
 
     override fun observeAllHabits(): Flow<List<HabitState>> = error("not reached by the widget")
+
+    override fun observeHabit(habitId: HabitId): Flow<TodayHabit?> = error("not reached by the widget")
 
     override fun observeHabitDetail(habitId: HabitId): Flow<HabitDetail?> = error("not reached by the widget")
 

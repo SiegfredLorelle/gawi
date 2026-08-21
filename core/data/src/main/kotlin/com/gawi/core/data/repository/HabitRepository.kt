@@ -1,6 +1,7 @@
 package com.gawi.core.data.repository
 
 import com.gawi.core.data.model.HabitDetail
+import com.gawi.core.data.model.TodayHabit
 import com.gawi.core.data.model.TodaySnapshot
 import com.gawi.core.domain.command.CommandResult
 import com.gawi.core.domain.model.HabitId
@@ -73,6 +74,26 @@ interface HabitRepository {
      * managing habits is not doing them.
      */
     fun observeAllHabits(): Flow<List<HabitState>>
+
+    /**
+     * One habit as it stands today, archived or not — null once it no longer
+     * exists.
+     *
+     * The lean single-habit read: metadata, completion, week count and streak,
+     * and nothing dated beyond that. What the editor wants, since a form is
+     * about what a habit *is*.
+     *
+     * Kept beside [observeHabitDetail] rather than folded into it. An earlier
+     * revision replaced this one outright on the grounds that there should be
+     * exactly one way to ask for a single habit; that was the wrong cut. The two
+     * ask different questions — this one "what is this habit", the other "what
+     * is this habit, on what day, with which recent cells" — and answering the
+     * first through the second makes the editor run and *wait on* a completions
+     * query it discards, because `combine` withholds its first emission until
+     * every source has emitted. Both are built on one private row query, so the
+     * duplication is a wrapper rather than a second definition.
+     */
+    fun observeHabit(habitId: HabitId): Flow<TodayHabit?>
 
     /**
      * One habit, archived or not, with the logical date it was read for and the

@@ -60,9 +60,23 @@ class FakeHabitRepository : HabitRepository {
     /** Set to fail the single read the way the real one can. */
     var habitFailure: Throwable? = null
 
+    /**
+     * Resolves only for the habit that was configured.
+     *
+     * Matching on the id rather than answering every request with [habit] is
+     * what stops a screen that read the *wrong* habit from passing: without it,
+     * a detail screen asking for anything at all gets the fixture back.
+     */
+    private fun configured(habitId: HabitId): TodayHabit? = habit?.takeIf { it.habit.id == habitId }
+
+    override fun observeHabit(habitId: HabitId): Flow<TodayHabit?> {
+        observedIds += habitId
+        return habitFailure?.let { flow<TodayHabit?> { throw it } } ?: flowOf(configured(habitId))
+    }
+
     override fun observeHabitDetail(habitId: HabitId): Flow<HabitDetail?> {
         observedIds += habitId
-        val detail = habit?.let { HabitDetail(habit = it, today = today, recent = recent) }
+        val detail = configured(habitId)?.let { HabitDetail(habit = it, today = today, recent = recent) }
         return habitFailure?.let { flow<HabitDetail?> { throw it } } ?: flowOf(detail)
     }
 
@@ -124,30 +138,35 @@ class FakeHabitRepository : HabitRepository {
     // these from a habits screen is a mistake worth failing the test that made it.
     override fun observeToday(): Flow<TodaySnapshot> = unused()
 
-    /** Completions added, in order, with the note each carried. */
-    val completed = mutableListOf<Pair<LocalDate, String?>>()
+    /**
+     * Completions added, in order: which habit, which day, and the note carried.
+     *
+     * The habit id is recorded rather than dropped, so a write aimed at the
+     * wrong habit is a failing test rather than an invisible one.
+     */
+    val completed = mutableListOf<Triple<HabitId, LocalDate, String?>>()
 
-    /** Completions undone, in order. */
-    val undone = mutableListOf<LocalDate>()
+    /** Completions undone, in order, with the habit each belonged to. */
+    val undone = mutableListOf<Pair<HabitId, LocalDate>>()
 
     override suspend fun addCompletion(habitId: HabitId, logicalDate: LocalDate, note: String?): CommandResult<Unit> {
         failIfAsked()
-        completed += logicalDate to note
+        completed += Triple(habitId, logicalDate, note)
         return result
     }
 
     override suspend fun undoCompletion(habitId: HabitId, logicalDate: LocalDate): CommandResult<Unit> {
         failIfAsked()
-        undone += logicalDate
+        undone += habitId to logicalDate
         return result
     }
 
     /** Notes written, in order. An empty text is a clear and is recorded as one. */
-    val notes = mutableListOf<Pair<LocalDate, String>>()
+    val notes = mutableListOf<Triple<HabitId, LocalDate, String>>()
 
     override suspend fun updateNote(habitId: HabitId, logicalDate: LocalDate, text: String): CommandResult<Unit> {
         failIfAsked()
-        notes += logicalDate to text
+        notes += Triple(habitId, logicalDate, text)
         return result
     }
 
