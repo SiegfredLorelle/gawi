@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="widget_name">Today</string>
-    <string name="widget_description">Today\'s habits, one tap each.</string>
     <!-- Distinct from an empty list on purpose: "no habits" and "could not
          read" look identical on a widget otherwise, and the 4b screenshot bug
          was two empty states wearing each other's copy. -->
