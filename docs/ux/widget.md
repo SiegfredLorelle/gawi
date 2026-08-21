@@ -284,6 +284,20 @@ all either `exported="false"` or guarded by `DUMP` / `BIND_JOB_SERVICE`.
   `parseHabitColor` are `:core:ui`, which a Glance tree cannot consume (the
   theme is Compose UI). Drawing them means Glance-side colour parsing, which is
   a duplicate of a rule that already exists — deferred rather than duplicated.
+- **`BIND_APPWIDGET` on the receiver, offered by `/security-review` and not
+  taken.** The review found no vulnerability on this branch, and enumerated
+  what a third-party app can actually drive against the exported receiver by
+  reading Glance's own `onReceive`: a forced redraw, and `onDeleted` clearing
+  Glance's per-widget scratch preferences. **No habit data is readable and
+  nothing reaches the event log** — the attacker-supplied widget ids are
+  useless, because `AppWidgetManager` enforces ids against the calling package,
+  and the lambda-trigger path resolves a key this widget never registers (it
+  uses `actionRunCallback`, so it has zero lambdas). Adding
+  `android:permission="android.permission.BIND_APPWIDGET"` would block those
+  pokes, since the framework sender holds it. Recorded rather than applied: the
+  review classified it as hardening rather than a fix, and putting a permission
+  on a provider risks a launcher-compatibility regression that one emulator
+  cannot rule out. Cheap to revisit — it is one attribute.
 - **The widget is not in the launcher automatically.** Pinning one needs the
   user, or `requestPinAppWidget` from the app. There is no in-app "add the
   widget" affordance and PRD §4 does not ask for one.
