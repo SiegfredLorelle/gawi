@@ -365,35 +365,47 @@ upgrade that reintroduces the network permission fails a test rather than
 shipping.
 
 **Reminder timing is deliberately inexact.** Both wakes are one-time requests
-with an initial delay — **not** periodic work, so there is no flex interval to
-quote, which an earlier version of this paragraph did. `setInitialDelay` makes a
-wake *eligible* once the delay elapses and nothing bounds how long after that it
-runs. The `SCHEDULE_EXACT_ALARM` permission
-(Android 12+, Play-policy scrutiny) is **deliberately avoided** — a "habits left
-today" nudge does not need exact delivery. The scheduled time just needs enough
-margin before the day boundary to absorb the delay. Do not "upgrade" this to
-exact alarms, and do not use `setExpedited` either, which pulls
-foreground-service behaviour into a background nudge.
+with an initial delay, **not** periodic work, so there is no flex interval to
+quote: `setInitialDelay` makes a wake *eligible* once the delay elapses, and
+nothing bounds how long after that it runs. WorkManager defers under Doze and App
+Standby and will not wake a device to deliver one. The `SCHEDULE_EXACT_ALARM`
+permission (Android 12+, Play-policy scrutiny) is **deliberately avoided** — a
+"habits left today" nudge does not need exact delivery. Do not "upgrade" this to
+exact alarms, and do not use `setExpedited` either, which pulls foreground-service
+behaviour into a background nudge.
 
-There is **no ceiling to state** on how late it can be, and an earlier version of
-this paragraph implied one twice over — first by quoting "~15 min", then by
-calling it a flex window. WorkManager defers work under Doze and App Standby and
-does not wake a device to deliver it, so lateness is a likelihood rather than a
-bound — the same correction docs/ux/widget.md §4 already carries about
-`updatePeriodMillis`. What *is* bounded is the damage: a wake that
-arrives after the day cutoff is refused rather than posted, because it would
-otherwise remind about a fresh logical day and consume that day's one reminder.
-docs/ux/reminder.md §1.
+So there is **no ceiling to state**, only a likelihood — the same correction
+docs/ux/widget.md §4 carries about `updatePeriodMillis`. The margin between the
+reminder time and the day boundary is **risk reduction, not absorption**: a
+reminder set well before the cutoff makes it *likely* that a late wake still lands
+inside the logical day it is about, and no margin can bound a delay that is itself
+unbounded. What *is* bounded is the damage. A wake arriving after the cutoff is
+refused rather than posted, because it would otherwise remind about a fresh
+logical day and consume that day's one reminder. docs/ux/reminder.md §1.
+
+This paragraph has been wrong in the same direction three times — "~15 min", then
+"flex window", then a margin that could "absorb" the delay — which is worth one
+line of warning to whoever edits it next: every phrasing that sounds like a
+delivery guarantee here is one.
 
 **Two wakes, and they arm each other.** The reminder arms the rollover refresh
 and the rollover arms the reminder; neither re-enqueues its own unique work,
 because `enqueueUniqueWork` with `REPLACE` cancels a run in progress and a worker
-re-arming itself would cancel itself every time. The workers arm with **`KEEP`**
-rather than `REPLACE` — "make sure the other exists", which cannot cancel
-anything — because `REPLACE` there let a late reminder destroy the overdue
-rollover that was about to re-arm it, losing a day's reminder. Only a settings
-edit uses `REPLACE`, where moving the pending wake is the point.
-`Application.onCreate` re-arms both, which is the chain's repair path.
+re-arming itself would cancel itself every time.
+
+**The two directions use different policies, and the asymmetry is the design.**
+`ReminderWorker` arms the rollover with `KEEP` — "make sure it exists", which
+cannot cancel anything — and `RolloverWorker` arms the reminder with `REPLACE`.
+The invariant is that **at least one direction always replaces**, so every
+interleaving makes forward progress. `KEEP` on both sides looks like the safer
+choice and is not: it no-ops against `RUNNING` as well as `ENQUEUED`, so when both
+wakes are overdue at once — device off overnight — either the rollover runs first
+and leaves a stale reminder to expire re-arming nothing, or the two run
+concurrently and each no-ops against the other. `REPLACE` on both sides is the
+opposite failure, where a late reminder destroys the overdue rollover that was
+about to re-arm it. A settings edit also uses `REPLACE`, and re-arms only the wake
+whose value actually moved. `Application.onCreate` re-arms both, which is the
+chain's repair path. docs/ux/reminder.md §2.
 
 **The reminder time may not equal the day cutoff.** `reminderOn` resolves that
 pair to the logical day's *start*, so `:feature:settings` refuses it and

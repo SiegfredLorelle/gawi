@@ -697,8 +697,26 @@ Then move the cutoff ahead and wait past it. With the wake deferred, the widget
 keeps yesterday's ticks and the periodic update is the only thing left, which is
 the pre-2026-08-21 behaviour. `adb shell dumpsys deviceidle unforce` afterwards.
 
-Treat a lag *without* forcing Doze as a real finding rather than the expected
-result: it means the rollover wake is not being armed at all.
+A lag *without* forcing Doze is worth investigating rather than expected — but it
+does **not** on its own mean the wake was never armed, which is what this paragraph
+used to claim. At least three things produce the same symptom: the wake armed and
+deferred anyway (App Standby, an OEM battery policy, ordinary idle), the wake ran
+and the push failed silently — `GlanceProjectionListener` catches `Throwable` and
+only logs — or the push succeeded and Glance's own update did not. Raised in PR
+review.
+
+Tell them apart before concluding anything:
+
+```console
+adb shell dumpsys jobscheduler | grep -A5 com.gawi.app
+adb logcat -s ReminderScheduler ReminderWorker RolloverWorker GlanceProjection
+```
+
+Pending work under `gawi.reminder.day-rollover` and no log line means armed and
+deferred. No pending work means never armed, and `ReminderScheduler` will have
+logged why. A `GlanceProjection` warning means it ran and the redraw is what
+failed — which is the failure shape that looks identical to nobody having placed a
+widget.
 
 **Put the cutoff back to midnight afterwards**, for the reason §4's own rollover
 check gives: those steps start from midnight, and this section sits below them, so
@@ -722,22 +740,33 @@ check gives about itself: leaving it moved is how a later run passes vacuously.
       the failure it guards against looks identical to success from the outside
       — so check it deliberately rather than assuming.
 - [ ] **One per day, and this is the one only a device can show.** After a
-      reminder has fired, **re-arm the reminder by setting the reminder time a
-      couple of minutes ahead again** in Settings, and wait for it.
+      reminder has fired:
 
-      No second notification arrives — the journal has already stamped today.
+      ```console
+      adb shell am force-stop com.gawi.app
+      ```
 
-      Do **not** try this by forcing the job out of `dumpsys jobscheduler`, which
-      is what this check used to say. Once `ReminderWorker` has succeeded its unique
-      work is finished and the only thing pending is the *rollover*, so the job you
-      would find and force is the wrong one: no second notification appears, the
-      check looks green, and nothing about the once-a-day rule was exercised.
-      Raised in PR review.
+      Then reopen the app, set the reminder time a couple of minutes ahead in
+      Settings, and wait for it. **No second notification arrives** — the journal
+      already stamped today, and it was read back in a process that did not write
+      it.
 
-      Editing the setting is what re-arms the reminder specifically, because
-      `ReminderScheduler` replaces that wake and only that wake when the reminder
-      time moves. `ReminderCheckTest` pins the decision on the JVM; what only a
-      device shows is that the journal survives the process ending in between.
+      **The force-stop is the point of the check**, and an earlier version left it
+      out while still claiming to prove the journal survives a process ending.
+      Without it the app is alive throughout — moving the reminder time means
+      opening Settings — so the read could come from the same in-memory `DataStore`
+      that wrote the stamp, and the one thing this adds over `ReminderCheckTest`
+      is the one thing it would not have done. Raised in PR review.
+
+      Reopening also re-arms both wakes through `ReminderScheduler.start()`, which
+      is the documented repair path, so this check exercises that for free and does
+      not depend on whether `force-stop` cancels pending jobs by itself.
+
+      Do **not** try this by forcing the job out of `dumpsys jobscheduler`. Once
+      `ReminderWorker` has succeeded its unique work is finished and the only thing
+      pending is the *rollover*, so the job you would find and force is the wrong
+      one: no second notification appears, the check looks green, and nothing about
+      the once-a-day rule was exercised.
 - [ ] **Notifications off is admitted, not hidden.** Turn the app's
       notifications off in system settings and come back to Settings. The reminder
       row shows *"Notifications are off, so this reminder will not arrive"* with a

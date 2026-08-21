@@ -141,25 +141,46 @@ itself every time, leaving the tail of its own `doWork` running inside a
 cancelled coroutine and its completion recorded as `CANCELLED`. Correct-looking
 and racy.
 
-**And the workers arm with `KEEP`, not `REPLACE`.** This is the second half of
-the design, and the first draft got it wrong in a way that lost a whole day's
-reminder. `KEEP` means *"make sure the other wake exists"*: pending work is left
-alone, and completed work is not pending, so the next occurrence is enqueued
-normally. With `REPLACE` there was a real hole — a reminder wake deferred past
-the cutoff (device off overnight) runs late, correctly decides to stay silent,
-and then **destroyed the overdue rollover work that was about to re-arm it**. So
-nothing was left under the reminder's name, and that whole day had no reminder;
-the chain only resumed at the *next* cutoff. Found by `/code-review`.
+**And the two directions use different policies.** `ReminderWorker` arms the
+rollover with `KEEP`; `RolloverWorker` arms the reminder with `REPLACE`. The
+invariant that makes the chain sound is that **at least one direction always
+replaces**, so every interleaving makes forward progress.
 
-`KEEP` also disposes of a race the first draft's prose called impossible. It
-claimed the other name is *provably* not running, since the reminder falls
-strictly inside a logical day and the cutoff ends it — and that a reminder set
-equal to the cutoff would leave the two "a whole day apart". **That was simply
-wrong**: day `D + 1`'s start *is* day `D`'s boundary, so equal times put both
-wakes on the same instant, and under `REPLACE` each worker would have cancelled
-the other mid-run. §3 now prevents that setting and §1 refuses to act on a stored
-one, but `KEEP` is what makes the coincidence harmless rather than merely
-unlikely.
+Getting there took two wrong answers, and both are worth keeping because each
+looks right on its own.
+
+**`REPLACE` on both sides** lost a day. A reminder wake deferred past the cutoff —
+device off overnight — runs late, correctly decides to stay silent, and then
+*destroyed the overdue rollover work that was about to re-arm it*. Nothing was
+left under the reminder's name and that whole day had none.
+
+**`KEEP` on both sides** looked like the fix and lost a day in two other
+orderings, because `KEEP` no-ops against `RUNNING` as well as `ENQUEUED` —
+measured in `EnqueueRunnable`'s bytecode, where the branch after the `KEEP`
+comparison tests both states. When both wakes are overdue at once:
+
+- *rollover first:* `armReminder(KEEP)` no-ops against the still-enqueued overdue
+  reminder; that reminder then runs, arms only the rollover, and leaves its own
+  name empty.
+- *concurrently:* each `KEEP` sees the other `RUNNING`, both no-op, and neither
+  name has pending work afterwards — the chain is simply dead.
+
+`ReminderScheduler.start()` repairs neither, because the process was started *for*
+the workers, so its first emission lands while both are still pending and no-ops
+too. Both found in review.
+
+The residual of `REPLACE` on the rollover side is cancelling a reminder run in
+flight. That is only reachable when the two wakes coincide, and a reminder run in
+that position decides `Silent` anyway — a wake that late is inside the following
+logical day, which §1 refuses.
+
+**A prose claim here was also wrong, and the policies no longer depend on it.** An
+earlier draft said the other name is *provably* not running, since the reminder
+falls strictly inside a logical day and the cutoff ends it — and that a reminder
+set equal to the cutoff would leave the two "a whole day apart". Day `D + 1`'s
+start *is* day `D`'s boundary, so equal times put both wakes on one instant. §3
+prevents that setting now and §1 refuses to act on a stored one, so it is
+unreachable rather than merely unlikely.
 
 So the chain alternates — 21:00 arms midnight, midnight arms 21:00 — and if
 either link is ever lost, `ReminderScheduler.start()` re-arms both on the next
@@ -183,6 +204,14 @@ The first emission uses `ExistingWorkPolicy.KEEP` and every later one uses
 `REPLACE`. The first is "these are the settings", which is not an edit and must
 not disturb work already scheduled — or, worse, running. Every later one is a
 real edit, where replacing the pending wake is the entire point.
+
+**An edit re-arms only the wake that actually moved**, which an earlier version did
+not do: replacing both meant a reminder-time edit could cancel a `RolloverWorker`
+mid-run and lose its streak sweep and widget push, over a setting the rollover does
+not depend on. A `reminderTime` edit moves the reminder alone. A **`dayCutoff` edit
+moves both**, and that is the half worth stating: the cutoff is obviously the
+rollover's own instant, and it is *also* an input to `reminderOn`, which uses it to
+decide whether the reminder falls on today's calendar date or tomorrow's.
 
 ### The rollover wake is the one that happens because nothing happened
 
@@ -403,6 +432,28 @@ finished, then because the assertion ran while it was still `RUNNING` — and th
 archived-filter test passed with the filter deleted, because `observeToday`'s SQL
 makes the guard unreachable through the real repository. Both were rewritten until
 the mutation reddened them.
+
+### What the third review round found, and what it missed
+
+**Two findings, both prose, both mine.** One was a self-contradiction: architecture
+§7 said "nothing bounds how long after that it runs" and, four lines later, that a
+margin could "absorb the delay". The second was a sentence *added in round 2* while
+fixing a different overclaim — that a widget lag without forced Doze "means the
+rollover wake is not being armed at all", which is one diagnosis for a symptom with
+at least three causes. `docs/running.md` now gives the diagnostic instead of the
+conclusion.
+
+Also valid and sharper than either: the once-per-day device check claimed to prove
+the journal survives a process ending, and never ended the process. The single
+thing it added over the JVM test was the single thing it omitted.
+
+**What the round missed, found while fixing it:** §2 above and architecture §7 both
+still documented `KEEP` on *both* sides of the chain — the policy round 2's own fix
+replaced. Round 2 updated the KDocs and the §5 summary and left the two sections a
+reader would actually consult, so the summary pointed at a resolution §2 did not
+contain. Three reviewers read that diff and none flagged it, which is worth
+recording plainly: **review catches claims that are wrong, not claims that have
+quietly gone out of date.** A policy change has to be swept for by name.
 
 ### What the first review round found, which was code this time
 
