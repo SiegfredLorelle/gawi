@@ -112,6 +112,22 @@ through its `Flow` and the date handed to a tap is current by construction —
 the rule `HabitRepository.observeToday`'s KDoc states. The widget is the one
 caller that cannot rely on it.
 
+**What re-reading costs, stated plainly: across a rollover the tap's visible
+semantics invert.** A session-less widget can draw yesterday's ticks for up to
+the update period. Tap a row it shows as **ticked** and the fresh read says
+`completedToday == false` for the new day — so the tap *adds* a completion where
+the user meant to undo one, and the box they tapped stays checked. The log is
+right and today really is done; the eye was misled. Calling this "safe" without
+that sentence, which an earlier draft of `docs/running.md` did, is only half
+true.
+
+The alternative considered was passing the drawn state as a second action
+parameter and refusing to act when it disagrees with the fresh read. Declined:
+it gives the widget a rule the screen does not have, and it turns a tap into a
+no-op, so a user chasing a one-tap completion taps twice. Recorded rather than
+built, because the trade could reasonably go the other way once there is real
+usage to judge it by.
+
 **`collectAsState` *and* the push, which reverses what this section first
 said.** The original decision here was a one-shot read plus the explicit push,
 argued as "a collected flow is current-if-lucky". That was backwards, and
@@ -137,6 +153,16 @@ sessions are short-lived. Neither alone is sufficient, and the earlier text
 asserting one of them was is the kind of claim this project keeps having to
 correct: it described what the library was assumed to do rather than what it
 does.
+
+**And they do not cover each other everywhere.** `catch` terminates a flow, so a
+read that throws would end collection for the life of the session — and the push
+cannot repair that, because `update` on a live session never re-enters
+`provideGlance`. A screen recovers when its `WhileSubscribed` window lapses and
+re-subscribes; nothing does that for a widget. That is why the read carries a
+bounded retry (three attempts, 150ms apart) *above* the `catch`, so a transient
+failure never reaches the terminal state. A persistent one still lands on
+*"Can't read your habits"* and stays until the session ends, which is correct —
+there is nothing else to show.
 
 **Failures resolve towards saying so.** Both reads behind the widget can throw —
 `SQLiteException` is a `RuntimeException` unrelated to `IOException`, and the
