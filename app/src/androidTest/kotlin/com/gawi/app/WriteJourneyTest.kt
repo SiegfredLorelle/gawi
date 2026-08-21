@@ -1,10 +1,13 @@
 package com.gawi.app
 
 import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isOff
+import androidx.compose.ui.test.isOn
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
@@ -81,6 +84,26 @@ class WriteJourneyTest {
         return compose.onNodeWithContentDescription(label)
     }
 
+    /**
+     * Waits for the row to reach a toggle state, and asserts it got there.
+     *
+     * The wait has to be on the **state**, not on the row existing. Waiting for
+     * the node reddens nothing, because the row is already on screen before the
+     * tap — so the assertion would race tap to command to projection to Room
+     * invalidation to recomposition, and pass only when the round trip happened
+     * to win. That is the "green that means nothing" this file exists to avoid,
+     * and `/code-review` found it here. Compose's idling cannot see Room, which
+     * is exactly why the condition has to name what the write should produce.
+     */
+    private fun awaitRow(name: String, on: Boolean) {
+        val state = if (on) isOn() else isOff()
+        compose.waitUntil(TIMEOUT_MILLIS) {
+            compose.onAllNodes(hasText(name, substring = true) and isToggleable() and state)
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        row(name).assert(state)
+    }
+
     /** The row itself, not the name inside it: `HabitRow` puts the toggle on the whole row. */
     private fun row(name: String): SemanticsNodeInteraction {
         compose.waitUntil(TIMEOUT_MILLIS) {
@@ -119,15 +142,13 @@ class WriteJourneyTest {
         // The tick appearing at all is the assertion Robolectric could not make:
         // it requires Room to have invalidated the query the screen is collecting.
         row(name).performScrollTo().assertIsOff()
+
         row(name).performClick()
-        compose.waitUntil(TIMEOUT_MILLIS) {
-            compose.onAllNodes(hasText(name, substring = true) and isToggleable()).fetchSemanticsNodes().isNotEmpty()
-        }
-        row(name).assertIsOn()
+        awaitRow(name, on = true)
 
         // And undo comes back, which is what the widget's toggle mirrors.
         row(name).performClick()
-        row(name).assertIsOff()
+        awaitRow(name, on = false)
     }
 
     @Test
