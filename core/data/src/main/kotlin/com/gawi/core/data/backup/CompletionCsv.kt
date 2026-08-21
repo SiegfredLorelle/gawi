@@ -25,7 +25,26 @@ import com.gawi.core.data.db.dao.CompletionExportRow
  * stripped — the asymmetry is deliberate: that path is fed by editors that add
  * one uninvited, this one feeds a reader that needs one.
  *
- * **CRLF line endings**, per RFC 4180 and for the same reader.
+ * It is not free, and the cost lands on the readers the `sep=` argument below
+ * declines to break. A **strict** UTF-8 reader — one not asked for `utf-8-sig`,
+ * `pandas` among them — sees the first column named `\uFEFFhabit` rather than
+ * `habit`. The mark is kept anyway, because that reader can be told the encoding
+ * in one argument whereas Excel's mojibake cannot be fixed after the fact.
+ *
+ * **CRLF separates records**, per RFC 4180 and for the same reader. It governs
+ * *row terminators only*: a line break **inside** a field is written through
+ * exactly as it arrived, whether that is LF, CR or CRLF, and the field is quoted
+ * around it — `MUST_QUOTE` covers both characters, so the file stays parseable
+ * either way (checked: a field holding a bare LF reads back as one row).
+ *
+ * Passing it through is the same rule that decided the formula guard below: an
+ * export whose justification is the user owning their data cannot quietly edit
+ * it, and rewriting someone's note to suit RFC 4180 §2.6 is editing it. Excel
+ * writes in-cell breaks as bare LF and reads them back as breaks, so
+ * normalising would also diverge from the reader this file is tuned for. Note
+ * how it can arrive at all: a note carrying a newline comes **from an import**,
+ * since `updateNote` has no production caller yet — the note sheet is deferred
+ * with habit detail.
  *
  * **Fields are quoted only when the format requires it**, so the common file
  * stays readable in a text editor.
