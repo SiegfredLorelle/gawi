@@ -606,6 +606,11 @@ cases where a count is zero get their own string rather than reading "0 added".
   meaning on its own is written in three places now, which is usually the signal
   that the component wants extracting.
 
+  **Still five as of 2026-08-21.** Habit detail draws two glyph buttons and added
+  no sixth: `HabitListScreen.kt`'s copy became `internal` and detail calls it.
+  The count is unchanged, the pressure is not — that copy now has two callers,
+  so it is the one with the strongest claim on `:core:ui` when this is done.
+
   **`SectionHeader` is the sixth**, added by the Data section: a bare `Text` at
   `titleSmall`/`onSurfaceVariant` with the same padding as
   `HabitListScreen.kt`'s archived heading. Not identical — that one is a
