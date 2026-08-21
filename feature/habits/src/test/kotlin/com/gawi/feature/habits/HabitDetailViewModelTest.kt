@@ -89,6 +89,25 @@ class HabitDetailViewModelTest {
     }
 
     /**
+     * Detail resolves the habit it was asked for, not whichever one is around.
+     *
+     * A well-formed id for a *different* habit is as unavailable as an unknown
+     * one. Worth its own case because the fake used to answer every request
+     * with its single fixture, which would let a screen reading the wrong habit
+     * pass this suite unchallenged.
+     */
+    @Test
+    fun `a well-formed id for another habit is unavailable`() = runTest {
+        repository.habit = todayHabit(habitState(id = habitId(1)))
+
+        detailFor(habitId(2).value).uiState.test {
+            assertEquals(HabitDetailUiState.Unavailable, awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+        assertEquals(listOf(habitId(2)), repository.observedIds)
+    }
+
+    /**
      * A throwing read is caught, not fatal.
      *
      * `viewModelScope` is a `SupervisorJob` with no `CoroutineExceptionHandler`,
@@ -145,7 +164,7 @@ class HabitDetailViewModelTest {
 
         detail.onToggle(habitId(1), TODAY.minusDays(2), completed = false)
 
-        assertEquals(listOf(TODAY.minusDays(2) to null), repository.completed)
+        assertEquals(listOf(Triple(habitId(1), TODAY.minusDays(2), null)), repository.completed)
         assertTrue(repository.undone.isEmpty())
     }
 
@@ -156,7 +175,7 @@ class HabitDetailViewModelTest {
 
         detail.onToggle(habitId(1), TODAY.minusDays(2), completed = true)
 
-        assertEquals(listOf(TODAY.minusDays(2)), repository.undone)
+        assertEquals(listOf(habitId(1) to TODAY.minusDays(2)), repository.undone)
         assertTrue(repository.completed.isEmpty())
     }
 
@@ -239,7 +258,7 @@ class HabitDetailViewModelTest {
 
         detail.onNote(habitId(1), TODAY.minusDays(2), "went far")
 
-        assertEquals(listOf(TODAY.minusDays(2) to "went far"), repository.notes)
+        assertEquals(listOf(Triple(habitId(1), TODAY.minusDays(2), "went far")), repository.notes)
     }
 
     /**
@@ -255,7 +274,7 @@ class HabitDetailViewModelTest {
 
         detail.onNote(habitId(1), TODAY, "")
 
-        assertEquals(listOf(TODAY to ""), repository.notes)
+        assertEquals(listOf(Triple(habitId(1), TODAY, "")), repository.notes)
     }
 
     /** A note on a day whose completion has gone says so rather than staying silent. */

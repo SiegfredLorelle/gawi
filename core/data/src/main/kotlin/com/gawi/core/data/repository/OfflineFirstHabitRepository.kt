@@ -12,6 +12,7 @@ import com.gawi.core.data.db.entity.ProjectionMetaEntity
 import com.gawi.core.data.db.mapper.toDomain
 import com.gawi.core.data.db.mapper.toEntity
 import com.gawi.core.data.model.HabitDetail
+import com.gawi.core.data.model.TodayHabit
 import com.gawi.core.data.model.TodaySnapshot
 import com.gawi.core.data.projection.ProjectionListener
 import com.gawi.core.data.projection.ProjectionWriter
@@ -186,6 +187,25 @@ internal class OfflineFirstHabitRepository @Inject constructor(
     }
 
     /**
+     * The lean single-habit read, for a caller that wants no date and no cells.
+     *
+     * Sweeps the stale streak on the way through, exactly as the detail read
+     * does: both are single-habit reads and neither may hand back a streak
+     * computed for an older day.
+     */
+    override fun observeHabit(habitId: HabitId): Flow<TodayHabit?> = flow {
+        ensureProjectionCurrent()
+        emitAll(
+            readContext()
+                .flatMapLatest { (today, weekStart) ->
+                    sweepStreaks(today, weekStart)
+                    habitRow(habitId, today, weekStart)
+                }
+                .distinctUntilChanged(),
+        )
+    }
+
+    /**
      * The habit and its recent cells, read against one date.
      *
      * Both halves come off the same [readContext] emission, so the strip's
@@ -195,7 +215,9 @@ internal class OfflineFirstHabitRepository @Inject constructor(
      *
      * `combine` rather than two `flow`s for the same reason `observeToday`
      * combines its rows with the mood context: one emission per change, and no
-     * intermediate state where one half has updated and the other has not.
+     * intermediate state where one half has updated and the other has not. It is
+     * also why [observeHabit] exists separately — `combine` waits for every
+     * source, so a caller with no use for the cells would still wait for them.
      */
     override fun observeHabitDetail(habitId: HabitId): Flow<HabitDetail?> = flow {
         ensureProjectionCurrent()
@@ -203,15 +225,11 @@ internal class OfflineFirstHabitRepository @Inject constructor(
             readContext()
                 .flatMapLatest { (today, weekStart) ->
                     sweepStreaks(today, weekStart)
-                    val week = weekOf(today, weekStart)
                     val (from, to) = HabitDetail.stripWindow(today)
-                    val habit = readModel
-                        .observeHabit(habitId.value, today.toString(), week.first.toString(), week.second.toString())
-                        .map { row -> row?.toDomain() }
                     val recent = readModel
                         .observeCompletedDates(habitId.value, from.toString(), to.toString())
                         .map { rows -> rows.associate { LocalDate.parse(it.logicalDate) to it.note } }
-                    combine(habit, recent) { row, cells ->
+                    combine(habitRow(habitId, today, weekStart), recent) { row, cells ->
                         // Null habit means null detail: there is no date worth
                         // carrying for a habit that is not there.
                         row?.let { HabitDetail(habit = it, today = today, recent = cells) }
@@ -219,6 +237,21 @@ internal class OfflineFirstHabitRepository @Inject constructor(
                 }
                 .distinctUntilChanged(),
         )
+    }
+
+    /**
+     * The row both single-habit reads are built on.
+     *
+     * Takes the date and week start already resolved by the caller's
+     * [readContext] emission rather than resolving its own, which is what keeps
+     * the streak, the week count and — for detail — the strip window all one
+     * day's answer.
+     */
+    private fun habitRow(habitId: HabitId, today: LocalDate, weekStart: DayOfWeek): Flow<TodayHabit?> {
+        val week = weekOf(today, weekStart)
+        return readModel
+            .observeHabit(habitId.value, today.toString(), week.first.toString(), week.second.toString())
+            .map { row -> row?.toDomain() }
     }
 
     override fun observeAllHabits(): Flow<List<HabitState>> = flow {
