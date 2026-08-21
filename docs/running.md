@@ -272,8 +272,8 @@ activity. They drive the settings screen now, which is the same code path a user
 takes — so what they verify is the app rather than a test fixture beside it.
 
 **The Storage Access Framework cannot be exercised off a device.** No test in
-this repo opens a file picker — the export and import checks below are the only
-thing that verifies a file is actually written and read. `SettingsScreenTest`
+this repo opens a file picker — the export, import and CSV checks below are the
+only thing that verifies a file is actually written and read. `SettingsScreenTest`
 covers the Data section's rows, their disabled state and their status copy, and
 `SettingsDataViewModelTest` covers what the ViewModel does with the `Uri` the
 picker returns, but nothing above those knows whether a picker appears at all.
@@ -522,6 +522,74 @@ build on each other, and the third is the one that has no JVM test behind it.
       change the week start and come back. The value line has not moved. Proves
       the export stamp shares a preferences file with the three settings and
       survives a write that assigns all three of their keys.
+
+**The CSV of completions** (PRD §5, docs/ux/settings.md §6). Its correctness is
+mostly covered on the JVM — `CompletionCsvTest` pins every byte of the format
+and `CompletionExportDaoTest` pins the query — so what is left here is the two
+things no test in this repo can reach: the picker, and what a real spreadsheet
+does with the file.
+
+- [ ] **The CSV is written, and Excel will read it as UTF-8.** Settings →
+      **Data** → **Export completions**. Keep the offered name — it should be
+      `gawi-completions-<today>.csv` and not the JSON stem. Then:
+
+      ```bash
+      adb shell 'head -c 3 /sdcard/Download/gawi-completions-*.csv' | xxd | head -1
+      # expect: efbb bf   -- the byte order mark, without which Excel mangles
+      #                      any non-ASCII habit name
+      adb shell 'head -2 /sdcard/Download/gawi-completions-*.csv'
+      # expect: habit,logical_date,note   then the oldest logged day
+      ```
+
+- [ ] **The row count matches the projection.** Pull the database **with its
+      `-wal`**, or the count lies in either direction (a pre-checkpoint snapshot
+      under-reports; a stale main file over-reports):
+
+      ```bash
+      adb exec-out run-as com.gawi.app cat databases/gawi.db     > /tmp/gawi.db
+      adb exec-out run-as com.gawi.app cat databases/gawi.db-wal > /tmp/gawi.db-wal
+      sqlite3 /tmp/gawi.db 'SELECT COUNT(*) FROM completions;'
+      adb shell 'wc -l < /sdcard/Download/gawi-completions-*.csv'   # one more, for the header
+      ```
+
+- [ ] **A formula in a habit name stays text in a spreadsheet.** This is the
+      security check and it is the reason the file is not written naively.
+      Create three habits named `=1+1`, `Read, daily` and `say "yes"`, complete
+      each one today, export, then open the file in LibreOffice on the host
+      (`localc /tmp/gawi-completions-*.csv`, comma-separated, UTF-8). The first
+      cell must **display** `=1+1` and compute nothing; the other two must each
+      be a single cell. In the raw file the first field reads `"'=1+1"` — the
+      apostrophe is the guard and a spreadsheet does not show it. Archive the
+      three habits afterwards.
+
+- [ ] **Cancelling the picker does nothing and says nothing.** Tap **Export
+      completions** and press Back out of the save dialog. No snackbar, no
+      change, and `/sdcard/Download` gains nothing.
+
+- [ ] **A CSV export does not touch the nudge.** The load-bearing negative, and
+      the one worth running even when nothing else is. Note what the export row
+      says, write a CSV, and return: the value line and the help line are both
+      unchanged. A CSV holds no events, so treating one as a backup would
+      silence the warning for a month over a file that could not restore
+      anything. `CompletionCsvArchiveWiringTest` asserts this against the
+      constructor and `SettingsDataViewModelTest` from the other end; this
+      confirms it through the real graph.
+
+- [ ] **All three Data rows go dead together.** Start a CSV export of a large
+      log and, while it runs, confirm **Export a copy** and **Import a file**
+      are both unavailable and that only the CSV row says it is working. Hard to
+      catch by hand on a small log; the JVM tests own this and this is a
+      sanity check.
+
+- [ ] **An empty log still writes a usable file.** After `adb shell pm clear
+      com.gawi.app`, export completions before creating anything. The snackbar
+      says the file holds only its column headings, and the file is the header
+      line and nothing else. Re-run the recovery check above afterwards, since
+      this clears the app.
+
+Clean up with `adb shell 'rm -f /sdcard/Download/*.csv'` — **quote the glob**,
+or zsh expands it on the host first and the command looks like it ran while the
+files stay put.
 
 **Physical device only** — nothing here is built yet, so these are placeholders
 that come alive with the widget and the reminder (architecture §8, PRD §7):
