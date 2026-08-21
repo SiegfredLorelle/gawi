@@ -8,13 +8,19 @@
 # Wired for Kotlin/Android per docs/stacks/kotlin-android.md.
 # Do not rename the targets.
 #
-# `run` is a deliberate stack-specific addition on top of the shared contract,
-# recorded in docs/architecture.md §9 the way ci.yml's JDK step already is.
-# Nothing in CI calls it, so the sameness the paragraph above is protecting is
-# untouched: an app you cannot launch is the one thing this file could not do.
+# `run` and `itest` are deliberate stack-specific additions on top of the shared
+# contract, recorded in docs/architecture.md §9 the way ci.yml's JDK step already
+# is. Nothing in CI calls either, so the sameness the paragraph above is
+# protecting is untouched: an app you cannot launch, and a test that needs a real
+# launcher, are the two things this file could not otherwise do.
+#
+# `test` and `itest` are separate because they are separate gates, not two ways
+# of saying the same thing: `./gradlew test` is the unit-test umbrella and never
+# touches a device, which is what keeps architecture §8's "CI runs unit tests
+# only" true without ci.yml having to know that instrumented tests exist.
 
 .DEFAULT_GOAL := help
-.PHONY: help setup hooks fmt lint test run
+.PHONY: help setup hooks fmt lint test itest run
 
 # Resolved from PATH. Override it if the SDK is somewhere unusual, e.g.
 #   make run ADB=~/Library/Android/sdk/platform-tools/adb
@@ -42,6 +48,14 @@ lint: ## Lint and type-check the codebase
 
 test: ## Run the test suite
 	./gradlew test
+
+# WARNING: connectedAndroidTest uninstalls the app when it finishes, and an
+# uninstall deletes /data/data — the entire event log, every habit and the
+# settings. allowBackup is off (architecture §6), so there is no OS copy to
+# restore from and export/import is the only way back. Export first, or point
+# this at a throwaway AVD. Measured: one run wiped an emulator holding 345 events.
+itest: ## Run instrumented tests on a device (DESTROYS app data; not run by CI)
+	./gradlew :app:connectedDebugAndroidTest
 
 run: ## Build, install and launch the app on a device or emulator
 	./gradlew :app:installDebug
