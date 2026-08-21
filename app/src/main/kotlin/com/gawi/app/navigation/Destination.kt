@@ -10,10 +10,11 @@ import kotlinx.serialization.Serializable
  * of a null at runtime. kotlinx-serialization was already a project dependency
  * for the event log's wire format, which is what makes this the cheap option.
  *
- * Namespaced inside one interface rather than declared as three top-level types,
+ * Namespaced inside one interface rather than declared as five top-level types,
  * because the feature modules already own the names — `TodayRoute`,
- * `HabitListRoute`, `HabitEditorRoute` — and a route called `Today` beside a
- * composable called `TodayRoute` reads as though one were the other.
+ * `HabitListRoute`, `HabitEditorRoute`, `HabitDetailRoute` — and a route called
+ * `Today` beside a composable called `TodayRoute` reads as though one were the
+ * other.
  *
  * This file is the whole vocabulary. Architecture §2 gives `:app` the navigation
  * graph, and no feature module has navigation on its classpath, so a screen
@@ -44,4 +45,15 @@ internal sealed interface Destination {
      */
     @Serializable
     data class HabitEditor(val habitId: String? = null) : Destination
+
+    /**
+     * One habit, read-only: its streak, its schedule, and where it stands today
+     * (PRD §6.6).
+     *
+     * [habitId] is non-null, unlike [HabitEditor]'s: there is no "new habit"
+     * detail. Still a `String`, and for the same reason — validated inside the
+     * detail ViewModel rather than on the way to it.
+     */
+    @Serializable
+    data class HabitDetail(val habitId: String) : Destination
 }

@@ -16,7 +16,12 @@ import com.gawi.core.domain.model.HabitId
  */
 internal data class HabitListActions(
     val onAdd: () -> Unit,
-    val onEdit: (HabitId) -> Unit,
+    /**
+     * Opens the habit. Detail rather than the editor since 2026-08-21
+     * (docs/ux/habits.md §6): detail is the hub, and it carries an Edit action
+     * of its own for the case this used to serve.
+     */
+    val onOpen: (HabitId) -> Unit,
     val onArchiveToggle: (HabitId, Boolean) -> Unit,
     val onBack: () -> Unit,
 )

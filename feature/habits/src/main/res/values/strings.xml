@@ -17,6 +17,9 @@
     <string name="habits_archive">Archive</string>
     <string name="habits_unarchive">Bring back</string>
     <string name="habits_edit">Edit</string>
+    <!-- The row's click label. "Open" rather than "Edit" since 2026-08-21: the
+         title block leads to detail, and detail is where Edit now lives. -->
+    <string name="habits_open">Open</string>
 
     <!-- A schedule, as the list summarises it. Not a plural: the weekly form is
          a target rather than a count of a noun, and "1 times a week" is a case

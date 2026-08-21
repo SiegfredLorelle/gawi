@@ -135,19 +135,23 @@ class HabitListScreenTest {
      * The two actions sit in the same row, so this is the pair worth pinning
      * together: a name that archived what it meant to open would lose a habit
      * off the list with no way to tell it had happened.
+     *
+     * The name leads to detail rather than the editor as of 2026-08-21
+     * (docs/ux/habits.md §6). What this asserts is unchanged either way: the tap
+     * reports the row's own id on the opening action and touches nothing else.
      */
     @Test
-    fun nameTap_editsTheHabitWithoutArchivingIt() {
-        val edited = mutableListOf<HabitId>()
+    fun nameTap_opensTheHabitWithoutArchivingIt() {
+        val opened = mutableListOf<HabitId>()
         val archived = mutableListOf<HabitId>()
         render(
             HabitListUiState.Habits(active = listOf(READ, SWIM), archived = emptyList()),
-            NO_ACTIONS.copy(onEdit = { edited += it }, onArchiveToggle = { id, _ -> archived += id }),
+            NO_ACTIONS.copy(onOpen = { opened += it }, onArchiveToggle = { id, _ -> archived += id }),
         )
 
         compose.onNodeWithText(SWIM.name).performClick()
 
-        assertEquals(listOf(SWIM.id), edited)
+        assertEquals(listOf(SWIM.id), opened)
         assertTrue(archived.isEmpty())
     }
 
@@ -178,7 +182,7 @@ class HabitListScreenTest {
     private companion object {
         val NO_ACTIONS = HabitListActions(
             onAdd = {},
-            onEdit = {},
+            onOpen = {},
             onArchiveToggle = { _, _ -> },
             onBack = {},
         )
