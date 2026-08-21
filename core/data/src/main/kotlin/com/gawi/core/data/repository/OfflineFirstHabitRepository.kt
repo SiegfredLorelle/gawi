@@ -13,6 +13,7 @@ import com.gawi.core.data.db.mapper.toDomain
 import com.gawi.core.data.db.mapper.toEntity
 import com.gawi.core.data.model.TodayHabit
 import com.gawi.core.data.model.TodaySnapshot
+import com.gawi.core.data.projection.ProjectionListener
 import com.gawi.core.data.projection.ProjectionWriter
 import com.gawi.core.data.settings.SettingsSource
 import com.gawi.core.data.settings.UserSettings
@@ -98,6 +99,7 @@ internal class OfflineFirstHabitRepository @Inject constructor(
     private val ids: UuidV7Generator,
     private val clock: DeviceClock,
     private val settings: SettingsSource,
+    private val projectionListener: ProjectionListener,
 ) : HabitRepository {
 
     private val mutex = Mutex()
@@ -328,6 +330,11 @@ internal class OfflineFirstHabitRepository @Inject constructor(
         // A self-assignment on the short path, and left that way on purpose:
         // one exit, and the publish stays visibly paired with the commit.
         state = refolded
+        // An import is the other way the read model moves, so it notifies too.
+        // Unconditionally, including when nothing was inserted: the guard above
+        // is about whether the *fold* can be reused, and a widget that is
+        // already correct is cheap to redraw, where one left stale is silent.
+        projectionListener.onProjectionChanged()
         added
     }
 
@@ -543,13 +550,14 @@ internal class OfflineFirstHabitRepository @Inject constructor(
                 writer.applyDelta(before, after, stamped, todayFor(now, settings), settings.weekStart)
             }
             state = after
+            // Inside the non-cancellable region, not after it: this is the one
+            // place responsible for keeping a widget current (architecture §4),
+            // and a tap whose scope dies right after the commit is exactly the
+            // case that leaves the home screen showing the opposite of the log.
+            // The same lesson the zero-byte export taught, in the direction
+            // where NonCancellable can actually help — the work has started.
+            projectionListener.onProjectionChanged()
         }
-
-        // The widget refresh belongs here — architecture §4 makes this the one
-        // place responsible for keeping Glance current, because widgets do not
-        // observe Room. There is no :widget module yet, and :core:data must not
-        // depend on one when there is, so it will arrive as a callback the app
-        // implements rather than a direct call.
     }
 
     private fun todayFor(now: Instant, settings: UserSettings): LocalDate = logicalDate(now, settings.dayCutoff, clock.zone())

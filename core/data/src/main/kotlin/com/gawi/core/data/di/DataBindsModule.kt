@@ -16,7 +16,15 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
-/** Which implementation answers each seam the event store is built on. */
+/**
+ * Which implementation answers each seam the event store is built on.
+ *
+ * **One seam is deliberately missing: `ProjectionListener`.** It is declared in
+ * this module's own package and bound in `:widget`, because the implementation
+ * calls Glance and the module rule is `widget → core` (architecture §2, §4). So
+ * `:core:data` on its own is an incomplete graph — intentionally, and the
+ * interface's KDoc argues why a required binding beats a `@Multibinds` set here.
+ */
 @Module
 @InstallIn(SingletonComponent::class)
 internal abstract class DataBindsModule {
