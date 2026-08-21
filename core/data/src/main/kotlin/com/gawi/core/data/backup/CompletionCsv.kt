@@ -29,6 +29,18 @@ import com.gawi.core.data.db.dao.CompletionExportRow
  *
  * **Fields are quoted only when the format requires it**, so the common file
  * stays readable in a text editor.
+ *
+ * **Known limit, and it is the same population the byte order mark is for.**
+ * Excel takes its CSV delimiter from the operating system's list separator
+ * rather than from the file, so on an install where that separator is `;` —
+ * German, French, Spanish, Dutch and others — double-clicking this file puts
+ * every record in one column. An `sep=,` first line would fix that for Excel
+ * and LibreOffice, and is deliberately **not** written: it is not part of RFC
+ * 4180, so every other reader sees a junk first row, and `pandas` in particular
+ * would take it as the header. The comma stays, and the workaround is the
+ * import dialog rather than a change to the bytes. Recorded in
+ * docs/ux/settings.md §6 and in docs/running.md §4 rather than left to be
+ * discovered.
  */
 internal object CompletionCsv {
 
@@ -63,9 +75,29 @@ internal object CompletionCsv {
      * the file is written to be opened in Excel or LibreOffice, an exported
      * habit called `=1+1` would be computed rather than shown, and the same
      * lead characters reach a formula that reads other cells or, in older
-     * configurations, a DDE command. TAB and CR are included because a
-     * spreadsheet skips leading whitespace before deciding what a cell is, so
-     * they let a formula in behind one.
+     * configurations, a DDE command. It is reachable by more than the user's own
+     * typing, which is what makes it worth guarding rather than documenting:
+     * import deliberately accepts a foreign file (docs/ux/settings.md §6), so a
+     * habit name can arrive from whoever wrote that file.
+     *
+     * **The check is on the trimmed value, and that matters.** A spreadsheet
+     * skips leading whitespace before deciding what a cell is, and several CSV
+     * readers strip it on import outright — LibreOffice offers "Trim spaces",
+     * Google Sheets does it, `pandas` does it under `skipinitialspace`. So
+     * `" =1+1"` is the same attack as `"=1+1"` wearing a space, and testing
+     * `first()` against a set that includes TAB and CR but not space was an
+     * inconsistency rather than a policy: either whitespace is skipped, in which
+     * case all of it has to be looked through, or it is not, in which case the
+     * TAB and CR entries were pointless. Trimming first covers space, TAB, CR,
+     * LF and every Unicode space at once, which is why the sigil set is now the
+     * four characters that are actually dangerous.
+     *
+     * **Quoting is not a substitute for this**, and it is worth saying because
+     * it looks like one. Quotes are a transport rule: a parser strips them and
+     * *then* the cell is type-inferred, so a quoted `=1+1` evaluates in Excel
+     * exactly as a bare one does. That every neutralised field below is also
+     * quoted is legibility, not defence — if quoting were the defence, the
+     * apostrophe would be redundant.
      *
      * **A leading apostrophe rather than removing the character.** Excel and
      * LibreOffice both read `'` as "this cell is text" and do not display it,
@@ -81,7 +113,7 @@ internal object CompletionCsv {
      * the apostrophe as belonging to the encoding rather than to the name.
      */
     private fun field(value: String): String {
-        val neutralised = value.isNotEmpty() && value.first() in FORMULA_LEAD
+        val neutralised = value.trimStart().firstOrNull() in FORMULA_LEAD
         val text = if (neutralised) FORMULA_GUARD + value else value
         return if (neutralised || needsQuoting(text)) quoted(text) else text
     }
@@ -117,8 +149,15 @@ internal object CompletionCsv {
 
     private const val FORMULA_GUARD = "'"
 
-    /** Lead characters a spreadsheet reads as the start of a formula. */
-    private val FORMULA_LEAD = setOf('=', '+', '-', '@', '\t', '\r')
+    /**
+     * Characters a spreadsheet reads as the start of a formula.
+     *
+     * Four, not six. TAB and CR used to be here as separate entries because they
+     * can precede a sigil; [field] trims before it looks, so every kind of
+     * leading whitespace is covered without enumerating it — and a lone leading
+     * TAB, with no sigil behind it, was never dangerous in the first place.
+     */
+    private val FORMULA_LEAD = setOf('=', '+', '-', '@')
 
     /** Characters that make a field ambiguous unless it is quoted. */
     private val MUST_QUOTE = setOf(',', '"', '\r', '\n')
