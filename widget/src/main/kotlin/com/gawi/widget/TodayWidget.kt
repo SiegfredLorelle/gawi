@@ -21,6 +21,7 @@ import androidx.glance.layout.Column
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.padding
 import androidx.glance.text.Text
+import androidx.glance.text.TextStyle
 import com.gawi.core.data.repository.HabitRepository
 import dagger.hilt.android.EntryPointAccessors
 
@@ -80,13 +81,13 @@ internal fun repositoryFrom(context: Context): HabitRepository =
 
 /** Draws whatever [body] decided. The choice is tested; this is only the drawing. */
 @Composable
-private fun WidgetBody(content: WidgetContent) {
+internal fun WidgetBody(content: WidgetContent) {
     GlanceTheme {
         Column(
             modifier = GlanceModifier.fillMaxSize().background(GlanceTheme.colors.widgetBackground).padding(WIDGET_PADDING.dp),
         ) {
             when (val body = content.body()) {
-                is WidgetBodyContent.Copy -> Text(text = LocalContext.current.getString(body.text))
+                is WidgetBodyContent.Copy -> Text(text = LocalContext.current.getString(body.text), style = widgetTextStyle())
                 is WidgetBodyContent.Rows -> HabitRows(body.rows)
                 WidgetBodyContent.Blank -> Unit
             }
@@ -102,9 +103,28 @@ private fun HabitRows(rows: List<WidgetRow>) {
                 checked = row.completed,
                 onCheckedChange = actionRunCallback<ToggleHabitAction>(actionParametersOf(HABIT_ID to row.habitId)),
                 text = row.name,
+                style = widgetTextStyle(),
             )
         }
     }
 }
+
+/**
+ * The one text style the widget draws with, and the reason it is not the default.
+ *
+ * Every `Text` and `CheckBox` here **must** name a colour. Glance's default text
+ * colour is not theme-aware, while the container above sets its background from
+ * `GlanceTheme.colors.widgetBackground`, which is — so leaving the style off gives
+ * a widget whose background follows dark mode and whose text does not. Measured on
+ * a Nothing A059 (Android 16) on 2026-08-22: near-black text on `#303030`, a
+ * contrast ratio of **1.59:1** against WCAG's 4.5:1 floor. It rendered, so
+ * `WidgetHostTest` was green throughout; it was only ever visible on a device in
+ * dark mode, which is what docs/running.md §4's widget block is for.
+ *
+ * `onSurface` rather than `onBackground` because `widgetBackground` is the surface
+ * this text sits on. Both resolve correctly in either mode; this one is the pair.
+ */
+@Composable
+private fun widgetTextStyle() = TextStyle(color = GlanceTheme.colors.onSurface)
 
 private const val WIDGET_PADDING = 8
