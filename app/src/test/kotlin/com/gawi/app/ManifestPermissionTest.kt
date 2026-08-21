@@ -72,6 +72,15 @@ class ManifestPermissionTest {
      * The exact set, so *any* new permission fails this and has to be argued for
      * rather than noticed later.
      *
+     * Compared **unordered**, deliberately. The order of `requestedPermissions`
+     * comes out of the manifest merger and is a function of dependency ordering,
+     * which nothing in this repo states — so a Glance, WorkManager or AGP bump
+     * that reordered the merge without adding or removing anything would fail
+     * this and read as "the permission set changed" when it had not. The KDoc's
+     * intent survives comparison as a set, and docs/ux/widget.md §5 nominates
+     * this assertion as the decision point for the reminder step, so it has to
+     * fail only for real reasons.
+     *
      * Three arrive with WorkManager, which Glance requires. The fourth is
      * androidx.core's own signature-level permission for a non-exported dynamic
      * receiver — it predates the widget, which also makes
@@ -81,13 +90,13 @@ class ManifestPermissionTest {
     @Test
     fun `the requested permission set is exactly the four that are argued for`() {
         assertEquals(
-            listOf(
+            setOf(
                 "android.permission.WAKE_LOCK",
                 "android.permission.RECEIVE_BOOT_COMPLETED",
                 "android.permission.FOREGROUND_SERVICE",
                 "com.gawi.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION",
             ),
-            requestedPermissions(),
+            requestedPermissions().toSet(),
         )
     }
 
