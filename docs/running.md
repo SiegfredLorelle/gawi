@@ -732,6 +732,31 @@ Every check here needs the reminder time moved to a couple of minutes ahead,
 in Settings. **Put it back to 21:00 afterwards**, for the reason §4's rollover
 check gives about itself: leaving it moved is how a later run passes vacuously.
 
+**How to see whether anything was posted, and why it matters here.** Two of the
+checks below assert an *absence* — silent when everything is done, and one per
+day — so a command that cannot see a notification makes both pass without
+proving anything. Use:
+
+```console
+adb shell cmd notification list | grep com.gawi.app
+```
+
+A posted reminder is one line, `0|com.gawi.app|1|null|<uid>`. For the copy and
+the time it fired:
+
+```console
+adb shell dumpsys notification --noredact | grep -A30 "pkg=com.gawi.app" \
+  | grep -E "android.title|android.text|when="
+```
+
+Note **`dumpsys notification`**, not `dumpsys notification_manager`: the latter
+exists, exits zero, and contains no `NotificationRecord` section at all, so
+grepping it for one reports "nothing posted" for every app on the device
+including the ones that certainly did post. Measured 2026-08-21, after it turned
+a reminder that had fired exactly on time into ten minutes of looking for a bug
+that was not there.
+
+
 - [ ] **It fires.** With at least one habit outstanding, set the reminder a
       couple of minutes ahead and lock the screen. A notification arrives saying
       *"N of M left today"*. Tapping it opens the app on Today.
