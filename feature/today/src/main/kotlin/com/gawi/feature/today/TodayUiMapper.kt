@@ -5,8 +5,6 @@ import com.gawi.core.data.model.TodaySnapshot
 import com.gawi.core.data.model.toMoodState
 import com.gawi.core.domain.mascot.Mascot
 import com.gawi.core.domain.model.Schedule
-import com.gawi.core.domain.streak.StreakSnapshot
-import com.gawi.core.ui.streak.StreakUi
 import com.gawi.core.ui.streak.toUi
 import com.gawi.core.ui.theme.parseHabitColor
 

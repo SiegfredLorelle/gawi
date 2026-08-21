@@ -19,8 +19,10 @@ fun habitId(n: Int): HabitId = HabitId("00000000-0000-7000-8000-" + n.toString(1
 /**
  * The logical date the detail tests read against.
  *
- * A Tuesday, matching docs/ux/today-view.md §5's worked example — with today at
- * Tue 19, Sat 16 is the oldest open day and Fri 15 is the one drawn shut.
+ * A Tuesday, so the strip runs Fri 14 to Tue 18: Sat 15 is the oldest open day
+ * and Fri 14 is the one drawn shut. Same shape as docs/ux/today-view.md §5's
+ * worked example, which uses a Tuesday the 19th — the weekday is what the
+ * example turns on, and the dates here are its own.
  */
 val TODAY: LocalDate = LocalDate.parse("2026-08-18")
 

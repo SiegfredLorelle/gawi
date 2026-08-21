@@ -11,7 +11,6 @@ import com.gawi.feature.today.testsupport.todaySnapshot
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
-import java.time.LocalDate
 
 /** docs/ux/today-view.md §5's display rules, asserted without a device. */
 class TodayUiMapperTest {

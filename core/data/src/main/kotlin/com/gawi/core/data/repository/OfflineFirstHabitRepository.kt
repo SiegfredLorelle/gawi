@@ -12,7 +12,6 @@ import com.gawi.core.data.db.entity.ProjectionMetaEntity
 import com.gawi.core.data.db.mapper.toDomain
 import com.gawi.core.data.db.mapper.toEntity
 import com.gawi.core.data.model.HabitDetail
-import com.gawi.core.data.model.TodayHabit
 import com.gawi.core.data.model.TodaySnapshot
 import com.gawi.core.data.projection.ProjectionListener
 import com.gawi.core.data.projection.ProjectionWriter

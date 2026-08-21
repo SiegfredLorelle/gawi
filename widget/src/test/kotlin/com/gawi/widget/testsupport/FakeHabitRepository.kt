@@ -1,7 +1,6 @@
 package com.gawi.widget.testsupport
 
 import com.gawi.core.data.model.HabitDetail
-import com.gawi.core.data.model.TodayHabit
 import com.gawi.core.data.model.TodaySnapshot
 import com.gawi.core.data.repository.HabitRepository
 import com.gawi.core.domain.command.CommandResult
