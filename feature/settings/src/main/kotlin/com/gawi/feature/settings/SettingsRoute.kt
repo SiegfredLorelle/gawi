@@ -57,6 +57,9 @@ fun SettingsRoute(onBack: () -> Unit) {
     val exportTo = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(EXPORT_MIME_TYPE)) { target ->
         if (target != null) viewModel.onExportTo(target)
     }
+    val exportCompletionsTo = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(CSV_MIME_TYPE)) { target ->
+        if (target != null) viewModel.onExportCompletionsTo(target)
+    }
     val importFrom = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { source ->
         if (source != null) viewModel.onImportFrom(source)
     }
@@ -75,6 +78,7 @@ fun SettingsRoute(onBack: () -> Unit) {
             onReminderTimeChange = viewModel::onReminderTimeChange,
             // The wall-clock date, not the logical one — see exportFileName.
             onExport = { exportTo.launch(exportFileName(LocalDate.now())) },
+            onExportCompletions = { exportCompletionsTo.launch(csvFileName(LocalDate.now())) },
             onImport = { importFrom.launch(IMPORT_MIME_TYPES) },
             onBack = onBack,
         ),
@@ -95,6 +99,16 @@ private fun Resources.format(message: SettingsMessage): String = getString(messa
 
 /** What an export is written as. `CreateDocument` requires one. */
 private const val EXPORT_MIME_TYPE = "application/json"
+
+/**
+ * What the CSV is written as.
+ *
+ * `text/csv` is the registered type (RFC 4180) and is what makes a spreadsheet
+ * the default handler for the file afterwards, which is the whole point of the
+ * row. Note this is only the *created* document's type; the import picker's
+ * generous filter is a separate decision and is about reading.
+ */
+private const val CSV_MIME_TYPE = "text/csv"
 
 /**
  * What the import picker offers to show.

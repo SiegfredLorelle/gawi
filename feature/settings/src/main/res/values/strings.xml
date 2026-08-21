@@ -65,6 +65,14 @@
          line directly above it already does. -->
     <string name="settings_export_overdue_help">There is no other copy of your history on this phone or anywhere else. Export one and keep it somewhere you would still have it if you lost this phone.</string>
 
+    <!-- The CSV row. Third in the section and the one that is NOT a recovery
+         path, which the help line has to carry in words because nothing about
+         its position says so: it holds no events and no habit settings, so
+         nothing can be rebuilt from it. docs/ux/settings.md §6 has the argument.
+         It gets no value line and no nudge for the same reason. -->
+    <string name="settings_export_csv_label">Export completions</string>
+    <string name="settings_export_csv_help">Writes every day you have logged to a CSV file for a spreadsheet. This is not a backup: it holds no habits and no settings, and it cannot be imported back. Use \"Export a copy\" above for that.</string>
+
     <string name="settings_import_label">Import a file</string>
     <string name="settings_import_help">Adds what a Gawi export holds to what is already here. Nothing is replaced and nothing is removed, so importing the same file twice changes nothing the second time.</string>
 
@@ -73,11 +81,25 @@
          broken. -->
     <string name="settings_export_running">Writing the file…</string>
     <string name="settings_import_running">Reading the file…</string>
+    <string name="settings_export_csv_running">Writing the spreadsheet…</string>
 
     <!-- Export speaks on success where a settings write does not. There is no
          row redrawing to be the feedback, and the file went somewhere this app
          is never told about. -->
     <string name="settings_export_done">Exported. That file is the only copy — keep it somewhere other than this phone.</string>
+
+    <!-- The CSV speaks on success too, and says what the file is rather than
+         congratulating the user on a backup they did not make.
+
+         No count and therefore no quantity resource, which is a copy decision
+         rather than a limitation. A number here would have to govern a noun —
+         "1 completions" — so it would need a <plurals>, and a plurals id cannot
+         travel through SettingsMessage, which resolves through getString. The
+         rule this file already follows is to write copy that needs neither, and
+         the count's one job that copy cannot do is telling an empty export from
+         a full one, which the second string does. -->
+    <string name="settings_export_csv_done">Exported. That file is a spreadsheet, not a backup, and it cannot be imported back.</string>
+    <string name="settings_export_csv_empty">Nothing has been logged yet, so that file holds only its column headings.</string>
 
     <!-- Two independent counts in one sentence, which a <plurals> cannot
          express: a quantity resource selects on one number. Composing two
@@ -98,6 +120,11 @@
          created the document by the time a write can fail, so a truncated file
          with a plausible name is exactly what someone would later trust. -->
     <string name="settings_error_export">That export did not finish. Delete the file it started rather than trusting it, and try again.</string>
+
+    <!-- Narrower than the message above it, deliberately. A half-written
+         spreadsheet is a nuisance; a half-written backup is a file someone
+         would later trust with their whole history. -->
+    <string name="settings_error_export_csv">That did not finish. The file it started is incomplete, so delete it and try again. Nothing else changed.</string>
 
     <!-- Import validates the whole file before it writes anything, so these
          two can both promise that nothing changed. -->

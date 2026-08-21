@@ -29,14 +29,24 @@ import com.gawi.core.ui.theme.GawiSpacing
  * `HorizontalDivider` anywhere in this app to be consistent with.
  *
  * The export row is a [SettingRow] with a real stored value — how long ago the
- * log was last written to a file — and the import row is the same composable
- * with none, because there is nothing an import leaves behind for a row to
+ * log was last written to a file — and the other two are the same composable
+ * with none, because there is nothing either of them leaves behind for a row to
  * report. That is the convergence docs/ux/settings.md §6 predicted, arriving one
  * step further along than it expected: one row composable rather than two.
+ *
+ * **Three rows under one heading, and the third one contradicts what the heading
+ * argues.** §6's case for naming this section is that its rows are the only
+ * recovery path there is. The CSV is not one, so the distinction cannot live in
+ * the layout and has to live in the copy: `settings_export_csv_help` says in as
+ * many words that the file is a spreadsheet, holds no habits or settings, and
+ * cannot be imported back. Splitting the section instead would have meant a
+ * one-row heading and a word to invent for it, which says less than the sentence
+ * does.
  */
 @Composable
 internal fun DataSection(dataTask: DataTask, recency: ExportRecency, actions: SettingsActions) {
     val exporting = activityOf(dataTask, DataTask.Exporting)
+    val exportingCsv = activityOf(dataTask, DataTask.ExportingCsv)
     val importing = activityOf(dataTask, DataTask.Importing)
 
     SectionHeader(stringResource(R.string.settings_data_header))
@@ -53,6 +63,17 @@ internal fun DataSection(dataTask: DataTask, recency: ExportRecency, actions: Se
         help = stringResource(importHelp(importing)),
         activity = importing,
         onClick = actions.onImport,
+    )
+    SettingRow(
+        label = stringResource(R.string.settings_export_csv_label),
+        // No value line, and for the same reason the import row has none rather
+        // than for a different one: there is nothing stored about this row to
+        // report. It is also not stamped — a CSV is not a backup, so the 30-day
+        // nudge above must not be settled by one.
+        value = null,
+        help = stringResource(csvHelp(exportingCsv)),
+        activity = exportingCsv,
+        onClick = actions.onExportCompletions,
     )
 }
 

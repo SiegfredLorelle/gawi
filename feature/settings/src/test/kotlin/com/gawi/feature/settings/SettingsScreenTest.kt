@@ -9,13 +9,16 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onChildren
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onParent
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import com.gawi.core.data.backup.ImportResult
 import com.gawi.core.ui.theme.GawiTheme
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -246,6 +249,7 @@ class SettingsScreenTest {
         compose.onNodeWithText(string(R.string.settings_data_header)).performScrollTo().assertIsDisplayed()
         compose.onNodeWithText(string(R.string.settings_export_label)).performScrollTo().assertIsDisplayed()
         compose.onNodeWithText(string(R.string.settings_import_label)).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(string(R.string.settings_export_csv_label)).performScrollTo().assertIsDisplayed()
     }
 
     @Test
@@ -293,11 +297,12 @@ class SettingsScreenTest {
      * mistake — nothing else here would see it.
      */
     @Test
-    fun whileExporting_bothDataRowsAreDisabled() {
+    fun whileExporting_everyDataRowIsDisabled() {
         render(STORED.copy(dataTask = DataTask.Exporting))
 
         compose.onNodeWithText(string(R.string.settings_export_label)).performScrollTo().assertIsNotEnabled()
         compose.onNodeWithText(string(R.string.settings_import_label)).performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithText(string(R.string.settings_export_csv_label)).performScrollTo().assertIsNotEnabled()
     }
 
     @Test
@@ -493,6 +498,114 @@ class SettingsScreenTest {
         compose.onNodeWithText(string(R.string.settings_export_label)).performScrollTo().assertIsNotEnabled()
     }
 
+    // --- the CSV of completions (PRD §5) ---------------------------------
+
+    /**
+     * The whole distinction lives in this sentence.
+     *
+     * §6's case for naming the Data section is that its rows are the only
+     * recovery path there is, and the CSV is not one — so nothing about where
+     * the row sits says so, and the copy has to. If this string ever stops
+     * saying it, the section quietly starts claiming a spreadsheet is a backup.
+     */
+    @Test
+    fun csvRow_saysItIsNotABackup() {
+        render(STORED)
+
+        val help = string(R.string.settings_export_csv_help)
+
+        compose.onNodeWithText(help).performScrollTo().assertIsDisplayed()
+        assertTrue("the CSV help line must disclaim being a backup: $help", help.contains("not a backup"))
+        assertTrue("it must say the file cannot come back in: $help", help.contains("cannot be imported back"))
+    }
+
+    /**
+     * No value line, and it must never acquire one. The middle line means "this
+     * is what it is set to", and nothing is stored about a CSV — in particular
+     * not a last-exported stamp, which is the JSON row's alone.
+     *
+     * **Asserted by counting the row's lines rather than by naming a string.**
+     * A value line would be new copy, so there is no resource to look for and no
+     * text to assert the absence of — the first draft of this test therefore
+     * only checked that the label and help were present, which a third line
+     * would not have disturbed. Mutation-checked: giving this row a value
+     * reddens it, and the export row beside it is rendered in the same pass with
+     * three lines, so the count is discriminating rather than incidental.
+     */
+    @Test
+    fun csvRow_hasNoValueLineEvenWhenTheExportRowDoes() {
+        render(STORED.copy(exportRecency = ExportRecency.DaysAgo(34)))
+
+        // The export row, same composable, in the same render: three lines,
+        // because it does have something stored to report. Asserting both is
+        // what makes the count discriminating rather than incidental.
+        assertEquals(3, lineCount(string(R.string.settings_export_label)))
+        assertEquals(2, lineCount(string(R.string.settings_export_csv_label)))
+        compose.onNodeWithText("Last exported 34 days ago").performScrollTo().assertIsDisplayed()
+    }
+
+    /**
+     * How many lines one `SettingRow` draws.
+     *
+     * `SettingRow`'s `Column` is `clickable` and therefore merges its
+     * descendants, so a text query returns the whole row rather than the `Text`
+     * inside it — which means its merged `Text` property *is* the list of lines,
+     * and counting that is the only way to assert a missing middle line without
+     * a string to look for. Reaching through `onParent().onChildren()` instead
+     * finds the scrolling column and every row in it, which is what the first
+     * draft of this did.
+     */
+    private fun lineCount(label: String): Int =
+        compose.onNodeWithText(label).performScrollTo().fetchSemanticsNode().config[SemanticsProperties.Text].size
+
+    /**
+     * The nudge belongs to the row that can settle it. A CSV cannot, so an
+     * overdue backup must not put the warning under this row as well — two
+     * copies of it would read as two problems.
+     */
+    @Test
+    fun whenOverdue_theNudgeAppearsOnceAndNotOnTheCsvRow() {
+        render(STORED.copy(exportRecency = ExportRecency.DaysAgo(34)))
+
+        assertEquals(
+            1,
+            compose.onAllNodesWithText(string(R.string.settings_export_overdue_help)).fetchSemanticsNodes().size,
+        )
+        compose.onNodeWithText(string(R.string.settings_export_csv_help)).performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun whileWritingTheCsv_thatRowSaysSoAndTheOthersGoDead() {
+        render(STORED.copy(dataTask = DataTask.ExportingCsv))
+
+        compose.onNodeWithText(string(R.string.settings_export_csv_running)).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(string(R.string.settings_export_csv_help)).assertDoesNotExist()
+        compose.onNodeWithText(string(R.string.settings_export_running)).assertDoesNotExist()
+        compose.onNodeWithText(string(R.string.settings_import_running)).assertDoesNotExist()
+        compose.onNodeWithText(string(R.string.settings_export_label)).performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithText(string(R.string.settings_import_label)).performScrollTo().assertIsNotEnabled()
+    }
+
+    /**
+     * Mutation-checked, and the same shape as the export/import pair above: the
+     * three lambdas have identical types, so nothing but this notices if the CSV
+     * row is wired to the backup.
+     */
+    @Test
+    fun csvRow_reportsItsOwnTapAndNotTheExportRows() {
+        val exports = mutableListOf<Unit>()
+        val csvExports = mutableListOf<Unit>()
+        render(
+            STORED,
+            actions = NO_ACTIONS.copy(onExport = { exports += Unit }, onExportCompletions = { csvExports += Unit }),
+        )
+
+        compose.onNodeWithText(string(R.string.settings_export_csv_label)).performScrollTo().performClick()
+
+        assertEquals(listOf(Unit), csvExports)
+        assertEquals(emptyList<Unit>(), exports)
+    }
+
     private fun render(state: SettingsUiState, actions: SettingsActions = NO_ACTIONS, is24Hour: Boolean = true) {
         compose.setContent {
             GawiTheme { SettingsScreen(state, actions, SnackbarHostState(), is24Hour) }
@@ -514,6 +627,7 @@ class SettingsScreenTest {
             onWeekStartChange = {},
             onReminderTimeChange = {},
             onExport = {},
+            onExportCompletions = {},
             onImport = {},
             onBack = {},
         )

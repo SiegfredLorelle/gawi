@@ -5,6 +5,7 @@ import app.cash.turbine.test
 import com.gawi.core.data.backup.ExportStatus
 import com.gawi.core.data.backup.ImportResult
 import com.gawi.core.data.settings.UserSettings
+import com.gawi.feature.settings.testsupport.FakeCompletionCsvArchive
 import com.gawi.feature.settings.testsupport.FakeEventArchive
 import com.gawi.feature.settings.testsupport.FakeSettingsSource
 import com.gawi.feature.settings.testsupport.MainDispatcherRule
@@ -41,10 +42,11 @@ class SettingsDataViewModelTest {
 
     private val settings = FakeSettingsSource()
     private val archive = FakeEventArchive()
+    private val csv = FakeCompletionCsvArchive()
 
     // by lazy, for the reason SettingsViewModelTest records: JUnit runs field
     // initialisers before it applies rules.
-    private val viewModel by lazy { SettingsViewModel(settings, archive) }
+    private val viewModel by lazy { SettingsViewModel(settings, archive, csv) }
 
     @Test
     fun `an export writes to the uri the picker returned`() = runTest {
@@ -174,6 +176,117 @@ class SettingsDataViewModelTest {
         assertEquals(listOf(DESTINATION), archive.exported)
     }
 
+    // --- the CSV of completions (PRD §5) ---------------------------------
+
+    @Test
+    fun `a csv export writes to the uri the picker returned`() = runTest {
+        viewModel.onExportCompletionsTo(CSV_DESTINATION)
+
+        assertEquals(listOf(CSV_DESTINATION), csv.exported)
+        assertEquals(emptyList<Uri>(), archive.exported)
+    }
+
+    @Test
+    fun `a csv export that succeeds says what the file is`() = runTest {
+        csv.rows = 327
+
+        viewModel.events.test {
+            viewModel.onExportCompletionsTo(CSV_DESTINATION)
+
+            assertEquals(SettingsMessage(R.string.settings_export_csv_done), awaitItem())
+        }
+    }
+
+    /** Nought rows is the one thing the copy cannot say for itself. */
+    @Test
+    fun `an empty csv export says the file holds only its headings`() = runTest {
+        csv.rows = 0
+
+        viewModel.events.test {
+            viewModel.onExportCompletionsTo(CSV_DESTINATION)
+
+            assertEquals(SettingsMessage(R.string.settings_export_csv_empty), awaitItem())
+        }
+    }
+
+    /**
+     * The failure message has to be the CSV's own and not the backup's. The
+     * backup's copy tells the user to distrust a file they may later need;
+     * saying that about a spreadsheet would be alarming and wrong.
+     */
+    @Test
+    fun `a csv export that throws reports its own failure`() = runTest {
+        csv.failure = IOException("the provider went away")
+
+        viewModel.events.test {
+            viewModel.onExportCompletionsTo(CSV_DESTINATION)
+
+            assertEquals(SettingsMessage(R.string.settings_error_export_csv), awaitItem())
+        }
+    }
+
+    @Test
+    fun `the state says it is writing a csv, and stops saying so`() = runTest {
+        val gate = CompletableDeferred<Unit>()
+        csv.gate = gate
+
+        viewModel.uiState.test {
+            assertEquals(SettingsUiState.Loading, awaitItem())
+            settings.emit(UserSettings())
+            assertEquals(DataTask.Idle, (awaitItem() as SettingsUiState.Settings).dataTask)
+
+            viewModel.onExportCompletionsTo(CSV_DESTINATION)
+            assertEquals(DataTask.ExportingCsv, (awaitItem() as SettingsUiState.Settings).dataTask)
+
+            gate.complete(Unit)
+            assertEquals(DataTask.Idle, (awaitItem() as SettingsUiState.Settings).dataTask)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `an export and an import are refused while a csv is being written`() = runTest {
+        val gate = CompletableDeferred<Unit>()
+        csv.gate = gate
+
+        viewModel.onExportCompletionsTo(CSV_DESTINATION)
+        viewModel.onExportTo(DESTINATION)
+        viewModel.onImportFrom(SOURCE)
+        gate.complete(Unit)
+
+        assertEquals(emptyList<Uri>(), archive.exported)
+        assertEquals(emptyList<Uri>(), archive.imported)
+    }
+
+    /**
+     * **The negative this whole row depends on.**
+     *
+     * A CSV holds no events, so it cannot restore anything, so it must not
+     * settle the 30-day nudge. `:core:data` enforces that structurally — the CSV
+     * archive is not given the journal at all, pinned by
+     * `CompletionCsvArchiveWiringTest` — and this asserts the same claim from
+     * the other end, at the level a user would notice: a log with something in
+     * it and no backup still says so after a CSV has been written.
+     */
+    @Test
+    fun `a csv export does not settle the export nudge`() = runTest {
+        archive.exportStatus.value = ExportStatus(daysSinceExport = null, hasEvents = true)
+
+        viewModel.uiState.test {
+            assertEquals(SettingsUiState.Loading, awaitItem())
+            settings.emit(UserSettings())
+            assertEquals(ExportRecency.Never, (awaitItem() as SettingsUiState.Settings).exportRecency)
+
+            viewModel.onExportCompletionsTo(CSV_DESTINATION)
+
+            // Two emissions as the task moves out and back. The recency must be
+            // untouched in both, which is exactly what a stamp would change.
+            assertEquals(ExportRecency.Never, (awaitItem() as SettingsUiState.Settings).exportRecency)
+            assertEquals(ExportRecency.Never, (awaitItem() as SettingsUiState.Settings).exportRecency)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
     // --- the last-export status ------------------------------------------
 
     @Test
@@ -248,5 +361,9 @@ class SettingsDataViewModelTest {
     private companion object {
         val DESTINATION: Uri = Uri.parse("content://documents/gawi-export.json")
         val SOURCE: Uri = Uri.parse("content://documents/incoming.json")
+
+        // Distinct from DESTINATION, so a test cannot pass by confusing the two
+        // archives with each other.
+        val CSV_DESTINATION: Uri = Uri.parse("content://documents/gawi-completions.csv")
     }
 }
