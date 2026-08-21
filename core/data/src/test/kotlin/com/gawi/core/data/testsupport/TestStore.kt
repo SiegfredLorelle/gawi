@@ -10,6 +10,7 @@ import com.gawi.core.data.db.entity.CompletionEntity
 import com.gawi.core.data.db.entity.EventEntity
 import com.gawi.core.data.db.entity.HabitEntity
 import com.gawi.core.data.db.entity.HabitStreakEntity
+import com.gawi.core.data.projection.ProjectionListener
 import com.gawi.core.data.projection.ProjectionWriter
 import com.gawi.core.data.repository.OfflineFirstHabitRepository
 import com.gawi.core.data.settings.SettingsSource
@@ -52,6 +53,24 @@ class FakeDeviceClock(var instant: Instant = Instant.parse("2026-08-17T09:00:00Z
 
     private companion object {
         const val MORNING = 9
+    }
+}
+
+/**
+ * Counts the pushes the widget would have received.
+ *
+ * The seam exists because Glance cannot observe Room (architecture §4), and the
+ * failure it guards against is silent: a widget that never hears about a commit
+ * looks exactly like one nobody has placed. So the notification is asserted
+ * here rather than left to a device observation.
+ */
+class RecordingProjectionListener : ProjectionListener {
+
+    var calls = 0
+        private set
+
+    override suspend fun onProjectionChanged() {
+        calls++
     }
 }
 
@@ -126,6 +145,7 @@ internal class TestStore private constructor(
     val archive: EventLogArchive,
     val clock: FakeDeviceClock,
     val settings: FakeSettingsSource,
+    val listener: RecordingProjectionListener,
 ) {
 
     suspend fun today(): LocalDate = logicalDate(clock.now(), settings.settings.dayCutoff, clock.zone())
@@ -156,6 +176,7 @@ internal class TestStore private constructor(
             settings: FakeSettingsSource = FakeSettingsSource(),
             idSeed: Long = 1,
             onCompletionWrite: (() -> Unit)? = null,
+            listener: RecordingProjectionListener = RecordingProjectionListener(),
         ): TestStore = createOver(
             database = Room
                 .inMemoryDatabaseBuilder(RuntimeEnvironment.getApplication(), GawiDatabase::class.java)
@@ -164,19 +185,30 @@ internal class TestStore private constructor(
             settings = settings,
             idSeed = idSeed,
             onCompletionWrite = onCompletionWrite,
+            listener = listener,
         )
 
         /**
          * A second repository over a database that already exists — a restart,
          * as far as the repository is concerned, since it folds the log again
          * and re-checks the projection version.
+         *
+         * `LongParameterList` is suppressed at the declaration, following the
+         * precedent the feature modules' `Fixtures.kt` builders set: a fixture
+         * builder's parameters are its whole point, every one is defaulted, and
+         * a test names only the seam it is about. detekt's threshold fires *at*
+         * six, and the sixth is the projection listener — folding two of these
+         * into a holder to get under the line would hide what a test store is
+         * made of.
          */
+        @Suppress("LongParameterList")
         fun createOver(
             database: GawiDatabase,
             clock: FakeDeviceClock = FakeDeviceClock(),
             settings: FakeSettingsSource = FakeSettingsSource(),
             idSeed: Long = 1,
             onCompletionWrite: (() -> Unit)? = null,
+            listener: RecordingProjectionListener = RecordingProjectionListener(),
         ): TestStore {
             val completions = database.completionProjectionDao()
             val writer = ProjectionWriter(
@@ -194,6 +226,7 @@ internal class TestStore private constructor(
                 ids = UuidV7Generator(nowMillis = { clock.now().toEpochMilli() }, random = Random(idSeed)),
                 clock = clock,
                 settings = settings,
+                projectionListener = listener,
             )
             val archive = EventLogArchive(
                 events = database.eventDao(),
@@ -202,7 +235,7 @@ internal class TestStore private constructor(
                 clock = clock,
                 appVersion = AppVersion(APP_VERSION),
             )
-            return TestStore(database, repository, archive, clock, settings)
+            return TestStore(database, repository, archive, clock, settings, listener)
         }
     }
 }
