@@ -549,7 +549,18 @@ does with the file.
       adb exec-out run-as com.gawi.app cat databases/gawi.db     > /tmp/gawi.db
       adb exec-out run-as com.gawi.app cat databases/gawi.db-wal > /tmp/gawi.db-wal
       sqlite3 /tmp/gawi.db 'SELECT COUNT(*) FROM completions;'
-      adb shell 'wc -l < /sdcard/Download/gawi-completions-*.csv'   # one more, for the header
+
+      # Count records with a parser, not with wc -l. A note may contain a line
+      # break -- written through verbatim, see docs/ux/settings.md 6 -- so wc
+      # counts newlines and over-reports. Name the file rather than globbing it:
+      # `wc -l < ...*.csv` also fails outright once two exports are in the folder.
+      adb pull /sdcard/Download/gawi-completions-$(date +%F).csv /tmp/ >/dev/null
+      python3 - "/tmp/gawi-completions-$(date +%F).csv" <<'EOF'
+      import csv, sys
+      with open(sys.argv[1], newline="", encoding="utf-8-sig") as handle:
+          rows = [r for r in csv.reader(handle) if r]
+      print(f"{len(rows) - 1} data rows (header excluded)")
+      EOF
       ```
 
 - [ ] **A formula in a habit name stays text in a spreadsheet.** This is the
