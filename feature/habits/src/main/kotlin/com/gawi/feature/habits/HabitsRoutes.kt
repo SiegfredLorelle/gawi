@@ -24,7 +24,7 @@ import com.gawi.core.domain.model.HabitId
  * what stops the editor's half-typed form outliving the screen it belongs to.
  */
 @Composable
-fun HabitListRoute(onAddHabit: () -> Unit, onEditHabit: (String) -> Unit, onBack: () -> Unit) {
+fun HabitListRoute(onAddHabit: () -> Unit, onOpenHabit: (String) -> Unit, onBack: () -> Unit) {
     val viewModel: HabitListViewModel = hiltViewModel()
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -44,7 +44,7 @@ fun HabitListRoute(onAddHabit: () -> Unit, onEditHabit: (String) -> Unit, onBack
             onAdd = onAddHabit,
             // Unwrapped at the boundary, so :app's route argument stays a plain
             // String and HabitId does not leak into the navigation graph.
-            onEdit = { habitId -> onEditHabit(habitId.value) },
+            onOpen = { habitId -> onOpenHabit(habitId.value) },
             onArchiveToggle = viewModel::onArchiveToggle,
             onBack = onBack,
         ),

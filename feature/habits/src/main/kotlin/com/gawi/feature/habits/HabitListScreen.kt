@@ -116,7 +116,7 @@ private fun HabitList(state: HabitListUiState.Habits, actions: HabitListActions,
 /**
  * One habit, with the two things you can do to it.
  *
- * The title block opens the editor and the trailing button archives, rather
+ * The title block opens detail and the trailing button archives, rather
  * than the row itself toggling archived. Archiving is the one of the two that
  * feels destructive, so it gets its own target and its own word instead of
  * being what happens when you meant to tap a name.
@@ -129,7 +129,7 @@ private fun HabitManageRow(row: HabitListRowUi, actions: HabitListActions, modif
         horizontalArrangement = Arrangement.spacedBy(GawiSpacing.Gap),
     ) {
         HabitIcon(row)
-        HabitTitles(row, Modifier.weight(1f), onEdit = { actions.onEdit(row.id) })
+        HabitTitles(row, Modifier.weight(1f), onOpen = { actions.onOpen(row.id) })
         TextButton(onClick = { actions.onArchiveToggle(row.id, row.archived) }) {
             Text(stringResource(if (row.archived) R.string.habits_unarchive else R.string.habits_archive))
         }
@@ -161,7 +161,7 @@ private fun HabitIcon(row: HabitListRowUi) {
 }
 
 /**
- * The name and its schedule, and the target that opens the editor.
+ * The name and its schedule, and the target that opens the habit.
  *
  * The whole block is the target rather than the name alone, so a habit is not
  * harder to open for having a short name. `onClickLabel` rather than
@@ -169,10 +169,10 @@ private fun HabitIcon(row: HabitListRowUi) {
  * technology — and to the tests — instead of being replaced by one description.
  */
 @Composable
-private fun RowScope.HabitTitles(row: HabitListRowUi, modifier: Modifier = Modifier, onEdit: () -> Unit) {
+private fun RowScope.HabitTitles(row: HabitListRowUi, modifier: Modifier = Modifier, onOpen: () -> Unit) {
     Column(
         modifier = modifier
-            .clickable(onClickLabel = stringResource(R.string.habits_edit), onClick = onEdit)
+            .clickable(onClickLabel = stringResource(R.string.habits_open), onClick = onOpen)
             .padding(vertical = GawiSpacing.Row),
         verticalArrangement = Arrangement.spacedBy(GawiSpacing.Line),
     ) {

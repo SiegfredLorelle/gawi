@@ -71,6 +71,14 @@ import com.gawi.feature.today.R as TodayR
  * real graph and the real database. So the limitation above is still exactly
  * true of *this* file and is no longer a gap in the project. What stays here is
  * what belongs here — navigation and first reads, on the JVM, in `make test`.
+ *
+ * **Habit detail, for the same reason.** Every route into it needs a habit that
+ * exists: the list row that opens one, and the editor that navigates to a habit
+ * it has just created. Both are writes, so neither is reachable here and there
+ * is no detail assertion below. `WriteJourneyTest` covers both on a device, and
+ * `HabitDetailScreenTest` covers what the screen draws once it has something to
+ * draw. What is asserted here is that the graph still compiles around the new
+ * destination and that the routes that never needed a habit still work.
  */
 @HiltAndroidTest
 @RunWith(RobolectricTestRunner::class)
