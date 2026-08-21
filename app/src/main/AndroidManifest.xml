@@ -2,8 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- The app declares no permission of its own, and requests **no INTERNET
-         permission**, so it cannot open a socket: §1's "offline-first,
+    <!-- The app declares **one** permission of its own, and requests **no
+         INTERNET permission**, so it cannot open a socket: §1's "offline-first,
          verifiably" holds in the way that matters.
 
          What is here, and why the merged manifest is the thing to read rather
@@ -22,6 +22,12 @@
          - DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION is androidx.core's own
            signature-level permission for registering a non-exported dynamic
            receiver. It predates the widget and grants nothing to anything else.
+         - POST_NOTIFICATIONS is the app's own, and the only one declared by hand
+           here. The end-of-day reminder (PRD §4) is a notification, so there is
+           no version of that feature without it. It is a **runtime** permission
+           on API 33+, requested from the settings screen's reminder row rather
+           than at first launch, and it grants nothing but the ability to put a
+           row in the user's own shade. docs/ux/reminder.md §3 has the argument.
 
          ManifestPermissionTest asserts this exact set, so anything arriving
          through any library's manifest fails a test rather than being noticed
@@ -32,10 +38,19 @@
          (architecture §6). -->
 
     <!-- Not "unused": measured. See the comment above. If a future WorkRequest
-         ever takes a network constraint, this line is what has to go first. -->
+         ever takes a network constraint, this line is what has to go first —
+         and the reminder's two WorkRequests deliberately carry no constraint at
+         all, which ReminderScheduler.enqueue's KDoc records as a rule rather
+         than an omission. -->
     <uses-permission
         android:name="android.permission.ACCESS_NETWORK_STATE"
         tools:node="remove" />
+
+    <!-- The reminder. Runtime-requested on API 33+; below that the grant is
+         implicit and the user's switch in system settings is the only control,
+         which is why the settings row reads NotificationManagerCompat rather
+         than checkSelfPermission. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:name=".GawiApplication"
