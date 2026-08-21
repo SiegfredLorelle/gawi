@@ -1,8 +1,10 @@
 package com.gawi.feature.habits
 
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -162,14 +164,15 @@ class HabitDetailScreenTest {
 
     // ---- the retro strip and the honesty prompt ----
 
-    private fun cellLabel(back: Long, shut: Boolean = false, done: Boolean = false): String {
+    private fun cellLabel(back: Long, shut: Boolean = false, done: Boolean = false, hasNote: Boolean = false): String {
         val day = TODAY.minusDays(back).dayOfMonth
         val id = when {
             shut -> R.string.habits_strip_shut
             done -> R.string.habits_strip_done
             else -> R.string.habits_strip_not_done
         }
-        val label = resources.getString(id, day)
+        val noted = if (hasNote) ". " + string(R.string.habits_strip_has_note) else ""
+        val label = resources.getString(id, day) + noted
         if (shut) return label
         val action = string(if (done) R.string.habits_strip_undo else R.string.habits_strip_complete)
         // A completed open day also offers the note, and the label says so.
@@ -307,6 +310,78 @@ class HabitDetailScreenTest {
         compose.onNodeWithContentDescription(cellLabel(back = 4, shut = true)).assertIsDisplayed()
     }
 
+    /**
+     * An archived habit's strip answers nothing at all.
+     *
+     * Every write is rejected for an archived habit, so a live cell could only
+     * produce a snackbar. Today's cell is the one worth naming: it is the one
+     * that would otherwise still look tappable.
+     */
+    @Test
+    fun anArchivedHabitsStrip_reportsNothing() {
+        val writes = mutableListOf<LocalDate>()
+        render(
+            detail(archived = true, strip = strip(archived = true)),
+            NO_ACTIONS.copy(onToggle = { _, date, _ -> writes += date }),
+        )
+
+        compose.onNodeWithContentDescription(cellLabel(back = 0, shut = true)).performClick()
+        compose.onNodeWithContentDescription(cellLabel(back = 2, shut = true)).performClick()
+
+        assertTrue(writes.isEmpty())
+        compose.onNodeWithText(string(R.string.habits_retro_title)).assertDoesNotExist()
+    }
+
+    /**
+     * A day with a note says so, out loud.
+     *
+     * The dot is the visual half; this is the half TalkBack gets, and the
+     * sharper one — without it an annotated day and a bare one are announced
+     * identically, so a note is discoverable only by long-pressing each cell.
+     */
+    @Test
+    fun aDayWithANote_announcesIt() {
+        render(detail(strip = strip(completed = setOf(TODAY.minusDays(2)), notes = mapOf(TODAY.minusDays(2) to "went far"))))
+
+        compose.onNodeWithContentDescription(cellLabel(back = 2, done = true, hasNote = true)).assertIsDisplayed()
+    }
+
+    /** And a completed day without one does not claim to have a note. */
+    @Test
+    fun aCompletedDayWithoutANote_doesNotClaimOne() {
+        render(detail(strip = strip(completed = setOf(TODAY.minusDays(2)))))
+
+        compose.onNodeWithContentDescription(cellLabel(back = 2, done = true)).assertIsDisplayed()
+    }
+
+    /**
+     * The marker is drawn on the annotated day and on no other.
+     *
+     * Counted rather than merely asserted present: a marker drawn on every cell
+     * would satisfy "the annotated day has one" and tell the reader nothing.
+     */
+    @Test
+    fun theNoteMarker_isDrawnOnlyOnAnAnnotatedDay() {
+        render(
+            detail(
+                strip = strip(
+                    completed = setOf(TODAY.minusDays(1), TODAY.minusDays(2)),
+                    notes = mapOf(TODAY.minusDays(2) to "went far"),
+                ),
+            ),
+        )
+
+        compose.onAllNodesWithText(NOTE_MARKER, useUnmergedTree = true).assertCountEquals(1)
+    }
+
+    /** None at all when nothing is annotated. */
+    @Test
+    fun theNoteMarker_isAbsentWhenNoDayCarriesANote() {
+        render(detail(strip = strip(completed = setOf(TODAY.minusDays(1)))))
+
+        compose.onAllNodesWithText(NOTE_MARKER, useUnmergedTree = true).assertCountEquals(0)
+    }
+
     private companion object {
         val HABIT = HabitId("00000000-0000-7000-8000-000000000001")
         val OTHER = HabitId("00000000-0000-7000-8000-000000000002")
@@ -352,19 +427,23 @@ class HabitDetailScreenTest {
          * mapper builds them. Built here rather than by calling the mapper so a
          * screen test stays a statement about drawing and not about mapping.
          */
-        fun strip(completed: Set<LocalDate> = emptySet(), notes: Map<LocalDate, String> = emptyMap()) = (0L..4L).reversed().map { back ->
-            val date = TODAY.minusDays(back)
-            RetroCellUi(
-                date = date,
-                dayLabel = R.string.habits_day_mon,
-                dayOfMonth = date.dayOfMonth,
-                completed = date in completed,
-                note = notes[date],
-                open = back <= RETRO_WINDOW,
-                isToday = back == 0L,
-            )
-        }
+        fun strip(completed: Set<LocalDate> = emptySet(), notes: Map<LocalDate, String> = emptyMap(), archived: Boolean = false) =
+            (0L..4L).reversed().map { back ->
+                val date = TODAY.minusDays(back)
+                RetroCellUi(
+                    date = date,
+                    dayLabel = R.string.habits_day_mon,
+                    dayOfMonth = date.dayOfMonth,
+                    completed = date in completed,
+                    note = notes[date],
+                    open = back <= RETRO_WINDOW && !archived,
+                    isToday = back == 0L,
+                )
+            }
 
         const val RETRO_WINDOW = 3L
+
+        /** Mirrors RetroStrip's NOTE_GLYPH, which is private to the composable. */
+        const val NOTE_MARKER = "•"
     }
 }

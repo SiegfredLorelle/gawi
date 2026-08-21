@@ -78,7 +78,18 @@ internal data class RetroCellUi(
     val open: Boolean,
     /** Today's cell writes with no confirmation — PRD §6.4's frictionless same-day undo. */
     val isToday: Boolean,
-)
+) {
+
+    /**
+     * Whether this day carries a note, which the cell draws and announces.
+     *
+     * Derived rather than stored: a note can only hang off a live completion
+     * (architecture §4), so [note] being present already says it. Named because
+     * the strip asks the question twice — once for the dot, once for the spoken
+     * label — and `note != null` in both places invites them to disagree.
+     */
+    val hasNote: Boolean get() = note != null
+}
 
 /**
  * A weekly habit's progress through its own week.

@@ -107,6 +107,13 @@ internal fun HabitDetail.toDetailUiState(): HabitDetailUiState.Detail = HabitDet
  * domain rejects with, so what the strip offers and what a tap is allowed to do
  * cannot drift apart.
  *
+ * **An archived habit's cells are all shut**, for the same reason and by the
+ * same field. `Commands` rejects every completion write on an archived habit —
+ * `addCompletion`, `undoCompletion` and `updateCompletionNote` alike — so a live
+ * cell there could only ever answer a tap with a refusal, which is precisely
+ * what §5 says not to build. Archiving is undone from the list row
+ * (docs/ux/habits.md §6); detail is read-only until it is.
+ *
  * A missing key in `recent` is "not completed"; a null value is "completed, no
  * note". Conflating them would draw a cleared note as a missing day.
  */
@@ -121,7 +128,7 @@ private fun HabitDetail.toStrip(): List<RetroCellUi> {
                 dayOfMonth = day.dayOfMonth,
                 completed = recent.containsKey(day),
                 note = recent[day],
-                open = !day.isBefore(oldestOpen),
+                open = !day.isBefore(oldestOpen) && !habit.habit.archived,
                 isToday = day == today,
             )
         }

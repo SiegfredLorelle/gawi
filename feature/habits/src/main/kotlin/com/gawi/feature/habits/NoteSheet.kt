@@ -40,7 +40,7 @@ import com.gawi.core.ui.theme.GawiSpacing
  */
 @Composable
 internal fun NoteSheetContent(
-    date: String,
+    dayOfMonth: Int,
     initial: String,
     onSave: (String) -> Unit,
     onCancel: () -> Unit,
@@ -49,7 +49,13 @@ internal fun NoteSheetContent(
     // Seeded from the note that is there and edited locally, so Cancel means
     // nothing changed — the rule every dialog in :feature:settings follows.
     // rememberSaveable takes a String directly, unlike the strip's LocalDate.
-    var text by rememberSaveable(initial) { mutableStateOf(initial) }
+    //
+    // Deliberately unkeyed. Keying on [initial] would reseed the field whenever
+    // the read model changed underneath — an import, or the cell re-read after a
+    // rollover — throwing away whatever was being typed. It would buy nothing:
+    // the sheet is torn down and rebuilt per cell, since the host removes it
+    // entirely when no cell is selected, so there is no second cell to reseed for.
+    var text by rememberSaveable { mutableStateOf(initial) }
 
     Column(
         modifier = modifier
@@ -58,7 +64,7 @@ internal fun NoteSheetContent(
         verticalArrangement = Arrangement.spacedBy(GawiSpacing.Gap),
     ) {
         Text(
-            text = stringResource(R.string.habits_note_title, date),
+            text = stringResource(R.string.habits_note_title, dayOfMonth),
             style = MaterialTheme.typography.titleMedium,
         )
         OutlinedTextField(
@@ -78,8 +84,16 @@ internal fun NoteSheetContent(
             // is append-only, so a no-op Save would add a CompletionNoteUpdated
             // that changes nothing — the same reason Clear below is offered
             // only when there is a note to remove.
+            //
+            // Compared trimmed, written raw. Trimmed because whitespace is the
+            // other way to change nothing: spaces typed into an empty note, or
+            // added to the end of an existing one, both render identically to
+            // what was already there. Raw because trimming the *written* value
+            // would quietly edit what someone typed — `Form.canSave` leaves a
+            // habit name untrimmed for that reason and `CompletionCsv` refuses
+            // to rewrite a note on the way out.
             TextButton(
-                onClick = { if (text == initial) onCancel() else onSave(text) },
+                onClick = { if (text.trim() == initial.trim()) onCancel() else onSave(text) },
             ) { Text(stringResource(R.string.habits_save)) }
             // Offered only when there is something to remove. A clear that wrote
             // an empty note over an already-empty one would append an event that

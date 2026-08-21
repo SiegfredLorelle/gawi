@@ -38,7 +38,7 @@ class NoteSheetContentTest {
         compose.setContent {
             GawiTheme {
                 NoteSheetContent(
-                    date = "16",
+                    dayOfMonth = 16,
                     initial = initial,
                     onSave = { saved += it },
                     onCancel = { cancelled++ },
@@ -150,5 +150,52 @@ class NoteSheetContentTest {
 
         assertTrue(saved.isEmpty())
         assertEquals(1, cancelled)
+    }
+
+    /**
+     * Typing only whitespace into an empty note writes nothing.
+     *
+     * Visually identical to the nothing that was there, so it is the same no-op
+     * write the unchanged-Save guard exists to stop — the comparison is trimmed
+     * for exactly this.
+     */
+    @Test
+    fun savingOnlyWhitespaceWritesNothing() {
+        render("")
+
+        compose.onNodeWithText(string(R.string.habits_note_label)).performTextInput("   ")
+        compose.onNodeWithText(string(R.string.habits_save)).performClick()
+
+        assertTrue(saved.isEmpty())
+        assertEquals(1, cancelled)
+    }
+
+    /** And padding an existing note changes nothing visible, so it writes nothing. */
+    @Test
+    fun paddingAnExistingNoteWritesNothing() {
+        render("went far")
+
+        compose.onNodeWithText("went far").performTextInput("  ")
+        compose.onNodeWithText(string(R.string.habits_save)).performClick()
+
+        assertTrue(saved.isEmpty())
+    }
+
+    /**
+     * What is written is what was typed, spaces and all.
+     *
+     * The guard compares trimmed; it must not *save* trimmed. `Form.canSave`
+     * leaves a habit name untrimmed for the same reason, and CompletionCsv
+     * refuses to rewrite a note on the way out — an app that owns your data
+     * does not quietly edit it.
+     */
+    @Test
+    fun aRealEditIsSavedExactlyAsTyped() {
+        render("")
+
+        compose.onNodeWithText(string(R.string.habits_note_label)).performTextInput("  went far  ")
+        compose.onNodeWithText(string(R.string.habits_save)).performClick()
+
+        assertEquals(listOf("  went far  "), saved)
     }
 }

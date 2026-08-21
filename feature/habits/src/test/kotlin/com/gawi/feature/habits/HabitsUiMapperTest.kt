@@ -287,4 +287,44 @@ class HabitsUiMapperTest {
 
         assertEquals(listOf(TODAY), strip.filter { it.isToday }.map { it.date })
     }
+
+    /**
+     * An archived habit's strip is shut end to end.
+     *
+     * `Commands` rejects every completion write on an archived habit —
+     * addCompletion, undoCompletion and updateCompletionNote alike — so a live
+     * cell could only answer a tap with a refusal, which is the
+     * tapped-and-refused pattern docs/ux/today-view.md §5 exists to prevent.
+     * Today's cell included: it is the one most likely to look actionable.
+     */
+    @Test
+    fun `an archived habit's cells are all shut`() {
+        val strip = habitDetail(todayHabit(habitState(archived = true))).toDetailUiState().strip
+
+        assertTrue(strip.none { it.open })
+        assertEquals(5, strip.size)
+        assertFalse(strip.single { it.isToday }.open)
+    }
+
+    /** And bringing it back opens the window again — the flag is the only difference. */
+    @Test
+    fun `an unarchived habit's window is open again`() {
+        val strip = habitDetail(todayHabit(habitState(archived = false))).toDetailUiState().strip
+
+        assertEquals(4, strip.count { it.open })
+    }
+
+    /** A shut day still reports its note, the same way it still reports the tick. */
+    @Test
+    fun `hasNote follows the note, on shut days too`() {
+        val detail = habitDetail(
+            todayHabit(habitState(archived = true)),
+            recent = mapOf(daysAgo(1) to "went far", daysAgo(2) to null),
+        )
+        val strip = detail.toDetailUiState().strip.associateBy { it.date }
+
+        assertTrue(strip.getValue(daysAgo(1)).hasNote)
+        assertFalse(strip.getValue(daysAgo(2)).hasNote)
+        assertFalse(strip.getValue(daysAgo(3)).hasNote)
+    }
 }

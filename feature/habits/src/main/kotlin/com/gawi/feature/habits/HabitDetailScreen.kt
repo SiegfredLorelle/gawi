@@ -183,7 +183,7 @@ private fun HabitDetail(state: HabitDetailUiState.Detail, actions: HabitDetailAc
 private fun NoteSheet(cell: RetroCellUi, onSave: (String) -> Unit, onDismiss: () -> Unit) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
         NoteSheetContent(
-            date = cell.dayOfMonth.toString(),
+            dayOfMonth = cell.dayOfMonth,
             initial = cell.note.orEmpty(),
             onSave = onSave,
             onCancel = onDismiss,
