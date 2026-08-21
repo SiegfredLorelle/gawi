@@ -122,4 +122,33 @@ class NoteSheetContentTest {
         assertEquals(1, cancelled)
         assertTrue(saved.isEmpty())
     }
+
+    /**
+     * Saving an untouched field writes nothing.
+     *
+     * The log is append-only, so a no-op Save would add a
+     * `CompletionNoteUpdated` that changes nothing — the same case Clear is
+     * already guarded against. It dismisses instead, which is what the tap
+     * meant.
+     */
+    @Test
+    fun savingAnUnchangedNoteWritesNothing() {
+        render("went far")
+
+        compose.onNodeWithText(string(R.string.habits_save)).performClick()
+
+        assertTrue(saved.isEmpty())
+        assertEquals(1, cancelled)
+    }
+
+    /** And an empty field on a day that never had a note is the same no-op. */
+    @Test
+    fun savingAnEmptyNoteOnADayWithoutOneWritesNothing() {
+        render("")
+
+        compose.onNodeWithText(string(R.string.habits_save)).performClick()
+
+        assertTrue(saved.isEmpty())
+        assertEquals(1, cancelled)
+    }
 }

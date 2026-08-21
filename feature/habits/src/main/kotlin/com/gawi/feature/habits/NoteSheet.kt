@@ -65,10 +65,22 @@ internal fun NoteSheetContent(
             value = text,
             onValueChange = { edited -> text = edited },
             label = { Text(stringResource(R.string.habits_note_label)) },
+            // Single-line, like both of the editor's fields. Not cosmetic:
+            // CompletionCsv's KDoc rests on it — a note carrying a newline has
+            // to come from an import rather than from the app, which is what
+            // makes the CSV's line-break handling a statement about foreign
+            // files rather than about anything this sheet can produce.
+            singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
         Row(horizontalArrangement = Arrangement.spacedBy(GawiSpacing.Gap)) {
-            TextButton(onClick = { onSave(text) }) { Text(stringResource(R.string.habits_save)) }
+            // Saving an unchanged field dismisses rather than writing. The log
+            // is append-only, so a no-op Save would add a CompletionNoteUpdated
+            // that changes nothing — the same reason Clear below is offered
+            // only when there is a note to remove.
+            TextButton(
+                onClick = { if (text == initial) onCancel() else onSave(text) },
+            ) { Text(stringResource(R.string.habits_save)) }
             // Offered only when there is something to remove. A clear that wrote
             // an empty note over an already-empty one would append an event that
             // changed nothing.

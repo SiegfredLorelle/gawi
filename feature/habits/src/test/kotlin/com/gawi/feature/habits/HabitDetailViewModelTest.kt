@@ -198,6 +198,39 @@ class HabitDetailViewModelTest {
         }
     }
 
+    /**
+     * A double tap on a ticked cell says nothing.
+     *
+     * `CompletionNotFound` on an undo means the day is already in the state the
+     * tap asked for — a second tap, or a cell the widget cleared first. Saying
+     * "that day is no longer logged" would be a message about a non-event, and
+     * `:feature:today` drops it on the same path for the same reason.
+     */
+    @Test
+    fun `an undo that finds nothing is not reported`() = runTest {
+        val detail = detailWriting()
+        repository.result = CommandResult.Rejected(CommandError.CompletionNotFound)
+
+        detail.events.test {
+            detail.onToggle(habitId(1), TODAY, completed = true)
+            expectNoEvents()
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    /** But every other rejection on that path still is. */
+    @Test
+    fun `other rejections on a toggle are still reported`() = runTest {
+        val detail = detailWriting()
+        repository.result = CommandResult.Rejected(CommandError.HabitIsArchived)
+
+        detail.events.test {
+            detail.onToggle(habitId(1), TODAY, completed = false)
+            assertEquals(HabitsMessage(R.string.habits_error_archived), awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
     // ---- the note ----
 
     @Test

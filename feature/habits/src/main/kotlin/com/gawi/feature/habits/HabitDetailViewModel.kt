@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gawi.core.data.repository.HabitRepository
+import com.gawi.core.domain.command.CommandError
 import com.gawi.core.domain.command.CommandResult
 import com.gawi.core.domain.model.HabitId
 import dagger.assisted.Assisted
@@ -116,7 +117,14 @@ internal class HabitDetailViewModel @AssistedInject constructor(
                 // cell tap. The read above is guarded for the same reason.
                 result == null -> messages.send(HabitsMessage(R.string.habits_error_unexpected))
 
-                result is CommandResult.Rejected -> messages.send(HabitsMessage(messageFor(result.error)))
+                // CompletionNotFound on an undo is a double tap, or a cell the
+                // widget already cleared: the day is in the state the tap asked
+                // for, so reporting it would be a message about a non-event.
+                // `:feature:today` drops it on the same path for the same
+                // reason. The note path keeps it — there a vanished completion
+                // means the write really did not happen.
+                result is CommandResult.Rejected && result.error != CommandError.CompletionNotFound ->
+                    messages.send(HabitsMessage(messageFor(result.error)))
             }
         }
     }
