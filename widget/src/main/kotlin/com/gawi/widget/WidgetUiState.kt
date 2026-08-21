@@ -109,8 +109,9 @@ internal fun WidgetContent.body(): WidgetBodyContent = when (this) {
  * shows [WidgetContent.Loading], which draws nothing.
  *
  * A *persistent* failure still lands on [WidgetContent.Unavailable] and stays
- * there, which is correct — there is nothing else to show — and is bounded by
- * the session's own lifetime and the provider's update period.
+ * there, which is correct — there is nothing else to show. How long it stays is
+ * not something this code can promise: it clears when the Glance session ends,
+ * or when the provider's update period next gets through (§4).
  *
  * The `catch` sits after the `map`, so a failed read replaces the whole content
  * rather than one row. Cancellation is never retried and never caught as a
@@ -128,9 +129,14 @@ private suspend fun delayThenRetry(): Boolean {
 }
 
 /**
- * Three attempts at 150ms. Short on purpose: the widget draws nothing while a
- * retry is in flight, so a generous backoff would trade a wrong answer for a
- * blank one.
+ * Three **retries**, at 150ms each — so at most *four* reads, the first plus
+ * three, and ~450ms of drawing nothing in the worst case. `retryWhen`'s
+ * `attempt` is zero-based, which is what makes the count off by one from the
+ * obvious reading; `WidgetContentTest` pins both edges with literal numbers so
+ * the distinction cannot drift.
+ *
+ * Short on purpose: nothing is emitted while a retry is in flight, so a generous
+ * backoff would trade a wrong answer for a blank one.
  */
 private const val READ_RETRIES = 3L
 private const val RETRY_BACKOFF_MILLIS = 150L
