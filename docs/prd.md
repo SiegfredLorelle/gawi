@@ -123,7 +123,7 @@ All data is an **append-only event log** (habit created/edited/archived, complet
 
 ## 6. Key UX Requirements
 
-1. Logging < 5 seconds: widget or notification action, one tap. (**The widget half landed 2026-08-21**; the notification action arrives with the reminder.)
+1. Logging < 5 seconds: widget or notification action, one tap. (**The widget satisfies this as of 2026-08-21.** The notification action remains §4's stretch goal, which may move to Phase 1.)
 2. Today view is the app's home screen.
 3. Notes/tags never add friction to the base flow — always optional, always secondary.
 4. Retroactive edits carry deliberate friction (confirmation + honesty prompt) but stay possible within 3 days; same-day undo is frictionless.
