@@ -50,7 +50,7 @@ fun habitState(
 )
 
 /**
- * What `observeHabit` returns.
+ * What `observeHabit` returns, and what nests inside a [HabitDetail].
  *
  * The editor reads only its `habit`; detail reads all of it, which is why the
  * completion, week and streak fields are parameters rather than fixed zeroes.

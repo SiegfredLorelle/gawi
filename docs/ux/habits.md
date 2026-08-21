@@ -202,6 +202,21 @@ A shut day still shows whether it was completed. It is refused, not hidden.
 heatmap/calendar history goes. This is the writable window and the one day past
 its edge, which is a different thing with a different job.
 
+**An archived habit's cells are all shut** — added in review. `Commands` rejects
+every completion write on an archived habit, so a live cell there could only
+answer a tap with a refusal, which is the thing §5 is arguing against and which
+the paragraph above claims this screen does not do. The archived section's rows
+open detail with the same tap as any other, so it is the documented path rather
+than a corner. Archiving is undone from the list row (§6); detail stays
+read-only until it is, and its header already says "Archived".
+
+**A day carrying a note is marked** — also added in review. The note reached the
+cell but only the sheet read it, so an annotated day looked exactly like a bare
+one and nothing advertised the long-press. A `•` beneath the tick, and "has a
+note" appended to the cell's spoken label. The second half is the sharper one:
+without it a note is discoverable only by long-pressing every completed day in
+turn.
+
 ### Every past-day write confirms, in both directions
 
 PRD §5 fixes the copy — *"You're logging for a previous day — make sure this is
