@@ -31,6 +31,12 @@ linter; this happens once per machine.
 | `make lint` | Lint and type-check |
 | `make test` | Run the test suite |
 | `make run` | Build, install and launch on a device or emulator |
+| `make itest` | Instrumented tests on a device — **destroys that device's app data** |
+
+`make itest` is the one command here that can lose something. It uninstalls the
+app when it finishes, and `allowBackup` is off by design, so the event log goes
+with it. Point it at a throwaway emulator, never at a device you actually track
+habits on — [docs/running.md](docs/running.md) §3 and §4 have the detail.
 
 ## Usage
 
