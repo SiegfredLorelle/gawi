@@ -172,7 +172,11 @@ private fun Modifier.cellAction(cell: RetroCellUi, onCell: (RetroCellUi) -> Unit
             toggleableState = ToggleableState(cell.completed)
         }
     } else {
-        semantics {
+        // mergeDescendants, because the open branch gets merging for free from
+        // combinedClickable. Without it the one cell this section exists to
+        // explain is four TalkBack stops — its description, then the weekday,
+        // the date and the glyph — where every other cell is one.
+        semantics(mergeDescendants = true) {
             contentDescription = label
             disabled()
         }

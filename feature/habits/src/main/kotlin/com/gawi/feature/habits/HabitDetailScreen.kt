@@ -9,7 +9,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -115,7 +117,12 @@ private fun HabitDetail(state: HabitDetailUiState.Detail, actions: HabitDetailAc
     val noted = state.strip.firstOrNull { it.date.toEpochDay() == noteDay }
 
     Column(
-        modifier = modifier.padding(GawiSpacing.Row),
+        // Scrolls like the editor and settings do. At a large system font scale
+        // the header, the displaySmall streak and the 48dp strip overflow a
+        // short screen, and the strip is the one thing here you can touch.
+        modifier = modifier
+            .verticalScroll(rememberScrollState())
+            .padding(GawiSpacing.Row),
         verticalArrangement = Arrangement.spacedBy(GawiSpacing.Row),
     ) {
         HabitHeader(state)
