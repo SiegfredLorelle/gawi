@@ -70,7 +70,7 @@ All data is an **append-only event log** (habit created/edited/archived, complet
 
 **Logging**
 - Today view (app home screen): all habits, one tap to complete, tap again to undo (undo = tombstone event; same-day undo has no friction).
-- Optional note per completion (long-press / detail view — never blocks the one-tap flow). (**Built 2026-08-21** — long-press a completed day on habit detail. The Today-row long-press is *not* built; the habit list is the only door to detail. [docs/ux/habits.md](ux/habits.md) §7.)
+- Optional note per completion (long-press / detail view — never blocks the one-tap flow). (**Built 2026-08-21** — long-press a completed day on habit detail, which is reached from the habit list or by saving a new habit. The Today-row long-press is *not* built. [docs/ux/habits.md](ux/habits.md) §7.)
 - **Retroactive logging: up to 3 days back only.** Editing a past day triggers a confirmation with an honesty prompt ("You're logging for a previous day — make sure this is accurate. Be true to yourself."). (**Built 2026-08-21** — [docs/ux/habits.md](ux/habits.md) §7. The prompt is UI friction only; architecture §5 keeps the window a command validation, so the domain refuses an out-of-range day whatever the screen believed.)
 - Android **home-screen widget**: today's habits, tap to complete without opening the app. **Built 2026-08-21** — a tap toggles, so it undoes too; [docs/ux/widget.md](ux/widget.md) records the decisions and what a widget cannot keep current on its own.
 - **End-of-day reminder notification** if due habits remain incomplete as the day boundary approaches (configurable time, e.g., 21:00). Silent when everything is done. One reminder max per day. (**Built 2026-08-21** — [docs/ux/reminder.md](ux/reminder.md).)
