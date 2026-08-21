@@ -668,14 +668,19 @@ Decisions and reasoning are in [docs/ux/widget.md](ux/widget.md).
 - [ ] **Resizing keeps it usable.** Drag the handles: rows reflow and the list
       scrolls rather than clipping.
 
-Known and expected, not a bug: a widget left on the launcher **across the day
-cutoff shows yesterday's ticks** until the next periodic update gets through —
-best-effort, not a deadline, since the framework defers these under Doze and will
-not wake the device for one. A tap still writes to the *right* date, because it
-re-reads rather than trusting the drawn one — but the visible semantics invert
-while it is stale: tapping a row drawn as **ticked** finds today incomplete and
-therefore **adds** a completion, so the box stays checked and nothing looks
-undone. The log is correct; the render was not (docs/ux/widget.md §4).
+Known and expected, not a bug — but **much narrower since 2026-08-21**: a widget
+left on the launcher across the day cutoff is now refreshed by a scheduled wake
+(`RolloverWorker`, docs/ux/reminder.md §2), so it normally clears by itself. What
+remains is that the wake is best-effort and not a deadline: a device deep in Doze
+can still defer it, and then the periodic update is the fallback it always was.
+
+So the stale-render behaviour below is still reachable and still worth knowing,
+because it is the reason the tap path is built the way it is. A tap always writes
+to the *right* date, because it re-reads rather than trusting the drawn one — but
+the visible semantics invert while a render is stale: tapping a row drawn as
+**ticked** finds today incomplete and therefore **adds** a completion, so the box
+stays checked and nothing looks undone. The log is correct; the render was not
+(docs/ux/widget.md §4).
 
 To provoke it, use the **Day rollover, against a real clock** check in §4 of this
 document — set the cutoff a couple of minutes ahead — and watch the widget lag
@@ -683,13 +688,81 @@ the app. **Put the cutoff back to midnight afterwards**, for the reason that
 check gives about itself: §4's rollover steps start from midnight, and this
 section sits below them, so leaving it moved is how a later run passes vacuously.
 
-### The reminder — *not built*
+### The reminder
 
-Placeholders that come alive with the end-of-day reminder
-(architecture §8, PRD §7):
+Built 2026-08-21 (docs/ux/reminder.md). PRD §7 makes a **physical device** the
+primary target for this as well as for the widget — OEM battery policies are the
+whole risk and an emulator has none.
 
-- [ ] End-of-day reminder fires, and stays silent when everything is done.
-- [ ] Survives doze and the vendor's battery optimiser.
+Every check here needs the reminder time moved to a couple of minutes ahead,
+in Settings. **Put it back to 21:00 afterwards**, for the reason §4's rollover
+check gives about itself: leaving it moved is how a later run passes vacuously.
+
+- [ ] **It fires.** With at least one habit outstanding, set the reminder a
+      couple of minutes ahead and lock the screen. A notification arrives saying
+      *"N of M left today"*. Tapping it opens the app on Today.
+- [ ] **It is silent when everything is done.** Complete every habit, set the
+      time ahead again. Nothing arrives. This is PRD §6.1.5's second half, and
+      the failure it guards against looks identical to success from the outside
+      — so check it deliberately rather than assuming.
+- [ ] **One per day, and this is the one only a device can show.** After a
+      reminder has fired, make the work run again. WorkManager schedules through
+      JobScheduler, so find the job and force it:
+
+      ```console
+      adb shell dumpsys jobscheduler | grep -A2 'com.gawi.app'
+      adb shell cmd jobscheduler run -f com.gawi.app <jobId>
+      ```
+
+      The id is the number after `#u0a…/` in the dump. If nothing is listed the
+      wake has already run and been consumed — re-arm it by force-stopping and
+      relaunching the app (`adb shell am force-stop com.gawi.app`), which is the
+      chain's repair path and worth seeing work.
+
+      No second notification. `ReminderCheckTest` pins the decision on the JVM;
+      what only a device shows is that the journal survives the process ending in
+      between.
+- [ ] **Notifications off is admitted, not hidden.** Turn the app's
+      notifications off in system settings and come back to Settings. The reminder
+      row shows *"Notifications are off, so this reminder will not arrive"* with a
+      target that leads somewhere — the permission dialog, or the system page if
+      the dialog can no longer appear. The row must update **on resume**, without
+      re-navigating.
+- [ ] **The time still edits while notifications are off.** Tapping the row
+      itself opens the time picker, not the permission. The time drives Momo's
+      worried face whether or not a notification can arrive.
+- [ ] **Survives doze and the vendor's battery optimiser.**
+
+      ```console
+      adb shell dumpsys deviceidle force-idle
+      ```
+
+      The reminder still arrives, late. It is *expected* to be late: architecture
+      §7 makes delivery deliberately inexact and there is **no ceiling to quote**
+      — WorkManager will not wake a device to deliver this. What must not happen
+      is the failure below.
+- [ ] **A very late wake stays quiet rather than lying.** Let a deferred reminder
+      land after the day cutoff (force-idle through midnight, or move the cutoff
+      close). It must post **nothing**. A reminder at 00:30 saying *"5 of 5 left
+      today"* is the bug: it describes a brand-new day, and it would consume that
+      day's one reminder so the real 21:00 one never comes.
+
+### The day-rollover refresh
+
+Also built 2026-08-21, and the same mechanism (docs/ux/reminder.md §2). This is
+what §4 of this document and docs/ux/widget.md §4 previously listed as a known
+widget limitation.
+
+- [ ] **The widget follows the rollover without being tapped.** With the widget on
+      the home screen and a habit ticked, set the **day cutoff** a couple of
+      minutes ahead and wait past it without touching anything. The tick clears by
+      itself. Before this worker existed, the widget kept yesterday's ticks until
+      the provider's periodic update got through.
+- [ ] **A cutoff edit re-arms it.** Change the cutoff again; the wake moves with
+      it. A settings edit writes nothing to the log, so nothing pushes it — the
+      scheduler's `SettingsSource` collector is the only thing that can, and this
+      is the only way to see it working.
+- [ ] **Put the cutoff back to midnight afterwards.** Same reason as above.
 
 ---
 

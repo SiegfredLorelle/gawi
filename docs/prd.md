@@ -73,8 +73,8 @@ All data is an **append-only event log** (habit created/edited/archived, complet
 - Optional note per completion (long-press / detail view — never blocks the one-tap flow).
 - **Retroactive logging: up to 3 days back only.** Editing a past day triggers a confirmation with an honesty prompt ("You're logging for a previous day — make sure this is accurate. Be true to yourself.").
 - Android **home-screen widget**: today's habits, tap to complete without opening the app. **Built 2026-08-21** — a tap toggles, so it undoes too; [docs/ux/widget.md](ux/widget.md) records the decisions and what a widget cannot keep current on its own.
-- **End-of-day reminder notification** if due habits remain incomplete as the day boundary approaches (configurable time, e.g., 21:00). Silent when everything is done. One reminder max per day.
-- **Notification quick-complete actions** (complete a habit directly from the reminder): MVP **stretch goal**. Android allows up to 3 action buttons per notification; if the interaction design or edge cases (undo, multiple habits) get complicated, ship the reminder as open-the-app only and move quick-complete to Phase 1. Either way, this feature is committed.
+- **End-of-day reminder notification** if due habits remain incomplete as the day boundary approaches (configurable time, e.g., 21:00). Silent when everything is done. One reminder max per day. (**Built 2026-08-21** — [docs/ux/reminder.md](ux/reminder.md).)
+- **Notification quick-complete actions** (complete a habit directly from the reminder): MVP **stretch goal**, and **moved to Phase 1 on 2026-08-21**, which this bullet explicitly allowed. The reminder shipped as open-the-app only. The deciding reason was not complexity: §6.1's one-tap criterion was already met by the widget, so an action button is a second path to a solved problem, and it would carry OQ-2 — unanswered — along with it. Still committed. [docs/ux/reminder.md](ux/reminder.md) §4.
 
 **Motivation**
 - Daily habits: day-streak counter. Weekly habits: **week-streak** (consecutive weeks hitting n/n).
@@ -123,11 +123,11 @@ All data is an **append-only event log** (habit created/edited/archived, complet
 
 ## 6. Key UX Requirements
 
-1. Logging < 5 seconds: widget or notification action, one tap. (**The widget satisfies this as of 2026-08-21.** The notification action remains §4's stretch goal, which may move to Phase 1.)
+1. Logging < 5 seconds: widget or notification action, one tap. (**The widget satisfies this as of 2026-08-21.** The notification *action* has now been deferred to Phase 1 on §4's own terms — the criterion is met, so a second one-tap path would carry OQ-2 for no gain. [docs/ux/reminder.md](ux/reminder.md) §4.)
 2. Today view is the app's home screen.
 3. Notes/tags never add friction to the base flow — always optional, always secondary.
 4. Retroactive edits carry deliberate friction (confirmation + honesty prompt) but stay possible within 3 days; same-day undo is frictionless.
-5. One reminder max per day; silent when all done.
+5. One reminder max per day; silent when all done. (**Built 2026-08-21** — [docs/ux/reminder.md](ux/reminder.md). Both halves are pinned by `ReminderCheckTest`, including the case that would break them: a wake deferred past the day cutoff, which would otherwise remind about a fresh day and consume its one reminder.)
 6. Streak visibility everywhere it motivates: Today view and habit detail. (**Narrowed 2026-08-21**: this said "Today view, widget, habit detail" and contradicted OQ-5, which asked whether the widget should show streaks at all. The widget is minimal — [docs/ux/widget.md](ux/widget.md) §2 has the reasoning.)
 
 ## 7. Technical Direction (Android MVP)
@@ -136,7 +136,7 @@ All data is an **append-only event log** (habit created/edited/archived, complet
 - **Widget:** Jetpack Glance (Compose-based app widgets).
 - **Storage:** Room over SQLite; event-log tables + derived-state tables/views for fast reads.
 - **IDs:** UUIDv7 for all events.
-- **Reminders:** WorkManager for the end-of-day reminder check; notification actions via standard PendingIntents if quick-complete ships.
+- **Reminders:** WorkManager for the end-of-day reminder check; notification actions via standard PendingIntents if quick-complete ships. **`POST_NOTIFICATIONS` is the app's first and only hand-declared permission**, requested from the settings reminder row rather than at first launch; it cannot move data off the device, so "no network permission at MVP" below is untouched.
 - **No network permission at MVP.**
 - **Schema versioning** embedded in the event log; migrations replay-safe (sync prerequisite).
 
