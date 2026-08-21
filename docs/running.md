@@ -563,9 +563,14 @@ does with the file.
       three habits afterwards.
 
       Include a name with a **leading space before the sigil** — ` =1+1` — in
-      the same pass, and tick LibreOffice's **Trim spaces** box for that run.
-      That combination is what the first version of the guard missed: it tested
-      the first character only, so the space walked a formula straight past it.
+      the same pass. It must also come out as text. Note what this check does
+      and does not show: measured 2026-08-21, LibreOffice leaves ` =1+1` as text
+      whether or not leading-space removal is on, so this is not a reproduction
+      of an exploit — it pins the guard's rule for readers nobody has measured.
+      The case that genuinely evaluates, and the one worth keeping an eye on, is
+      a **bare** `=1+1` with no apostrophe: convert a hand-made file holding one
+      and confirm the cell really does compute, or this whole check can pass
+      because the reader never evaluates anything.
 
 - [ ] **Know what a `;`-locale Excel does with it.** Not a defect and not
       fixable in the bytes without breaking every other reader, so it is a check

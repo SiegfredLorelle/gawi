@@ -80,24 +80,35 @@ internal object CompletionCsv {
      * import deliberately accepts a foreign file (docs/ux/settings.md §6), so a
      * habit name can arrive from whoever wrote that file.
      *
-     * **The check is on the trimmed value, and that matters.** A spreadsheet
-     * skips leading whitespace before deciding what a cell is, and several CSV
-     * readers strip it on import outright — LibreOffice offers "Trim spaces",
-     * Google Sheets does it, `pandas` does it under `skipinitialspace`. So
-     * `" =1+1"` is the same attack as `"=1+1"` wearing a space, and testing
-     * `first()` against a set that includes TAB and CR but not space was an
-     * inconsistency rather than a policy: either whitespace is skipped, in which
-     * case all of it has to be looked through, or it is not, in which case the
+     * **The check is on the trimmed value, and be precise about why.** The
+     * honest reason is consistency, not a demonstrated hole: testing `first()`
+     * against a set that included TAB and CR but *not* space was incoherent
+     * either way round — if leading whitespace is skipped before a cell is
+     * typed then space had to be looked through too, and if it is not then the
      * TAB and CR entries were pointless. Trimming first covers space, TAB, CR,
-     * LF and every Unicode space at once, which is why the sigil set is now the
-     * four characters that are actually dangerous.
+     * LF and every Unicode space at once and lets the sigil set be the four
+     * characters that are actually dangerous.
      *
-     * **Quoting is not a substitute for this**, and it is worth saying because
-     * it looks like one. Quotes are a transport rule: a parser strips them and
-     * *then* the cell is type-inferred, so a quoted `=1+1` evaluates in Excel
-     * exactly as a bare one does. That every neutralised field below is also
-     * quoted is legibility, not defence — if quoting were the defence, the
-     * apostrophe would be redundant.
+     * **What was measured, 2026-08-21, because the first version of this
+     * paragraph claimed more than it could show.** In LibreOffice a *bare*
+     * quoted `"=1+1"` really does import as a formula and evaluate to 2 — so
+     * the guard earns its place. But `" =1+1"` stayed text, and it stayed text
+     * **even with the filter's leading-space removal on**, verified by a control
+     * field that came back trimmed in the same run. So LibreOffice decides what
+     * a cell is independently of that trimming, and the space variant is not
+     * exploitable there. Excel and Google Sheets were not tested. The trim
+     * guard is therefore defence in depth against readers nobody here has
+     * measured, plus the consistency argument above — it is **not** a fix for a
+     * reproduced bypass, and a claim that `pandas` matters was simply wrong,
+     * since `pandas` strips spaces and evaluates nothing at all.
+     *
+     * **Quoting is not a substitute for this, and that part *is* measured.**
+     * Quotes are a transport rule: a parser strips them and *then* the cell is
+     * type-inferred. A file holding `"=1+1"`, quotes and all, converts in
+     * LibreOffice to a cell whose stored formula is `of:=1+1` and whose value is
+     * 2 — checked by reading the converted document rather than by looking at a
+     * screen. So the apostrophe is the defence and the quotes are legibility; if
+     * quoting were the defence, the apostrophe below would be redundant.
      *
      * **A leading apostrophe rather than removing the character.** Excel and
      * LibreOffice both read `'` as "this cell is text" and do not display it,

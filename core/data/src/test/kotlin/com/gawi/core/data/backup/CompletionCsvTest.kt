@@ -128,10 +128,14 @@ class CompletionCsvTest {
      *
      * Found by review of this change. The guard used to test the *first*
      * character against a set that included TAB and CR but not space, which was
-     * an inconsistency rather than a policy — if leading whitespace is skipped
-     * before a cell is typed, then all of it has to be looked through. Several
-     * readers strip it outright on import: LibreOffice offers "Trim spaces",
-     * Google Sheets does it, `pandas` does it under `skipinitialspace`.
+     * incoherent either way round — if leading whitespace is skipped before a
+     * cell is typed then space had to be looked through too, and if it is not
+     * then TAB and CR did not belong in the set.
+     *
+     * Do not read this test as pinning a reproduced exploit. Measured on
+     * LibreOffice 2026-08-21, `" =1+1"` stays text even with leading-space
+     * removal enabled; a bare `"=1+1"` does evaluate. This pins the consistent
+     * rule, which is worth having for readers nobody has measured.
      *
      * Note the space itself survives, because neutralising must not edit the
      * user's text — only the apostrophe is added.
