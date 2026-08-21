@@ -28,6 +28,10 @@
          all of them. docs/ux/reminder.md §3. -->
     <string name="settings_reminder_blocked">Notifications are off, so this reminder will not arrive.</string>
     <string name="settings_reminder_enable">Turn notifications on</string>
+    <!-- The one refusable settings write. reminderOn resolves a reminder equal to
+         the cutoff to the day's START, so the pair is meaningless rather than
+         merely odd — docs/ux/reminder.md 6. -->
+    <string name="settings_error_reminder_equals_cutoff">The reminder can\'t be at the day boundary itself — pick another time.</string>
 
     <!-- Day names as resources rather than DayOfWeek.getDisplayName, so the
          tests read the same strings the screen renders and the copy is

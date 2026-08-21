@@ -89,6 +89,51 @@ class SettingsViewModelTest {
         }
     }
 
+    /**
+     * The one settings combination that is refused, from the reminder's side.
+     *
+     * `reminderOn` resolves a reminder equal to the day cutoff to the logical
+     * day's **start**, so the pair is meaningless rather than merely odd — and once
+     * the reminder shipped it meant a "N of N left today" at the top of every day
+     * that also consumed that day's one reminder. reminderOn's KDoc always said a
+     * settings screen was where to prevent it; nothing did. Found by /code-review.
+     */
+    @Test
+    fun `a reminder time equal to the day cutoff is refused and reported`() = runTest {
+        viewModel.events.test {
+            viewModel.onReminderTimeChange(LocalTime.MIDNIGHT)
+
+            assertEquals(SettingsMessage(R.string.settings_error_reminder_equals_cutoff), awaitItem())
+        }
+
+        assertEquals(LocalTime.of(21, 0), settings.stored.reminderTime)
+    }
+
+    /** And from the cutoff's side, because either row can create the collision. */
+    @Test
+    fun `a day cutoff equal to the reminder time is refused and reported`() = runTest {
+        viewModel.events.test {
+            viewModel.onDayCutoffChange(LocalTime.of(21, 0))
+
+            assertEquals(SettingsMessage(R.string.settings_error_reminder_equals_cutoff), awaitItem())
+        }
+
+        assertEquals(LocalTime.MIDNIGHT, settings.stored.dayCutoff)
+    }
+
+    /**
+     * The control: a value that merely *looks* close is written normally.
+     *
+     * Without this, a validation that refused every reminder-time edit would pass
+     * both tests above.
+     */
+    @Test
+    fun `a reminder time one minute off the cutoff is written`() = runTest {
+        viewModel.onReminderTimeChange(LocalTime.of(0, 1))
+
+        assertEquals(LocalTime.of(0, 1), settings.stored.reminderTime)
+    }
+
     @Test
     fun `each of the three settings is written, and only that one changes`() = runTest {
         viewModel.onDayCutoffChange(LocalTime.of(4, 15))
