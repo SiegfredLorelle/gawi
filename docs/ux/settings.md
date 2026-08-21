@@ -186,9 +186,14 @@ overdue immediately rather than thirty days later. That second signal is why the
 stamp is not a `UserSettings` field — see §7.
 
 **There is no "not now".** A nudge that can be dismissed for thirty days is a
-nudge that says nothing, and it would have needed a seventh `SettingsActions`
-property, which is one past detekt's constructor threshold. The row that shows it
-is the row that fixes it.
+nudge that says nothing, and there is no second surface to dismiss it from. The
+row that shows it is the row that fixes it.
+
+This used to carry a second reason — that a dismiss action would have needed a
+seventh `SettingsActions` property, one past detekt's constructor threshold. That
+was never true of this declaration and is now visibly untrue: the class has seven
+properties today. §7 has the measurement. The product reason above is the whole
+of it and always was.
 
 **The system picker is this section's "pick, then confirm" (§3), so there is no
 dialog.** Cancelling it returns a null `Uri` and nothing happens and nothing is
@@ -267,9 +272,14 @@ it actually has.
 `+`, `-` or `@` as a formula.** This is the one part of the file that is a
 security property rather than a formatting choice, and it is reachable by typing
 a habit name. Such a field is written with a leading apostrophe, which Excel and
-LibreOffice both read as "this cell is text" and neither displays. TAB and CR
-are guarded too, because a spreadsheet skips leading whitespace before deciding
-what a cell is. **Not stripped** — a habit honestly named `-5kg` must survive,
+LibreOffice both read as "this cell is text" and neither displays. **The check is
+made on the trimmed value**, so a sigil hiding behind a leading space, TAB or CR
+is caught too — a spreadsheet skips leading whitespace before deciding what a
+cell is. Whitespace on its own is not a sigil and is only quoted, never
+apostrophed: ` read` comes out as `" read"` and keeps its space. The sigil set is
+therefore exactly `=`, `+`, `-` and `@`; an earlier version of this paragraph
+said TAB and CR were themselves guarded, which described the guard before it
+learned to trim. **Not stripped** — a habit honestly named `-5kg` must survive,
 and an export whose justification is the user owning their data cannot quietly
 edit it. Be exact about the cost: the bytes do change, and a text editor shows
 the apostrophe.
@@ -361,6 +371,19 @@ cases where a count is zero get their own string rather than reading "0 added".
   its own three keys, and two tests pin that in both directions. The three
   preferences are what the user set; when an export last happened is a record of
   what the app did — the same distinction §6 draws about the two rows.
+- **`ContentResolverEventArchive` has no behavioural test, and that is now a
+  gap rather than a constraint.** The CSV archive got one this round
+  (`CompletionCsvArchiveTest`), using `ShadowContentResolver` — which the
+  previous reasoning had written off as a shadow "nothing in this project uses".
+  True about the repo, wrong about the difficulty: `robolectric` was already on
+  `:core:data`'s test classpath and the shadow implements the exact two-argument
+  `openOutputStream` both archives call. The JSON path deserves the same test,
+  and **the order matters**: with it in place, extracting the shared
+  `NonCancellable`/`"wt"`/encode-before-open rules into one writer stops being a
+  refactor of untested code. Three things stay device-only either way — the
+  `"wt"` mode, `NonCancellable`, and the null-stream guard, none of which the
+  shadow can express.
+
 - **The last-export *age* is still counted at emission, so it can go stale on an
   open screen.** A screen left open across midnight shows yesterday's count until
   it re-subscribes, which `WhileSubscribed(5_000)` makes a five-second staleness
