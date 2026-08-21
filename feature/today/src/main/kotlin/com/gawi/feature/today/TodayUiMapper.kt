@@ -6,6 +6,8 @@ import com.gawi.core.data.model.toMoodState
 import com.gawi.core.domain.mascot.Mascot
 import com.gawi.core.domain.model.Schedule
 import com.gawi.core.domain.streak.StreakSnapshot
+import com.gawi.core.ui.streak.StreakUi
+import com.gawi.core.ui.streak.toUi
 import com.gawi.core.ui.theme.parseHabitColor
 
 /**
@@ -46,24 +48,3 @@ internal fun TodayHabit.toRowUi(): HabitRowUi = HabitRowUi(
     },
     streak = streak.toUi(habit.schedule),
 )
-
-/**
- * §5's two streak rules, both of which fall out of the branch order.
- *
- * A positive `current` always renders, so an unfinished day still shows its
- * live streak and a row unchecked at 09:00 never reads `0` — per
- * `Streaks.dayStreak`, an unfinished current day has not broken anything, it
- * has simply not extended it. And a break always keeps `previous`, so "was 4"
- * is available whenever there is a break to describe.
- *
- * The cases are exhaustive rather than defensive: `StreakSnapshot` documents
- * that exactly one of its two states is live, so a positive `current` never
- * carries a break and a zero one carries `brokenOn` unless nothing has ever
- * happened.
- */
-internal fun StreakSnapshot.toUi(schedule: Schedule): StreakUi = when {
-    current > 0 && schedule is Schedule.Weekly -> StreakUi.Weeks(current)
-    current > 0 -> StreakUi.Days(current)
-    brokenOn != null -> StreakUi.Broken(previous = previous, weekly = schedule is Schedule.Weekly)
-    else -> StreakUi.None
-}

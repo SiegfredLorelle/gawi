@@ -3,6 +3,7 @@ package com.gawi.feature.today
 import androidx.compose.ui.graphics.Color
 import com.gawi.core.domain.mascot.Mood
 import com.gawi.core.domain.model.HabitId
+import com.gawi.core.ui.streak.StreakUi
 import java.time.LocalDate
 
 /**
@@ -69,24 +70,3 @@ internal data class HabitRowUi(
 
 /** A weekly habit's progress through its own week. */
 internal data class WeekProgress(val done: Int, val target: Int)
-
-/**
- * A streak as it is drawn.
- *
- * Sealed, and split by unit, because §5 says a daily streak is a count of days
- * and a weekly one is a count of weeks and "the two must never be styled as the
- * same number". Making them different types is what enforces that through
- * exhaustiveness rather than through a convention someone forgets.
- */
-internal sealed interface StreakUi {
-
-    /** No completions ever — nothing to draw. */
-    data object None : StreakUi
-
-    data class Days(val count: Int) : StreakUi
-
-    data class Weeks(val count: Int) : StreakUi
-
-    /** Zero now, with what was lost kept as context — §5's "was 4". */
-    data class Broken(val previous: Int, val weekly: Boolean) : StreakUi
-}
