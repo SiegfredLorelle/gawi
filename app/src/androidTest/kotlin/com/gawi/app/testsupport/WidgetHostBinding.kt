@@ -54,6 +54,11 @@ class WidgetHostBinding private constructor(
     }
 
     fun release() {
+        // Paired with bind()'s startListening, and on the same thread. deleteHost
+        // does tear the host down, so this is not a leak past the process — but
+        // two tests bind and release in one instrumentation process, and this is
+        // the documented way out.
+        InstrumentationRegistry.getInstrumentation().runOnMainSync { host.stopListening() }
         host.deleteAppWidgetId(widgetId)
         host.deleteHost()
     }
