@@ -6,16 +6,25 @@ import java.time.LocalTime
 /**
  * What the settings screen can do, as one parameter.
  *
- * A holder rather than six lambdas in the signature, for the same reason
+ * A holder rather than seven lambdas in the signature, for the same reason
  * `TodayActions` and `HabitListActions` are holders: it keeps the composable
  * inside detekt's parameter limit — which fires *at* six, not above it — and
  * adding a fourth setting does not re-thread every call site and test.
  *
- * Six properties is the last one that fits: the constructor threshold is seven.
- * The 30-day nudge did not need a seventh in the end, because it has no "not
- * now" — a nudge that can be dismissed for thirty days is a nudge that says
- * nothing, and there is no second surface to dismiss it from. It is a caption on
- * the row that fixes it.
+ * **This used to say six properties was the last one that fits, because the
+ * constructor threshold is seven. That was false for this declaration and the
+ * correction is worth keeping.** The threshold is indeed seven, but detekt's
+ * `LongParameterList` sets `ignoreDataClasses` true by default, so the rule
+ * never applies to a `data class` at all. Measured rather than reasoned about:
+ * seven properties and eight both pass, and the same seven fire the rule the
+ * moment `data` is removed from the declaration. So the CSV row's action is a
+ * seventh property here and needs no nested holder — which is what the plan for
+ * it had assumed, on the strength of this comment.
+ *
+ * What remains true is the reason there is no eighth for a dismiss. The 30-day
+ * nudge has no "not now": a nudge that can be dismissed for thirty days is a
+ * nudge that says nothing, and there is no second surface to dismiss it from.
+ * It is a caption on the row that fixes it.
  *
  * Each change carries the whole new value rather than a delta. `update` on the
  * store is a read-modify-write over one transform, so a partial edit has
@@ -34,6 +43,15 @@ internal data class SettingsActions(
      * never passes through here.
      */
     val onExport: () -> Unit,
+    /**
+     * The user asked for the CSV of completions.
+     *
+     * Its own action rather than a parameter on [onExport], because the two
+     * launch different pickers with different types and different default
+     * names, and because what they produce are different kinds of thing — one
+     * is the backup and one is not.
+     */
+    val onExportCompletions: () -> Unit,
     val onImport: () -> Unit,
     val onBack: () -> Unit,
 )

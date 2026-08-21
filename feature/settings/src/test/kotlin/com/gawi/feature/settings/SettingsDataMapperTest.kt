@@ -3,6 +3,9 @@ package com.gawi.feature.settings
 import com.gawi.core.data.backup.ExportStatus
 import com.gawi.core.data.backup.ImportResult
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.LocalDate
 
@@ -111,13 +114,28 @@ class SettingsDataMapperTest {
      * announced. The row that is *not* running is the easy one to leave live.
      */
     @Test
-    fun `a task makes its own row running and the other one blocked`() {
+    fun `a task makes its own row running and the others blocked`() {
         assertEquals(RowActivity.Live, activityOf(DataTask.Idle, DataTask.Exporting))
         assertEquals(RowActivity.Live, activityOf(DataTask.Idle, DataTask.Importing))
+        assertEquals(RowActivity.Live, activityOf(DataTask.Idle, DataTask.ExportingCsv))
         assertEquals(RowActivity.Running, activityOf(DataTask.Exporting, DataTask.Exporting))
         assertEquals(RowActivity.Blocked, activityOf(DataTask.Exporting, DataTask.Importing))
+        assertEquals(RowActivity.Blocked, activityOf(DataTask.Exporting, DataTask.ExportingCsv))
         assertEquals(RowActivity.Running, activityOf(DataTask.Importing, DataTask.Importing))
         assertEquals(RowActivity.Blocked, activityOf(DataTask.Importing, DataTask.Exporting))
+        assertEquals(RowActivity.Blocked, activityOf(DataTask.Importing, DataTask.ExportingCsv))
+    }
+
+    /**
+     * The CSV is the row most easily left live by accident, because it reads
+     * nothing and writes somewhere else — but a spreadsheet of a log that is
+     * still being merged is a spreadsheet of a state that never existed.
+     */
+    @Test
+    fun `a csv export blocks the other two rows and runs its own`() {
+        assertEquals(RowActivity.Running, activityOf(DataTask.ExportingCsv, DataTask.ExportingCsv))
+        assertEquals(RowActivity.Blocked, activityOf(DataTask.ExportingCsv, DataTask.Exporting))
+        assertEquals(RowActivity.Blocked, activityOf(DataTask.ExportingCsv, DataTask.Importing))
     }
 
     private fun status(days: Int) = ExportStatus(daysSinceExport = days.toLong(), hasEvents = true)
@@ -187,5 +205,67 @@ class SettingsDataMapperTest {
         val message = messageFor(ImportResult.Refused.FromANewerVersion(formatVersion = 2))
 
         assertEquals(SettingsMessage(R.string.settings_error_import_newer), message)
+    }
+
+    // --- the CSV of completions (PRD §5) ----------------------------------
+
+    @Test
+    fun `the csv row has a status and no nudge`() {
+        assertEquals(R.string.settings_export_csv_running, csvHelp(RowActivity.Running))
+        assertEquals(R.string.settings_export_csv_help, csvHelp(RowActivity.Live))
+        assertEquals(R.string.settings_export_csv_help, csvHelp(RowActivity.Blocked))
+    }
+
+    /**
+     * The row that must never settle the 30-day warning.
+     *
+     * A CSV holds no events, so offering it as an answer to "there is no other
+     * copy of your history" would tell the user something false about their own
+     * data. `csvHelp` takes no [ExportRecency] at all, which is what makes this
+     * true by construction rather than by branch — so what is asserted here is
+     * the consequence: neither of its two sentences is the nudge, and neither is
+     * the JSON row's either.
+     */
+    @Test
+    fun `the csv row never shows the overdue nudge`() {
+        val csvSentences = RowActivity.entries.map { csvHelp(it) }.toSet()
+
+        assertEquals(2, csvSentences.size)
+        assertFalse(csvSentences.contains(R.string.settings_export_overdue_help))
+        assertFalse(csvSentences.contains(R.string.settings_export_help))
+    }
+
+    @Test
+    fun `an empty csv export is not the same message as a full one`() {
+        assertEquals(SettingsMessage(R.string.settings_export_csv_empty), csvMessageFor(rows = 0))
+        assertEquals(SettingsMessage(R.string.settings_export_csv_done), csvMessageFor(rows = 1))
+        assertEquals(SettingsMessage(R.string.settings_export_csv_done), csvMessageFor(rows = 327))
+    }
+
+    /** No count in the copy, so no `<plurals>` and nothing to interpolate. */
+    @Test
+    fun `a csv message carries no arguments`() {
+        assertEquals(emptyList<Any>(), csvMessageFor(rows = 327).args)
+        assertEquals(emptyList<Any>(), csvMessageFor(rows = 0).args)
+    }
+
+    /**
+     * A different stem and not just a different extension, so the two files are
+     * told apart by the part a person reads first. ISO order for the reason
+     * [exportFileName] gives.
+     */
+    @Test
+    fun `the csv file name names the completions and sorts chronologically`() {
+        assertEquals("gawi-completions-2026-08-21.csv", csvFileName(LocalDate.of(2026, 8, 21)))
+        assertEquals("gawi-completions-2026-01-05.csv", csvFileName(LocalDate.of(2026, 1, 5)))
+    }
+
+    @Test
+    fun `the two export file names cannot be mistaken for each other`() {
+        val day = LocalDate.of(2026, 8, 21)
+
+        assertNotEquals(csvFileName(day), exportFileName(day))
+        assertTrue(exportFileName(day).endsWith(".json"))
+        assertTrue(csvFileName(day).endsWith(".csv"))
     }
 }

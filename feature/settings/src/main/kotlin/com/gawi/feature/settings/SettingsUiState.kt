@@ -59,14 +59,20 @@ internal sealed interface SettingsUiState {
 }
 
 /**
- * Whether a file is being written or read right now.
+ * Whether a file is being written or read right now, and which one.
  *
- * Three states rather than a boolean, because the two rows say different
- * things while they wait and both are disabled either way — exporting while an
- * import is half-applied, or the reverse, is a race with a user's only backup
- * on one side of it.
+ * Named states rather than a boolean, because the three rows say different
+ * things while they wait and all of them are disabled either way — exporting
+ * while an import is half-applied, or the reverse, is a race with a user's only
+ * backup on one side of it, and a CSV taken mid-import is a spreadsheet of a log
+ * that was still changing.
+ *
+ * [ExportingCsv] is a fourth state rather than a flag on [Exporting], because
+ * the two write different files and say different things about them. Collapsing
+ * them would make one row's status appear under the other, which is exactly what
+ * `activityOf` exists to prevent.
  */
-internal enum class DataTask { Idle, Exporting, Importing }
+internal enum class DataTask { Idle, Exporting, ExportingCsv, Importing }
 
 /**
  * What the export row's value line says about the last backup (PRD §5).

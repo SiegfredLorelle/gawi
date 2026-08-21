@@ -64,3 +64,48 @@ internal suspend fun <T> commandOrNull(tag: String, what: String, command: suspe
     Log.e(tag, "$what failed", failure)
     null
 }
+
+// What a data task is called, in a log line and in a snackbar.
+//
+// Here rather than on the ViewModel for two reasons. The CSV task took that
+// class to eleven functions and detekt's TooManyFunctions fires *at* eleven for
+// a class — measured, and note it fires at *twelve* for a file, which is not the
+// same rule read twice. The better reason is that both of these are decisions
+// about what to say, which is what this file is for; neither touches a
+// coroutine, a store or a Uri.
+
+/**
+ * How a task is named in a log line.
+ *
+ * Not user-facing, and deliberately not derived from the enum name: what a log
+ * reader wants is the phrase that completes "… failed".
+ */
+internal fun DataTask.describe(): String = when (this) {
+    DataTask.Exporting -> "the export"
+    DataTask.ExportingCsv -> "the completions export"
+    DataTask.Importing -> "the import"
+    DataTask.Idle -> "the data task"
+}
+
+/**
+ * What to tell the user when a data task throws.
+ *
+ * Three genuinely different promises, which is why this is not one string. The
+ * backup's copy has to admit that a plausibly-named partial file now exists,
+ * because the picker created the document before the write began. The CSV's is
+ * narrower on purpose: a half-written spreadsheet is a nuisance where a
+ * half-written backup is a file someone would later trust with their whole
+ * history. The import's can promise the log is untouched and mean it, because
+ * the whole file is validated before a row is written.
+ *
+ * Exhaustive over [DataTask], including [DataTask.Idle] — which `runDataTask`
+ * cannot reach, but a `when` that needs no `else` cannot silently acquire a
+ * wrong default when a fourth task is added.
+ */
+@StringRes
+internal fun failureFor(task: DataTask): Int = when (task) {
+    DataTask.Exporting -> R.string.settings_error_export
+    DataTask.ExportingCsv -> R.string.settings_error_export_csv
+    DataTask.Importing -> R.string.settings_error_import
+    DataTask.Idle -> R.string.settings_error_unexpected
+}

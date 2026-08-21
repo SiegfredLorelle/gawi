@@ -10,8 +10,8 @@ import java.time.format.DateTimeFormatter
 // applies, which help line each of the three rows shows, what an import
 // reports, and what the two save dialogs open on.
 //
-// Split from SettingsUiMapper.kt ahead of the CSV row, whose own functions
-// would take that file past detekt's TooManyFunctions, which caps a *file* at
+// Split from SettingsUiMapper.kt for the CSV row, whose three functions would
+// have taken that file past detekt's TooManyFunctions, which caps a *file* at
 // eleven — measured at twelve, and the same threshold that forced
 // SettingsPickers.kt out of SettingsScreen.kt. The line it falls on is better
 // than a threshold deserves: nothing here reads or writes a preference, and
@@ -142,3 +142,48 @@ internal fun messageFor(result: ImportResult): SettingsMessage = when (result) {
  * chronologically.
  */
 internal fun exportFileName(today: LocalDate): String = "gawi-export-${DateTimeFormatter.ISO_LOCAL_DATE.format(today)}.json"
+
+/**
+ * The CSV row's help line.
+ *
+ * **No nudge branch, and that is the decision rather than an omission.** The
+ * 30-day nudge asks whether a copy of the *log* exists, and a CSV is not one —
+ * it holds no events, so nothing can be rebuilt from it. A row that offered to
+ * settle that warning with a spreadsheet would be telling the user something
+ * false about their own data, which is what docs/ux/settings.md §7 means when it
+ * says the CSV must never be described as a recovery path. Nothing here reads
+ * [ExportRecency] at all, so it cannot acquire one by accident.
+ */
+@StringRes
+internal fun csvHelp(activity: RowActivity): Int =
+    if (activity == RowActivity.Running) R.string.settings_export_csv_running else R.string.settings_export_csv_help
+
+/**
+ * What a completed CSV export is worth saying.
+ *
+ * **[rows] decides which sentence, and never appears in one.** Putting the
+ * number in the copy would mean a noun governed by a count — "1 completions" —
+ * and therefore a `<plurals>`, whose id cannot travel through
+ * [SettingsMessage] because the Route resolves that through `getString`. The
+ * rule this file already follows for the import message is to write copy that
+ * needs no quantity resource, and the one thing a count says that copy cannot
+ * is that the file came out empty, which the other branch says outright.
+ *
+ * The copy says what the file is and not that a backup was made. That is the
+ * whole distinction the row exists to keep.
+ */
+internal fun csvMessageFor(rows: Int): SettingsMessage = if (rows == 0) {
+    SettingsMessage(R.string.settings_export_csv_empty)
+} else {
+    SettingsMessage(R.string.settings_export_csv_done)
+}
+
+/**
+ * The name the CSV save dialog opens on.
+ *
+ * A different stem from [exportFileName] rather than a different extension
+ * alone, so the two files are told apart in a folder listing by the part a
+ * person reads first. "completions" is also the more honest word: it names what
+ * is in the file, where "export" in this app means the log.
+ */
+internal fun csvFileName(today: LocalDate): String = "gawi-completions-${DateTimeFormatter.ISO_LOCAL_DATE.format(today)}.csv"

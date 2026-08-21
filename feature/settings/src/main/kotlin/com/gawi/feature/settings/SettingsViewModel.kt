@@ -2,9 +2,9 @@ package com.gawi.feature.settings
 
 import android.net.Uri
 import android.util.Log
-import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.gawi.core.data.backup.CompletionCsvArchive
 import com.gawi.core.data.backup.EventArchive
 import com.gawi.core.data.backup.ExportStatus
 import com.gawi.core.data.settings.SettingsSource
@@ -27,7 +27,7 @@ import javax.inject.Inject
 /**
  * The settings screen's state holder.
  *
- * Injects the settings source and the archive: no repository and no clock. What
+ * Injects the settings source and the two archives: no repository and no clock. What
  * this screen shows is not a function of the habits or of the date — it edits
  * the three values that decide how both are interpreted, which is a different
  * job. Even the last-export age arrives already counted, from the class that
@@ -43,8 +43,11 @@ import javax.inject.Inject
  * behind.
  */
 @HiltViewModel
-internal class SettingsViewModel @Inject constructor(private val settings: SettingsSource, private val archive: EventArchive) :
-    ViewModel() {
+internal class SettingsViewModel @Inject constructor(
+    private val settings: SettingsSource,
+    private val archive: EventArchive,
+    private val completions: CompletionCsvArchive,
+) : ViewModel() {
 
     /**
      * Whether a file is being written or read.
@@ -132,6 +135,20 @@ internal class SettingsViewModel @Inject constructor(private val settings: Setti
         SettingsMessage(R.string.settings_export_done)
     }
 
+    /**
+     * Writes the completions to the document the picker returned.
+     *
+     * Separate from [onExportTo] all the way down: a different archive, a
+     * different task and a different message. The one thing it deliberately
+     * does *not* do is touch the last-export stamp — a CSV holds no events, so
+     * recording it as a backup would silence the 30-day nudge over a file that
+     * cannot restore anything. That is enforced in `:core:data`, where the CSV
+     * archive is not given the journal at all.
+     */
+    fun onExportCompletionsTo(destination: Uri) = runDataTask(DataTask.ExportingCsv) {
+        csvMessageFor(completions.exportTo(destination))
+    }
+
     /** Merges the export at [source] into this device's log. */
     fun onImportFrom(source: Uri) = runDataTask(DataTask.Importing) { messageFor(archive.importFrom(source)) }
 
@@ -154,25 +171,6 @@ internal class SettingsViewModel @Inject constructor(private val settings: Setti
                 dataTask.value = DataTask.Idle
             }
         }
-    }
-
-    private fun DataTask.describe(): String = when (this) {
-        DataTask.Exporting -> "the export"
-        DataTask.Importing -> "the import"
-        DataTask.Idle -> "the data task"
-    }
-
-    @StringRes
-    private fun failureFor(task: DataTask): Int = when (task) {
-        // Not "nothing was written": the picker created the document before the
-        // write began, so what is on disk is a plausibly-named partial file.
-        DataTask.Exporting -> R.string.settings_error_export
-
-        // Import validates the whole file before it writes a row, so this one
-        // can promise the log is untouched and mean it.
-        DataTask.Importing -> R.string.settings_error_import
-
-        DataTask.Idle -> R.string.settings_error_unexpected
     }
 
     /**

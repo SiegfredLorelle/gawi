@@ -31,11 +31,15 @@ interface CompletionCsvArchive {
      * Writes every logged day to [destination], returning how many rows were
      * written.
      *
-     * The count is returned because the row that starts this has to say
-     * something true on success — the file went somewhere this app is never
-     * told about, so silence would be indistinguishable from nothing happening
-     * (docs/ux/settings.md §6). Nought is a real answer and not an error: a log
-     * with nothing in it produces a file holding only its column headings.
+     * The count is returned so the caller can tell an empty export from a full
+     * one, which is the one thing about a written file that the copy cannot say
+     * for itself. Nought is a real answer and not an error: a log with nothing
+     * in it produces a file holding only its column headings, and saying so is
+     * more use than a success message that reads the same either way.
+     *
+     * It is deliberately not *shown*. A number in that sentence would govern a
+     * noun and so need a quantity resource, which the settings screen's message
+     * type cannot carry — see `csvMessageFor`.
      */
     suspend fun exportTo(destination: Uri): Int
 }
