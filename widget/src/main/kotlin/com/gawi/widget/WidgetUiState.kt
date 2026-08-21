@@ -3,9 +3,12 @@ package com.gawi.widget
 import androidx.annotation.StringRes
 import com.gawi.core.data.model.TodaySnapshot
 import com.gawi.core.data.repository.HabitRepository
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.retryWhen
 
 /**
  * One habit as the widget draws it: a name and whether today's cell is ticked.
@@ -95,14 +98,42 @@ internal fun WidgetContent.body(): WidgetBodyContent = when (this) {
  * under `warningsAsErrors`. Being a function also makes it reachable from a
  * test, which is how the failure branch is covered.
  *
+ * **A transient failure is retried, because a widget cannot re-subscribe for
+ * itself.** `catch` terminates a flow, so without the retry one throw would end
+ * collection for the life of the Glance session — and the push cannot repair
+ * that, since `update` on a live session never re-enters `provideGlance`
+ * ([TodayWidget]). A screen recovers when its `WhileSubscribed` window lapses
+ * and it re-subscribes; nothing does that for a widget. That is the one place
+ * the two-mechanism argument does not hold on its own, so a bounded retry closes
+ * it. Kept short and finite: while retrying nothing is emitted, so the widget
+ * shows [WidgetContent.Loading], which draws nothing.
+ *
+ * A *persistent* failure still lands on [WidgetContent.Unavailable] and stays
+ * there, which is correct — there is nothing else to show — and is bounded by
+ * the session's own lifetime and the provider's update period.
+ *
  * The `catch` sits after the `map`, so a failed read replaces the whole content
- * rather than one row — which is what [WidgetContent.Unavailable] means. Same
- * accepted pattern as `TodayViewModel`, including that a caught read completes
- * the flow (docs/ux/settings.md §7).
+ * rather than one row. Cancellation is never retried and never caught as a
+ * failure.
  */
 internal fun HabitRepository.widgetContent(): Flow<WidgetContent> = observeToday()
     .map<TodaySnapshot, WidgetContent> { WidgetContent.Ready(it.toWidgetState()) }
+    .retryWhen { cause, attempt -> cause !is CancellationException && attempt < READ_RETRIES && delayThenRetry() }
     .catch { emit(WidgetContent.Unavailable) }
+
+/** Always true; exists so the retry predicate reads as one expression. */
+private suspend fun delayThenRetry(): Boolean {
+    delay(RETRY_BACKOFF_MILLIS)
+    return true
+}
+
+/**
+ * Three attempts at 150ms. Short on purpose: the widget draws nothing while a
+ * retry is in flight, so a generous backoff would trade a wrong answer for a
+ * blank one.
+ */
+private const val READ_RETRIES = 3L
+private const val RETRY_BACKOFF_MILLIS = 150L
 
 /**
  * The snapshot as rows. Pure, so it is tested without Glance or a device.

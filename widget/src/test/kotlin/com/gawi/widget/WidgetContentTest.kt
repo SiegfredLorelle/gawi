@@ -45,6 +45,29 @@ class WidgetContentTest {
         }
     }
 
+    /**
+     * The reason the read retries at all. `catch` terminates a flow, so without
+     * a retry one transient throw would end collection for the life of the
+     * Glance session — and the push cannot repair that, because `update` on a
+     * live session never re-enters `provideGlance`. A screen recovers when its
+     * `WhileSubscribed` window lapses; nothing does that for a widget.
+     */
+    @Test
+    fun `a transient failure recovers instead of sticking on unavailable`() {
+        runTest {
+            val habits = FakeHabitRepository(
+                todaySnapshot(habits = listOf(todayHabit(id = habitId(1), name = "read"))),
+                failWith = IllegalStateException("transient"),
+                failTimes = 2,
+            )
+
+            val content = habits.widgetContent().first()
+
+            assertEquals(listOf("read"), (content as WidgetContent.Ready).state.rows.map { it.name })
+            assertEquals("it should have taken all three attempts", 3, habits.reads)
+        }
+    }
+
     @Test
     fun `a runtime failure is absorbed too, not only an IOException`() {
         runTest {

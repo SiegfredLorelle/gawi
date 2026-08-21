@@ -26,13 +26,27 @@ data class Write(val kind: String, val habitId: HabitId, val logicalDate: LocalD
  * refuses to guess a cutoff, so neither is hypothetical.
  */
 @Suppress("TooManyFunctions")
-class FakeHabitRepository(private var snapshot: TodaySnapshot = todaySnapshot(), private val failWith: Throwable? = null) :
-    HabitRepository {
+class FakeHabitRepository(
+    private var snapshot: TodaySnapshot = todaySnapshot(),
+    private val failWith: Throwable? = null,
+    /**
+     * How many reads fail before one succeeds. Unbounded by default, so
+     * `failWith` alone still means "always fails"; a finite value is what lets a
+     * test tell a transient failure from a permanent one, which is the whole
+     * difference the read's retry exists for.
+     */
+    private val failTimes: Int = Int.MAX_VALUE,
+) : HabitRepository {
 
     val writes = mutableListOf<Write>()
 
+    /** Reads attempted, so a test can assert the retry actually retried. */
+    var reads = 0
+        private set
+
     override fun observeToday(): Flow<TodaySnapshot> = flow {
-        failWith?.let { throw it }
+        reads++
+        failWith?.let { if (reads <= failTimes) throw it }
         emit(snapshot)
     }
 
