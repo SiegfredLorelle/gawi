@@ -1,14 +1,23 @@
 package com.gawi.core.data.reminder
 
+import com.gawi.core.data.model.TodayHabit
+import com.gawi.core.data.model.TodaySnapshot
+import com.gawi.core.data.repository.HabitRepository
 import com.gawi.core.data.settings.UserSettings
 import com.gawi.core.data.settings.settingsDataStore
 import com.gawi.core.data.testsupport.FakeDeviceClock
 import com.gawi.core.data.testsupport.FakeSettingsSource
 import com.gawi.core.data.testsupport.TestStore
+import com.gawi.core.data.testsupport.habitId
 import com.gawi.core.data.testsupport.metadata
 import com.gawi.core.domain.command.CommandResult
 import com.gawi.core.domain.model.HabitId
 import com.gawi.core.domain.model.Schedule
+import com.gawi.core.domain.projection.HabitMetadata
+import com.gawi.core.domain.projection.HabitState
+import com.gawi.core.domain.streak.StreakSnapshot
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -19,6 +28,7 @@ import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import java.io.File
+import java.time.DayOfWeek
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
@@ -46,8 +56,11 @@ class ReminderCheckTest {
 
     private lateinit var store: TestStore
 
+    // Guarded, because one test injects a fake repository and never builds a store.
     @After
-    fun tearDown() = store.close()
+    fun tearDown() {
+        if (::store.isInitialized) store.close()
+    }
 
     /**
      * A check over a real repository, a real journal and a real preferences file.
@@ -66,6 +79,55 @@ class ReminderCheckTest {
         val dataStore = settingsDataStore(scope = backgroundScope) { File(folder.root, "$name.preferences_pb") }
         return ReminderCheck(store.repository, settings, clock, ReminderJournal(dataStore))
     }
+
+    /**
+     * A check over a snapshot this test wrote, rather than one a query produced.
+     *
+     * Only [HabitRepository.observeToday] is implemented; everything else `error`s,
+     * following the shape `DataStoreSettingsSourceTest`'s `throwing` store uses — a
+     * fake that answers more than the test needs is a fake that can drift.
+     */
+    private fun TestScope.checkOver(snapshot: TodaySnapshot): ReminderCheck {
+        val settings = FakeSettingsSource(UserSettings(dayCutoff = snapshot.dayCutoff, reminderTime = snapshot.reminderTime))
+        val dataStore = settingsDataStore(scope = backgroundScope) { File(folder.root, "injected.preferences_pb") }
+        val repository = object : HabitRepository {
+            override fun observeToday(): Flow<TodaySnapshot> = flowOf(snapshot)
+
+            override suspend fun createHabit(metadata: HabitMetadata) = error("not used")
+
+            override suspend fun updateHabit(habitId: HabitId, metadata: HabitMetadata) = error("not used")
+
+            override suspend fun archiveHabit(habitId: HabitId) = error("not used")
+
+            override suspend fun unarchiveHabit(habitId: HabitId) = error("not used")
+
+            override suspend fun addCompletion(habitId: HabitId, logicalDate: LocalDate, note: String?) = error("not used")
+
+            override suspend fun undoCompletion(habitId: HabitId, logicalDate: LocalDate) = error("not used")
+
+            override suspend fun updateNote(habitId: HabitId, logicalDate: LocalDate, text: String) = error("not used")
+
+            override fun observeAllHabits() = error("not used")
+
+            override fun observeHabit(habitId: HabitId) = error("not used")
+
+            override fun observeCompletedDates(habitId: HabitId, from: LocalDate, to: LocalDate) = error("not used")
+
+            override suspend fun refreshStreaks() = error("not used")
+
+            override suspend fun rebuildProjections() = error("not used")
+        }
+        return ReminderCheck(repository, settings, FakeDeviceClock(), ReminderJournal(dataStore))
+    }
+
+    /** An incomplete daily habit, archived or not — outstanding unless filtered. */
+    private fun row(id: HabitId, archived: Boolean) = TodayHabit(
+        habit = HabitState(id, "read", "book", "#aabbcc", Schedule.Daily, tag = null, archived = archived),
+        completedToday = false,
+        note = null,
+        weekCount = 0,
+        streak = StreakSnapshot.NONE,
+    )
 
     private suspend fun createHabit(name: String = "read", schedule: Schedule = Schedule.Daily): HabitId =
         (store.repository.createHabit(metadata(name, schedule)) as CommandResult.Accepted).payload
@@ -316,6 +378,41 @@ class ReminderCheckTest {
         val until = check.untilNextCutoff()
 
         assert(!until.isNegative) { "armed a wake $until in the past" }
+    }
+
+    /**
+     * Archived habits count towards neither figure — and this needs a **fake
+     * repository**, which is the interesting part.
+     *
+     * `Mascot.isOutstanding` does not check `archived` the way `Mascot.mood` does,
+     * so `ReminderCheck` filters for itself rather than trusting the query, the
+     * same call `TodayUiMapper` makes and documents. Found by /code-review.
+     *
+     * The guard is **unreachable through the real repository**: `observeToday`'s SQL
+     * has `WHERE h.archived = 0`, so a real snapshot can never carry an archived
+     * row, and a test built on `TestStore` passes identically with the filter
+     * deleted — measured, which is how the first version of this test was caught
+     * being vacuous. That is exactly what makes the finding latent rather than
+     * live: correct today, wrong the day that query changes.
+     *
+     * So the snapshot is injected instead. This is the only place in the suite that
+     * fakes the repository, and it earns it: nothing else can put the class in the
+     * state the guard exists for.
+     */
+    @Test
+    fun `an archived habit counts towards neither the outstanding nor the total`() = runTest {
+        val today = LocalDate.parse("2026-08-17")
+        val snapshot = TodaySnapshot(
+            habits = listOf(row(habitId(1), archived = false), row(habitId(2), archived = true)),
+            today = today,
+            now = today.atTime(21, 30),
+            reminderTime = LocalTime.of(21, 0),
+            dayCutoff = LocalTime.MIDNIGHT,
+            weekStart = DayOfWeek.MONDAY,
+        )
+        val check = checkOver(snapshot)
+
+        assertEquals(ReminderDecision.Remind(outstanding = 1, total = 1), check.evaluate())
     }
 
     /** Both wakes are always in the future, which is what keeps a delay non-negative. */
