@@ -112,10 +112,31 @@ through its `Flow` and the date handed to a tap is current by construction —
 the rule `HabitRepository.observeToday`'s KDoc states. The widget is the one
 caller that cannot rely on it.
 
-**Not `collectAsState`.** Glance's session is started and torn down by the
-framework around update requests, so collecting the flow would keep the widget
-current only while a session happened to be alive. Explicit push plus a snapshot
-read is deterministic; a collected flow is current-if-lucky.
+**`collectAsState` *and* the push, which reverses what this section first
+said.** The original decision here was a one-shot read plus the explicit push,
+argued as "a collected flow is current-if-lucky". That was backwards, and
+`/code-review` caught it. Measured against `glance-appwidget-1.1.1` bytecode:
+`AppWidgetSession` collects `runGlance` — the thing that invokes the widget's
+`provideGlance` — with `collectAsState`, **once per session**. An `update`
+arriving while a session is already alive therefore never re-enters
+`provideGlance`; it re-reads only the state definition, which this widget does
+not use.
+
+So a one-shot read froze the content for the session's lifetime. The concrete
+failure: complete a habit in the app and the widget redraws, complete a second
+five seconds later and that push lands on the live session, nothing re-reads,
+and the home screen shows the first ticked and the second not — until the
+30-minute update period. Two taps on the widget in quick succession do the same,
+which reads as a dead widget.
+
+**The two mechanisms are both needed and cover different cases.** Collecting
+`observeToday()` inside the content keeps a *live* session tracking Room,
+through the same `InvalidationTracker` every screen uses. `ProjectionListener`
+is what starts a session at all when none is alive — the common case, since
+sessions are short-lived. Neither alone is sufficient, and the earlier text
+asserting one of them was is the kind of claim this project keeps having to
+correct: it described what the library was assumed to do rather than what it
+does.
 
 **Failures resolve towards saying so.** Both reads behind the widget can throw —
 `SQLiteException` is a `RuntimeException` unrelated to `IOException`, and the
@@ -230,6 +251,14 @@ all either `exported="false"` or guarded by `DUMP` / `BIND_JOB_SERVICE`.
 
 - **A boundary refresh** (§4). The reminder step brings WorkManager and should
   schedule one at the cutoff. Until then, staleness is bounded by 30 minutes.
+- **A settings edit is not an event either**, and it is the easier one to miss.
+  Changing the **day cutoff** changes the logical date, and therefore every
+  `completedToday`, without writing anything to the log — so no
+  `ProjectionListener` push can fire for it. Found by `/code-review`. A live
+  session follows it, because `observeToday()` re-emits on a settings change; a
+  widget with no session shows the previous day's ticks until the update period
+  comes round. Recorded rather than fixed, because the fix is the same scheduled
+  refresh the boundary wants.
 - **"A write in the app moves the widget" has no automated test, and one was
   attempted.** The pieces are each covered — `ProjectionListenerTest` proves the
   repository makes the call (mutation-checked), and `WidgetHostTest` proves
