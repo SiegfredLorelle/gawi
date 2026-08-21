@@ -197,4 +197,44 @@ class HabitDetailViewModelTest {
             cancelAndIgnoreRemainingEvents()
         }
     }
+
+    // ---- the note ----
+
+    @Test
+    fun `a note is written against the day it belongs to`() = runTest {
+        val detail = detailWriting()
+
+        detail.onNote(habitId(1), TODAY.minusDays(2), "went far")
+
+        assertEquals(listOf(TODAY.minusDays(2) to "went far"), repository.notes)
+    }
+
+    /**
+     * Clearing writes an empty note rather than writing nothing.
+     *
+     * architecture §4: an empty note is a real write that clears the note and
+     * wins last-write-wins like any other. Skipping the write as an
+     * optimisation would leave an older note winning and the clear undone.
+     */
+    @Test
+    fun `clearing a note is a write, not a skipped one`() = runTest {
+        val detail = detailWriting()
+
+        detail.onNote(habitId(1), TODAY, "")
+
+        assertEquals(listOf(TODAY to ""), repository.notes)
+    }
+
+    /** A note on a day whose completion has gone says so rather than staying silent. */
+    @Test
+    fun `a note against a vanished completion is reported`() = runTest {
+        val detail = detailWriting()
+        repository.result = CommandResult.Rejected(CommandError.CompletionNotFound)
+
+        detail.events.test {
+            detail.onNote(habitId(1), TODAY, "went far")
+            assertEquals(HabitsMessage(R.string.habits_error_completion_missing), awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
 }

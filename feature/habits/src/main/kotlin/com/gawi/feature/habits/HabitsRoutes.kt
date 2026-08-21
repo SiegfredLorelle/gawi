@@ -142,6 +142,7 @@ fun HabitDetailRoute(habitId: String, onEdit: (String) -> Unit, onBack: () -> Un
         actions = HabitDetailActions(
             onEdit = { id -> onEdit(id.value) },
             onToggle = viewModel::onToggle,
+            onNote = viewModel::onNote,
             onBack = onBack,
         ),
         snackbarHostState = snackbarHostState,
