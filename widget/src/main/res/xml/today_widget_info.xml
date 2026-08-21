@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Deliberately free of the API 31 attributes (targetCellWidth/Height,
+     description, previewLayout). minSdk is 29, so lint reports each of them as
+     UnusedAttribute — and warningsAsErrors is on, so that is a failed build
+     rather than a note. minWidth/minHeight size the widget on every level this
+     app supports; adding the newer attributes means a res/xml-v31 variant to
+     keep in step, which is a trade worth making only once they buy something.
+
+     updatePeriodMillis is load-bearing, not a default. A day rollover is not an
+     event, so nothing commits at the cutoff and ProjectionListener cannot fire
+     for one — this period is what bounds how long a widget shows yesterday's
+     ticks. 30 minutes is also the floor the framework clamps to, so a smaller
+     number would be a comment claiming something untrue. An exact refresh at
+     the boundary wants WorkManager and arrives with the reminder
+     (docs/ux/widget.md §4). -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:initialLayout="@layout/glance_default_loading_layout"
+    android:minHeight="110dp"
+    android:minWidth="180dp"
+    android:resizeMode="horizontal|vertical"
+    android:updatePeriodMillis="1800000"
+    android:widgetCategory="home_screen" />

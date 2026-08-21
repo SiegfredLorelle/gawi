@@ -1,10 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Deliberately no <uses-permission>: the MVP is verifiably offline
-         (architecture §1). allowBackup is off because Android Auto Backup
-         would copy app data to the user's Google account without any
-         network permission (architecture §6). -->
+    <!-- The app declares no permission of its own, and requests **no INTERNET
+         permission**, so it cannot open a socket: §1's "offline-first,
+         verifiably" holds in the way that matters.
+
+         What is here, and why the merged manifest is the thing to read rather
+         than this file:
+
+         - ACCESS_NETWORK_STATE is REMOVED below. Jetpack Glance requires
+           WorkManager (it runs its composition session in a CoroutineWorker),
+           and WorkManager's manifest asks for it in order to evaluate network
+           constraints on work requests. Nothing in this app has one. Keeping it
+           would falsify PRD §5 and §7's "no network permission at MVP", which
+           is a headline claim, for a capability no code here uses.
+         - WAKE_LOCK, RECEIVE_BOOT_COMPLETED and FOREGROUND_SERVICE arrive with
+           WorkManager and are KEPT, deliberately: WorkManager genuinely wakes
+           and reschedules, so removing them would be a manifest that lies about
+           what the app does. None of them can move data off the device.
+         - DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION is androidx.core's own
+           signature-level permission for registering a non-exported dynamic
+           receiver. It predates the widget and grants nothing to anything else.
+
+         ManifestPermissionTest asserts this exact set, so anything arriving
+         through any library's manifest fails a test rather than being noticed
+         later. docs/ux/widget.md §5 has the measurement.
+
+         allowBackup is off because Android Auto Backup would copy app data to
+         the user's Google account without any network permission
+         (architecture §6). -->
+
+    <!-- Not "unused": measured. See the comment above. If a future WorkRequest
+         ever takes a network constraint, this line is what has to go first. -->
+    <uses-permission
+        android:name="android.permission.ACCESS_NETWORK_STATE"
+        tools:node="remove" />
+
     <application
         android:name=".GawiApplication"
         android:allowBackup="false"
