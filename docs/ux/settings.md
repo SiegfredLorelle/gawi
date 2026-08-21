@@ -286,6 +286,28 @@ cell while dropping the habit row — so an inner join would lose a day the user
 really logged, and its name falls back to the habit id. Archived habits' history
 is still history.
 
+**Two limits of the three-column choice, recorded rather than fixed.** Both were
+found by review after the row was built, and neither is a bug in the sense that
+the file is wrong — they are consequences of the shape agreed above.
+
+*Two habits with the same name are one series in a pivot.* The `habit` column is
+a name, and nothing distinguishes an archived "Read" from a new "Read" created
+after it — which is a normal thing to do at a fresh start, and archived habits'
+completions are deliberately included. A `habit_id` column would settle it and
+was rejected above on the grounds that nobody pivots on an id; that argument is
+about pivoting and is not an answer to this. What makes it tolerable for now is
+that the ambiguity is visible — two identical labels in the same file — rather
+than silent in the data. Revisit if duplicate names turn out to be common in real
+use; the fix is a fourth column, not a rename.
+
+*Excel in a `;`-locale opens the file in one column.* Excel takes its delimiter
+from the OS list separator rather than from the file, so the same installs the
+byte order mark exists to serve are the ones that cannot split the rows. Writing
+an `sep=,` first line would fix it for Excel and LibreOffice and break every
+strict reader, `pandas` included, so the comma stays and the workaround is the
+import dialog. `CompletionCsv`'s KDoc has the reasoning and docs/running.md §4
+has the check.
+
 **The success message carries no count.** A number here would govern a noun
 ("1 completions") and so need a `<plurals>`, whose id cannot travel through
 `SettingsMessage` — that resolves through `getString`. The rule this screen

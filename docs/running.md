@@ -562,6 +562,18 @@ does with the file.
       apostrophe is the guard and a spreadsheet does not show it. Archive the
       three habits afterwards.
 
+      Include a name with a **leading space before the sigil** — ` =1+1` — in
+      the same pass, and tick LibreOffice's **Trim spaces** box for that run.
+      That combination is what the first version of the guard missed: it tested
+      the first character only, so the space walked a formula straight past it.
+
+- [ ] **Know what a `;`-locale Excel does with it.** Not a defect and not
+      fixable in the bytes without breaking every other reader, so it is a check
+      that you have seen it rather than one that can fail: on a German, French,
+      Spanish or Dutch install, Excel splits CSV on `;` and puts every record of
+      this file in column A. The fix for a user is the import dialog. See
+      `CompletionCsv`'s KDoc for why no `sep=,` line is written.
+
 - [ ] **Cancelling the picker does nothing and says nothing.** Tap **Export
       completions** and press Back out of the save dialog. No snackbar, no
       change, and `/sdcard/Download` gains nothing.
