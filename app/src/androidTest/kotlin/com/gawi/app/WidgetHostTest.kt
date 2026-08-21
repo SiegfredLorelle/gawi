@@ -5,6 +5,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.gawi.app.testsupport.WidgetHostBinding
 import org.junit.After
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -55,10 +56,23 @@ class WidgetHostTest {
         val rendered = bound!!.awaitText(TIMEOUT_SECONDS) { it.isNotEmpty() }
 
         assertTrue(
-            "Glance produced no text for a bound widget within ${TIMEOUT_SECONDS}s — " +
-                "provideGlance, its session worker, or WorkManager did not run",
+            "Glance produced no text for a bound widget within ${TIMEOUT_SECONDS}s",
             rendered.isNotEmpty(),
         )
+
+        // "It drew something" is not enough: the read-failure copy is text too,
+        // so a throwing observeToday() would turn this green while the message
+        // above blamed the session worker. That is the confusion strings.xml is
+        // split to prevent (docs/ux/widget.md §4), and the one automated check
+        // that Glance renders should not be blind to it.
+        //
+        // :app cannot name :widget's R class — non-transitive R classes are the
+        // default — but the resource is resolvable by name at runtime.
+        val unavailable = context.getString(
+            context.resources.getIdentifier("widget_unavailable", "string", context.packageName),
+        )
+        assertFalse("Glance rendered the read-failure state: $rendered", unavailable in rendered)
+
         // Printed so a run says what it drew, not merely that it drew something.
         println("GAWI_WIDGET rendered=$rendered")
     }
