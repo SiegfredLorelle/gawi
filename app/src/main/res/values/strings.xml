@@ -1,4 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">Gawi</string>
+
+    <!-- The end-of-day reminder. In :app rather than a feature module because
+         :app is the only module that knows what the app's one activity is, and
+         the notification opens it (docs/ux/reminder.md). -->
+    <string name="reminder_channel_name">End-of-day reminder</string>
+    <string name="reminder_channel_description">A nudge when habits are still outstanding and the day is nearly over.</string>
+    <!-- Momo's voice, matching the Today view's mascot copy rather than
+         inventing a second register for the shade. -->
+    <string name="reminder_title">Momo is worried</string>
+    <!-- Deliberately the same phrasing as today_remaining, so the shade and the
+         app agree about the count instead of describing it two ways. -->
+    <string name="reminder_body" tools:ignore="PluralsCandidate">%1$d of %2$d left today</string>
 </resources>

@@ -32,9 +32,22 @@ import org.robolectric.RuntimeEnvironment
  * the app cannot open a socket at all — which is the property PRD §5 is really
  * claiming.
  *
- * The end-of-day reminder will use WorkManager on purpose. If a WorkRequest ever
- * takes a network constraint, the `tools:node="remove"` line is what has to go
- * first, and this test is what will say so.
+ * The end-of-day reminder uses WorkManager on purpose, and shipped **2026-08-21**
+ * without disturbing any of that: the two `WorkRequest`s it arms carry no
+ * constraints at all, which `ReminderScheduler.enqueue` records as a rule. If one
+ * ever takes a network constraint, the `tools:node="remove"` line is what has to
+ * go first, and this test is what will say so.
+ *
+ * **Two measurements were taken separately when the reminder landed, and the
+ * order mattered.** WorkManager was pinned first, on its own — `:widget` takes
+ * Glance on `implementation`, so `:app` had to declare `work-runtime` to compile a
+ * worker at all, which meant choosing a version where Glance's transitive 2.7.1
+ * had been the silent default. 2.11.2 was measured *before* `POST_NOTIFICATIONS`
+ * was added, and changed this set by nothing. Then the permission went in and this
+ * assertion **failed**, naming exactly one addition. That failure is the reason
+ * the first result is worth anything: a check that has only ever returned "clean"
+ * has not been shown able to return "dirty", which is the mistake the widget step
+ * made with a broken grep and is recorded in docs/ux/widget.md §5.
  */
 @RunWith(RobolectricTestRunner::class)
 class ManifestPermissionTest {
@@ -86,17 +99,50 @@ class ManifestPermissionTest {
      * receiver — it predates the widget, which also makes
      * `AndroidManifest.xml`'s old "deliberately no `<uses-permission>`" comment
      * literally false all along; it now says what is true instead.
+     *
+     * The fifth, `POST_NOTIFICATIONS`, is the **only one the app declares by
+     * hand**, and the first runtime permission it has ever asked for. The
+     * end-of-day reminder is a notification (PRD §4), so there is no version of
+     * that feature without it. It grants nothing but a row in the user's own
+     * shade, and it cannot move data off the device — which is the property this
+     * whole class is really about, and which `INTERNET`'s absence still decides.
      */
     @Test
-    fun `the requested permission set is exactly the four that are argued for`() {
+    fun `the requested permission set is exactly the five that are argued for`() {
         assertEquals(
             setOf(
                 "android.permission.WAKE_LOCK",
                 "android.permission.RECEIVE_BOOT_COMPLETED",
                 "android.permission.FOREGROUND_SERVICE",
                 "com.gawi.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION",
+                "android.permission.POST_NOTIFICATIONS",
             ),
             requestedPermissions().toSet(),
+        )
+    }
+
+    /**
+     * The reminder's permission is the *only* one the app declares itself.
+     *
+     * Separate from the set above because it is a different claim, and the one
+     * that would rot first. The set says which five are requested; this says that
+     * four of them are consequences of a library and exactly one is a decision —
+     * so a permission arriving in `app/src/main/AndroidManifest.xml` by hand,
+     * which is the easy thing to do and the hard thing to notice, fails a test
+     * whose name says what went wrong.
+     */
+    @Test
+    fun `the app declares one permission of its own`() {
+        val fromLibraries = setOf(
+            "android.permission.WAKE_LOCK",
+            "android.permission.RECEIVE_BOOT_COMPLETED",
+            "android.permission.FOREGROUND_SERVICE",
+            "com.gawi.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION",
+        )
+
+        assertEquals(
+            listOf("android.permission.POST_NOTIFICATIONS"),
+            requestedPermissions().filterNot { it in fromLibraries },
         )
     }
 
