@@ -1,4 +1,4 @@
-# Habit management: the list and the editor
+# Habit management: the list, the editor and habit detail
 
 Companion to [the PRD](../prd.md) §4 and §5, and to
 [the architecture](../architecture.md) §2 and §3. The PRD's whole habit
@@ -6,8 +6,10 @@ specification is two bullets — *"create/edit/archive habits: name, icon/color,
 schedule (daily or n-per-week), optional tag"* — so this document is where the
 decisions behind those two bullets are written down.
 
-**Status:** decided and built 2026-08-20, with `:feature:habits`. Habit
-**detail** is deferred; see §7.
+**Status:** the list and the editor decided and built 2026-08-20, with
+`:feature:habits`. **Habit detail** built 2026-08-21 — §7 has its decisions,
+and it closes the last three of PRD §6's UX criteria. What remains open is in
+§8.
 
 Written after the screens rather than before them, unlike
 [today-view.md](today-view.md). That is worth admitting: the Today view was
@@ -16,11 +18,17 @@ everything after it, whereas this is a form and a list whose shape is mostly
 dictated by `HabitMetadata`. What was genuinely open was the archive/delete
 question (§4) and the weekly cap (§3), and both are recorded here.
 
-## 1. Two screens, not three
+## 1. Three screens
 
-A **list** (`Habits`) and an **editor** (`HabitEditor`). Reached from the Today
-view's app-bar action, and from a button on its empty state that goes straight
-to the editor.
+A **list** (`Habits`), an **editor** (`HabitEditor`) and **detail**
+(`HabitDetail`). Reached from the Today view's app-bar action, and from a button
+on its empty state that goes straight to the editor.
+
+This section said "two screens, not three" until 2026-08-21, and the third it
+was refusing was a separate *detail-and-edit* split of the form. That is still
+refused — §2 is why one editor serves create and edit. Detail is not that third
+screen: it is read-only, and it is where a habit is looked at rather than
+changed.
 
 There is deliberately **no add button on the Today view itself** beyond the
 empty state's. Adding a habit is something you do a handful of times; ticking
@@ -126,7 +134,7 @@ With a solo user's habit count that is not close.
 
 ## 6. Row actions are separated on purpose
 
-The title block opens the editor; a trailing button archives. The row itself
+The title block opens the habit; a trailing button archives. The row itself
 does **not** toggle archived.
 
 Archiving is the one of the two that feels destructive, so it gets its own
@@ -134,22 +142,135 @@ target and its own word. A row where tapping the name archived it would lose a
 habit off the list with nothing to say it had happened — and since archiving is
 idempotent, there would be no error either.
 
+**Amended 2026-08-21:** the title block led to the *editor* until habit detail
+was built. It now leads to detail, and detail carries an Edit action of its own.
+The separation this section is about is unchanged — the destructive action still
+has its own target and its own word — and what moved is only which screen the
+safe tap opens. Detail is the better default: opening a habit is usually to look
+at it, and the editor is one tap further on rather than unreachable.
+
 Contrast the Today view, where §5 of [today-view.md](today-view.md)
 deliberately makes the *whole row* the toggle: there, one tap is the point, and
 the action is trivially reversible.
 
-## 7. Still open
+## 7. Habit detail
 
-- **Habit detail is deferred.** Architecture §2 scopes this module as
-  "create/edit/archive habit, habit detail", and the detail screen is the part
-  not built. PRD §6.6 wants streak visibility in "Today view, widget, habit
-  detail", so the third of those is outstanding. The reads it needs already
-  exist and are still callerless: `observeHabit` and `observeCompletedDates`.
-- **`createHabit` mints and returns the `HabitId`** so a caller "can navigate to
-  it", per its own KDoc. With detail deferred, the editor only pops back and
-  that returned id goes unused. It is the natural first user of a detail screen.
-- **The retro strip and the honesty prompt** (PRD §5, three-day retro window)
-  belong to habit detail too, and none of that UX is specified anywhere yet.
+Built 2026-08-21. One screen, three jobs — and between them they close PRD §6.3
+(notes), §6.4 (retroactive edits) and §6.6 (streaks on habit detail), which were
+the last three of §6's six criteria still open.
+
+### The streak is the subject, not a badge
+
+The Today row draws a streak as a compact trailing badge; detail draws it large
+and captioned. That follows [widget.md](widget.md) §2's argument for narrowing
+§6.6 to two surfaces: the in-app ones are where a streak is *read deliberately*
+rather than glanced at, and this is the one you open on purpose.
+
+The rules themselves are shared, not restated. `StreakUi` and its mapper moved
+to `:core:ui` when this was built, so [today-view.md](today-view.md) §5's "a
+daily streak is a count, a weekly one is in weeks, and the two must never be
+styled as the same number" is one decision with two renderings rather than two
+copies that can drift. Detail distinguishes them three ways — the `w`, a caption
+naming the unit, and a different colour role — so it survives a reader who
+cannot tell the two colours apart.
+
+### The retro strip is five cells, and one of them is shut
+
+PRD §5 allows retroactive logging up to three days back. today-view.md §5 had
+already decided how that limit is shown, and it is the reason the strip is five
+cells rather than four:
+
+> **Days outside the retro window are drawn shut**, not tapped and refused. With
+> today at Tue 19, Sat 16 is the oldest open day and Fri 15 renders struck
+> through and dashed. The command rule should be readable before it is hit.
+
+`Fri 15` is `today − 4`, one day past what `Commands.addCompletion` will accept.
+A four-cell strip would show only legal writes and say nothing about the edge,
+so the strip reaches one day further back than it can write to. That cell is
+inert: no tap, no long-press, and `disabled()` in its semantics. A cell that
+answered a gesture with a snackbar would be exactly the tapped-and-refused
+behaviour §5 argues against.
+
+It renders **struck through and dimmed** rather than struck through and dashed.
+A true dashed border needs a drawn stroke rather than a `BorderStroke`, and the
+strike-through plus a quieter outline and glyph already carry it. Recorded
+because it is a deliberate departure from §5's wording.
+
+A shut day still shows whether it was completed. It is refused, not hidden.
+
+**Not a calendar.** PRD Phase 1's Insights v1 is where a per-habit
+heatmap/calendar history goes. This is the writable window and the one day past
+its edge, which is a different thing with a different job.
+
+### Every past-day write confirms, in both directions
+
+PRD §5 fixes the copy — *"You're logging for a previous day — make sure this is
+accurate. Be true to yourself."* — and §6.4 wants retroactive edits to "carry
+deliberate friction but stay possible".
+
+The prompt appears for an **undo as well as a completion**. §5 says "editing a
+past day", and un-ticking a day you did do rewrites the record as much as
+ticking one you did not. Today's cell writes straight through, which is §6.4's
+other half: "same-day undo is frictionless".
+
+It is **friction and nothing else**. Architecture §5 is explicit that the 3-day
+window is a *command* validation and that the confirmation is UI, with nothing
+enforcing it. Two consequences the implementation has to honour: dismissing
+leaves the log untouched rather than deferring a write, and the domain still
+refuses a day out of range whatever the screen believed. `RetroWindowExceeded`
+therefore has real copy despite the strip never offering an illegal tap — the
+day can roll over between the strip being drawn and a tap landing on it.
+
+### The note is behind a long-press, on a completed day only
+
+PRD §5 puts an optional note on a completion, reached by "long-press / detail
+view"; §6.3 requires notes never add friction to the base flow. Nothing on the
+way to logging a day asks about a note.
+
+Offered on a **completed** day only: a note hangs off a completion, and
+architecture §4 has notes die with the add they belong to, so there is nothing
+to annotate on an empty day and `updateNote` would reject it with
+`CompletionNotFound`.
+
+Not offered on the **shut** day either, even though `updateNote` has no
+retro-window check and the domain would accept it. Annotating is not claiming to
+have done something, so the window does not apply — but shut has to mean inert,
+and a cell that refuses a tap while answering a long-press does not read as
+closed. That is a UI choice, not a rule, and it is the one place this screen is
+stricter than the domain.
+
+**Clear is a button, not a disabled Save** — today-view.md §5, and the reason is
+architecture §4: an empty note is a real write that clears the note and wins
+last-write-wins like any other. Removing a note has to be something you can ask
+for rather than something you discover by emptying a field. It reports the same
+write Save does with an empty field, because it *is* that write; what §5 asks
+for is the affordance.
+
+It is a `ModalBottomSheet`, the first in the app — every other overlay here is
+an `AlertDialog`. Its content is a separate stateless composable so the tests
+can assert what the buttons report without driving a sheet's animation.
+
+### Creating a habit opens it
+
+`createHabit` mints a `HabitId` and returns it "so the caller can navigate to
+it", per its own KDoc. Until detail existed there was nowhere to go and the id
+went unused; saving a new habit now lands on it.
+
+The editor is popped inclusively on the way. Without that, Back from a new
+habit's detail lands in the form that made it — a filled-in create form that
+would append a second identical habit if saved again.
+
+## 8. Still open
+
+- **A per-habit heatmap or calendar history** is PRD Phase 1's Insights v1, not
+  this. §7's strip is the writable window and the day past its edge; a month
+  view is a different screen with a different job, and building one here would
+  pull Phase 1 scope into the MVP.
+- **Nothing on this screen is reachable from the Today view.** Detail is opened
+  from the habit list or by creating a habit. PRD §5 names a long-press on a
+  Today row as one route to the note, and that route does not exist — the list
+  is the only door. Worth revisiting once the 30-day trial says how often a note
+  is actually wanted.
 - **Multi-tag (PRD OQ-1).** One tag is baked into `HabitMetadata.tag` and into
   the wire format, so multi-tag is an event-payload schema bump with an
   upcast-on-read, not a UI change.

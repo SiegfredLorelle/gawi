@@ -42,9 +42,8 @@ import com.gawi.core.data.db.dao.CompletionExportRow
  * it, and rewriting someone's note to suit RFC 4180 §2.6 is editing it. Excel
  * writes in-cell breaks as bare LF and reads them back as breaks, so
  * normalising would also diverge from the reader this file is tuned for. Note
- * how it can arrive at all: a note carrying a newline comes **from an import**,
- * since `updateNote` has no production caller yet — the note sheet is deferred
- * with habit detail.
+ * how it can arrive at all: the note sheet's field is single-line, so a note
+ * carrying a newline comes **from an import** rather than from the app.
  *
  * **Fields are quoted only when the format requires it**, so the common file
  * stays readable in a text editor.

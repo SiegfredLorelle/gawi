@@ -190,6 +190,15 @@ Small decisions that were easier to make once drawn:
 - **"Clear note" is a button, not a disabled Save.** An empty note is a
   real write that wins LWW like any other (architecture §4), so the sheet
   offers it explicitly.
+
+  Those two are **about habit detail, not this screen** — they were settled
+  here because the sketch drew a strip, and they were the only record of
+  either decision. Both were built on 2026-08-21 and now live in
+  [habits.md](habits.md) §7, which is where to change them. Two notes on how
+  they came out: the shut day renders struck through and *dimmed* rather than
+  dashed, a real dash needing a drawn stroke rather than a border; and the
+  strip is five cells, because "Fri 15 renders" is only true if the strip
+  reaches a day further back than it can write to.
 - **Habit colour appears as the tint behind the row's icon** — one place,
   set once in the create/edit form.
 - **The widget carries no mascot at MVP.** It is a bare checklist; the
