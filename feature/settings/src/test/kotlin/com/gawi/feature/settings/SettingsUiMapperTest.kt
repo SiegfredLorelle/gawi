@@ -1,6 +1,5 @@
 package com.gawi.feature.settings
 
-import com.gawi.core.data.backup.ExportStatus
 import com.gawi.core.data.settings.UserSettings
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
