@@ -9,12 +9,15 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.gawi.core.ui.theme.GawiSpacing
 
-// Export and import: the two rows on this screen that are not settings.
+// The Data section: the three rows on this screen that are not settings.
 //
 // Their own file for the reason SettingsPickers.kt has one — detekt counts
 // functions per file as well as per class — and because the split falls
-// somewhere honest: everything here is about getting the log off the phone and
-// back, and nothing here reads or writes a preference.
+// somewhere honest: everything here is about getting data off the phone or back
+// on it, and nothing here reads or writes a preference.
+//
+// Two of the three rows are the backup; the third is a spreadsheet and is not.
+// See DataSection's own KDoc, which is where that distinction is argued.
 
 /**
  * The Data section.
