@@ -24,11 +24,19 @@ import javax.inject.Inject
  * ask why there is no shared writer; two reasons, and the second is the one
  * that decided it:
  *
- * That class has **no JVM test at all** — substituting a `ContentResolver`
- * needs a Robolectric shadow nothing in this project uses — so refactoring it
- * is verified only on a device. Reaching into the one untested class on the
- * recovery path, to serve a caller whose stakes are lower, is the wrong
- * direction.
+ * That class has **no JVM test at all**, so refactoring it is verified only on a
+ * device, and reaching into the one untested class on the recovery path to serve
+ * a caller whose stakes are lower is the wrong direction.
+ *
+ * **That argument is now weaker than when it was written, and honestly so.** It
+ * used to add that substituting a `ContentResolver` needs a Robolectric shadow
+ * nothing in this project uses. A PR reviewer pointed out the cost of starting
+ * was low, and `CompletionCsvArchiveTest` now does exactly that for *this*
+ * class — so the same shadow would work for [ContentResolverEventArchive] too.
+ * What still holds is the second reason below, plus the sequencing: the JSON
+ * path should get its own behavioural test **first**, and only then is
+ * extracting a shared writer a change with a safety net under it. Recorded in
+ * docs/ux/settings.md §7.
  *
  * And its reasoning is **about the backup**, at length and for good cause: a
  * truncated JSON is a file the user will later trust with their whole history.
