@@ -1,6 +1,7 @@
 package com.gawi.widget
 
 import android.content.Context
+import android.util.Log
 import androidx.glance.appwidget.updateAll
 import com.gawi.core.data.projection.ProjectionListener
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -41,17 +42,25 @@ import javax.inject.Inject
  * are none — which is the common case, and the reason no "is one placed?" guard
  * is worth keeping in front of it.
  */
+private const val TAG = "GlanceProjection"
+
 internal class GlanceProjectionListener @Inject constructor(@ApplicationContext private val context: Context) : ProjectionListener {
 
     @Suppress("TooGenericExceptionCaught", "SwallowedException")
     override suspend fun onProjectionChanged() {
-        withContext(Dispatchers.Default) {
+        withContext(Dispatchers.IO) {
             try {
                 TodayWidget().updateAll(context)
             } catch (e: Throwable) {
                 // Rethrows cancellation and nothing else. Deliberately wider
                 // than Exception; the KDoc above says which Error did escape.
                 currentCoroutineContext().ensureActive()
+                // Logged rather than silently dropped. A permanently broken push
+                // — WorkManager failing to start, a corrupt Glance store — is
+                // otherwise indistinguishable from nobody having placed a
+                // widget, which is the failure shape ProjectionListenerTest
+                // exists to rule out and which already cost one debugging round.
+                Log.w(TAG, "the widget refresh failed after a committed write", e)
             }
         }
     }
