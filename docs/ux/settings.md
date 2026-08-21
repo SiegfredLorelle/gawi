@@ -9,8 +9,9 @@ it — so this document is where the screen those four words imply is decided.
 **Status:** decided and built 2026-08-20, with `:feature:settings`. **Export and
 import** landed the same day, as a labelled section below the three settings
 (§6). **The 30-day nudge landed 2026-08-21** and turned the export row into a
-`SettingRow` with a real stored value (§6). The rest of PRD §5's data row — a
-CSV of completions — is still unbuilt; see §7.
+`SettingRow` with a real stored value (§6). **The CSV of completions landed
+2026-08-21** as a third row in that section, which completes PRD §5's data row
+(§6).
 
 Written after the screens, like [habits.md](habits.md) and unlike
 [today-view.md](today-view.md). Little here was open: the fields are fixed by
@@ -129,12 +130,19 @@ for that broadcast. Deferred: the payoff is a screen that re-renders while the
 user is changing an Android setting they reached by leaving this app, and the
 next thing that recomposes catches up anyway.
 
-## 6. Export and import, and the two rows that are not settings
+## 6. Export and import, and the rows that are not settings
 
 PRD §5 gives this app one recovery path and architecture §6 explains why there
 is only one: Auto Backup is off, so nothing else copies the log anywhere, and
-the log cannot be rebuilt from the derived tables. That makes these two rows the
-most consequential thing on the screen and, oddly, the least setting-like.
+the log cannot be rebuilt from the derived tables. That makes the export and
+import rows the most consequential thing on the screen and, oddly, the least
+setting-like.
+
+This section was written when there were two of them. There are three now, and
+the third is deliberately *not* a recovery path — everything below down to "The
+CSV of completions" is about the first two, and that subsection is where the
+distinction is drawn. Read the two together: the argument here is what makes the
+CSV's copy load-bearing rather than decorative.
 
 **They are a section with a heading; the three settings above are not.** The
 habit list already made this choice for its archived group — the obvious group
@@ -146,7 +154,7 @@ either: a rule and a heading are two devices doing one job, and there is no
 
 **One row composable, and a nullable value.** A `SettingRow`'s middle line is
 `titleMedium` in the primary colour and it means *this is what the setting is set
-to*; three rows teach a reader that before they reach these two. "Export a copy"
+to*; three rows teach a reader that before they reach the Data section. "Export a copy"
 is not a value, and pre-staging the nudge by writing "Last exported: never" there
 before anything stored it would have been copy the store cannot back — the one
 thing §2 argues against.
@@ -220,6 +228,71 @@ truth": that rule is about *committed settings*, and there is no preference
 called "an export is running". Both rows disable while either runs, because
 exporting midway through an import reads a half-merged log.
 
+### The CSV of completions, and the sentence it needs
+
+**A third row under a heading that argues against it.** Everything above turns
+on these rows being the only recovery path there is. The CSV is not one — it is
+a view of the completions projection for a spreadsheet, holding no events and no
+habit configuration, so nothing can be rebuilt from it. That leaves two ways to
+carry the distinction, and **the copy carries it**: `settings_export_csv_help`
+says the file is for a spreadsheet, holds no habits or settings, and cannot be
+imported back, and points at the row above for the thing that can.
+
+The alternative was splitting the section in two, with the CSV under a heading
+of its own. Rejected for the reason the section is named in the first place: it
+would mean a one-row group and a word to invent for it ("Spreadsheet"?
+"Reports"?), and every candidate says less than the sentence does. A structural
+distinction also would not have helped the person this is for — someone who
+taps the wrong row learns what it did from the copy either way.
+
+**It gets no value line and no nudge, and those are the same decision twice.**
+`ExportJournal` records the JSON export only. A CSV cannot restore anything, so
+letting one reset the 30-day warning would silence it for a month on the
+strength of a file that would be no use — the exact failure §7's rule about
+resolving towards nudging exists to prevent. That is enforced where it cannot be
+forgotten rather than remembered: the CSV archive is **not given the journal at
+all**, which `CompletionCsvArchiveWiringTest` asserts against the constructor,
+and `csvHelp` takes no `ExportRecency`, so the row has no way to show a nudge
+even by accident.
+
+**A UTF-8 byte order mark is written, and the import path strips one.** The two
+directions disagree about the same three bytes and that is deliberate. Excel
+reads a mark-less UTF-8 CSV as the platform's legacy encoding, so a habit named
+in anything but ASCII comes out as mojibake in the tool most likely to open the
+file; import, meanwhile, is fed by editors that add a mark uninvited, where
+refusing the file would be the worse failure. Each path accommodates the reader
+it actually has.
+
+**Habit names are free text, and a spreadsheet evaluates a cell starting `=`,
+`+`, `-` or `@` as a formula.** This is the one part of the file that is a
+security property rather than a formatting choice, and it is reachable by typing
+a habit name. Such a field is written with a leading apostrophe, which Excel and
+LibreOffice both read as "this cell is text" and neither displays. TAB and CR
+are guarded too, because a spreadsheet skips leading whitespace before deciding
+what a cell is. **Not stripped** — a habit honestly named `-5kg` must survive,
+and an export whose justification is the user owning their data cannot quietly
+edit it. Be exact about the cost: the bytes do change, and a text editor shows
+the apostrophe.
+
+**Three columns, `habit,logical_date,note`.** What a spreadsheet is for is
+pivoting by habit and counting by month; a habit id and a schedule would be
+columns nobody pivots on and are in the JSON already. `logical_date` rather than
+"date" because which day a completion belongs to is decided by the day cutoff
+(architecture §5), and calling it a date would quietly claim otherwise.
+
+**The join is a `LEFT JOIN` and archived habits are included.** A completion can
+arrive before its `HabitCreated` under a merge, and the projection then keeps the
+cell while dropping the habit row — so an inner join would lose a day the user
+really logged, and its name falls back to the habit id. Archived habits' history
+is still history.
+
+**The success message carries no count.** A number here would govern a noun
+("1 completions") and so need a `<plurals>`, whose id cannot travel through
+`SettingsMessage` — that resolves through `getString`. The rule this screen
+already follows is to write copy that needs no quantity resource. The one thing
+a count says that copy cannot is that the file came out empty, and that case has
+its own sentence.
+
 **Export speaks on success where a settings write is silent.** §7 notes that a
 successful settings change says nothing, because the row redrawing is the
 feedback. There is no row to redraw here, and the file went somewhere the app is
@@ -234,11 +307,24 @@ cases where a count is zero get their own string rather than reading "0 added".
 
 ## 7. Still open
 
-- **The CSV of completions is not built.** PRD §5 asks for it alongside the
-  JSON, and the two are different things for different jobs: the JSON is the
-  event log and the only thing an import can rebuild from, while the CSV is a
-  view of the completions projection for a spreadsheet. It is not a recovery
-  path and must not be described as one.
+- ~~**The CSV of completions is not built.**~~ **Built 2026-08-21**, and this
+  bullet's own warning is what shaped it. The JSON is the event log and the only
+  thing an import can rebuild from; the CSV is a view of the completions
+  projection for a spreadsheet, and it is not a recovery path. §6 has the
+  decisions. Two of them exist purely to keep that true where a comment could
+  not: the CSV archive is not given `ExportJournal`, so it cannot stamp the
+  last-export time, and `csvHelp` takes no `ExportRecency`, so the row cannot
+  show the nudge. Both are asserted rather than asked for.
+
+  One sizing assumption in the plan for it was wrong and worth recording.
+  `SettingsActions` was expected to need a nested holder for a seventh action,
+  because its own KDoc said six was the last that fits under detekt's
+  constructor threshold of seven. The threshold is seven, but
+  `LongParameterList` sets `ignoreDataClasses` true by default, so the rule
+  never applied to that declaration at all — measured, and the KDoc is corrected
+  in place. What did bite was `TooManyFunctions`, which caps a *file* at eleven:
+  the mapper was at ten, so the Data section's functions moved to
+  `SettingsDataMapper.kt`.
 - ~~**The 30-day nudge is not built.**~~ **Built 2026-08-21**, and one thing
   this bullet said about it turned out to be wrong in a way worth recording.
   `lastExportedAt` is **not** a fourth `UserSettings` field. Two reasons, both
