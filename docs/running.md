@@ -670,9 +670,12 @@ Decisions and reasoning are in [docs/ux/widget.md](ux/widget.md).
 
 Known and expected, not a bug: a widget left on the launcher **across the day
 cutoff shows yesterday's ticks** until the framework's 30-minute update period
-comes round. A tap is still safe — it re-reads and writes to the current logical
-date, never the drawn one (docs/ux/widget.md §4). To see it, move the cutoff a
-couple of minutes ahead (§4's rollover trick) and watch the widget lag the app.
+comes round. A tap still writes to the *right* date, because it re-reads rather
+than trusting the drawn one — but the visible semantics invert while it is
+stale: tapping a row drawn as **ticked** finds today incomplete and therefore
+**adds** a completion, so the box stays checked and nothing looks undone. The log
+is correct; the render was not (docs/ux/widget.md §4). To see it, move the cutoff
+a couple of minutes ahead (§4's rollover trick) and watch the widget lag the app.
 
 ### The reminder — *not built*
 
