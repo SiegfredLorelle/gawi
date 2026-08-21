@@ -13,6 +13,9 @@ android {
         applicationId = "com.gawi.app"
         versionCode = 1
         versionName = "0.1.0"
+        // The only module with an androidTest source set (architecture §8).
+        // configureAndroid sets no runner, because until now nothing needed one.
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 }
 
@@ -46,4 +49,19 @@ dependencies {
     testImplementation(libs.hilt.android.testing)
     kspTest(libs.hilt.compiler)
 
+    // Instrumented tests. Deliberately NOT Hilt-testing: these drive the real
+    // installed app with the real graph and the real database, which is the
+    // whole point — it is the one place where Room's invalidation actually
+    // delivers, so a write journey can be asserted here and cannot be under
+    // Robolectric (architecture §8).
+    //
+    // Not run by `make test` (`./gradlew test` is the unit-test umbrella), so
+    // CI is untouched. `make itest` runs them on an attached device.
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.uiautomator)
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    // Overrides ui-test-junit4's transitive 3.5.0; see the catalog comment.
+    androidTestImplementation(libs.androidx.test.espresso.core)
 }
