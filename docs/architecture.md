@@ -66,13 +66,22 @@ anywhere in the project now.
 
 `:feature:settings` holds the three preferences the data layer stores — day
 boundary, week start and reminder time — and, below them in a labelled section
-of their own, **export and import**. They are a section rather than a fourth
-setting row because they are not settings: they have no stored value and they
-are the only disaster-recovery path there is, `allowBackup` being off (§6) and
-the event log reconstructible from nothing. The export row does now carry one
+of their own, **export and import**. They are a section rather than two more
+setting rows because they are not settings: they have no stored value, and
+between them they are the only disaster-recovery path there is, `allowBackup`
+being off (§6) and the event log reconstructible from nothing. The export row does now carry one
 stored value — how long ago it last wrote a file — which is §6's compensating
 control and the whole of PRD §5's nudge; `docs/ux/settings.md` §6 has the copy
-decisions. **The CSV of completions PRD §5 also asks for is not built.**
+decisions. **The CSV of completions is built too**, as of 2026-08-21, which
+completes PRD §5's data row — a third row in the same section, deliberately not
+a recovery path, and the one row there whose help line has to say so.
+
+The CSV lives in `:core:data` as this table's row for that module says, and its
+being there rather than in `:core:domain` is worth one sentence: unlike the
+export codec it needs no kotlinx-serialization, so putting it here leaves the
+boundary guard below intact. It also never touches the last-export stamp, which
+is enforced by the class that writes it not being given `ExportJournal` at all
+rather than by a comment asking for restraint.
 
 **The export codec is in `:core:domain`, not `:core:data`**, which is the one
 place this table's `:core:data` row would once have said otherwise. An export
@@ -248,6 +257,12 @@ recovery path**. Compensating control: a gentle in-app nudge when no export
 has been made for 30 days (local check only, surfaced in-app — never a
 notification). **Built 2026-08-21**, as a value line and a help line on the
 export row itself rather than as a banner or a second surface.
+
+**Only the JSON export counts as a backup.** The CSV of completions, built
+2026-08-21, writes no events and cannot be imported, so it never stamps the
+last-export time and never settles the nudge above — a spreadsheet is not a copy
+of the log. `ExportJournal` is not reachable from that path at all, which is how
+this is kept true rather than remembered.
 
 **What records the export is not a setting**, and the boundary is worth stating
 because the obvious place is wrong. The stamp lives in the settings preferences
