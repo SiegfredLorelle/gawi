@@ -93,11 +93,16 @@ not an event. Nothing is written at the cutoff, so no listener can fire for one,
 and a widget left on a launcher overnight will show yesterday's ticks. Two
 things follow:
 
-- **Bounded, not fixed:** the provider's `updatePeriodMillis` is 30 minutes —
-  also the floor the framework clamps to — so staleness has a ceiling without
-  any new dependency. An exact refresh at the boundary wants a scheduled wake,
-  which means WorkManager, which arrives with the reminder. **That step should
-  add a boundary refresh**; it is the cheapest thing it can do for this one.
+- **Shortened, not bounded.** The provider asks to be updated every 30 minutes,
+  which is also the floor the framework clamps to — but `updatePeriodMillis` is
+  a *minimum interval between requested updates*, not a deadline. The framework
+  batches these, defers them under Doze and App Standby, and does not wake the
+  device to deliver one. So it shortens the stale window and closes nothing;
+  there is no ceiling here to quote, and an earlier draft of this bullet
+  claimed one. An exact refresh at the cutoff wants a scheduled wake, which
+  means a WorkManager **worker** — WorkManager itself is already a dependency,
+  because Glance requires it (§5). **The reminder step should schedule that
+  worker**; it is the cheapest thing it can do for this one.
 - **The tap does not trust the render.** This is the part that matters for
   correctness rather than appearance. A rendered row carries only a habit id;
   the logical date and the completion state both come from a read taken at tap
@@ -113,13 +118,13 @@ the rule `HabitRepository.observeToday`'s KDoc states. The widget is the one
 caller that cannot rely on it.
 
 **What re-reading costs, stated plainly: across a rollover the tap's visible
-semantics invert.** A session-less widget can draw yesterday's ticks for up to
-the update period. Tap a row it shows as **ticked** and the fresh read says
-`completedToday == false` for the new day — so the tap *adds* a completion where
-the user meant to undo one, and the box they tapped stays checked. The log is
-right and today really is done; the eye was misled. Calling this "safe" without
-that sentence, which an earlier draft of `docs/running.md` did, is only half
-true.
+semantics invert.** A session-less widget can draw yesterday's ticks until a
+periodic update gets through, which is not a bounded wait. Tap a row it shows
+as **ticked** and the fresh read says `completedToday == false` for the new day
+— so the tap *adds* a completion where the user meant to undo one, and the box
+they tapped stays checked. The log is right and today really is done; the eye
+was misled. Calling this "safe" without that sentence, which an earlier draft
+of `docs/running.md` did, is only half true.
 
 The alternative considered was passing the drawn state as a second action
 parameter and refusing to act when it disagrees with the fresh read. Declined:
@@ -141,9 +146,10 @@ not use.
 So a one-shot read froze the content for the session's lifetime. The concrete
 failure: complete a habit in the app and the widget redraws, complete a second
 five seconds later and that push lands on the live session, nothing re-reads,
-and the home screen shows the first ticked and the second not — until the
-30-minute update period. Two taps on the widget in quick succession do the same,
-which reads as a dead widget.
+and the home screen shows the first ticked and the second not — until the next
+periodic update gets through, which is best-effort rather than a deadline. Two
+taps on the widget in quick succession do the same, which reads as a dead
+widget.
 
 **The two mechanisms are both needed and cover different cases.** Collecting
 `observeToday()` inside the content keeps a *live* session tracking Room,
@@ -203,9 +209,10 @@ manifest then contributes four permissions to an app that had none of its own:
   the property §1 is really claiming, and it is unchanged.
 - `ManifestPermissionTest` asserts the **exact** set, so anything arriving
   through any library's manifest fails a test rather than being noticed later.
-  When the reminder takes WorkManager on purpose, that test is the decision
-  point: if a `WorkRequest` ever takes a network constraint, the removal line is
-  the first thing that has to go.
+  When the reminder schedules work of its own — WorkManager is already here, so
+  what that step adds is a worker, not the dependency — this test is the
+  decision point: if a `WorkRequest` ever carries a network constraint, the
+  removal line is the first thing that has to go.
 
 **Two corrections that fell out of measuring it:**
 
@@ -275,16 +282,19 @@ all either `exported="false"` or guarded by `DUMP` / `BIND_JOB_SERVICE`.
 
 ## 6. Still open
 
-- **A boundary refresh** (§4). The reminder step brings WorkManager and should
-  schedule one at the cutoff. Until then, staleness is bounded by 30 minutes.
+- **A boundary refresh** (§4). WorkManager is already a dependency, because
+  Glance requires it (§5), so what the reminder step adds is a *worker*
+  scheduled at the cutoff. Until then the only thing shortening the stale
+  window is the provider's periodic update, which is best-effort — so there is
+  no ceiling to state, only a likelihood.
 - **A settings edit is not an event either**, and it is the easier one to miss.
   Changing the **day cutoff** changes the logical date, and therefore every
   `completedToday`, without writing anything to the log — so no
   `ProjectionListener` push can fire for it. Found by `/code-review`. A live
   session follows it, because `observeToday()` re-emits on a settings change; a
-  widget with no session shows the previous day's ticks until the update period
-  comes round. Recorded rather than fixed, because the fix is the same scheduled
-  refresh the boundary wants.
+  widget with no session shows the previous day's ticks until the next periodic
+  update gets through. Recorded rather than fixed, because the fix is the same
+  scheduled worker the boundary wants.
 - **`glance-appwidget-testing` was considered and declined.** PR review
   suggested it for pinning what the widget draws. Not taken: `Message` resolves
   its copy through `LocalContext.current.getString(...)`, so the Glance unit
