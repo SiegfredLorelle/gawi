@@ -15,9 +15,9 @@ internal val HABIT_ID = ActionParameters.Key<String>("habitId")
 /**
  * One tap on a widget row: complete the habit, or undo it if it is already done.
  *
- * Toggling rather than completing mirrors `TodayViewModel.onToggle` exactly, so
- * the widget has no semantics of its own to document, and a mis-tap on a home
- * screen is recoverable without opening the app (docs/ux/widget.md §3).
+ * Toggling rather than only completing mirrors `TodayViewModel.onToggle`, so the
+ * widget has no semantics of its own to document and a mis-tap on a home screen
+ * is recoverable where it happened (docs/ux/widget.md §3).
  *
  * `internal` is a Kotlin visibility statement only; Glance resolves this class
  * by name from the `PendingIntent`, so it must keep a no-arg constructor — the
@@ -25,12 +25,33 @@ internal val HABIT_ID = ActionParameters.Key<String>("habitId")
  */
 internal class ToggleHabitAction : ActionCallback {
 
+    /**
+     * **The whole body is guarded, including the two Glance calls.** `onAction`
+     * is invoked from Glance's `ActionCallbackBroadcastReceiver` inside a
+     * `goAsync { }`, so there is no `CoroutineExceptionHandler` between a throw
+     * here and the thread's default handler — a throw is process death, on a tap.
+     * `TodayWidget()` in particular constructs the object whose constructor has
+     * already been measured throwing `NoClassDefFoundError` on this project
+     * (docs/ux/widget.md §5), and an `Error` walks past `catch (e: Exception)`.
+     *
+     * [toggleHabit] carries its own guard as well, and the redundancy is
+     * deliberate: that one is the unit-tested seam and its callers should not
+     * have to know, while this one covers the two calls it cannot reach.
+     *
+     * Not unit-testable — it needs a real Glance object, which only
+     * `WidgetHostTest` constructs.
+     */
+    @Suppress("TooGenericExceptionCaught", "SwallowedException")
     override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
-        toggleHabit(repositoryFrom(context), parameters[HABIT_ID])
-        // Re-render whatever the log now says, including after a failure: the
-        // widget is the only surface here and correcting it is the only report
-        // it can make.
-        TodayWidget().update(context, glanceId)
+        try {
+            toggleHabit(repositoryFrom(context), parameters[HABIT_ID])
+            // Re-render whatever the log now says, including after a failure:
+            // the widget is the only surface here, so correcting itself is the
+            // only report it can make.
+            TodayWidget().update(context, glanceId)
+        } catch (e: Throwable) {
+            currentCoroutineContext().ensureActive()
+        }
     }
 }
 
@@ -38,30 +59,23 @@ internal class ToggleHabitAction : ActionCallback {
  * The whole of the tap's decision, as a function taking the repository so it is
  * tested without Glance or a device.
  *
- * **It re-reads the snapshot; it does not trust what was drawn.** The rendered
- * row carried only an id, and the logical date and the completion state both
- * come from this fresh read. That is a deliberate difference from
- * `TodayScreen`, where the snapshot is live through its `Flow` and the date
- * handed to a tap is current by construction — the rule
- * `HabitRepository.observeToday`'s KDoc states. A widget's render is live only
- * while a Glance session is, and sessions are short — so a widget sitting on a
- * launcher is usually collecting nothing, which makes a rendered `logicalDate`
- * exactly the value most likely to be stale. Writing to it would put a
- * completion on yesterday, which is something the
- * 3-day retroactive window (architecture §5) *accepts* rather than rejects, and
- * so a silent wrong answer rather than a refusal. Re-reading means a stale
- * render can mislead the eye and never the log.
+ * **It re-reads the log; it does not trust what was drawn.** The rendered row
+ * carried only an id, and both the logical date and the completion state come
+ * from this fresh read. A widget's content is live only while a Glance session
+ * is, and sessions are short, so the drawn `logicalDate` is the value most
+ * likely to be stale — and writing to a stale one would put a completion on
+ * *yesterday*, which architecture §5's 3-day retroactive window **accepts**
+ * rather than refuses. That would be a silent wrong answer rather than a
+ * refusal. `TodayScreen` needs none of this care because its snapshot really is
+ * live (`HabitRepository.observeToday`'s KDoc states the rule).
  *
- * Matching the id as a string is what makes a bad parameter harmless: an id that
- * is absent, malformed, or belongs to a habit archived since the render all
- * resolve to the same no-op, and no `HabitId` is ever constructed here, so its
- * `require` cannot throw inside a broadcast.
+ * Matching the id as a string is what makes a bad parameter harmless: absent,
+ * malformed, or belonging to a habit archived since the render all resolve to
+ * the same no-op, and no `HabitId` is constructed here, so its `require` cannot
+ * throw inside a broadcast.
  *
- * Failures are absorbed for the reason [TodayWidget]'s read absorbs them, plus
- * one specific to writes: an exception out of a command reaching the default
- * handler is process death, which is the defect PR review found in three
- * ViewModels — a widget callback needs the same guard, and rejections are
- * values here rather than exceptions, so what is left to catch is real failure.
+ * Failures are absorbed rather than propagated, for the reason
+ * [ToggleHabitAction.onAction]'s own guard records.
  */
 @Suppress("TooGenericExceptionCaught", "SwallowedException")
 internal suspend fun toggleHabit(habits: HabitRepository, habitId: String?) {
@@ -73,7 +87,7 @@ internal suspend fun toggleHabit(habits: HabitRepository, habitId: String?) {
         } else {
             habits.addCompletion(row.habit.id, snapshot.today)
         }
-    } catch (e: Exception) {
+    } catch (e: Throwable) {
         currentCoroutineContext().ensureActive()
     }
 }
