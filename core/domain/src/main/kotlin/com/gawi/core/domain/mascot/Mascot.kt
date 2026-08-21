@@ -39,7 +39,12 @@ object Mascot {
      * instead of being masked by the recovery face. For a weekly habit that
      * means the first three days of the week its streak zeroed.
      *
-     * The 3 is a guess, flagged for the 30-day trial alongside PRD OQ-3.
+     * The 3 is a guess. It was flagged for the 30-day trial alongside PRD
+     * OQ-3, and PRD §8 now records why that flag cannot be acted on as
+     * written: Phase 0 draws three faces and folds [Mood.REGENERATING] onto
+     * neutral, so no amount of using the app distinguishes this window's
+     * effect from its absence. It waits for Phase 1's fourth face, or it is
+     * settled on the streak rules alone.
      */
     const val REGENERATING_WINDOW_DAYS = 3L
 

@@ -145,9 +145,15 @@ than a rounding of the weekly case: `regenerating` outranks `worried`, and a
 window that lasted the whole week would mask the now-or-never warning on
 exactly the days a weekly habit still has one chance left.
 
-The 3-day figure is a guess and is flagged for the 30-day trial, alongside
-PRD OQ-3. Grace mechanics, if they ever land, change `recentlyBroken` and
-therefore this whole section.
+The 3-day figure is a guess and was flagged for the 30-day trial, alongside
+PRD OQ-3. **That flag does not work, and this section used to contradict its
+own §6 by carrying it** (corrected 2026-08-22): the MVP mapping below folds
+`regenerating` onto `neutral`, so the trial shows the same face whether this
+window is 3 days, 30, or absent. §6 says as much already — decided, tested and
+unobservable. The window therefore waits for Phase 1's fourth face, or is
+settled on the streak rules alone; PRD §8's OQ-3 records the same. Grace
+mechanics, if they ever land, change `recentlyBroken` and therefore this whole
+section.
 
 ### MVP mapping
 
