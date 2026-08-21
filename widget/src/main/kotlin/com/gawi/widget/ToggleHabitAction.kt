@@ -1,6 +1,7 @@
 package com.gawi.widget
 
 import android.content.Context
+import android.util.Log
 import androidx.glance.GlanceId
 import androidx.glance.action.ActionParameters
 import androidx.glance.appwidget.action.ActionCallback
@@ -51,9 +52,12 @@ internal class ToggleHabitAction : ActionCallback {
             TodayWidget().update(context, glanceId)
         } catch (e: Throwable) {
             currentCoroutineContext().ensureActive()
+            Log.w(TAG, "a widget tap failed", e)
         }
     }
 }
+
+private const val TAG = "ToggleHabitAction"
 
 /**
  * The whole of the tap's decision, as a function taking the repository so it is
@@ -89,5 +93,9 @@ internal suspend fun toggleHabit(habits: HabitRepository, habitId: String?) {
         }
     } catch (e: Throwable) {
         currentCoroutineContext().ensureActive()
+        // Logged, not dropped. There is no snackbar on a home screen, so without
+        // this a persistently failing tap is indistinguishable from a widget
+        // nobody is tapping.
+        Log.w(TAG, "the toggle behind a widget tap failed", e)
     }
 }
