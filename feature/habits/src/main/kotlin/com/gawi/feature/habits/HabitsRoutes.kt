@@ -11,7 +11,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gawi.core.domain.model.HabitId
 
 /**
- * The two screens `:app` shows, wired up.
+ * The three screens `:app` shows, wired up.
  *
  * Neither takes a `Modifier` and neither puts a Compose or `:core:data` type in
  * its signature — the same rule `TodayRoute` follows, and what keeps `:core:ui`
@@ -95,6 +95,41 @@ fun HabitEditorRoute(habitId: String?, onSaved: () -> Unit, onCancel: () -> Unit
             onEdit = viewModel::onEdit,
             onSave = viewModel::onSave,
             onCancel = onCancel,
+        ),
+        snackbarHostState = snackbarHostState,
+    )
+}
+
+/**
+ * One habit, read-only.
+ *
+ * The id is non-null here, unlike the editor's: there is no "new habit" detail,
+ * and a route that could not name its habit would have nothing to draw. It is
+ * still a `String` for the same reason — [HabitId] throws on anything that is
+ * not a canonical UUIDv7, and the ViewModel is where that is turned into a
+ * state rather than a crash.
+ *
+ * [onEdit] hands the id back rather than closing over the one passed in, so
+ * what is edited is the habit the screen is actually showing.
+ *
+ * No `SnackbarHostState` collection loop: nothing on this screen writes yet, so
+ * there are no rejections to report. The host is still created and passed, so
+ * the retro strip and the note sheet have somewhere to put theirs.
+ */
+@Composable
+fun HabitDetailRoute(habitId: String, onEdit: (String) -> Unit, onBack: () -> Unit) {
+    val viewModel: HabitDetailViewModel =
+        hiltViewModel<HabitDetailViewModel, HabitDetailViewModel.Factory>(
+            creationCallback = { factory -> factory.create(habitId) },
+        )
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    HabitDetailScreen(
+        state = state,
+        actions = HabitDetailActions(
+            onEdit = { id -> onEdit(id.value) },
+            onBack = onBack,
         ),
         snackbarHostState = snackbarHostState,
     )

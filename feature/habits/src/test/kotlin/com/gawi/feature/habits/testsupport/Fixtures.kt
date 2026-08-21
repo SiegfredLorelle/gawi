@@ -5,6 +5,7 @@ import com.gawi.core.domain.model.HabitId
 import com.gawi.core.domain.model.Schedule
 import com.gawi.core.domain.projection.HabitState
 import com.gawi.core.domain.streak.StreakSnapshot
+import java.time.LocalDate
 
 /**
  * Habits as the repository would hand them over. Named after the `Fixtures.kt`
@@ -37,11 +38,29 @@ fun habitState(
     archived = archived,
 )
 
-/** What `observeHabit` returns — the editor reads only its `habit`. */
-fun todayHabit(habit: HabitState = habitState()): TodayHabit = TodayHabit(
+/**
+ * What `observeHabit` returns.
+ *
+ * The editor reads only its `habit`; detail reads all of it, which is why the
+ * completion, week and streak fields are parameters rather than fixed zeroes.
+ */
+fun todayHabit(
+    habit: HabitState = habitState(),
+    completedToday: Boolean = false,
+    note: String? = null,
+    weekCount: Int = 0,
+    streak: StreakSnapshot = StreakSnapshot.NONE,
+): TodayHabit = TodayHabit(
     habit = habit,
-    completedToday = false,
-    note = null,
-    weekCount = 0,
-    streak = StreakSnapshot.NONE,
+    completedToday = completedToday,
+    note = note,
+    weekCount = weekCount,
+    streak = streak,
 )
+
+/** A live run of [current], in whatever unit the habit's schedule counts in. */
+fun running(current: Int): StreakSnapshot = StreakSnapshot(current = current, previous = 0, brokenOn = null)
+
+/** A run of [previous] that has since been lost, and reads zero as of [brokenOn]. */
+fun broken(previous: Int, brokenOn: LocalDate = LocalDate.parse("2026-08-16")): StreakSnapshot =
+    StreakSnapshot(current = 0, previous = previous, brokenOn = brokenOn)

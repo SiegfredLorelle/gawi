@@ -1,6 +1,9 @@
 package com.gawi.feature.habits
 
+import com.gawi.core.data.model.TodayHabit
+import com.gawi.core.domain.model.Schedule
 import com.gawi.core.domain.projection.HabitState
+import com.gawi.core.ui.streak.toUi
 import com.gawi.core.ui.theme.HabitPalette
 import com.gawi.core.ui.theme.parseHabitColor
 
@@ -57,4 +60,35 @@ internal fun newHabitForm(): HabitEditorUiState.Form = HabitEditorUiState.Form(
     color = HabitPalette.DefaultColor,
     schedule = ScheduleUi.Daily,
     tag = "",
+)
+
+/**
+ * One habit, as detail draws it.
+ *
+ * Reads a `TodayHabit` rather than a `HabitState`, which is what makes the
+ * streak and the week count available at all — the management list's
+ * `observeAllHabits` carries neither. `TodayHabit`'s own KDoc anticipated this:
+ * detail reads the same shape as the Today row and differs only in that asking
+ * for one habit by id can see an archived one, since unarchiving has to be
+ * reachable.
+ *
+ * The week-progress rule is Today's, deliberately: docs/ux/today-view.md §5
+ * says only a weekly habit draws "2/3 this week", and a detail screen that
+ * disagreed with the row that led to it would be its own bug.
+ */
+internal fun TodayHabit.toDetailUiState(): HabitDetailUiState.Detail = HabitDetailUiState.Detail(
+    id = habit.id,
+    name = habit.name,
+    icon = habit.icon,
+    iconTint = parseHabitColor(habit.color),
+    schedule = habit.schedule.toUi(),
+    // Blank to null, the same translation toForm does in the other direction.
+    tag = habit.tag?.takeUnless { it.isBlank() },
+    archived = habit.archived,
+    completedToday = completedToday,
+    weekProgress = when (val schedule = habit.schedule) {
+        Schedule.Daily -> null
+        is Schedule.Weekly -> HabitWeekProgress(done = weekCount, target = schedule.timesPerWeek)
+    },
+    streak = streak.toUi(habit.schedule),
 )

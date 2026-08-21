@@ -55,6 +55,35 @@
     <string name="habits_editor_unavailable_title">Can\'t open that habit</string>
     <string name="habits_editor_unavailable_body">It could not be read. Go back and try again.</string>
 
+    <!-- Habit detail (PRD §6.6's second streak surface) -->
+    <string name="habits_detail_title">Habit</string>
+    <string name="habits_detail_edit">Edit habit</string>
+    <string name="habits_detail_tag">#%s</string>
+    <string name="habits_detail_archived">Archived</string>
+    <string name="habits_detail_done">Done today</string>
+    <string name="habits_detail_not_done">Not done yet today</string>
+    <!-- "2/3 this week", the same wording the Today row uses — docs/ux/today-view.md
+         §5 fixes it, and detail disagreeing with the row that led to it would be
+         its own bug. Positional, so a translation may reorder the two numbers.
+         Not a plural: the numbers are a ratio and "week" is not what they count,
+         so there is no singular form to write. -->
+    <string name="habits_detail_week_progress" tools:ignore="PluralsCandidate">%1$d/%2$d this week</string>
+
+    <!-- The streak, in the schedule's own unit. docs/ux/today-view.md §5: a
+         daily streak is a count and a weekly one is in weeks, and "the two must
+         never be styled as the same number" — hence the w, and a caption that
+         names the unit rather than leaving it to the colour. -->
+    <string name="habits_detail_streak_days">%d</string>
+    <string name="habits_detail_streak_weeks">%dw</string>
+    <string name="habits_detail_streak_days_caption">day streak</string>
+    <string name="habits_detail_streak_weeks_caption">week streak</string>
+    <string name="habits_detail_streak_none">No completions yet</string>
+    <!-- A break keeps what it lost as context — §5's "was 4" and its cut thread. -->
+    <string name="habits_detail_streak_broken">0</string>
+    <string name="habits_detail_streak_broken_glyph">\u2702</string>
+    <string name="habits_detail_streak_was_days">was %d</string>
+    <string name="habits_detail_streak_was_weeks">was %dw</string>
+
     <!-- Rejections. The domain rejects a blank name and nothing else about a
          habit's metadata, so the third is a backstop for errors this module
          cannot actually produce rather than copy anyone should see. -->
