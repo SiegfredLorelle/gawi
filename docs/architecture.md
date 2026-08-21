@@ -58,11 +58,16 @@ the dependency rule — in particular that domain logic never lands in a module
 where it can import Android.
 
 Built so far: `:app`, `:core:domain`, `:core:data`, `:core:ui`,
-`:feature:today`, `:feature:habits` and `:feature:settings`. `:widget` does not
-exist yet. `app/src/debug/` is gone: the debug-only activity that set the day
-cutoff and the reminder time over `adb` was deleted when `:feature:settings`
-landed, as this paragraph used to promise, and there is no debug source set
-anywhere in the project now.
+`:feature:today`, `:feature:habits`, `:feature:settings` and — as of 2026-08-21
+— **`:widget`**, which is the first module here that is not a screen. Its
+decisions are in [docs/ux/widget.md](ux/widget.md). It takes `:core:data` and
+`:core:domain` and deliberately **not** `:core:ui`: a Glance tree is
+`RemoteViews` under the composition, so it cannot consume a Compose UI theme or
+a shared composable, and the module rule (`widget → core`) is satisfied without
+the one dependency that looks obvious. `app/src/debug/` is gone: the debug-only
+activity that set the day cutoff and the reminder time over `adb` was deleted
+when `:feature:settings` landed, as this paragraph used to promise, and there
+is no debug source set anywhere in the project now.
 
 `:feature:settings` holds the three preferences the data layer stores — day
 boundary, week start and reminder time — and, below them in a labelled section
@@ -209,11 +214,30 @@ completion (above) raises "whose note does the cell show?" The rule:
 This is a pure function of the event set, so duplicate merges pick one note
 deterministically and the incremental-≡-rebuild invariant holds.
 
-**Widget refresh:** Glance widgets do not observe Room. A widget tap goes
-through the same command path as the app, so open screens update via their
-`Flow` queries — but the reverse direction must be explicit: the repository
-triggers a `GlanceAppWidget` update after the projection transaction commits.
-That is the single place responsible for keeping the widget current.
+**Widget refresh:** Glance widgets do not observe Room. Room's
+`InvalidationTracker` is the only data-change notifier in this app, and a widget
+is not a subscriber. A widget tap goes through the same command path as the app,
+so open screens update via their `Flow` queries — but the reverse direction must
+be explicit.
+
+**Built 2026-08-21, and this paragraph used to describe it wrongly.** It said
+"the repository triggers a `GlanceAppWidget` update", which read literally puts
+Glance in `:core:data` and inverts the module rule (`widget → core`, §2). What
+it actually is: `:core:data` declares a `ProjectionListener` and calls it after
+the committing transactions — the commands' `appendLocked` and the import's
+`mergeLocked`, both inside the existing `NonCancellable` region, so a tap whose
+scope dies straight after the commit still announces. `:core:data` binds
+nothing; `:widget` provides the implementation that tells Glance to redraw and
+`:app` depends on `:widget`, which closes the graph. One *required* binding
+rather than a `@Multibinds` set, because an empty set is a legal graph and a
+widget that silently stops updating looks exactly like a widget nobody placed.
+
+**What no listener can cover: a day rollover is not an event.** Nothing commits
+at the cutoff, so the provider's `updatePeriodMillis` bounds the staleness and
+the tap path re-reads rather than trusting the date it drew — writing to a stale
+logical date is something §5's 3-day retro window *accepts* rather than refuses,
+so it would be silent. docs/ux/widget.md §4 has the whole argument; a scheduled
+refresh at the boundary wants WorkManager and belongs with the reminder.
 
 At this app's data volume (~2k events/year) a full rebuild is milliseconds,
 so `rebuildProjections()` is cheap enough to reach for whenever in doubt.
@@ -290,6 +314,20 @@ not a setting.
 | Reminder | WorkManager + notification via PendingIntents |
 | IDs | UUIDv7, hand-rolled in `:core:domain` |
 
+**Glance pins to the newest stable, and excludes WorkManager.** Glance is not
+in the compose BOM — it ships on its own train, so its version is a number that
+moves by itself, and 1.1.1 is the newest stable one (the 1.2.0 line reached
+rc01 and was abandoned for 1.3.0-alpha01, so "the next one up" is a
+pre-release). More importantly, `androidx.glance:glance` declares
+`androidx.work:work-runtime`, which contributes `WAKE_LOCK`,
+`RECEIVE_BOOT_COMPLETED`, `FOREGROUND_SERVICE` and **`ACCESS_NETWORK_STATE`**
+to the merged manifest — the last of which falsifies §1's first principle, for
+a widget with nothing to do with the network. It is excluded, and safely: at
+1.1.1 no class and no manifest entry in either Glance artifact references
+`androidx.work`. `ManifestPermissionTest` asserts the whole requested
+permission set, so a Glance upgrade that reintroduces it fails a test rather
+than shipping. docs/ux/widget.md §5 has the measurement.
+
 **Reminder timing is deliberately inexact.** The end-of-day reminder fires
 within WorkManager's flex window (~15 min); the `SCHEDULE_EXACT_ALARM`
 permission (Android 12+, Play-policy scrutiny) is **deliberately avoided** —
@@ -324,16 +362,49 @@ Do not "upgrade" this to exact alarms.
   stays stale. Such a test passes only when a `WhileSubscribed` window happens to
   lapse between two assertions, which is a pass that proves nothing. Replacing
   the database would fix it and `@TestInstallIn` cannot reach it, because the
-  modules binding it are `internal` to `:core:data`. Until that changes, the
-  command path stays covered by `:core:data`'s tests and by `docs/running.md` §4
-  on a device.
+  modules binding it are `internal` to `:core:data`. **As of 2026-08-21 they are
+  covered instead by the instrumented source set below**, which is where Room's
+  invalidation does deliver — so the answer to this gap turned out not to be the
+  `:core:data` test seam.
+- `:widget`: JVM unit tests, and no Robolectric. The read is a pure
+  `TodaySnapshot` → rows mapper and the tap is a function of the repository, so
+  both are testable without Glance, a device or a shadow. The rules worth
+  deleting by accident are pinned and mutation-checked: that a tap re-reads
+  rather than trusting the date it drew, and that a malformed action parameter
+  is a no-op rather than a thrown `HabitId`. `ProjectionListenerTest` in
+  `:core:data` asserts the push that keeps a widget current, because a listener
+  nobody calls looks exactly like a widget nobody placed.
+- **`app/src/androidTest/`, added 2026-08-21 — this is a change of policy, not
+  a detail.** §8 said instrumented tests were a manual activity and there was
+  no such source set anywhere. There is now one, in `:app` only, holding the
+  write journeys the bullet above could not: create a habit, complete it, undo
+  it, asserted through the real activity against the real database. It uses
+  plain `AndroidJUnitRunner` and **not** Hilt testing, because driving the
+  installed app's own graph is the point. Two costs, and the first is
+  worse than it sounds: **running it DESTROYS the app's data on that device.**
+  `connectedAndroidTest` uninstalls the app at the end, and an uninstall takes
+  `/data/data` with it — the whole event log, and with `allowBackup="false"`
+  (§6) there is no OS copy to restore from. Measured: a run wiped an emulator
+  holding 345 events. Export first or use a throwaway AVD. The second cost is
+  ordinary: it needs a device, so `make itest` runs it and **`make test` does
+  not**. `./gradlew test` is the
+  unit-test umbrella and never reaches `connectedAndroidTest`, which is what
+  keeps the CI line below true without `ci.yml` knowing instrumented tests
+  exist.
 - Widget, notifications, and OEM battery behavior: **physical device only**
-  (PRD §7). No emulator in CI.
-- CI runs unit tests only; instrumented tests are a manual, on-device
-  activity. The JVM Compose tests are unit tests and are inside that gate —
-  this line changes only if cross-app journeys (widget on a launcher, the
-  notification shade) are ever put in CI, which needs Gradle Managed Devices
-  and is a decision, not a detail.
+  (PRD §7). No emulator in CI. What is device-only narrowed with the widget:
+  the *logic* is JVM-tested per the bullet above, and what genuinely needs a
+  launcher is the widget being placed, drawn and tapped there. Pinning a widget
+  needs the user, so that stays a manual step in `docs/running.md` rather than
+  something the instrumented source set can do.
+- **CI runs unit tests only; instrumented tests are a manual, on-device
+  activity.** Still true after the source set arrived, and mechanically rather
+  than by convention: `ci.yml` calls `make test`, `make test` is
+  `./gradlew test`, and that umbrella covers JVM and Android *unit* tests and
+  never `connectedAndroidTest`. The JVM Compose tests are unit tests and are
+  inside the gate. Putting cross-app journeys in CI is the thing that would
+  change this line, and it needs Gradle Managed Devices — still a decision, and
+  still not taken.
 - Golden-image / screenshot testing is **deliberately not adopted yet**: Momo's
   art is placeholder copy (PRD OQ-4), so goldens would pin something designed
   to change. Revisit when the four moods have real art.
@@ -348,6 +419,7 @@ The template's Makefile contract maps to Gradle as:
 | `make fmt` | Spotless (ktlint) apply |
 | `make lint` | Spotless check + detekt + Android Lint |
 | `make test` | `./gradlew test` (module-generic: JVM modules' `test` plus Android modules' unit tests; a new module can never be silently skipped) |
+| `make itest` | `./gradlew :app:connectedDebugAndroidTest` — needs a device; not called by CI (see below) |
 | `make run` | `./gradlew :app:installDebug` + `adb shell am start` (see below) |
 
 Deviations and notes:
@@ -357,6 +429,13 @@ Deviations and notes:
   is untouched; what it buys is that §8's manual on-device activity has a
   one-command entry point instead of living in people's shell history. The
   procedure it serves is [docs/running.md](running.md).
+- **`make itest` is the second such addition** (2026-08-21, with `:widget`), and
+  it is deliberately *not* folded into `make test`. The two are different gates:
+  `test` runs anywhere and gates every commit, `itest` needs an attached device
+  and gates nothing automatically. Keeping them separate is what lets `ci.yml`
+  stay stack-blind — it calls `make test` and does not have to know that this
+  repo grew instrumented tests. It is also why §8's "CI runs unit tests only"
+  needs no exception clause.
 - `ci.yml` gains JDK 17 setup and Gradle caching. This is a **conscious
   deviation** from the template's "never edit the workflow" rule: that rule
   prevents stack drift across many repos, and this repo has exactly one stack
