@@ -5,6 +5,7 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -604,9 +605,87 @@ class SettingsScreenTest {
         assertEquals(emptyList<Unit>(), exports)
     }
 
-    private fun render(state: SettingsUiState, actions: SettingsActions = NO_ACTIONS, is24Hour: Boolean = true) {
+    /**
+     * The reminder row is silent about notifications while they work.
+     *
+     * The negative half of the pair below, and the one that would rot first: a
+     * warning that is always drawn is worse than no warning, because a user who
+     * has notifications on would learn to ignore the one line on this screen that
+     * ever means something is broken.
+     */
+    @Test
+    fun reminderRow_saysNothingAboutNotificationsWhenTheyAreAllowed() {
+        render(STORED, notificationsAllowed = true)
+
+        compose.onAllNodesWithText(string(R.string.settings_reminder_blocked)).assertCountEquals(0)
+        compose.onAllNodesWithText(string(R.string.settings_reminder_enable)).assertCountEquals(0)
+    }
+
+    /**
+     * With notifications off, the row admits the reminder will not arrive.
+     *
+     * This is the state the whole affordance exists for, and it is invisible
+     * otherwise: the reminder time is still set, still drawn, and still feeds the
+     * mascot — so the screen looks entirely correct while the feature it names
+     * cannot happen. Deleting the `if` in `SettingsList` reddens this and nothing
+     * else.
+     */
+    @Test
+    fun reminderRow_admitsTheReminderCannotArriveWhenNotificationsAreOff() {
+        render(STORED, notificationsAllowed = false)
+
+        compose.onNodeWithText(string(R.string.settings_reminder_blocked)).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(string(R.string.settings_reminder_enable)).assertIsDisplayed()
+    }
+
+    /** The time is still editable while notifications are off — it still drives the mascot. */
+    @Test
+    fun reminderRow_stillShowsItsTimeWhenNotificationsAreOff() {
+        render(STORED, notificationsAllowed = false)
+
+        compose.onNodeWithText("22:30").assertIsDisplayed()
+        compose.onNodeWithText(string(R.string.settings_reminder_help)).assertIsDisplayed()
+    }
+
+    /**
+     * Tapping the affordance reports, and tapping it does **not** report a
+     * reminder-time change.
+     *
+     * The second assertion is the one worth having. The affordance sits directly
+     * under a row whose whole area is clickable, so the failure to watch for is a
+     * tap that opens the time picker instead — which would look like nothing
+     * happening at all, since the picker would appear over the tap the user meant
+     * for the notice.
+     */
+    @Test
+    fun enableNotifications_reportsWithoutTouchingTheReminderTime() {
+        val enables = mutableListOf<Unit>()
+        val times = mutableListOf<LocalTime>()
+        render(
+            STORED,
+            actions = NO_ACTIONS.copy(
+                onEnableNotifications = { enables += Unit },
+                onReminderTimeChange = { times += it },
+            ),
+            notificationsAllowed = false,
+        )
+
+        compose.onNodeWithText(string(R.string.settings_reminder_enable)).performScrollTo().performClick()
+
+        assertEquals(listOf(Unit), enables)
+        assertEquals(emptyList<LocalTime>(), times)
+    }
+
+    private fun render(
+        state: SettingsUiState,
+        actions: SettingsActions = NO_ACTIONS,
+        is24Hour: Boolean = true,
+        notificationsAllowed: Boolean = true,
+    ) {
         compose.setContent {
-            GawiTheme { SettingsScreen(state, actions, SnackbarHostState(), is24Hour) }
+            GawiTheme {
+                SettingsScreen(state, actions, SnackbarHostState(), DeviceFacts(is24Hour, notificationsAllowed))
+            }
         }
     }
 
@@ -627,6 +706,7 @@ class SettingsScreenTest {
             onExport = {},
             onExportCompletions = {},
             onImport = {},
+            onEnableNotifications = {},
             onBack = {},
         )
     }

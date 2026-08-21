@@ -6,7 +6,7 @@ import java.time.LocalTime
 /**
  * What the settings screen can do, as one parameter.
  *
- * A holder rather than seven lambdas in the signature, for the same reason
+ * A holder rather than eight lambdas in the signature, for the same reason
  * `TodayActions` and `HabitListActions` are holders: it keeps the composable
  * inside detekt's parameter limit — which fires *at* six, not above it — and
  * adding a fourth setting does not re-thread every call site and test.
@@ -53,5 +53,18 @@ internal data class SettingsActions(
      */
     val onExportCompletions: () -> Unit,
     val onImport: () -> Unit,
+    /**
+     * The user asked for the reminder to be able to appear at all.
+     *
+     * Nullary for the reason [onExport] is: the Route turns it into a permission
+     * request, or — when that request would be a silent no-op because the user has
+     * already refused it once for good — into the system's own notification
+     * settings for this app. Neither an `Intent` nor a launcher reaches the
+     * screen, which is what keeps `SettingsScreenTest` able to render both states.
+     *
+     * The eighth property, and safe: this declaration's `data` keyword is what
+     * exempts it from `LongParameterList` entirely, per the measurement above.
+     */
+    val onEnableNotifications: () -> Unit,
     val onBack: () -> Unit,
 )

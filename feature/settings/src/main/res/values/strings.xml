@@ -21,7 +21,13 @@
     <string name="settings_week_start_help">Which day weekly habits count from. Changing it re-counts the current week straight away.</string>
 
     <string name="settings_reminder_label">Day is nearly over at</string>
-    <string name="settings_reminder_help">When Momo starts looking worried about anything still outstanding. The end-of-day notification will use this time too, once it is built.</string>
+    <string name="settings_reminder_help">When Momo starts looking worried about anything still outstanding, and when the end-of-day reminder arrives if anything is.</string>
+    <!-- Says what is not happening rather than naming a permission: below API 33
+         there is nothing to grant and the user simply switched notifications off,
+         so "allow the permission" would be wrong on some versions and jargon on
+         all of them. docs/ux/reminder.md §3. -->
+    <string name="settings_reminder_blocked">Notifications are off, so this reminder will not arrive.</string>
+    <string name="settings_reminder_enable">Turn notifications on</string>
 
     <!-- Day names as resources rather than DayOfWeek.getDisplayName, so the
          tests read the same strings the screen renders and the copy is

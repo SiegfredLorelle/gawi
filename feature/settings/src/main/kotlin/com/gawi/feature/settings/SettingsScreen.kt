@@ -41,8 +41,9 @@ import com.gawi.core.ui.theme.GawiSpacing
  * and a committed one must come back from the store rather than from here, so
  * the screen can never show a value the file does not hold.
  *
- * [is24Hour] is a parameter rather than something read off the platform in
- * here, so a test can render both clocks without a device to set the flag on.
+ * [DeviceFacts] are parameters rather than things read off the platform in here,
+ * so a test can render both clocks — and both notification states — without a
+ * device to set either on.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,7 +51,7 @@ internal fun SettingsScreen(
     state: SettingsUiState,
     actions: SettingsActions,
     snackbarHostState: SnackbarHostState,
-    is24Hour: Boolean,
+    device: DeviceFacts,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -79,7 +80,7 @@ internal fun SettingsScreen(
             is SettingsUiState.Settings -> SettingsList(
                 state = state,
                 actions = actions,
-                is24Hour = is24Hour,
+                device = device,
                 modifier = Modifier.fillMaxSize().padding(insets),
             )
         }
@@ -93,8 +94,9 @@ internal fun SettingsScreen(
  * screen at a large font scale, and there is nothing here to virtualise.
  */
 @Composable
-private fun SettingsList(state: SettingsUiState.Settings, actions: SettingsActions, is24Hour: Boolean, modifier: Modifier = Modifier) {
+private fun SettingsList(state: SettingsUiState.Settings, actions: SettingsActions, device: DeviceFacts, modifier: Modifier = Modifier) {
     var openDialog by rememberSaveable { mutableStateOf(SettingsDialog.None) }
+    val is24Hour = device.is24Hour
 
     Column(
         modifier = modifier.verticalScroll(rememberScrollState()),
@@ -118,9 +120,40 @@ private fun SettingsList(state: SettingsUiState.Settings, actions: SettingsActio
             help = stringResource(R.string.settings_reminder_help),
             onClick = { openDialog = SettingsDialog.Reminder },
         )
+        if (!device.notificationsAllowed) ReminderBlocked(actions.onEnableNotifications)
         DataSection(state.dataTask, state.exportRecency, actions)
     }
 
+    SettingsDialogs(
+        openDialog = openDialog,
+        state = state,
+        is24Hour = is24Hour,
+        actions = actions,
+        onClose = { openDialog = SettingsDialog.None },
+    )
+}
+
+/**
+ * Whichever dialog a row has opened, and nothing if none has.
+ *
+ * Split out of [SettingsList] rather than nested in it, because the two do
+ * different jobs: that one lays out rows, this one is a `when` over view state.
+ * They were one function until the reminder row grew its notification notice and
+ * pushed it past detekt's `LongMethod` — which is the sort of limit worth taking
+ * the hint from rather than raising, since the seam it pointed at was already
+ * there.
+ *
+ * [onClose] is called before the action, in every branch, so a confirm cannot
+ * leave the dialog up if the write throws.
+ */
+@Composable
+private fun SettingsDialogs(
+    openDialog: SettingsDialog,
+    state: SettingsUiState.Settings,
+    is24Hour: Boolean,
+    actions: SettingsActions,
+    onClose: () -> Unit,
+) {
     when (openDialog) {
         SettingsDialog.None -> Unit
 
@@ -129,10 +162,10 @@ private fun SettingsList(state: SettingsUiState.Settings, actions: SettingsActio
             initial = state.dayCutoff,
             is24Hour = is24Hour,
             onConfirm = { picked ->
-                openDialog = SettingsDialog.None
+                onClose()
                 actions.onDayCutoffChange(picked)
             },
-            onDismiss = { openDialog = SettingsDialog.None },
+            onDismiss = onClose,
         )
 
         SettingsDialog.Reminder -> TimeDialog(
@@ -140,19 +173,19 @@ private fun SettingsList(state: SettingsUiState.Settings, actions: SettingsActio
             initial = state.reminderTime,
             is24Hour = is24Hour,
             onConfirm = { picked ->
-                openDialog = SettingsDialog.None
+                onClose()
                 actions.onReminderTimeChange(picked)
             },
-            onDismiss = { openDialog = SettingsDialog.None },
+            onDismiss = onClose,
         )
 
         SettingsDialog.WeekStart -> WeekStartDialog(
             selected = state.weekStart,
             onConfirm = { picked ->
-                openDialog = SettingsDialog.None
+                onClose()
                 actions.onWeekStartChange(picked)
             },
-            onDismiss = { openDialog = SettingsDialog.None },
+            onDismiss = onClose,
         )
     }
 }
@@ -214,6 +247,54 @@ internal fun SettingRow(label: String, value: String?, help: String, activity: R
             } else {
                 Modifier
             },
+        )
+    }
+}
+
+/**
+ * The reminder row's own bad news: the time is set, and nothing will arrive.
+ *
+ * **Its own target under the row rather than a state on the row**, and that is the
+ * decision worth recording. `SettingRow`'s rule is that the whole row is the
+ * target (see its KDoc), and the row's tap already means "change the time" —
+ * which stays worth doing while notifications are off, because the same setting
+ * decides when Momo starts looking worried (docs/ux/today-view.md §4). Folding
+ * two different actions into one row would have made a tap ambiguous, and making
+ * the row *do* this instead would have taken the time picker away over a
+ * permission.
+ *
+ * `error` rather than a plain caption, because this is the one thing on this
+ * screen that says a feature the user has configured is not running.
+ *
+ * The copy does not say "grant a permission". Below API 33 there is no permission
+ * to grant — the user turned notifications off in system settings and that is
+ * where they are turned back on — so naming the mechanism would be wrong on some
+ * versions and jargon on all of them. It says what is not happening and offers to
+ * fix it, which is true everywhere.
+ */
+@Composable
+private fun ReminderBlocked(onEnable: () -> Unit) {
+    val label = stringResource(R.string.settings_reminder_enable)
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClickLabel = label, onClick = onEnable)
+            .padding(horizontal = GawiSpacing.Row, vertical = GawiSpacing.Gap),
+        verticalArrangement = Arrangement.spacedBy(GawiSpacing.Line),
+    ) {
+        Text(
+            text = stringResource(R.string.settings_reminder_blocked),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.error,
+            // Announced when it appears: a user who has just come back from
+            // system settings needs to hear that it did not take effect, and the
+            // row above it is unchanged.
+            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary,
         )
     }
 }
