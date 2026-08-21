@@ -121,6 +121,27 @@ internal class HabitDetailViewModel @AssistedInject constructor(
         }
     }
 
+    /**
+     * Writes the note on one completed day.
+     *
+     * Empty [text] is a clear and is a real write, not a no-op: architecture §4
+     * makes it a note write that wins last-write-wins like any other, which is
+     * why the sheet offers Clear as its own button rather than a disabled Save.
+     *
+     * No retro-window check, here or below. `updateNote` has none — annotating a
+     * day is not the same as claiming to have done it, and the window is about
+     * the claim. The strip still only offers a note on an open day.
+     */
+    fun onNote(habitId: HabitId, logicalDate: LocalDate, text: String) {
+        viewModelScope.launch {
+            val result = commandOrNull(TAG) { habits.updateNote(habitId, logicalDate, text) }
+            when {
+                result == null -> messages.send(HabitsMessage(R.string.habits_error_unexpected))
+                result is CommandResult.Rejected -> messages.send(HabitsMessage(messageFor(result.error)))
+            }
+        }
+    }
+
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L
         const val TAG = "HabitDetailViewModel"

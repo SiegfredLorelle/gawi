@@ -43,6 +43,8 @@ internal data class HabitListActions(
 internal data class HabitDetailActions(
     val onEdit: (HabitId) -> Unit,
     val onToggle: (HabitId, LocalDate, Boolean) -> Unit,
+    /** Writes the note on one completed day. Empty text clears it, and that is a real write. */
+    val onNote: (HabitId, LocalDate, String) -> Unit,
     val onBack: () -> Unit,
 )
 

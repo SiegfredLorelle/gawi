@@ -1,8 +1,10 @@
 package com.gawi.feature.habits
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,7 +12,6 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -22,6 +23,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.toggleableState
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.gawi.core.ui.theme.GawiSpacing
@@ -42,7 +45,12 @@ import com.gawi.core.ui.theme.GawiSpacing
  * this is the writable window and the one day past its edge.
  */
 @Composable
-internal fun RetroStrip(strip: List<RetroCellUi>, onCell: (RetroCellUi) -> Unit, modifier: Modifier = Modifier) {
+internal fun RetroStrip(
+    strip: List<RetroCellUi>,
+    onCell: (RetroCellUi) -> Unit,
+    onCellNote: (RetroCellUi) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(GawiSpacing.Line)) {
         Text(
             text = stringResource(R.string.habits_strip_title),
@@ -53,13 +61,13 @@ internal fun RetroStrip(strip: List<RetroCellUi>, onCell: (RetroCellUi) -> Unit,
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(GawiSpacing.Gap),
         ) {
-            strip.forEach { cell -> RetroCell(cell, onCell) }
+            strip.forEach { cell -> RetroCell(cell, onCell, onCellNote) }
         }
     }
 }
 
 @Composable
-private fun RowScope.RetroCell(cell: RetroCellUi, onCell: (RetroCellUi) -> Unit) {
+private fun RowScope.RetroCell(cell: RetroCellUi, onCell: (RetroCellUi) -> Unit, onCellNote: (RetroCellUi) -> Unit) {
     Column(
         modifier = Modifier
             .weight(1f)
@@ -68,7 +76,7 @@ private fun RowScope.RetroCell(cell: RetroCellUi, onCell: (RetroCellUi) -> Unit)
             // — the same note HabitEditorPickers carries about `selectable`.
             .defaultMinSize(minHeight = TOUCH_TARGET)
             .cellSurface(cell)
-            .cellAction(cell, onCell)
+            .cellAction(cell, onCell, onCellNote)
             .padding(vertical = GawiSpacing.Gap),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(GawiSpacing.Line),
@@ -122,9 +130,24 @@ private fun Modifier.cellSurface(cell: RetroCellUi): Modifier {
  * `semantics { disabled() }` rather than a disabled `toggleable`: the cell is
  * not a control that happens to be off, it is a day that cannot be written to,
  * and its description already says why.
+ *
+ * Long-press opens the note, and only on an open day that is already completed.
+ * A note hangs off a completion — architecture §4 has notes die with the add
+ * they belong to — so there is nothing to annotate on an empty day, and
+ * `updateNote` would reject it with `CompletionNotFound`.
+ *
+ * A **shut** completed day carries no note action either, even though
+ * `updateNote` has no retro-window check and the domain would accept it. Shut
+ * means inert here: §5's argument is that the cell should read as closed, and a
+ * day that refuses a tap but answers a long-press does not.
+ *
+ * `combinedClickable` rather than `toggleable`, since a cell now has two
+ * gestures. The checkbox role and the toggle's own semantics are restated by
+ * hand so what assistive technology hears does not change.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun Modifier.cellAction(cell: RetroCellUi, onCell: (RetroCellUi) -> Unit): Modifier {
+private fun Modifier.cellAction(cell: RetroCellUi, onCell: (RetroCellUi) -> Unit, onCellNote: (RetroCellUi) -> Unit): Modifier {
     val label = stringResource(
         when {
             !cell.open -> R.string.habits_strip_shut
@@ -134,12 +157,20 @@ private fun Modifier.cellAction(cell: RetroCellUi, onCell: (RetroCellUi) -> Unit
         cell.dayOfMonth,
     )
     val action = stringResource(if (cell.completed) R.string.habits_strip_undo else R.string.habits_strip_complete)
+    val noteLabel = stringResource(R.string.habits_strip_note)
+    // Inside the open branch below, so completion is the only condition left
+    // to ask about: a shut cell never reaches it.
+    val notable = cell.completed
     return if (cell.open) {
-        toggleable(
-            value = cell.completed,
+        combinedClickable(
             role = Role.Checkbox,
-            onValueChange = { onCell(cell) },
-        ).semantics { contentDescription = "$label. $action" }
+            onClick = { onCell(cell) },
+            onLongClickLabel = noteLabel.takeIf { notable },
+            onLongClick = if (notable) ({ onCellNote(cell) }) else null,
+        ).semantics {
+            contentDescription = if (notable) "$label. $action. $noteLabel" else "$label. $action"
+            toggleableState = ToggleableState(cell.completed)
+        }
     } else {
         semantics {
             contentDescription = label

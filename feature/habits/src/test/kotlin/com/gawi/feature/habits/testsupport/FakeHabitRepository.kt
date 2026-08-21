@@ -142,7 +142,14 @@ class FakeHabitRepository : HabitRepository {
         return result
     }
 
-    override suspend fun updateNote(habitId: HabitId, logicalDate: LocalDate, text: String): CommandResult<Unit> = unused()
+    /** Notes written, in order. An empty text is a clear and is recorded as one. */
+    val notes = mutableListOf<Pair<LocalDate, String>>()
+
+    override suspend fun updateNote(habitId: HabitId, logicalDate: LocalDate, text: String): CommandResult<Unit> {
+        failIfAsked()
+        notes += logicalDate to text
+        return result
+    }
 
     override fun observeCompletedDates(habitId: HabitId, from: LocalDate, to: LocalDate): Flow<Map<LocalDate, String?>> = unused()
 

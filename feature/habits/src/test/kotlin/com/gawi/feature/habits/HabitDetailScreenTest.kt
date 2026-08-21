@@ -172,7 +172,9 @@ class HabitDetailScreenTest {
         val label = resources.getString(id, day)
         if (shut) return label
         val action = string(if (done) R.string.habits_strip_undo else R.string.habits_strip_complete)
-        return "$label. $action"
+        // A completed open day also offers the note, and the label says so.
+        val note = if (done) ". " + string(R.string.habits_strip_note) else ""
+        return "$label. $action$note"
     }
 
     /**
@@ -284,11 +286,37 @@ class HabitDetailScreenTest {
         compose.onNodeWithText(string(R.string.habits_retro_body)).assertDoesNotExist()
     }
 
+    /**
+     * A note is offered on a completed open day, and on nothing else.
+     *
+     * Read off the long-click label rather than by performing the gesture: what
+     * is being pinned is which cells *offer* the action, and the label is how
+     * that reaches assistive technology as well as the eye.
+     */
+    @Test
+    fun theNoteAction_isOfferedOnlyOnACompletedOpenDay() {
+        render(detail(strip = strip(completed = setOf(TODAY.minusDays(2), TODAY.minusDays(4)))))
+
+        // Completed and open: the label ends with the note action.
+        compose.onNodeWithContentDescription(cellLabel(back = 2, done = true)).assertIsDisplayed()
+
+        // Open but not completed: nothing to annotate, so the plain label stands.
+        compose.onNodeWithContentDescription(cellLabel(back = 1)).assertIsDisplayed()
+
+        // Completed but shut: inert, so no note action either.
+        compose.onNodeWithContentDescription(cellLabel(back = 4, shut = true)).assertIsDisplayed()
+    }
+
     private companion object {
         val HABIT = HabitId("00000000-0000-7000-8000-000000000001")
         val OTHER = HabitId("00000000-0000-7000-8000-000000000002")
 
-        val NO_ACTIONS = HabitDetailActions(onEdit = {}, onToggle = { _, _, _ -> }, onBack = {})
+        val NO_ACTIONS = HabitDetailActions(
+            onEdit = {},
+            onToggle = { _, _, _ -> },
+            onNote = { _, _, _ -> },
+            onBack = {},
+        )
 
         /**
          * Suppressed here for the reason the fixture builders elsewhere are: every

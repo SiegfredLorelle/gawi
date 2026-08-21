@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -106,6 +107,13 @@ private fun HabitDetail(state: HabitDetailUiState.Detail, actions: HabitDetailAc
     var pendingDay by rememberSaveable { mutableLongStateOf(NO_PENDING_DAY) }
     val pending = state.strip.firstOrNull { it.date.toEpochDay() == pendingDay }
 
+    // The cell whose note is open, held the same way and for the same reason.
+    // Two values rather than one enum, unlike SettingsDialog: each carries which
+    // day it is about, and they cannot both be set — a cell is either awaiting
+    // the prompt or being annotated, never both.
+    var noteDay by rememberSaveable { mutableLongStateOf(NO_PENDING_DAY) }
+    val noted = state.strip.firstOrNull { it.date.toEpochDay() == noteDay }
+
     Column(
         modifier = modifier.padding(GawiSpacing.Row),
         verticalArrangement = Arrangement.spacedBy(GawiSpacing.Row),
@@ -125,6 +133,7 @@ private fun HabitDetail(state: HabitDetailUiState.Detail, actions: HabitDetailAc
                     pendingDay = cell.date.toEpochDay()
                 }
             },
+            onCellNote = { cell -> noteDay = cell.date.toEpochDay() },
         )
     }
 
@@ -135,6 +144,42 @@ private fun HabitDetail(state: HabitDetailUiState.Detail, actions: HabitDetailAc
                 pendingDay = NO_PENDING_DAY
             },
             onDismiss = { pendingDay = NO_PENDING_DAY },
+        )
+    }
+
+    if (noted != null) {
+        NoteSheet(
+            cell = noted,
+            onSave = { text ->
+                actions.onNote(state.id, noted.date, text)
+                noteDay = NO_PENDING_DAY
+            },
+            onDismiss = { noteDay = NO_PENDING_DAY },
+        )
+    }
+}
+
+/**
+ * The note sheet's surface.
+ *
+ * A `ModalBottomSheet` because docs/ux/today-view.md §5 calls this a sheet, and
+ * the first one in the app — every other overlay here is an `AlertDialog`. Its
+ * content is [NoteSheetContent], a separate stateless composable, so what the
+ * buttons report can be asserted without driving a sheet's animation.
+ *
+ * Clearing goes through the same [onSave], with empty text — one write either
+ * way (architecture §4: an empty note is a real write that wins
+ * last-write-wins), so a second callback would be two names for one event.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun NoteSheet(cell: RetroCellUi, onSave: (String) -> Unit, onDismiss: () -> Unit) {
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        NoteSheetContent(
+            date = cell.dayOfMonth.toString(),
+            initial = cell.note.orEmpty(),
+            onSave = onSave,
+            onCancel = onDismiss,
         )
     }
 }
