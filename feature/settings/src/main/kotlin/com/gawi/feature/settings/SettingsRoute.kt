@@ -5,9 +5,11 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
 import android.content.res.Resources
+import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import android.text.format.DateFormat
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.SnackbarHostState
@@ -206,12 +208,28 @@ private tailrec fun Context.findActivity(): Activity? = when (this) {
  * may be reached from a context that is not an `Activity`.
  */
 private fun Context.openNotificationSettings() {
-    val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+    val appNotifications = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
         .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
-        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    val appDetails = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", packageName, null))
 
-    startActivity(intent)
+    // Neither action is guaranteed to resolve. Both are implicit intents into an
+    // app this app does not ship, and a device or work profile without a Settings
+    // activity for one of them is a bare ActivityNotFoundException out of a click
+    // handler — a crash on tapping a row, which is the failure every other path in
+    // this module absorbs. Found by /code-review.
+    //
+    // The fallback is the app's own details page, which carries a notifications
+    // entry on every version this app supports. If neither resolves there is
+    // nothing left to offer, and the row goes on saying the reminder will not
+    // arrive, which is at least true.
+    for (intent in listOf(appNotifications, appDetails)) {
+        val started = runCatching { startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }.isSuccess
+        if (started) return
+    }
+    Log.w(TAG, "no activity could show this app's notification settings")
 }
+
+private const val TAG = "SettingsRoute"
 
 private const val POST_NOTIFICATIONS = "android.permission.POST_NOTIFICATIONS"
 

@@ -116,13 +116,61 @@ internal class SettingsViewModel @Inject constructor(
      * moving this does not rewrite last week — which is what the copy under the
      * row has to say, because it is not what a reader would assume.
      */
-    fun onDayCutoffChange(cutoff: LocalTime) = write { it.copy(dayCutoff = cutoff) }
+    fun onDayCutoffChange(cutoff: LocalTime) = writeUnlessDegenerate { current ->
+        current.takeIf { cutoff != it.reminderTime }?.copy(dayCutoff = cutoff)
+    }
 
     /** The day a week is counted from, for weekly habits' progress and streaks. */
     fun onWeekStartChange(weekStart: DayOfWeek) = write { it.copy(weekStart = weekStart) }
 
     /** When the day is treated as nearly over. */
-    fun onReminderTimeChange(reminderTime: LocalTime) = write { it.copy(reminderTime = reminderTime) }
+    fun onReminderTimeChange(reminderTime: LocalTime) = writeUnlessDegenerate { current ->
+        current.takeIf { reminderTime != it.dayCutoff }?.copy(reminderTime = reminderTime)
+    }
+
+    /**
+     * A settings write that can be **refused**, which these two are and the week
+     * start is not.
+     *
+     * The refusal is one specific combination: the reminder time equal to the day
+     * cutoff. `reminderOn`'s KDoc has always said that combination resolves to the
+     * logical day's *start* rather than its end, and that *"a settings screen
+     * offering the two as one control is where the combination should be
+     * prevented"*. Nothing prevented it, and until the reminder was built nothing
+     * visibly suffered — the cost was Momo looking worried all day, which reads as
+     * a mood rather than a bug. With a notification behind the same threshold it
+     * became a *"N of N left today"* posted at the top of every logical day, which
+     * also consumed that day's one reminder, so the evening was silent too.
+     * `ReminderCheck` refuses to act on such a value; this is what stops one being
+     * stored. Found by `/code-review`.
+     *
+     * Guarded from **both** rows, because either can create the collision, and a
+     * screen that refused it from one side and allowed it from the other would be
+     * the more confusing of the two.
+     *
+     * This is the first refusable settings write, which `SettingsMessage`'s KDoc
+     * used to argue could not exist: *"a fixed picker cannot express an invalid
+     * time"*. That reasoning was sound and incomplete — a picker cannot express an
+     * invalid time, but it can express a valid time that is invalid *against
+     * another setting*, which is a validation the store cannot do because it sees
+     * one field at a time.
+     */
+    private fun writeUnlessDegenerate(transform: (UserSettings) -> UserSettings?) {
+        viewModelScope.launch {
+            // `refused` is set inside `update`, which is where the current value is
+            // visible — the collision is between the picked value and a stored one,
+            // so it cannot be decided before the read-modify-write begins.
+            var refused = false
+            val written = commandOrNull(TAG, "the settings write") {
+                settings.update { current -> transform(current) ?: current.also { refused = true } }
+            }
+
+            when {
+                written == null -> messages.send(SettingsMessage(R.string.settings_error_unexpected))
+                refused -> messages.send(SettingsMessage(R.string.settings_error_reminder_equals_cutoff))
+            }
+        }
+    }
 
     /**
      * Writes the whole log to the document the picker returned.
