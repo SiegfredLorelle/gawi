@@ -41,15 +41,23 @@ Now-in-Android convention: Gradle version catalog
 | `:app` | MainActivity, navigation graph, Hilt app wiring, WorkManager scheduling and the reminder notification |
 | `:core:domain` | Pure Kotlin/JVM: event types, projection logic, logical-date rules, streak computation, UUIDv7 generator, event and export JSON codecs |
 | `:core:data` | Repositories, event store, Room database + DAOs, DataStore settings and the last-export stamp, export/import plumbing and the CSV of completions, and the end-of-day reminder's decision (whether to remind, and when the next wake falls) |
-| `:core:ui` | Theme, shared composables |
+| `:core:ui` | Theme, shared composables, and presentation types shared by more than one feature |
 | `:feature:today` | Today view (app home screen, Momo's habitat) |
 | `:feature:habits` | Create/edit/archive habit, habit detail |
 | `:feature:settings` | Day boundary, week start, reminder time, export and import, the 30-day export nudge |
 | `:widget` | Glance home-screen widget |
 
 Dependency rule: `feature → core`, `widget → core`, `app → everything`,
-`core:data → core:domain`, and `:core:domain` depends on nothing but the
-Kotlin stdlib and kotlinx-serialization.
+`core:data → core:domain`, `core:ui → core:domain`, and `:core:domain` depends
+on nothing but the Kotlin stdlib and kotlinx-serialization.
+
+`core:ui → core:domain` was added 2026-08-21 with habit detail, which made the
+Today view's `StreakUi` a thing two feature modules need — and feature modules
+cannot see each other. It carries the type and its `StreakSnapshot` mapper, so
+PRD §6.6's two streak surfaces share one days-versus-weeks rule rather than two
+copies that drift. Nothing about the rule that matters changes: `:core:domain`
+is pure Kotlin and cannot import Android, so a UI module depending on it moves
+no domain logic anywhere.
 
 This table fixes the **target shape**, not the creation order. Scaffolding
 starts with `:app`, `:core:domain`, and `:core:data`; each remaining module is

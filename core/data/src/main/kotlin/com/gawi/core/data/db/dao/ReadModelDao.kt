@@ -96,8 +96,9 @@ internal interface ReadModelDao {
      * The management list is the one screen that has to show archived habits,
      * because unarchiving has to be reachable from somewhere. It is also the
      * one screen that shows no progress: PRD §6.6 scopes streaks to the Today
-     * view, the widget and habit detail, so joining for them here would buy
-     * columns nothing draws.
+     * view and habit detail — narrowed from three surfaces on 2026-08-21, the
+     * widget having been settled as minimal (docs/ux/widget.md §2) — so joining
+     * for them here would buy columns nothing draws.
      *
      * Ordered by name rather than by `habit_id`, because this list is read to
      * find a habit rather than to work through one. `COLLATE NOCASE` so a

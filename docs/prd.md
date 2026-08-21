@@ -70,14 +70,14 @@ All data is an **append-only event log** (habit created/edited/archived, complet
 
 **Logging**
 - Today view (app home screen): all habits, one tap to complete, tap again to undo (undo = tombstone event; same-day undo has no friction).
-- Optional note per completion (long-press / detail view — never blocks the one-tap flow).
-- **Retroactive logging: up to 3 days back only.** Editing a past day triggers a confirmation with an honesty prompt ("You're logging for a previous day — make sure this is accurate. Be true to yourself.").
+- Optional note per completion (long-press / detail view — never blocks the one-tap flow). (**Built 2026-08-21** — long-press a completed day on habit detail. The Today-row long-press is *not* built; the habit list is the only door to detail. [docs/ux/habits.md](ux/habits.md) §7.)
+- **Retroactive logging: up to 3 days back only.** Editing a past day triggers a confirmation with an honesty prompt ("You're logging for a previous day — make sure this is accurate. Be true to yourself."). (**Built 2026-08-21** — [docs/ux/habits.md](ux/habits.md) §7. The prompt is UI friction only; architecture §5 keeps the window a command validation, so the domain refuses an out-of-range day whatever the screen believed.)
 - Android **home-screen widget**: today's habits, tap to complete without opening the app. **Built 2026-08-21** — a tap toggles, so it undoes too; [docs/ux/widget.md](ux/widget.md) records the decisions and what a widget cannot keep current on its own.
 - **End-of-day reminder notification** if due habits remain incomplete as the day boundary approaches (configurable time, e.g., 21:00). Silent when everything is done. One reminder max per day. (**Built 2026-08-21** — [docs/ux/reminder.md](ux/reminder.md).)
 - **Notification quick-complete actions** (complete a habit directly from the reminder): MVP **stretch goal**, and **moved to Phase 1 on 2026-08-21**, which this bullet explicitly allowed. The reminder shipped as open-the-app only. The deciding reason was not complexity: §6.1's one-tap criterion was already met by the widget, so an action button is a second path to a solved problem, and it would carry OQ-2 — unanswered — along with it. Still committed. [docs/ux/reminder.md](ux/reminder.md) §4.
 
 **Motivation**
-- Daily habits: day-streak counter. Weekly habits: **week-streak** (consecutive weeks hitting n/n).
+- Daily habits: day-streak counter. Weekly habits: **week-streak** (consecutive weeks hitting n/n). (**Visible on both its surfaces as of 2026-08-21** — see §6.6.)
 - Simple emotive indicator on Today view (happy/neutral/worried) as the mascot placeholder.
 - Missing a day/week resets the streak. Grace mechanics: revisit after real usage (OQ-3).
 
@@ -125,10 +125,10 @@ All data is an **append-only event log** (habit created/edited/archived, complet
 
 1. Logging < 5 seconds: widget or notification action, one tap. (**The widget satisfies this as of 2026-08-21.** The notification *action* has now been deferred to Phase 1 on §4's own terms — the criterion is met, so a second one-tap path would carry OQ-2 for no gain. [docs/ux/reminder.md](ux/reminder.md) §4.)
 2. Today view is the app's home screen.
-3. Notes/tags never add friction to the base flow — always optional, always secondary.
-4. Retroactive edits carry deliberate friction (confirmation + honesty prompt) but stay possible within 3 days; same-day undo is frictionless.
+3. Notes/tags never add friction to the base flow — always optional, always secondary. (**Built 2026-08-21** — the note is a long-press on a day already logged, on habit detail; nothing on the way to logging one asks about it. [docs/ux/habits.md](ux/habits.md) §7.)
+4. Retroactive edits carry deliberate friction (confirmation + honesty prompt) but stay possible within 3 days; same-day undo is frictionless. (**Built 2026-08-21** — the strip draws the day outside the window shut rather than refusing a tap on it, and the prompt appears for an undo as well as a completion, since §5's "editing a past day" covers both. [docs/ux/habits.md](ux/habits.md) §7.)
 5. One reminder max per day; silent when all done. (**Built 2026-08-21** — [docs/ux/reminder.md](ux/reminder.md). Both halves are pinned by `ReminderCheckTest`, including the case that would break them: a wake deferred past the day cutoff, which would otherwise remind about a fresh day and consume its one reminder.)
-6. Streak visibility everywhere it motivates: Today view and habit detail. (**Narrowed 2026-08-21**: this said "Today view, widget, habit detail" and contradicted OQ-5, which asked whether the widget should show streaks at all. The widget is minimal — [docs/ux/widget.md](ux/widget.md) §2 has the reasoning.)
+6. Streak visibility everywhere it motivates: Today view and habit detail. (**Both built as of 2026-08-21**; detail draws the streak large and captioned rather than as the Today row's badge, and the two share one `StreakUi` so the days-versus-weeks rule cannot drift. **Narrowed 2026-08-21**: this said "Today view, widget, habit detail" and contradicted OQ-5, which asked whether the widget should show streaks at all. The widget is minimal — [docs/ux/widget.md](ux/widget.md) §2 has the reasoning.)
 
 ## 7. Technical Direction (Android MVP)
 

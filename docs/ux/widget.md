@@ -53,7 +53,7 @@ Why, in the order the reasons mattered:
    in-app ones are where a streak is read deliberately rather than glanced at.
 
 So §6.6 is **narrowed** rather than contradicted: streaks live in the Today view
-and (when it is built) habit detail. `WidgetRow` has no streak field, which is
+and habit detail, built 2026-08-21. `WidgetRow` has no streak field, which is
 what stops this decision being undone by an accident of what was in scope.
 
 Revisit when Momo has real art (PRD OQ-4) — a mascot on the widget is a

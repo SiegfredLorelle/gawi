@@ -53,8 +53,10 @@ internal sealed interface TodayUiState {
  * inside detekt's parameter limit and the display rules are asserted on the
  * JVM instead of through pixels.
  *
- * [note] is deliberately absent: the note sheet is a long-press flow that does
- * not exist yet, and a field nothing renders invites rendering half of it.
+ * [note] is deliberately absent, and stays so now that the note sheet exists:
+ * it lives on habit detail (PRD §5's "long-press / detail view"), and §6.3 wants
+ * notes kept out of the base flow. A field this row never renders would only
+ * invite rendering half of it.
  */
 internal data class HabitRowUi(
     val id: HabitId,
