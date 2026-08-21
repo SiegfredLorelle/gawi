@@ -72,7 +72,7 @@ All data is an **append-only event log** (habit created/edited/archived, complet
 - Today view (app home screen): all habits, one tap to complete, tap again to undo (undo = tombstone event; same-day undo has no friction).
 - Optional note per completion (long-press / detail view — never blocks the one-tap flow).
 - **Retroactive logging: up to 3 days back only.** Editing a past day triggers a confirmation with an honesty prompt ("You're logging for a previous day — make sure this is accurate. Be true to yourself.").
-- Android **home-screen widget**: today's habits, tap to complete without opening the app.
+- Android **home-screen widget**: today's habits, tap to complete without opening the app. **Built 2026-08-21** — a tap toggles, so it undoes too; [docs/ux/widget.md](ux/widget.md) records the decisions and what a widget cannot keep current on its own.
 - **End-of-day reminder notification** if due habits remain incomplete as the day boundary approaches (configurable time, e.g., 21:00). Silent when everything is done. One reminder max per day.
 - **Notification quick-complete actions** (complete a habit directly from the reminder): MVP **stretch goal**. Android allows up to 3 action buttons per notification; if the interaction design or edge cases (undo, multiple habits) get complicated, ship the reminder as open-the-app only and move quick-complete to Phase 1. Either way, this feature is committed.
 
@@ -123,12 +123,12 @@ All data is an **append-only event log** (habit created/edited/archived, complet
 
 ## 6. Key UX Requirements
 
-1. Logging < 5 seconds: widget or notification action, one tap.
+1. Logging < 5 seconds: widget or notification action, one tap. (**The widget half landed 2026-08-21**; the notification action arrives with the reminder.)
 2. Today view is the app's home screen.
 3. Notes/tags never add friction to the base flow — always optional, always secondary.
 4. Retroactive edits carry deliberate friction (confirmation + honesty prompt) but stay possible within 3 days; same-day undo is frictionless.
 5. One reminder max per day; silent when all done.
-6. Streak visibility everywhere it motivates: Today view, widget, habit detail.
+6. Streak visibility everywhere it motivates: Today view and habit detail. (**Narrowed 2026-08-21**: this said "Today view, widget, habit detail" and contradicted OQ-5, which asked whether the widget should show streaks at all. The widget is minimal — [docs/ux/widget.md](ux/widget.md) §2 has the reasoning.)
 
 ## 7. Technical Direction (Android MVP)
 
@@ -151,7 +151,7 @@ All data is an **append-only event log** (habit created/edited/archived, complet
 - **OQ-2:** Notification quick-complete UX when >3 habits remain (Android caps 3 action buttons) — show top 3? "Complete all"? Opens the app?
 - **OQ-3:** Streak freeze / grace day mechanics — decide after the 30-day personal trial reveals how resets feel.
 - **OQ-4:** Mascot art style (round/chibi? pixel? flat vector?), and static-first vs animated-first. (Species and name decided: Momo the axolotl.)
-- **OQ-5:** Should the widget show streaks or stay minimal (just checkboxes)?
+- ~~**OQ-5:** Should the widget show streaks or stay minimal (just checkboxes)?~~ **Settled 2026-08-21 with the widget: minimal.** A streak is the one number that reaches zero with no new event, so it is the value whose staleness is not bounded by user inaction — on the one surface with no live query. It also costs the width that rows need. §6.6 is narrowed accordingly rather than contradicted; see [docs/ux/widget.md](ux/widget.md) §2.
 - **OQ-6:** Final name call between Gawi / Hinabi / Araw; verify availability (Play Store, domain, trademark) closer to launch. ("Habi" rejected — existing habit tracker at habi.app.)
 
 ## 9. Risks
