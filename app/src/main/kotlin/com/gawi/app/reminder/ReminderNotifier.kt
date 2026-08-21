@@ -87,7 +87,7 @@ internal class ReminderNotifier @Inject constructor(@ApplicationContext private 
         manager.createNotificationChannel(channel())
 
         val notification = NotificationCompat.Builder(context, REMINDER_CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_popup_reminder)
+            .setSmallIcon(R.drawable.ic_reminder)
             .setContentTitle(context.getString(R.string.reminder_title))
             .setContentText(context.getString(R.string.reminder_body, remind.outstanding, remind.total))
             .setContentIntent(openApp())

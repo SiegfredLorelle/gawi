@@ -14,6 +14,7 @@ import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -23,6 +24,8 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import java.time.LocalTime
+import java.util.UUID
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 /**
@@ -212,6 +215,88 @@ class ReminderSchedulerTest {
         assertEquals(listOf(WorkInfo.State.ENQUEUED), stateOf(REMINDER_WORK))
     }
 
+    /**
+     * **The chain, with the workers actually run — and the hole this closes.**
+     *
+     * The absence of any test that ran *both* workers is what let the
+     * `KEEP`-on-both-sides bug through, and the first two attempts at writing it
+     * were themselves vacuous. Worth recording, because each looked fine:
+     *
+     * - Calling `arm*` in order without running anything: the reminder's unique
+     *   name stayed occupied by work that never finished, so the assertion passed
+     *   under the bug.
+     * - Running the workers but asserting immediately: `SynchronousExecutor` runs
+     *   the task on the calling thread, but a `CoroutineWorker` completes on its
+     *   own dispatcher, so the state read back was `RUNNING` either way.
+     *
+     * And the third attempt asserted the wrong invariant — "both names are always
+     * armed" is not true and should not be: the chain *alternates*, so a name is
+     * legitimately empty between its own run and the other worker's.
+     *
+     * The property that actually distinguishes the fix is **identity**: when the
+     * rollover runs while an overdue reminder is still queued, it must *replace*
+     * that stale wake, not leave it. `KEEP` leaves it — and the stale wake then
+     * runs, arms only the rollover, and leaves the reminder's name empty for a
+     * whole day. Putting `RolloverWorker` back on `KEEP` reddens this.
+     */
+    @Test
+    fun `the rollover replaces a stale overdue reminder rather than leaving it`() = runTest {
+        scheduler.armReminder(ExistingWorkPolicy.KEEP)
+        scheduler.armRollover(ExistingWorkPolicy.KEEP)
+        val stale = pendingIdOf(REMINDER_WORK)
+
+        // Device off overnight: both are overdue, and the rollover runs first.
+        runWake(ROLLOVER_WORK)
+
+        val armed = pendingIdOf(REMINDER_WORK)
+        assertNotEquals("the stale overdue reminder was left in place", stale, armed)
+    }
+
+    /**
+     * The other ordering, and the hole `KEEP` was introduced to close: a late
+     * reminder must **not** destroy the overdue rollover, because that rollover is
+     * what re-arms the reminder afterwards. So this direction keeps identity.
+     *
+     * The two tests are each other's control — one direction must replace and the
+     * other must not, which is the asymmetry `ReminderScheduler`'s KDoc argues for.
+     */
+    @Test
+    fun `a late reminder leaves the overdue rollover in place`() = runTest {
+        scheduler.armReminder(ExistingWorkPolicy.KEEP)
+        scheduler.armRollover(ExistingWorkPolicy.KEEP)
+        val overdue = pendingIdOf(ROLLOVER_WORK)
+
+        runWake(REMINDER_WORK)
+
+        assertEquals("the overdue rollover was destroyed", overdue, pendingIdOf(ROLLOVER_WORK))
+    }
+
+    /** The id of whatever is currently armed under [name]; fails if nothing is. */
+    private fun pendingIdOf(name: String): UUID = workManager.getWorkInfosForUniqueWork(name).get().first { !it.state.isFinished }.id
+
+    /**
+     * Runs whatever is pending under [name] and waits for it to finish.
+     *
+     * **The wait is load-bearing**: `setInitialDelayMet` returns with the work still
+     * `RUNNING`, because a `CoroutineWorker` completes on its own dispatcher, and
+     * the states the bug lives in only exist once a worker has finished and re-armed
+     * the other name. A real poll rather than virtual time, because the worker is
+     * genuinely on another thread. Bounded, so a hang fails this test rather than
+     * the suite.
+     */
+    private fun runWake(name: String) {
+        val id = pendingIdOf(name)
+
+        WorkManagerTestInitHelper.getTestDriver(context)!!.setInitialDelayMet(id)
+
+        val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(WAKE_TIMEOUT_SECONDS)
+        while (System.nanoTime() < deadline) {
+            if (workManager.getWorkInfoById(id).get()?.state?.isFinished == true) return
+            Thread.sleep(POLL_MILLIS)
+        }
+        error("$name did not finish within $WAKE_TIMEOUT_SECONDS s")
+    }
+
     private companion object {
         /**
          * Duplicated from `ReminderScheduler`, which keeps them private on
@@ -220,6 +305,9 @@ class ReminderSchedulerTest {
          * already in the field kept its wake under the old name. Spelling them out
          * here means a rename has to be a deliberate two-place change.
          */
+        const val WAKE_TIMEOUT_SECONDS = 10L
+        const val POLL_MILLIS = 20L
+
         const val REMINDER_WORK = "gawi.reminder.end-of-day"
         const val ROLLOVER_WORK = "gawi.reminder.day-rollover"
     }

@@ -19,9 +19,11 @@ private const val TAG = "ReminderWorker"
  * in `:core:data` where the clock, the cutoff and the outstanding rule already
  * live; this posts it and arms the next wake.
  *
- * **Arms the rollover, not itself.** See [ReminderScheduler]'s KDoc: re-enqueuing
- * one's own unique work with `REPLACE` cancels the run doing the enqueuing. The
- * two workers arming each other has no such race, and the chain alternates.
+ * **Arms the rollover, not itself, and with `KEEP`.** See [ReminderScheduler]'s
+ * KDoc: re-enqueuing one's own unique work with `REPLACE` cancels the run doing
+ * the enqueuing, and replacing the *other* name from here is what lost a day's
+ * reminder. This is the direction that may not cancel; [RolloverWorker] is the one
+ * that must.
  *
  * **Always `Result.success()`, even when the work failed.** A `failure` on unique
  * one-time work is terminal — the record is kept and nothing re-runs — and a
@@ -30,8 +32,16 @@ private const val TAG = "ReminderWorker"
  * below, "did today's post work" is not something WorkManager's result needs to
  * carry, and reporting a failure would only add a red row to a dumpsys nobody
  * reads. What is not swallowed is the *arming*: that runs whether the post
- * succeeded or not, because a lost link is the one failure the chain cannot
+ * succeeded or failed, because a lost link is the one failure the chain cannot
  * repair by itself.
+ *
+ * **With one exception, which this KDoc used to gloss over.** The guard rethrows
+ * cancellation, so a worker WorkManager *stops* — a `REPLACE` from a settings
+ * edit, a quota, a constraint — never reaches the arming call at all. That is
+ * safe rather than a hole, for two separate reasons: a stop leaves the work
+ * enqueued for a retry, so this runs again; and the `REPLACE` that caused the
+ * stop has itself just armed that name. Not "unconditional", which is what the
+ * previous wording claimed. Found by `/code-review`.
  */
 internal class ReminderWorker(context: Context, parameters: WorkerParameters) : CoroutineWorker(context, parameters) {
 
@@ -61,9 +71,13 @@ internal class ReminderWorker(context: Context, parameters: WorkerParameters) : 
             Log.w(TAG, "the end-of-day reminder failed", cause)
         }
 
-        // KEEP, never REPLACE: this must not cancel the other wake, only
-        // ensure one exists. See ReminderScheduler's KDoc — REPLACE here
-        // destroyed an overdue rollover wake that was about to re-arm this one.
+        // KEEP, and this is the one direction that must not cancel. REPLACE here
+        // destroyed an overdue rollover wake that was about to re-arm this one,
+        // losing a day's reminder. RolloverWorker replaces instead, which is what
+        // keeps the chain moving — ReminderScheduler's KDoc has the pair.
+        //
+        // Not reached when this worker is stopped: the guard above rethrows
+        // cancellation. See the KDoc for why that is safe.
         entryPoint.reminderScheduler().armRollover(ExistingWorkPolicy.KEEP)
         return Result.success()
     }

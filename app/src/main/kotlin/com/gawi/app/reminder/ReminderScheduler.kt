@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.time.Duration
+import java.time.LocalTime
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -53,31 +54,53 @@ private const val ROLLOVER_WORK = "gawi.reminder.day-rollover"
  * own `doWork` to run inside a cancelled coroutine and its completion to be
  * recorded as `CANCELLED`. Correct-looking and racy.
  *
- * **The workers therefore arm with [ExistingWorkPolicy.KEEP], not `REPLACE`, and
- * that is the second half of the design rather than a detail.** KEEP means "make
- * sure the other wake exists", and it cannot cancel anything: pending work is
- * left where it is, and completed work is not pending, so the next occurrence is
- * enqueued normally. A first draft used `REPLACE` here and had a real hole in it.
- * A reminder wake deferred past the cutoff — device off overnight — runs late,
- * correctly decides to stay silent, and then **replaced the overdue rollover work
- * that was about to re-arm it**, so nothing was left under the reminder's name and
- * that whole day's reminder was lost. With KEEP the overdue rollover survives,
- * runs, and re-arms the reminder for that evening. Found by `/code-review`.
+ * **The two directions use different policies, and the asymmetry is the design.**
+ * [ReminderWorker] arms the rollover with [ExistingWorkPolicy.KEEP];
+ * [RolloverWorker] arms the reminder with [ExistingWorkPolicy.REPLACE]. The
+ * invariant that makes the chain sound is that **at least one direction always
+ * replaces**, so every interleaving makes forward progress.
  *
- * KEEP also removes a race the first draft's KDoc claimed was impossible. It said
- * the other name is provably not running, because the reminder falls strictly
- * inside a logical day and the cutoff ends it — and that a reminder set equal to
- * the cutoff would leave them "a whole day apart". **That was wrong**: day `D + 1`'s
- * start *is* day `D`'s boundary, so equal times make both wakes fall on the same
- * instant, and with `REPLACE` each worker would have cancelled the other mid-run.
- * `:feature:settings` now refuses that combination and `ReminderCheck` refuses to
- * act on a stored one, but KEEP is what makes the coincidence harmless rather than
- * merely unlikely.
+ * Getting here took two wrong answers, both worth keeping because each looks
+ * right on its own.
+ *
+ * **`REPLACE` on both** lost a day. A reminder wake deferred past the cutoff —
+ * device off overnight — runs late, correctly decides to stay silent, and then
+ * *replaced the overdue rollover work that was about to re-arm it*. Nothing was
+ * left under the reminder's name and that whole day had none.
+ *
+ * **`KEEP` on both** looked like the fix and lost a day in two other orderings,
+ * because `KEEP` no-ops against `RUNNING` as well as `ENQUEUED` — measured in
+ * `EnqueueRunnable`'s bytecode, where the branch after the `KEEP` comparison tests
+ * both states. When both wakes are overdue at once, which is the ordinary
+ * device-off-overnight case:
+ *
+ * - *rollover first:* `armReminder(KEEP)` no-ops against the still-enqueued overdue
+ *   reminder; the reminder then runs, arms only the rollover, and leaves its own
+ *   name empty.
+ * - *concurrently:* each `KEEP` sees the other `RUNNING`, both no-op, and neither
+ *   name has pending work afterwards — the chain is simply dead.
+ *
+ * [start] does not repair either, because the process was started *for* the
+ * workers, so its first emission lands while both are still pending and no-ops too.
+ * Both found by `/code-review`.
+ *
+ * The residual of `REPLACE` on the rollover side is cancelling a reminder run in
+ * flight. That is only reachable when the two wakes coincide, and a reminder run
+ * in that position decides `Silent` anyway — a wake that late is inside the
+ * following logical day, which `ReminderCheck` refuses.
+ *
+ * **A KDoc here also claimed the coincidence was impossible, and that was wrong.**
+ * It said the other name is provably not running, since the reminder falls strictly
+ * inside a logical day and the cutoff ends it — and that a reminder set equal to the
+ * cutoff would leave them "a whole day apart". Day `D + 1`'s start *is* day `D`'s
+ * boundary, so equal times put both wakes on one instant. `:feature:settings`
+ * refuses that combination now and `ReminderCheck` refuses to act on a stored one,
+ * so it is unreachable rather than merely unlikely — but the reasoning was still
+ * wrong and the policies above no longer depend on it being right.
  *
  * The chain therefore alternates: 21:00 arms midnight, midnight arms 21:00. If
  * either link is ever lost — a cleared app, a WorkManager database migration —
- * [start] re-arms both on the next process start, so the chain has a repair path
- * that does not depend on itself.
+ * [start] re-arms both on the next process start.
  */
 @Singleton
 class ReminderScheduler @Inject constructor(
@@ -108,43 +131,78 @@ class ReminderScheduler @Inject constructor(
      * Deduped on the two fields that move a wake. The week start also lives in
      * `UserSettings` and moves neither, so reacting to it would re-enqueue both
      * works for nothing.
+     *
+     * An edit re-arms **only the wake that moved** — see [replaceWhatMoved]. An
+     * earlier version replaced both on every edit, so changing the reminder time
+     * could cancel a `RolloverWorker` that happened to be running at that moment
+     * and lose its streak sweep and widget push. Found by `/code-review`.
      */
     fun start() {
         scope.launch {
-            var armed = false
+            var previous: Pair<LocalTime, LocalTime>? = null
             settings.observe()
                 .map { it.dayCutoff to it.reminderTime }
                 .distinctUntilChanged()
-                .collect { _ ->
-                    // The first emission is "what the settings already are", which
-                    // is not an edit — so it must not disturb work that is already
-                    // scheduled or, worse, running. KEEP arms only what is absent.
-                    // Every later emission is a real edit, where replacing the
-                    // pending wake with one at the new time is the entire point.
-                    arm(if (armed) ExistingWorkPolicy.REPLACE else ExistingWorkPolicy.KEEP)
-                    armed = true
+                .collect { current ->
+                    when (val was = previous) {
+                        // The first emission is "what the settings already are",
+                        // which is not an edit — so it must not disturb work that
+                        // is already scheduled or, worse, running. KEEP arms only
+                        // what is absent.
+                        null -> {
+                            armReminder(ExistingWorkPolicy.KEEP)
+                            armRollover(ExistingWorkPolicy.KEEP)
+                        }
+
+                        // A real edit, where replacing the pending wake with one at
+                        // the new time is the entire point — but only the wake that
+                        // actually moved. Replacing both would cancel a worker of
+                        // the other kind that happened to be running, losing its
+                        // run for a setting it does not depend on.
+                        else -> replaceWhatMoved(was, current)
+                    }
+                    previous = current
                 }
         }
     }
 
-    /** Arms both wakes. Used on the first settings emission and on every edit. */
-    private suspend fun arm(policy: ExistingWorkPolicy) {
-        armReminder(policy)
-        armRollover(policy)
+    /**
+     * Re-arms only the wakes an edit actually moved.
+     *
+     * **A `dayCutoff` edit moves both, and that is the part worth stating.** The
+     * cutoff is obviously the rollover's own instant, and it is *also* an input to
+     * [com.gawi.core.domain.time.reminderOn] — which uses it to decide whether the
+     * reminder falls on today's calendar date or tomorrow's. So a cutoff edit can
+     * move the reminder by a whole day, and re-arming only the rollover for one
+     * would leave the reminder pointing at the old threshold.
+     *
+     * A `reminderTime` edit moves only the reminder. Nothing about the boundary
+     * depends on it.
+     */
+    private suspend fun replaceWhatMoved(was: Pair<LocalTime, LocalTime>, now: Pair<LocalTime, LocalTime>) {
+        val cutoffMoved = was.first != now.first
+
+        if (cutoffMoved || was.second != now.second) armReminder(ExistingWorkPolicy.REPLACE)
+        if (cutoffMoved) armRollover(ExistingWorkPolicy.REPLACE)
     }
 
     /**
      * Arms the next reminder. Called by [RolloverWorker], never by [ReminderWorker].
      *
-     * No default policy, deliberately: the two callers want opposite things — a
-     * worker wants [ExistingWorkPolicy.KEEP] and a settings edit wants `REPLACE` —
-     * and a default would let the wrong one be picked by omission.
+     * No default policy, deliberately. The callers want different things and the
+     * difference is load-bearing: [RolloverWorker] and a settings edit both want
+     * `REPLACE`, [start]'s first emission wants `KEEP`, and a default would let the
+     * wrong one be picked by omission — which is exactly how the chain broke twice.
      */
     suspend fun armReminder(policy: ExistingWorkPolicy) {
         enqueue(REMINDER_WORK, ReminderWorker::class.java, policy) { check.untilNextReminder() }
     }
 
-    /** Arms the next rollover refresh. Called by [ReminderWorker], never by [RolloverWorker]. */
+    /**
+     * Arms the next rollover refresh. Called by [ReminderWorker], never by
+     * [RolloverWorker] — and always with `KEEP`, which is the direction that must
+     * not cancel anything. See the class KDoc.
+     */
     suspend fun armRollover(policy: ExistingWorkPolicy) {
         enqueue(ROLLOVER_WORK, RolloverWorker::class.java, policy) { check.untilNextCutoff() }
     }
@@ -160,11 +218,17 @@ class ReminderScheduler @Inject constructor(
      * for a wake that needs no network. `ManifestPermissionTest` is the tripwire.
      *
      * **Not expedited and not an exact alarm.** Architecture §7 rules both out by
-     * name: the reminder fires within WorkManager's flex window, and
-     * `SCHEDULE_EXACT_ALARM` is deliberately avoided because a "habits left today"
-     * nudge does not need exact delivery and the permission attracts Play-policy
-     * scrutiny. `setExpedited` would additionally pull foreground-service
+     * name: `SCHEDULE_EXACT_ALARM` is deliberately avoided because a "habits left
+     * today" nudge does not need exact delivery and the permission attracts
+     * Play-policy scrutiny, and `setExpedited` would pull foreground-service
      * behaviour into a background nudge.
+     *
+     * What the delay means, stated precisely because an earlier version of this
+     * said "flex window" and that is a different mechanism: these are
+     * `OneTimeWorkRequest`s, which have no flex interval — that belongs to periodic
+     * work. `setInitialDelay` makes a wake **eligible** once the delay has elapsed,
+     * and nothing bounds how long after that it runs. WorkManager defers under Doze
+     * and App Standby and will not wake the device to deliver one.
      *
      * **Every failure is absorbed and logged**, the same call
      * `GlanceProjectionListener` and `ExportJournal.record` make — and here it is
