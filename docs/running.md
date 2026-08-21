@@ -215,14 +215,17 @@ adb shell pm clear com.gawi.app                 # wipe the database and settings
 ## 3. A physical device — *unverified on every platform*
 
 PRD §7 makes a real device the primary target for widget and notification work,
-because launchers and OEM battery policies differ from emulators. None of that
-exists yet, so nothing in this repo yet *requires* a device — but the setup is
-here so it is not discovered later.
+because launchers and OEM battery policies differ from emulators. That stopped
+being forward-looking on 2026-08-21: the widget and the reminder both shipped, and
+§4's widget block **cannot be completed without a launcher** — pinning a widget
+requires a user, so nothing automated in this repo can place one. A device is no
+longer setup-in-advance; it is the only way to finish the checklist.
 
 1. On the phone: **Settings → About → tap Build number seven times**, then
    **Developer options → USB debugging**.
 2. Connect it and accept the RSA fingerprint prompt.
-3. `adb devices` must show `device`. Anything else means step 4.
+3. `adb devices` must show `device`. Anything else means the per-platform notes
+   below — there is no step 4, which this line used to point at.
 
 Per platform:
 
@@ -258,6 +261,76 @@ adb tcpip 5555
 # unplug
 adb connect 192.168.1.50:5555
 ```
+
+### Check the udev group *before* you plug in
+
+On Arch, installing `android-udev` is **not** sufficient and the symptom appears
+only after the cable is in. `51-android.rules` sets `GROUP="adbusers"` with
+`MODE="0660"`, and the package creates that group **empty** — so a fresh Arch box
+has the rules and still cannot talk to a phone. Check first:
+
+```console
+$ id                      # is adbusers in the list?
+$ getent group adbusers   # who is actually in it
+```
+
+If you are missing, `sudo usermod -aG adbusers $USER` and **log out and back in**;
+group membership only refreshes at login, so a new terminal is not enough and
+neither is restarting `adb`. Measured on this machine on 2026-08-22: rules
+present, group present, group empty.
+
+### Installing it
+
+`make run` is the whole story, but four things about it are not obvious.
+
+**Only the debug variant is installable.** `release` has no signing config and R8
+is deliberately deferred until the keep rules for Room, Hilt and
+kotlinx-serialization can be tested against a real release build
+(`build-logic/src/main/kotlin/AndroidApplicationConventionPlugin.kt`), so
+`assembleRelease` produces an *unsigned* APK that no device will accept. Anything
+you run on a phone is the debug build: `debuggable`, unminified, and entirely fine
+for use — just not a release rehearsal.
+
+**With more than one device attached, `make run` is ambiguous.** It is
+`./gradlew :app:installDebug` followed by `$(ADB) shell am start`, and neither
+half takes a serial — so a running emulator makes the install fan out and the
+`am start` fail on *"more than one device"*. Name the target:
+
+```console
+$ adb devices -l                          # copy the serial
+$ ANDROID_SERIAL=<serial> make run
+```
+
+`ANDROID_SERIAL` is read by both AGP and `adb`, which is why it is the one knob
+that steers the whole target rather than just half of it. The `ADB` variable the
+Makefile documents only reaches the second command.
+
+**The reminder does nothing until you visit its settings row.**
+`POST_NOTIFICATIONS` is the app's only hand-declared permission and it is a
+*runtime* permission on API 33+, requested from the settings screen's reminder row
+rather than at first launch (docs/ux/reminder.md §3). On a fresh install on a
+modern phone, that means the end-of-day reminder is silently inert until you go
+there — which reads exactly like a bug if you do not know it. Check the phone's
+API level with `adb shell getprop ro.build.version.sdk`.
+
+### If the device is one you actually use — read this
+
+A phone carrying the PRD §5 30-day trial holds the only copy of the trial. Two
+ways to destroy it, both easy:
+
+- **`make itest` uninstalls the app**, and `allowBackup=false` (architecture §6)
+  means the OS has no copy. See the warning above §4's widget block — it is not
+  theoretical, one run wiped an emulator holding 345 events. Point `make itest` at
+  a throwaway AVD, never at the trial device. `ANDROID_SERIAL` is how you make
+  sure.
+- **The debug keystore is per-machine** (`~/.android/debug.keystore`). PRD §7 names
+  macOS as a fallback build environment, and a build from a second machine is
+  signed with that machine's key — so it cannot install over the first one. The
+  only way through is an uninstall, which is the data loss above. Build the trial
+  app from one machine, or copy the keystore deliberately.
+
+The JSON export is the only recovery path either way. Take one when real habits
+exist, which also arms the 30-day export nudge.
 
 ---
 
