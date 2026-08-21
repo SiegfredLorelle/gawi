@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- No <uses-permission>, and that is the whole of this module's effect on
+         the app's permission set: a home-screen widget needs none. The
+         end-of-day reminder is the change that will, and it is deliberately a
+         separate step. -->
+    <application>
+
+        <!-- Fully qualified rather than ".TodayWidgetReceiver": a library
+             manifest has no package attribute of its own to resolve a relative
+             name against, so spelling it out is what makes the merge into :app
+             unambiguous.
+
+             exported="true" is required, not incidental. The launcher is a
+             different app, and it is AppWidgetManager that sends
+             APPWIDGET_UPDATE, so an unexported provider is one nothing can
+             bind. -->
+        <receiver
+            android:name="com.gawi.widget.TodayWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/today_widget_info" />
+        </receiver>
+    </application>
+
+</manifest>

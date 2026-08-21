@@ -22,6 +22,11 @@ dependencies {
     implementation(project(":feature:habits"))
     implementation(project(":feature:settings"))
     implementation(project(":feature:today"))
+    // The widget module. :app names nothing from it — the receiver is reached
+    // through the merged manifest and GlanceProjectionListener through Hilt —
+    // but the dependency is what puts both in the app, and what closes the
+    // ProjectionListener binding :core:data deliberately leaves open.
+    implementation(project(":widget"))
 
     implementation(libs.androidx.activity.compose)
     // The navigation graph lives here and only here (architecture §2). No
@@ -40,4 +45,5 @@ dependencies {
     testImplementation(libs.androidx.test.ext.junit)
     testImplementation(libs.hilt.android.testing)
     kspTest(libs.hilt.compiler)
+
 }
