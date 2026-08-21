@@ -232,12 +232,26 @@ nothing; `:widget` provides the implementation that tells Glance to redraw and
 rather than a `@Multibinds` set, because an empty set is a legal graph and a
 widget that silently stops updating looks exactly like a widget nobody placed.
 
-**What no listener can cover: a day rollover is not an event.** Nothing commits
-at the cutoff, so the provider's `updatePeriodMillis` bounds the staleness and
-the tap path re-reads rather than trusting the date it drew — writing to a stale
-logical date is something §5's 3-day retro window *accepts* rather than refuses,
-so it would be silent. docs/ux/widget.md §4 has the whole argument; a scheduled
-refresh at the boundary wants WorkManager and belongs with the reminder.
+**The push alone is not sufficient, and assuming it was is a defect this
+document once described.** Glance's session collects the widget's
+`provideGlance` with `collectAsState` **once per session**, so an `update`
+arriving while a session is already alive does not re-enter it. A widget that
+read one snapshot and leaned on the push therefore froze for the life of the
+session. So the widget *also* collects `observeToday()` inside its content, and
+the two cover different cases: collecting keeps a live session tracking Room,
+and the listener is what starts a session when none is alive, which is the
+common case because sessions are short.
+
+**What neither can cover: a day rollover and a settings edit are not events.**
+Nothing commits at the cutoff, and changing the cutoff is a DataStore write —
+yet it decides the logical date and so every `completedToday`. `observeToday()`
+re-emits on both, so a live session follows them; a widget with no session
+shows the previous answer until `updatePeriodMillis` comes round. That is why
+the tap path re-reads rather than trusting the date it drew: writing to a stale
+logical date is something §5's 3-day retro window *accepts* rather than
+refuses, so it would be silent. docs/ux/widget.md §4 has the whole argument; a
+scheduled refresh at the boundary wants WorkManager and belongs with the
+reminder.
 
 At this app's data volume (~2k events/year) a full rebuild is milliseconds,
 so `rebuildProjections()` is cheap enough to reach for whenever in doubt.
@@ -314,19 +328,31 @@ not a setting.
 | Reminder | WorkManager + notification via PendingIntents |
 | IDs | UUIDv7, hand-rolled in `:core:domain` |
 
-**Glance pins to the newest stable, and excludes WorkManager.** Glance is not
-in the compose BOM — it ships on its own train, so its version is a number that
-moves by itself, and 1.1.1 is the newest stable one (the 1.2.0 line reached
+**Glance pins to the newest stable, and brings WorkManager with it.** Glance is
+not in the compose BOM — it ships on its own train, so its version is a number
+that moves by itself, and 1.1.1 is the newest stable one (the 1.2.0 line reached
 rc01 and was abandoned for 1.3.0-alpha01, so "the next one up" is a
-pre-release). More importantly, `androidx.glance:glance` declares
-`androidx.work:work-runtime`, which contributes `WAKE_LOCK`,
+pre-release).
+
+`androidx.glance:glance` declares `androidx.work:work-runtime`, and **it cannot
+be excluded**: Glance runs its composition session in `SessionWorker`, a
+`CoroutineWorker` reached from `GlanceAppWidget`'s own constructor, so excluding
+it compiles and then dies at runtime with `NoClassDefFoundError`. Every version
+through 1.3.0-alpha02 declares it. An earlier version of this paragraph claimed
+the dependency was vestigial and safely excluded; that was measured with a
+broken harness and is corrected here — docs/ux/widget.md §5 records both the
+measurement and the mistake.
+
+The consequence is a permission decision. WorkManager contributes `WAKE_LOCK`,
 `RECEIVE_BOOT_COMPLETED`, `FOREGROUND_SERVICE` and **`ACCESS_NETWORK_STATE`**
-to the merged manifest — the last of which falsifies §1's first principle, for
-a widget with nothing to do with the network. It is excluded, and safely: at
-1.1.1 no class and no manifest entry in either Glance artifact references
-`androidx.work`. `ManifestPermissionTest` asserts the whole requested
-permission set, so a Glance upgrade that reintroduces it fails a test rather
-than shipping. docs/ux/widget.md §5 has the measurement.
+to the merged manifest. The last of those falsifies §1's first principle for a
+capability no code here uses, so `:app` removes exactly that one with
+`tools:node="remove"`; the other three stay, because WorkManager genuinely
+wakes and reschedules and a manifest hiding that would be lying. `INTERNET` is
+absent, so the process cannot open a socket, which is the property §1 is really
+claiming. `ManifestPermissionTest` asserts the whole requested set, so a Glance
+upgrade that reintroduces the network permission fails a test rather than
+shipping.
 
 **Reminder timing is deliberately inexact.** The end-of-day reminder fires
 within WorkManager's flex window (~15 min); the `SCHEDULE_EXACT_ALARM`
@@ -353,19 +379,19 @@ Do not "upgrade" this to exact alarms.
   Robolectric with `HiltTestApplication`. It is the only test of the production
   Hilt graph — a missing binding is a runtime failure, so nothing below it can
   catch one — and it asserts that each route leads where it says. Driving the
-  real activity is forced rather than chosen: feature screens and ViewModels are
-  `internal` to their modules, and `hiltViewModel()` needs an
-  `@AndroidEntryPoint` host.
-  **Journeys that write are deliberately not here.** Room's `InvalidationTracker`
-  does not deliver in this setup, so a screen never re-reads after a write;
-  measured by calling the repository directly, which succeeds while the screen
-  stays stale. Such a test passes only when a `WhileSubscribed` window happens to
-  lapse between two assertions, which is a pass that proves nothing. Replacing
-  the database would fix it and `@TestInstallIn` cannot reach it, because the
-  modules binding it are `internal` to `:core:data`. **As of 2026-08-21 they are
-  covered instead by the instrumented source set below**, which is where Room's
-  invalidation does deliver — so the answer to this gap turned out not to be the
-  `:core:data` test seam.
+  real activity is forced rather than chosen: feature screens and ViewModels
+  are `internal` to their modules, and `hiltViewModel()` needs an
+  `@AndroidEntryPoint` host. **Journeys that write are deliberately not here.**
+  Room's `InvalidationTracker` does not deliver in this setup, so a screen
+  never re-reads after a write; measured by calling the repository directly,
+  which succeeds while the screen stays stale. Such a test passes only when a
+  `WhileSubscribed` window happens to lapse between two assertions, which is a
+  pass that proves nothing. Replacing the database would fix it and
+  `@TestInstallIn` cannot reach it, because the modules binding it are
+  `internal` to `:core:data`. **As of 2026-08-21 they are covered instead by
+  the instrumented source set below**, which is where Room's invalidation does
+  deliver — so the answer to this gap turned out not to be the `:core:data`
+  test seam.
 - `:widget`: JVM unit tests, and no Robolectric. The read is a pure
   `TodaySnapshot` → rows mapper and the tap is a function of the repository, so
   both are testable without Glance, a device or a shadow. The rules worth
@@ -425,10 +451,10 @@ The template's Makefile contract maps to Gradle as:
 Deviations and notes:
 
 - **`make run` is an addition to the template's contract**, not a rename of it.
-  Nothing in CI calls it, so the cross-repo sameness the Makefile header protects
-  is untouched; what it buys is that §8's manual on-device activity has a
-  one-command entry point instead of living in people's shell history. The
-  procedure it serves is [docs/running.md](running.md).
+  Nothing in CI calls it, so the cross-repo sameness the Makefile header
+  protects is untouched; what it buys is that §8's manual on-device activity
+  has a one-command entry point instead of living in people's shell history.
+  The procedure it serves is [docs/running.md](running.md).
 - **`make itest` is the second such addition** (2026-08-21, with `:widget`), and
   it is deliberately *not* folded into `make test`. The two are different gates:
   `test` runs anywhere and gates every commit, `itest` needs an attached device
