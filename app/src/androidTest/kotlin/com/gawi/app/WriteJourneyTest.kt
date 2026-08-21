@@ -12,6 +12,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
@@ -112,6 +113,13 @@ class WriteJourneyTest {
     }
 
     /**
+     * Creates a habit and leaves the app on that habit's **detail** screen.
+     *
+     * Saving a new habit navigates on to detail rather than popping, as of
+     * 2026-08-21 — that is what `createHabit`'s minted id is for. Waiting for
+     * the detail title here rather than in each caller is what keeps the next
+     * tap from racing the navigation.
+     *
      * Cancel and Back are icon buttons and carry content descriptions; Save is a
      * `TextButton` and carries text. Reaching for the wrong one of those matches
      * nothing and fails as a timeout, which reads like a broken app rather than
@@ -127,6 +135,20 @@ class WriteJourneyTest {
         awaitText(string(HabitsR.string.habits_name_label)).performTextInput(name)
 
         awaitText(string(HabitsR.string.habits_save)).performClick()
+        awaitText(string(HabitsR.string.habits_detail_title))
+    }
+
+    /**
+     * Detail to Today, which is two pops: detail, then the habit list.
+     *
+     * The editor is not among them. It is popped inclusively when detail opens,
+     * so Back from a new habit cannot land in the form that made it — a filled-in
+     * create form that would append a second identical habit if saved again.
+     */
+    private fun returnToToday() {
+        awaitDescribed(string(HabitsR.string.habits_back)).performClick()
+        awaitText(string(HabitsR.string.habits_title))
+        awaitDescribed(string(HabitsR.string.habits_back)).performClick()
     }
 
     @Test
@@ -134,9 +156,7 @@ class WriteJourneyTest {
         val name = "itest-" + System.currentTimeMillis()
 
         createHabit(name)
-
-        // Back on the habit list after saving; get to Today.
-        awaitDescribed(string(HabitsR.string.habits_back)).performClick()
+        returnToToday()
 
         // The tick appearing at all is the assertion Robolectric could not make:
         // it requires Room to have invalidated the query the screen is collecting.
@@ -155,9 +175,33 @@ class WriteJourneyTest {
         val name = "itest-" + System.currentTimeMillis()
 
         createHabit(name)
-        awaitDescribed(string(HabitsR.string.habits_back)).performClick()
+        returnToToday()
 
         row(name).performScrollTo().assertIsDisplayed()
+    }
+
+    /**
+     * A new habit opens on its own detail screen, and Back does not return to
+     * the form that made it.
+     *
+     * The other half of `createHabit`'s minted-id promise, and the reason the
+     * editor is popped inclusively. Robolectric cannot reach this: the habit has
+     * to actually exist for detail to read it back, and a write does not deliver
+     * there — `AppNavigationTest` covers the routes it can and says so.
+     */
+    @Test
+    fun creatingAHabitOpensItsDetailAndPopsTheForm() {
+        val name = "itest-" + System.currentTimeMillis()
+
+        createHabit(name)
+
+        awaitText(name).assertIsDisplayed()
+
+        awaitDescribed(string(HabitsR.string.habits_back)).performClick()
+
+        // The habit list, not the editor it was created from.
+        awaitText(string(HabitsR.string.habits_title)).assertIsDisplayed()
+        compose.onNodeWithText(string(HabitsR.string.habits_new_title)).assertDoesNotExist()
     }
 
     private companion object {
