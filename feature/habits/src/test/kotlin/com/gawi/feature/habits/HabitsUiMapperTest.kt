@@ -2,9 +2,13 @@ package com.gawi.feature.habits
 
 import androidx.compose.ui.graphics.Color
 import com.gawi.core.domain.model.Schedule
+import com.gawi.core.ui.streak.StreakUi
 import com.gawi.core.ui.theme.HabitPalette
+import com.gawi.feature.habits.testsupport.broken
 import com.gawi.feature.habits.testsupport.habitId
 import com.gawi.feature.habits.testsupport.habitState
+import com.gawi.feature.habits.testsupport.running
+import com.gawi.feature.habits.testsupport.todayHabit
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -155,5 +159,59 @@ class HabitsUiMapperTest {
         assertEquals("#26A69A", metadata.color)
         assertEquals(Schedule.Weekly(2), metadata.schedule)
         assertEquals("health", metadata.tag)
+    }
+
+    /**
+     * Detail counts a daily habit in days and a weekly one in weeks.
+     *
+     * The rule itself lives in `:core:ui` and is asserted there; what this pins
+     * is that detail passes the habit's *own* schedule to it. Passing a constant
+     * would make every streak a day count, which reads plausibly and is wrong
+     * for exactly the habits docs/ux/today-view.md §5 is about.
+     */
+    @Test
+    fun `a detail streak is counted in the habit's own unit`() {
+        val daily = todayHabit(habitState(schedule = Schedule.Daily), streak = running(4))
+        val weekly = todayHabit(habitState(schedule = Schedule.Weekly(3)), streak = running(4))
+
+        assertEquals(StreakUi.Days(4), daily.toDetailUiState().streak)
+        assertEquals(StreakUi.Weeks(4), weekly.toDetailUiState().streak)
+    }
+
+    @Test
+    fun `a broken detail streak keeps what was lost`() {
+        val habit = todayHabit(habitState(schedule = Schedule.Daily), streak = broken(previous = 4))
+
+        assertEquals(StreakUi.Broken(previous = 4, weekly = false), habit.toDetailUiState().streak)
+    }
+
+    /** Only a weekly habit carries week progress — the Today row's rule, kept in step. */
+    @Test
+    fun `only a weekly habit carries week progress on detail`() {
+        val weekly = todayHabit(habitState(schedule = Schedule.Weekly(3)), weekCount = 2)
+        val daily = todayHabit(habitState(schedule = Schedule.Daily), weekCount = 2)
+
+        assertEquals(HabitWeekProgress(done = 2, target = 3), weekly.toDetailUiState().weekProgress)
+        assertNull(daily.toDetailUiState().weekProgress)
+    }
+
+    /**
+     * A blank tag is no tag.
+     *
+     * `HabitMetadata.tag` is nullable and the editor writes blank-to-null, but an
+     * imported log is not bound by the editor's rule. A blank that reached the
+     * header would draw a lone "#".
+     */
+    @Test
+    fun `a blank tag is dropped rather than drawn`() {
+        assertNull(todayHabit(habitState(tag = "  ")).toDetailUiState().tag)
+        assertEquals("focus", todayHabit(habitState(tag = "focus")).toDetailUiState().tag)
+    }
+
+    /** Detail shows archived habits, so the flag has to survive the mapping. */
+    @Test
+    fun `detail carries the archived flag rather than hiding the habit`() {
+        assertTrue(todayHabit(habitState(archived = true)).toDetailUiState().archived)
+        assertFalse(todayHabit(habitState(archived = false)).toDetailUiState().archived)
     }
 }

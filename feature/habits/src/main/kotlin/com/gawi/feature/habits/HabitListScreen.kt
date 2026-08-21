@@ -199,9 +199,16 @@ private fun AddHabitButton(onAdd: () -> Unit) {
     }
 }
 
-/** An icon button with no icon font behind it, named for assistive technology. */
+/**
+ * An icon button with no icon font behind it, named for assistive technology.
+ *
+ * Internal rather than private since habit detail landed: both screens in this
+ * module draw glyph buttons, and material-icons-extended is still not a
+ * dependency. `:feature:settings` keeps its own copy — feature modules cannot
+ * see each other, which is the same reason `commandOrNull` exists twice.
+ */
 @Composable
-private fun GlyphButton(glyph: String, labelRes: Int, onClick: () -> Unit) {
+internal fun GlyphButton(glyph: String, labelRes: Int, onClick: () -> Unit) {
     val label = stringResource(labelRes)
     IconButton(onClick = onClick, modifier = Modifier.semantics { contentDescription = label }) {
         Text(text = glyph, style = MaterialTheme.typography.titleLarge)
