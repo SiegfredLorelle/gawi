@@ -1,0 +1,71 @@
+name: Feature request
+description: Suggest something the app should do
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before writing much: the roadmap is in
+        [PRD §5](https://github.com/SiegfredLorelle/gawi/blob/main/docs/prd.md),
+        and much of it is already committed rather than undecided. Checking
+        whether your idea is already there — and which phase it sits in — saves
+        us both a round trip.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is the problem
+      description: >-
+        The situation you are in, not the feature you want. It is easier to
+        judge a solution when the problem is visible.
+      placeholder: >-
+        I track a habit that only makes sense on weekdays, and a 5-times-a-week
+        target lets me satisfy it on a Saturday.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What should happen instead
+    validations:
+      required: true
+
+  - type: dropdown
+    id: needs-network
+    attributes:
+      label: Would this need network access?
+      description: >-
+        The single most important question here. The app declares no INTERNET
+        permission, and that is a headline claim rather than an implementation
+        detail — see SECURITY.md. A "yes" is not an automatic no, but it has to
+        be argued as a change to that claim instead of arriving with a feature.
+      options:
+        - "No — this works fully offline"
+        - "Yes — it needs to reach something"
+        - "Not sure"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: phase
+    attributes:
+      label: Which roadmap phase does this belong to?
+      description: From PRD §5. Pick "not sure" rather than guessing.
+      options:
+        - Phase 1 — mascot, quick actions, insights
+        - Phase 1.5 — quarterly and yearly retrospectives
+        - Phase 2 — LAN sync
+        - Phase 3 — cloud sync
+        - None of these, it is something new
+        - Not sure
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues, and checked PRD §5 for this
+          required: true

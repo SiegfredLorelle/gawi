@@ -1,0 +1,102 @@
+name: Bug report
+description: Something behaves differently from how it is documented
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this.
+
+        **Please do not paste real habit data or an export file.** An export is
+        a complete record of what you do every day. Invent a habit or two to
+        reproduce with, and redact where you cannot.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, and what the app did instead of what you expected.
+      placeholder: |
+        1. Created a daily habit "read"
+        2. Tapped it on the widget
+        3. Opened the app — Today still showed it unticked
+    validations:
+      required: true
+
+  - type: input
+    id: device
+    attributes:
+      label: Device
+      placeholder: Pixel 7a / Nothing A059 / Android Studio emulator
+    validations:
+      required: true
+
+  - type: input
+    id: android-version
+    attributes:
+      label: Android version
+      description: Settings → About phone → Android version. The API level too, if you know it.
+      placeholder: Android 16 (API 36)
+    validations:
+      required: true
+
+  - type: input
+    id: app-version
+    attributes:
+      label: App version or commit
+      description: >-
+        There are no published releases yet, so this is most likely the commit
+        you built from — `git rev-parse --short HEAD`.
+      placeholder: 0.1.0, or bcf9c16
+    validations:
+      required: true
+
+  - type: dropdown
+    id: data-loss
+    attributes:
+      label: Did you lose habit data?
+      description: >-
+        Asked directly because it changes the priority. Android Auto Backup is
+        off by design, so an export is the only way back — see SECURITY.md.
+      options:
+        - "No"
+        - "Yes — some of it"
+        - "Yes — all of it"
+        - "Not sure"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Where did it happen?
+      options:
+        - Today view
+        - Habit list or editor
+        - Habit detail
+        - Home-screen widget
+        - Reminder notification
+        - Settings
+        - Export or import
+        - Somewhere else, or more than one
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: >-
+        Optional. `adb logcat` output around the failure, or a stack trace.
+        Check it for habit names before pasting.
+      render: text
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues for this
+          required: true
+        - label: This report contains no real habit data or export file
+          required: true

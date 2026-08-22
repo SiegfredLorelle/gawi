@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/SiegfredLorelle/gawi/security/advisories/new
+    about: Report privately instead of opening an issue. See SECURITY.md.
+  - name: How to build and run it
+    url: https://github.com/SiegfredLorelle/gawi/blob/main/docs/running.md
+    about: Emulator and device setup, and the checks CI cannot run.
+  - name: What the app is for, and the roadmap
+    url: https://github.com/SiegfredLorelle/gawi/blob/main/docs/prd.md
+    about: Read this before filing a feature request — much is already committed.
