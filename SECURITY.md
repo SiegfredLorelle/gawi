@@ -6,7 +6,7 @@ Please report security issues privately, not as a public issue.
 
 Use GitHub's [private vulnerability reporting][pvr] on this repository
 (**Security** tab → *Report a vulnerability*). If that is unavailable to you,
-email **`<CONTACT — fill this in before publishing>`**.
+email **`siegfredlorelle09@gmail.com`**.
 
 Include what you did, what happened, and the device and Android version. A
 proof of concept helps. Please do not include a real export file or real habit
