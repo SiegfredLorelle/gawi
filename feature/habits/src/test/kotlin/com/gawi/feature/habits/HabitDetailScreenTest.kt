@@ -2,12 +2,15 @@ package com.gawi.feature.habits
 
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.unit.dp
 import com.gawi.core.domain.model.HabitId
 import com.gawi.core.ui.streak.StreakUi
 import com.gawi.core.ui.theme.GawiTheme
@@ -446,4 +449,38 @@ class HabitDetailScreenTest {
         /** Mirrors RetroStrip's NOTE_GLYPH, which is private to the composable. */
         const val NOTE_MARKER = "•"
     }
+
+    /**
+     * A strip cell is big enough to hit: WCAG 2.5.5 and Android's minimum.
+     *
+     * **What this does and does not hold, measured rather than assumed.** It
+     * asserts the outcome — the cell is at least 48dp tall — and *not* that
+     * `RetroCell`'s `defaultMinSize` is what gets it there. Deleting that
+     * modifier outright leaves this test green, because the cell's four stacked
+     * lines plus its vertical padding already exceed 48dp, so the minimum never
+     * binds. The modifier is correct insurance for a cell that loses content; it
+     * is simply not what fails here.
+     *
+     * Kept anyway, because the property is worth holding whatever satisfies it:
+     * a cell that shrank below the floor would fail this, and it is the only
+     * assertion on the strip's size.
+     *
+     * Against a literal and not against `GawiSpacing.TouchTarget`, for the reason
+     * `HabitEditorScreenTest` gives: a constant compared with itself cannot fail.
+     *
+     * Height only. The cells are `weight(1f)` across the row, so width is the
+     * screen's to decide and a narrow enough phone would fail an assertion this
+     * code could not satisfy.
+     */
+    @Test
+    fun aStripCellMeetsTheTouchTargetFloor() {
+        render(detail())
+
+        compose.onNodeWithContentDescription(cellLabel(back = 2))
+            .performScrollTo()
+            .assertHeightIsAtLeast(MIN_TOUCH_TARGET)
+    }
 }
+
+/** WCAG 2.5.5, and Android's own floor. A literal on purpose — see the test above. */
+private val MIN_TOUCH_TARGET = 48.dp
