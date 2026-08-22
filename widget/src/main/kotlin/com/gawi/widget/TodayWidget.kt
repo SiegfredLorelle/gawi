@@ -104,6 +104,8 @@ private fun HabitRows(rows: List<WidgetRow>) {
                 onCheckedChange = actionRunCallback<ToggleHabitAction>(actionParametersOf(HABIT_ID to row.habitId)),
                 text = row.name,
                 style = widgetTextStyle(),
+                // No `colors`: see the note below on why the glyph cannot take
+                // the theme's, and what that leaves to check by hand.
             )
         }
     }
@@ -128,5 +130,42 @@ private fun HabitRows(rows: List<WidgetRow>) {
  */
 @Composable
 private fun widgetTextStyle() = TextStyle(color = GlanceTheme.colors.onSurface)
+
+/*
+ * The checkbox glyph is deliberately NOT pinned, and this is the measurement
+ * behind that — raised in review on 2026-08-22 with the reasonable suggestion
+ * that it should be.
+ *
+ * The glyph does have the same defect shape as the label had. Left unset it
+ * takes Glance's `res/color/glance_default_check_box.xml`, which is
+ * `?android:attr/colorControlActivated` when checked and
+ * `?android:attr/colorControlNormal` otherwise: theme attributes, with no
+ * `-night` variant. A widget's `RemoteViews` are inflated by the host, so both
+ * resolve in the *launcher's* theme against a background this module chose.
+ *
+ * `CheckBox` does take `colors`, and the obvious fix does not work.
+ * `CheckboxDefaults.colors(checkedColor = GlanceTheme.colors.primary, …)`
+ * compiles and then **throws at runtime** — `IllegalArgumentException: Cannot
+ * provide resource-backed ColorProviders to CheckBoxColors`, from
+ * `CheckedUncheckedColorProvider.<init>`. Every `GlanceTheme` colour is
+ * resource-backed, so no theme colour can be handed to a checkbox. The new
+ * render test caught this on the first run; the decision-only tests could not
+ * have. Glance 1.1.1 offers only `ColorProvider(Color)` and
+ * `ColorProvider(@ColorRes Int)` publicly, and the second is the kind being
+ * rejected — so pinning means two hardcoded literals per state, chosen to work
+ * in both themes without a day/night provider to express them.
+ *
+ * That is a palette decision, and this project does not have one yet:
+ * `HabitPalette` says in as many words that it is "not a design system" because
+ * Momo's palette is PRD OQ-4 and undesigned. Inventing two widget-only
+ * constants here to fix an unobserved contrast problem is the wrong trade, so
+ * the glyph keeps the host's tint and docs/running.md §4 keeps the by-hand
+ * check. Revisit with OQ-4.
+ *
+ * Note also that pinning would NOT have made the glyph testable, which was the
+ * stated reason to do it: `EmittableCheckBox.colors` is readable, but
+ * `CheckBoxColors` exposes only an `internal` accessor returning
+ * `CheckableColorProvider`, a public interface with no members.
+ */
 
 private const val WIDGET_PADDING = 8

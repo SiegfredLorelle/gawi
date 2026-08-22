@@ -735,9 +735,17 @@ Decisions and reasoning are in [docs/ux/widget.md](ux/widget.md).
       measure the ratio of every text the widget emits, in both themes — so the
       part worth a human's eyes is what those cannot reach: **toggle the system
       dark-mode setting and look at the widget in both**. Specifically check the
-      **checkbox glyph**, not just the label. Its tint comes from Glance's
-      `?android:attr/colorControlNormal`, resolved in the *launcher's* theme
-      rather than the app's, so no test in this repo sees the colour it ends up.
+      **checkbox glyph**, not just the label — it is the one thing on this
+      surface whose colour the app does not choose. It takes
+      `?android:attr/colorControlNormal` (unchecked) and `colorControlActivated`
+      (checked) from Glance's own selector, which ships no `-night` variant, so
+      it resolves in the **launcher's** theme against a background this app
+      picked. Confirm by eye that both states stand out.
+      `TodayWidget.kt` records why it is not simply pinned: handing a
+      `GlanceTheme` colour to `CheckBox(colors = …)` throws at runtime, because
+      every theme colour is resource-backed and `CheckBoxColors` refuses those,
+      so pinning would mean inventing hardcoded literals while PRD OQ-4 is open.
+      No test sees this colour either way.
 - [ ] **A tap completes.** Tap an unticked row: it ticks. Open the app — Today
       agrees, and the mascot has reacted if that was the last one.
 - [ ] **A tap again undoes.** Tap the ticked row: it unticks, and Today agrees.
