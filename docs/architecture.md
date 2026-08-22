@@ -538,6 +538,20 @@ this app's was added — both versions declare the same four.
 - Golden-image / screenshot testing is **deliberately not adopted yet**: Momo's
   art is placeholder copy (PRD OQ-4), so goldens would pin something designed
   to change. Revisit when the four moods have real art.
+- **A test harness that wraps its body in `runTest` needs its timeout stated, not
+  defaulted.** `runGlanceAppWidgetUnitTest` defaults to about two seconds where
+  plain `runTest` defaults to sixty, and that gap produced this repo's only flaky
+  test: Robolectric's one-time initialisation lands *inside* the timed block, so
+  `WidgetTextColourTest`'s first case takes 4.4s while its other five take 0.03s
+  each — 3.6s with the module alone, 32s under a loaded parallel suite, which is
+  where it failed. Around thirty other classes run Robolectric inside plain
+  `runTest` and cannot hit this, because sixty seconds absorbs the cost.
+  The convention: **align such a harness with `runTest`'s own 60s** rather than
+  guessing from an observed duration, since the duration is a property of machine
+  load. Raising the ceiling is the fix here and not a workaround — warming the
+  init outside the block was tried and moved the first case by 10%, inside noise,
+  because the expensive part is the harness rather than the application. CI
+  retries are deliberately not used: they hide a flake instead of removing it.
 - **Tools this stack's standard advice recommends and this repo does not use.**
   Recorded because each is a decision with a reason, and a reader arriving with
   a generic Android testing checklist will otherwise propose all of them.
