@@ -75,6 +75,14 @@ Full guide with examples: `.github/COMMIT_CONVENTION.md`
   `hilt-navigation-compose` — its pom would drag navigation onto their
   classpath. Routes are type-safe `@Serializable` classes
   (docs/architecture.md §2).
+- **Look in `core/ui/component/` before writing a composable a second feature
+  could want.** Anything drawn by more than one feature belongs in `:core:ui`,
+  and so do presentation types shared by more than one (docs/architecture.md
+  §2). This is the rule most easily broken by accident: the habit icon badge was
+  written three times before it was shared, which meant three hand-copied
+  contrast decisions, and fixing two of the three would have looked exactly like
+  fixing it. The pointer is to the directory rather than to a list of what is in
+  it, because a list would be stale by Phase 1.
 - **Versions live only in `gradle/libs.versions.toml`.** Convention plugins
   in `build-logic/` own build configuration; module build files only apply
   `gawi.*` plugin ids and declare dependencies.
