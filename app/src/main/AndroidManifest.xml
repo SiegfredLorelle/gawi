@@ -52,6 +52,16 @@
          than checkSelfPermission. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- android:icon below is Android's generic default, and a placeholder on
+         purpose rather than an oversight: there is no mipmap/ic_launcher in this
+         app at all. A real icon is the same decision as Momo's art style, so it
+         waits on PRD OQ-4 — a mark drawn before the character is settled would
+         be redrawn to match it. PRD §5's Phase 1 records this next to the
+         mascot, along with why UI polish waits on the same thing.
+
+         sym_def_app_icon is not public API. It has been stable for years, so
+         this is not urgent, but the fix is to replace it rather than to lean on
+         it further. -->
     <application
         android:name=".GawiApplication"
         android:allowBackup="false"
