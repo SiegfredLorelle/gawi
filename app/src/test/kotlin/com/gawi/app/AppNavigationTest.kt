@@ -42,8 +42,8 @@ import com.gawi.feature.today.R as TodayR
  * Still a unit test: JVM, Robolectric, inside `make test`. Architecture §8's
  * "CI runs unit tests only" is untouched — mechanically so, since `make test`
  * is `./gradlew test` and that umbrella never reaches `connectedAndroidTest`.
- * There **is** an `androidTest` source set now, added 2026-08-21 beside this
- * one; see the note below on what moved into it.
+ * There **is** an `androidTest` source set beside this one; see the note below
+ * on what moved into it.
  *
  * Strings come from each feature module's own `R` class rather than `:app`'s,
  * because non-transitive R classes are the default — `:app`'s R holds only
@@ -65,12 +65,12 @@ import com.gawi.feature.today.R as TodayR
  * it: `DataModule` and `DataBindsModule` are `internal` to `:core:data` and
  * cannot be named from here.
  *
- * **Resolved 2026-08-21, and not the way this KDoc expected.** The fix was not
- * a `:core:data` test seam: `WriteJourneyTest` in `app/src/androidTest/` runs
- * the same journey on a device, where the invalidation does arrive, against the
- * real graph and the real database. So the limitation above is still exactly
- * true of *this* file and is no longer a gap in the project. What stays here is
- * what belongs here — navigation and first reads, on the JVM, in `make test`.
+ * **Covered elsewhere, and not by a `:core:data` test seam.** `WriteJourneyTest`
+ * in `app/src/androidTest/` runs the same journey on a device, where the
+ * invalidation does arrive, against the real graph and the real database. So the
+ * limitation above is exactly true of *this* file and is not a gap in the
+ * project. What stays here is what belongs here — navigation and first reads, on
+ * the JVM, in `make test`.
  *
  * **Habit detail, for the same reason.** Every route into it needs a habit that
  * exists: the list row that opens one, and the editor that navigates to a habit
