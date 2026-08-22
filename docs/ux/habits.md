@@ -40,7 +40,7 @@ app bar, then the list's own button — and that is the right ratio.
 `today_empty_body` has read *"Momo is waiting. Add a habit and it starts here"*
 since the Today view was built, with nothing to tap. The empty state's button is
 what makes that sentence true, and it is the shortest path from a fresh install
-to a first habit — which is what PRD §5's 30-day trial cannot start without.
+to a first habit — which is where any real use of this app has to start.
 
 ## 2. One editor for create and for edit
 
@@ -284,8 +284,11 @@ would append a second identical habit if saved again.
 - **Nothing on this screen is reachable from the Today view.** Detail is opened
   from the habit list or by creating a habit. PRD §5 names a long-press on a
   Today row as one route to the note, and that route does not exist — the list
-  is the only door. Worth revisiting once the 30-day trial says how often a note
-  is actually wanted.
+  is the only door. **The evidence that was going to settle this is not coming**
+  — the 30-day trial was waived on 2026-08-23 (PRD §5), and "how often is a note
+  actually wanted" was exactly the kind of thing it would have answered. So this
+  gets decided on design grounds when Insights v1 next opens this screen up
+  (PRD §5, Phase 1), or it stays as it is.
 - **Multi-tag (PRD OQ-1).** One tag is baked into `HabitMetadata.tag` and into
   the wire format, so multi-tag is an event-payload schema bump with an
   upcast-on-read, not a UI change.

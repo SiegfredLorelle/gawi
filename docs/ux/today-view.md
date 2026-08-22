@@ -42,9 +42,12 @@ Rationale, in the order it mattered:
 
 Accepted cost: Momo is off-screen while you scroll a long list — arguably
 the moment the mascot is meant to matter. The collapsed chip is the
-mitigation, and it is deliberately small. If the trial (PRD §5, 30-day
-success criterion) shows the mascot going unnoticed, revisit *this* line
-before revisiting the decision.
+mitigation, and it is deliberately small. This used to name the 30-day trial
+as the thing that would show the mascot going unnoticed; the trial was waived
+(PRD §5, 2026-08-23). The occasion is now **Phase 1's real mascot**, which is
+the first build on which this cost is even measurable — the placeholder is three
+static faces, and nobody would notice *those* going unnoticed. Revisit *this*
+line then, before revisiting the decision.
 
 ## 2. Rejected, and why
 
@@ -145,10 +148,12 @@ than a rounding of the weekly case: `regenerating` outranks `worried`, and a
 window that lasted the whole week would mask the now-or-never warning on
 exactly the days a weekly habit still has one chance left.
 
-The 3-day figure is a guess, and **the 30-day trial cannot settle it** — §6
-below and PRD §8's OQ-3 both carry the reason, which is that the MVP mapping
-makes `regenerating` unobservable. Argued in those two rather than a third time
-here. Grace mechanics, if they ever land, change `recentlyBroken` and therefore
+The 3-day figure is a guess, and **no amount of use settles it** — §6 below and
+PRD §8's OQ-3 both carry the reason, which is that the MVP mapping makes
+`regenerating` unobservable. Argued in those two rather than a third time here.
+(The 30-day trial named here until 2026-08-23 was waived, and could not have
+settled this either; PRD §8's OQ-3 is parked on Phase 1's fourth face instead,
+which is the build where this window first has a visible effect.) Grace mechanics, if they ever land, change `recentlyBroken` and therefore
 this whole section.
 
 ### MVP mapping
