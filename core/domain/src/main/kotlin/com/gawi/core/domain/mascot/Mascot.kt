@@ -40,11 +40,14 @@ object Mascot {
      * means the first three days of the week its streak zeroed.
      *
      * The 3 is a guess. It was flagged for the 30-day trial alongside PRD
-     * OQ-3, and PRD §8 now records why that flag cannot be acted on as
+     * OQ-3, and PRD §8 records why that flag could never be acted on as
      * written: Phase 0 draws three faces and folds [Mood.REGENERATING] onto
      * neutral, so no amount of using the app distinguishes this window's
-     * effect from its absence. It waits for Phase 1's fourth face, or it is
-     * settled on the streak rules alone.
+     * effect from its absence. The trial itself was waived on 2026-08-23
+     * (PRD §5), which changes nothing here for that same reason. **It waits
+     * for Phase 1's fourth face**, which PRD §8's OQ-3 is now parked on too:
+     * until a build exists where a reset is visible on screen, this stays 3
+     * and stays a guess.
      */
     const val REGENERATING_WINDOW_DAYS = 3L
 
