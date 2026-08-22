@@ -74,8 +74,8 @@ decisions are in [docs/ux/widget.md](ux/widget.md). It takes `:core:data` and
 a shared composable, and the module rule (`widget → core`) is satisfied without
 the one dependency that looks obvious. `app/src/debug/` is gone: the debug-only
 activity that set the day cutoff and the reminder time over `adb` was deleted
-when `:feature:settings` landed, as this paragraph used to promise, and there
-is no debug source set anywhere in the project now.
+when `:feature:settings` landed, and there is no debug source set anywhere in
+the project now.
 
 `:feature:settings` holds the three preferences the data layer stores — day
 boundary, week start and reminder time — and, below them in a labelled section
@@ -228,10 +228,10 @@ is not a subscriber. A widget tap goes through the same command path as the app,
 so open screens update via their `Flow` queries — but the reverse direction must
 be explicit.
 
-**Built 2026-08-21, and this paragraph used to describe it wrongly.** It said
-"the repository triggers a `GlanceAppWidget` update", which read literally puts
-Glance in `:core:data` and inverts the module rule (`widget → core`, §2). What
-it actually is: `:core:data` declares a `ProjectionListener` and calls it after
+**Built 2026-08-21.** Note what it is *not*: `:core:data` never triggers a
+`GlanceAppWidget` update itself. That would put Glance in `:core:data` and
+invert the module rule (`widget → core`, §2). What happens instead is that
+`:core:data` declares a `ProjectionListener` and calls it after
 the committing transactions — the commands' `appendLocked` and the import's
 `mergeLocked`, both inside the existing `NonCancellable` region, so a tap whose
 scope dies straight after the commit still announces. `:core:data` binds

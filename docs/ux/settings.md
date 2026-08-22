@@ -301,9 +301,8 @@ made on the trimmed value**, so a sigil hiding behind a leading space, TAB or CR
 is caught too — a spreadsheet skips leading whitespace before deciding what a
 cell is. Whitespace on its own is not a sigil and is only quoted, never
 apostrophed: ` read` comes out as `" read"` and keeps its space. The sigil set is
-therefore exactly `=`, `+`, `-` and `@`; an earlier version of this paragraph
-said TAB and CR were themselves guarded, which described the guard before it
-learned to trim. **Not stripped** — a habit honestly named `-5kg` must survive,
+therefore exactly `=`, `+`, `-` and `@`. **Not stripped** — a habit honestly
+named `-5kg` must survive,
 and an export whose justification is the user owning their data cannot quietly
 edit it. Be exact about the cost: the bytes do change, and a text editor shows
 the apostrophe.
