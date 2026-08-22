@@ -18,6 +18,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Every piece of text the widget draws is legible against the background it is
@@ -67,6 +68,31 @@ class WidgetTextColourDarkTest : WidgetTextColourContract()
 class WidgetTextColourLightTest : WidgetTextColourContract()
 
 /**
+ * How long a render may take before the harness gives up, and why it is stated
+ * rather than defaulted.
+ *
+ * `runGlanceAppWidgetUnitTest` defaults to about **2 seconds**, while plain
+ * `runTest` from kotlinx-coroutines-test defaults to **60**. That 30× gap made
+ * this the only flaky test in the suite. Robolectric pays a large one-time cost
+ * initialising the first case in a class, and here it lands *inside* the timed
+ * block: measured at 3.6s with `:widget` alone, 10.6s under a full parallel
+ * suite, and 32.1s on the run that failed. `org.gradle.parallel=true` means
+ * modules compete for CPU, so the number is a property of the machine's load,
+ * not of this test.
+ *
+ * Around thirty other classes run Robolectric inside plain `runTest`, several
+ * taking 9–15s — `TodayScreenTest` peaks at 19.9s — and none can hit this,
+ * because 60s absorbs the cost. So the value here is not tuned to the observed
+ * 32s; it is **aligned with what every other coroutine test in this repo already
+ * gets**. A guessed 30s would have failed the run that failed.
+ *
+ * Accepted cost: a genuinely hung render now takes a minute to report instead of
+ * two seconds. That is the price of a gate that means something, and it is
+ * already the price paid everywhere else here.
+ */
+private val RENDER_TIMEOUT = 60.seconds
+
+/**
  * The assertions themselves, run once per theme by the two classes above.
  *
  * Each test also asserts the text it expects is present, because "nothing has
@@ -76,7 +102,7 @@ class WidgetTextColourLightTest : WidgetTextColourContract()
 abstract class WidgetTextColourContract {
 
     @Test
-    fun `the empty copy is legible on the widget background`() = runGlanceAppWidgetUnitTest {
+    fun `the empty copy is legible on the widget background`() = runGlanceAppWidgetUnitTest(RENDER_TIMEOUT) {
         val probe = renderWithProbe(WidgetContent.Ready(todaySnapshot().toWidgetState()))
 
         onAllNodes(anyText()).assertCountEquals(1)
@@ -84,7 +110,7 @@ abstract class WidgetTextColourContract {
     }
 
     @Test
-    fun `the unavailable copy is legible on the widget background`() = runGlanceAppWidgetUnitTest {
+    fun `the unavailable copy is legible on the widget background`() = runGlanceAppWidgetUnitTest(RENDER_TIMEOUT) {
         val probe = renderWithProbe(WidgetContent.Unavailable)
 
         onAllNodes(anyText()).assertCountEquals(1)
@@ -93,7 +119,7 @@ abstract class WidgetTextColourContract {
 
     /** The rows, which are `CheckBox`es and not `Text`s — the case that hides. */
     @Test
-    fun `habit rows are legible on the widget background`() = runGlanceAppWidgetUnitTest {
+    fun `habit rows are legible on the widget background`() = runGlanceAppWidgetUnitTest(RENDER_TIMEOUT) {
         val snapshot = todaySnapshot(
             habits = listOf(todayHabit(id = habitId(1), name = "read"), todayHabit(id = habitId(2), name = "walk")),
         )
