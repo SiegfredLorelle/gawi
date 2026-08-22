@@ -1,5 +1,6 @@
 package com.gawi.widget
 
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
 import androidx.glance.EmittableWithText
 import androidx.glance.GlanceTheme
@@ -131,7 +132,10 @@ private fun GlanceAppWidgetUnitTest.renderWithProbe(content: WidgetContent): Pro
     probe.context = RuntimeEnvironment.getApplication()
     setContext(probe.context)
     provideComposable {
-        GlanceTheme { probe.background = GlanceTheme.colors.widgetBackground.getColor(probe.context) }
+        GlanceTheme {
+            val background = GlanceTheme.colors.widgetBackground.getColor(probe.context)
+            SideEffect { probe.background = background }
+        }
         WidgetBody(content)
     }
     awaitIdle()
