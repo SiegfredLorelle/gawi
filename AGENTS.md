@@ -61,10 +61,13 @@ Full guide with examples: `.github/COMMIT_CONVENTION.md`
 - **Modules**: `:app` (wiring, navigation), `:core:domain` (pure Kotlin/JVM),
   `:core:data` (Room, DataStore, repositories), `:core:ui` (theme, shared
   composables), `:feature:today`, `:feature:habits`, `:feature:settings` and
-  `:widget` (Glance). **All eight exist**; none is pending, and `:widget` is not
-  a screen. **`docs/architecture.md` §2 owns the contents of each and the full
-  dependency rule** — read it rather than trusting this summary, which is the
-  drift this file warns about everywhere else.
+  `:widget` (Glance). **All eight exist** and `:widget` is not a screen. A ninth,
+  `:feature:insights`, is in architecture.md §2's table as of 2026-08-23 and is
+  **planned, not built** — it is the only row there that does not exist, and its
+  scope is not in `.commitlintrc.yaml` yet either. **`docs/architecture.md` §2
+  owns the contents of each and the full dependency rule** — read it rather than
+  trusting this summary, which is the drift this file warns about everywhere
+  else.
 - **The dependency rule is non-negotiable**: `:core:domain` depends only on
   the Kotlin stdlib and kotlinx-serialization. Domain logic never lands in a
   module that can import Android.
