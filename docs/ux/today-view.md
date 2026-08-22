@@ -145,15 +145,11 @@ than a rounding of the weekly case: `regenerating` outranks `worried`, and a
 window that lasted the whole week would mask the now-or-never warning on
 exactly the days a weekly habit still has one chance left.
 
-The 3-day figure is a guess and was flagged for the 30-day trial, alongside
-PRD OQ-3. **That flag does not work, and this section used to contradict its
-own §6 by carrying it** (corrected 2026-08-22): the MVP mapping below folds
-`regenerating` onto `neutral`, so the trial shows the same face whether this
-window is 3 days, 30, or absent. §6 says as much already — decided, tested and
-unobservable. The window therefore waits for Phase 1's fourth face, or is
-settled on the streak rules alone; PRD §8's OQ-3 records the same. Grace
-mechanics, if they ever land, change `recentlyBroken` and therefore this whole
-section.
+The 3-day figure is a guess, and **the 30-day trial cannot settle it** — §6
+below and PRD §8's OQ-3 both carry the reason, which is that the MVP mapping
+makes `regenerating` unobservable. Argued in those two rather than a third time
+here. Grace mechanics, if they ever land, change `recentlyBroken` and therefore
+this whole section.
 
 ### MVP mapping
 
@@ -217,11 +213,7 @@ Small decisions that were easier to make once drawn:
 - **PRD OQ-4** — Momo's art style. The canvas art is placeholder line
   work; species and name are the only settled parts.
 - ~~**PRD OQ-5** — whether the widget shows streaks.~~ **Settled 2026-08-21:
-  minimal, no streak.** This entry said "both answers are drawn; neither is
-  chosen" until 2026-08-22, by which point `docs/prd.md` §8 had struck OQ-5
-  through and [widget.md](widget.md) §2 carried the reasoning. Left stale, it
-  invites a reader to re-open a decided question — which is the failure mode
-  AGENTS.md warns about, arriving in a sketch rather than a summary.
+  minimal, no streak.** Reasoning in [widget.md](widget.md) §2.
 - The Phase 1 mascot treatment **in the widget and the reminder** (PRD §5).
   Only the Today-view slot is fixed here.
 - Milestone celebrations (7/30/100 days) have no visual treatment yet.
