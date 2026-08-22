@@ -117,8 +117,8 @@ private fun HabitList(state: TodayUiState.Habits, onToggle: (HabitId, Boolean, L
  *
  * `today_empty_body` has said "Add a habit and it starts here" since 4b, with
  * nothing to tap. The button is what makes that sentence true — and it is the
- * shortest path from a fresh install to a first habit, which is what the
- * 30-day trial in PRD §5 cannot start without.
+ * shortest path from a fresh install to a first habit, which is where any real
+ * use of this app has to start.
  */
 @Composable
 private fun EmptyToday(onAddHabit: () -> Unit, modifier: Modifier = Modifier) {
