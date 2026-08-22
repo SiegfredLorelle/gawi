@@ -24,6 +24,18 @@ import java.time.LocalDate
  *
  * Suppressed at the declaration: the interface it implements carries the same
  * suppression for the same reason, which is a command per user action.
+ *
+ * **One fake per module rather than one shared, and the copies are not
+ * interchangeable.** There is nowhere shared to put it — modules that draw
+ * habits do not depend on one another, and no test-fixtures publishing is
+ * configured in this build — but the stronger reason is that each records what
+ * its own tests assert. This is the widest of the three: seven lists, because
+ * this module holds the editor, the list, detail and notes. `:feature:today`
+ * records only a `Toggle`; `:widget` only a `Write`. A shared fake would be the
+ * union of all three and would couple three modules' test needs.
+ *
+ * Accepted cost: [HabitRepository] gaining a method breaks all three at once.
+ * That is a prompt to decide what each fake should answer, not a chore.
  */
 @Suppress("TooManyFunctions")
 class FakeHabitRepository : HabitRepository {
