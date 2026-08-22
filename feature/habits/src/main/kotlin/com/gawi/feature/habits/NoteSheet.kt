@@ -31,7 +31,7 @@ import com.gawi.core.ui.theme.GawiSpacing
  * any other (architecture §4), so the sheet offers it explicitly rather than
  * leaving someone to guess that saving nothing means removing something. It
  * reports through [onSave] with empty text, because it *is* that write — a
- * separate callback would be two names for one event. What §5 asks for is the
+ * separate callback would be two names for one event. What today-view §5 asks for is the
  * affordance, and that is what the button is.
  *
  * Stateless apart from the field itself, and separate from the surface that

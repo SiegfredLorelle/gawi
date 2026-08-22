@@ -58,11 +58,11 @@ class HabitDetailScreenTest {
     }
 
     /**
-     * §5: "A daily habit's streak is a count; a weekly habit's is in weeks. The
+     * today-view §5: "A daily habit's streak is a count; a weekly habit's is in weeks. The
      * two must never be styled as the same number."
      *
      * The bare count is asserted absent, not just the `w` present — a weekly
-     * streak that also rendered "3" somewhere would be the exact confusion §5
+     * streak that also rendered "3" somewhere would be the exact confusion today-view §5
      * forbids.
      */
     @Test
@@ -75,7 +75,7 @@ class HabitDetailScreenTest {
     }
 
     /**
-     * §5: a broken streak "keeps its old value as context (`was 4`) next to the
+     * today-view §5: a broken streak "keeps its old value as context (`was 4`) next to the
      * `0`, with a cut-thread glyph". All three parts, because the zero on its
      * own reads as a habit that never started.
      */
@@ -89,7 +89,7 @@ class HabitDetailScreenTest {
     }
 
     /**
-     * §5 again, from the other side: never reading zero is a rule about a *live*
+     * today-view §5 again, from the other side: never reading zero is a rule about a *live*
      * streak. A habit with no completions has nothing to draw, and a `0` here
      * would claim a break that never happened.
      */
