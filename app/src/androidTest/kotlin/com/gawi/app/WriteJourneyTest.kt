@@ -115,8 +115,8 @@ class WriteJourneyTest {
     /**
      * Creates a habit and leaves the app on that habit's **detail** screen.
      *
-     * Saving a new habit navigates on to detail rather than popping, as of
-     * 2026-08-21 — that is what `createHabit`'s minted id is for. Waiting for
+     * Saving a new habit navigates on to detail rather than popping — that is
+     * what `createHabit`'s minted id is for. Waiting for
      * the detail title here rather than in each caller is what keeps the next
      * tap from racing the navigation.
      *

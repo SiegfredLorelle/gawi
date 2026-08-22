@@ -14,6 +14,10 @@ import org.junit.runner.Description
  * Unconfined so a coroutine launched by a command runs eagerly, which keeps the
  * tests free of advance-the-scheduler calls that would say nothing about the
  * ViewModel.
+ *
+ * A copy of the one in the other two feature modules rather than something
+ * shared. Feature modules do not depend on one another, and no test-fixtures
+ * publishing is configured anywhere in this build.
  */
 class MainDispatcherRule : TestWatcher() {
 

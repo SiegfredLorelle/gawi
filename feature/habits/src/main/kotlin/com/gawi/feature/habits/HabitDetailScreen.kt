@@ -33,6 +33,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import com.gawi.core.ui.component.HabitIcon
 import com.gawi.core.ui.component.Notice
 import com.gawi.core.ui.streak.StreakUi
 import com.gawi.core.ui.theme.GawiSpacing
@@ -226,7 +227,13 @@ private fun HabitHeader(state: HabitDetailUiState.Detail) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(GawiSpacing.Gap),
     ) {
-        HabitGlyph(state)
+        // Larger than the list's and the Today row's: this is the screen the
+        // habit is the subject of, not one line in a list of them.
+        HabitIcon(
+            icon = state.icon,
+            tint = state.iconTint,
+            style = MaterialTheme.typography.titleMedium,
+        )
         Column(verticalArrangement = Arrangement.spacedBy(GawiSpacing.Line)) {
             Text(text = state.name, style = MaterialTheme.typography.headlineSmall)
             Text(
@@ -257,30 +264,6 @@ private fun HabitHeader(state: HabitDetailUiState.Detail) {
     }
 }
 
-/** The habit's colour, in the one place it appears — behind its icon. */
-@Composable
-private fun HabitGlyph(state: HabitDetailUiState.Detail) {
-    val tint = state.iconTint
-    Box(
-        modifier = Modifier
-            .size(GawiSpacing.IconBox)
-            .clip(CircleShape)
-            .background(tint ?: MaterialTheme.colorScheme.secondaryContainer),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = state.icon,
-            style = MaterialTheme.typography.titleMedium,
-            // The stored colour is unvalidated, so the glyph cannot take a theme
-            // role — a black habit would draw a dark glyph on itself in light
-            // mode. The background is passed because a translucent tint means
-            // what the glyph really sits on is the two composited.
-            color = tint?.let { glyphColorOn(it, MaterialTheme.colorScheme.background) }
-                ?: MaterialTheme.colorScheme.onSecondaryContainer,
-        )
-    }
-}
-
 /**
  * The streak, drawn by unit.
  *
@@ -300,7 +283,7 @@ private fun StreakPanel(streak: StreakUi, modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.spacedBy(GawiSpacing.Line),
     ) {
         when (streak) {
-            // §5's rule about never reading zero is about a live streak, which
+            // today-view §5's rule about never reading zero is about a live streak, which
             // this is not: nothing has ever run, so there is no number to draw.
             StreakUi.None -> Text(
                 text = stringResource(R.string.habits_detail_streak_none),
@@ -336,7 +319,7 @@ private fun StreakCount(count: String, caption: String, color: Color) {
     )
 }
 
-/** Zero, with what was lost kept beside it — §5's "was 4" and its cut thread. */
+/** Zero, with what was lost kept beside it — today-view §5's "was 4" and its cut thread. */
 @Composable
 private fun BrokenStreak(streak: StreakUi.Broken) {
     Row(
@@ -367,7 +350,7 @@ private fun BrokenStreak(streak: StreakUi.Broken) {
 /**
  * Where the habit stands on the day being shown.
  *
- * The week line is drawn for a weekly habit only, which is §5's rule and the
+ * The week line is drawn for a weekly habit only, which is today-view §5's rule and the
  * same one the Today row follows — a detail screen that disagreed with the row
  * that led to it would be its own bug.
  */

@@ -25,6 +25,19 @@ data class Write(val kind: String, val habitId: HabitId, val logicalDate: LocalD
  * [failWith] makes the *read* throw, which is the failure the widget has to
  * absorb — `SQLiteException` is a `RuntimeException` and the settings store
  * refuses to guess a cutoff, so neither is hypothetical.
+ *
+ * **One fake per module rather than one shared, and the copies are not
+ * interchangeable.** There is nowhere shared to put it — modules that draw
+ * habits do not depend on one another, and no test-fixtures publishing is
+ * configured in this build — but the stronger reason is that each records what
+ * its own tests assert. This one records a `Write` naming the kind, because what
+ * the widget has to prove is that a tap wrote *something* and which direction.
+ * `:feature:today` records a `Toggle` carrying `undo`; `:feature:habits` keeps
+ * seven separate lists, down to notes. A shared fake would be the union of all
+ * three and would couple three modules' test needs.
+ *
+ * Accepted cost: [HabitRepository] gaining a method breaks all three at once.
+ * That is a prompt to decide what each fake should answer, not a chore.
  */
 @Suppress("TooManyFunctions")
 class FakeHabitRepository(

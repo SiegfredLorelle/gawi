@@ -43,7 +43,11 @@ hooks: ## Install pre-commit git hooks (pre-commit + commit-msg)
 fmt: ## Format the codebase
 	./gradlew spotlessApply
 
+# The citation check runs first because it takes about a second and Gradle takes
+# minutes, so a stale `docs/` reference fails fast instead of at the end. It is a
+# script and not a Gradle task on purpose — see its header, and architecture §9.
 lint: ## Lint and type-check the codebase
+	./scripts/check-citations.sh
 	./gradlew spotlessCheck detekt lint
 
 test: ## Run the test suite

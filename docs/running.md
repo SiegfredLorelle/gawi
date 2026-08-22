@@ -11,9 +11,12 @@ this file picks up where that leaves off.
 **What has actually been run.** The Linux path in this document was executed end
 to end on 2026-08-20 (Arch, AMD Ryzen, AVD on Android 17 x86_64). The macOS and
 Windows sections come from Google's and Microsoft's documentation and have **not**
-been run by anyone here — they are marked as such. **No physical device has been
-attached on any platform**, so the whole of §3 is unverified. Corrections
-welcome; that is what those markers are for.
+been run by anyone here — they are marked as such. A physical device joined them
+on 2026-08-22 — a Nothing A059 on Android 16 (API 36) — but **over wireless
+debugging**: §3's USB path was attempted on Linux and never got as far as
+enumeration, so it stays unverified, and the macOS and Windows device notes are
+unrun like the rest of their sections. Corrections welcome; that is what those
+markers are for.
 
 ---
 
@@ -212,17 +215,20 @@ adb shell pm clear com.gawi.app                 # wipe the database and settings
 
 ---
 
-## 3. A physical device — *unverified on every platform*
+## 3. A physical device — *wireless path verified on Linux; USB unverified*
 
 PRD §7 makes a real device the primary target for widget and notification work,
-because launchers and OEM battery policies differ from emulators. None of that
-exists yet, so nothing in this repo yet *requires* a device — but the setup is
-here so it is not discovered later.
+because launchers and OEM battery policies differ from emulators. That stopped
+being forward-looking on 2026-08-21: the widget and the reminder both shipped, and
+§4's widget block **cannot be completed without a launcher** — pinning a widget
+requires a user, so nothing automated in this repo can place one. A device is no
+longer setup-in-advance; it is the only way to finish the checklist.
 
 1. On the phone: **Settings → About → tap Build number seven times**, then
    **Developer options → USB debugging**.
 2. Connect it and accept the RSA fingerprint prompt.
-3. `adb devices` must show `device`. Anything else means step 4.
+3. `adb devices` must show `device`. Anything else means the per-platform notes
+   below — there is no step 4, which this line used to point at.
 
 Per platform:
 
@@ -233,7 +239,9 @@ Per platform:
   symptom of missing rules is `adb devices` listing the serial with
   **`no permissions`** rather than `device`; after installing them,
   `sudo udevadm control --reload-rules && sudo udevadm trigger`, replug, then
-  `adb kill-server && adb start-server`.
+  `adb kill-server && adb start-server` — with the caveat about *which shell*
+  starts that server below. Or skip USB altogether: wireless debugging needs
+  none of this.
 - **macOS** — nothing needed.
 - **Windows** — install the USB driver (see §1).
 
@@ -250,6 +258,12 @@ adb connect 192.168.1.50:5555    # port from the main Wireless debugging screen
 The two ports differ, which is the usual stumbling block. Pairing is once per
 workstation.
 
+**Wireless debugging needs no udev rules and no group membership**, because udev
+governs USB device nodes and this path has no USB node in it. That makes it the
+way past a `no permissions` phone without logging out — and on 2026-08-22 it was
+the only way in at all. On Linux it is worth trying before the USB path below,
+not after it.
+
 `minSdk` is 29, so Android 10 testers are in scope and need the legacy route,
 which requires one initial cable:
 
@@ -258,6 +272,114 @@ adb tcpip 5555
 # unplug
 adb connect 192.168.1.50:5555
 ```
+
+### If USB never shows up at all
+
+Before auditing udev rules or adb groups, check the phone is on the USB bus at
+all. A device missing from `lsusb` is a cable, port or phone-mode problem, and no amount
+of udev or adb work will touch it. **Charging proves nothing** — only that VBUS
+and ground are connected, which a charge-only cable does too.
+
+```console
+$ lsusb                              # the phone should appear by name
+$ ls /sys/bus/usb/devices/usb*/      # per-port detail when it does not
+```
+
+`dmesg` is the usual tool for this and it is **not available here**: the machine
+runs with `kernel.dmesg_restrict = 1`, so kernel logs need root and USB
+enumeration cannot be read from them. `lsusb` and `/sys` are the substitutes.
+
+Measured on 2026-08-22: the phone above never enumerated, on any port or cable,
+while charging normally throughout — and wireless debugging is what got the app
+on. That is why the USB half of this section is still marked unverified.
+
+### Check the udev group *before* you plug in
+
+On Arch, installing `android-udev` is **not** sufficient and the symptom appears
+only after the cable is in. `51-android.rules` sets `GROUP="adbusers"` with
+`MODE="0660"`, and the package creates that group **empty** — so a fresh Arch box
+has the rules and still cannot talk to a phone. Check first:
+
+```console
+$ id                      # is adbusers in the list?
+$ getent group adbusers   # who is actually in it
+```
+
+If you are missing, `sudo usermod -aG adbusers $USER` and **log out and back in**;
+group membership only refreshes at login, so a new terminal is not enough and
+neither is restarting `adb`. Measured on this machine on 2026-08-22: rules
+present, group present, group empty.
+
+**Then beware that any `adb` command silently starts a server.** With no server
+running, an `adb devices` from a shell that is *not* in `adbusers` forks one
+**without** the group, and that server cannot open the phone's USB node however
+correct the rules are. So the `adb kill-server && adb start-server` above will
+undo the fix rather than complete it if it runs before the logout, or from a
+script or tool that inherited the old groups. Verify the *server's* groups, not
+the shell's:
+
+```console
+$ getent group adbusers                            # note the gid
+$ grep ^Groups: /proc/$(pgrep -f 'adb -L')/status  # the gid must be in this list
+```
+
+Whoever holds the group has to be the one who starts the server, and nobody else
+may call `adb` while it is down.
+
+### Installing it
+
+`make run` is the whole story, but four things about it are not obvious.
+
+**Only the debug variant is installable.** `release` has no signing config and R8
+is deliberately deferred until the keep rules for Room, Hilt and
+kotlinx-serialization can be tested against a real release build
+(`build-logic/src/main/kotlin/AndroidApplicationConventionPlugin.kt`), so
+`assembleRelease` produces an *unsigned* APK that no device will accept. Anything
+you run on a phone is the debug build: `debuggable`, unminified, and entirely fine
+for use — just not a release rehearsal.
+
+**With more than one device attached, `make run` is ambiguous.** It is
+`./gradlew :app:installDebug` followed by `$(ADB) shell am start`, and neither
+half takes a serial — so a running emulator makes the install fan out and the
+`am start` fail on *"more than one device"*. Name the target:
+
+```console
+$ adb devices -l                          # copy the serial
+$ ANDROID_SERIAL=<serial> make run
+```
+
+`ANDROID_SERIAL` is read by both AGP and `adb`, which is why it is the one knob
+that steers the whole target rather than just half of it. The `ADB` variable the
+Makefile documents only reaches the second command. Confirmed on 2026-08-22 with
+a phone and an emulator attached at once: the install landed on the phone alone,
+checked against the two targets' install timestamps.
+
+**The reminder does nothing until you visit its settings row.**
+`POST_NOTIFICATIONS` is the app's only hand-declared permission and it is a
+*runtime* permission on API 33+, requested from the settings screen's reminder row
+rather than at first launch (docs/ux/reminder.md §3). On a fresh install on a
+modern phone, that means the end-of-day reminder is silently inert until you go
+there — which reads exactly like a bug if you do not know it. Check the phone's
+API level with `adb shell getprop ro.build.version.sdk`.
+
+### If the device is one you actually use — read this
+
+A phone carrying the PRD §5 30-day trial holds the only copy of the trial. Two
+ways to destroy it, both easy:
+
+- **`make itest` uninstalls the app**, and `allowBackup=false` (architecture §6)
+  means the OS has no copy. See the warning above §4's widget block — it is not
+  theoretical, one run wiped an emulator holding 345 events. Point `make itest` at
+  a throwaway AVD, never at the trial device. `ANDROID_SERIAL` is how you make
+  sure.
+- **The debug keystore is per-machine** (`~/.android/debug.keystore`). PRD §7 names
+  macOS as a fallback build environment, and a build from a second machine is
+  signed with that machine's key — so it cannot install over the first one. The
+  only way through is an uninstall, which is the data loss above. Build the trial
+  app from one machine, or copy the keystore deliberately.
+
+The JSON export is the only recovery path either way. Take one when real habits
+exist, which also arms the 30-day export nudge.
 
 ---
 
@@ -652,6 +774,27 @@ Decisions and reasoning are in [docs/ux/widget.md](ux/widget.md).
       merged manifest reports the old answer).
 - [ ] **It draws today's habits** — each active habit's name with a checkbox,
       ticked to match the Today screen. **No streak**, deliberately (PRD OQ-5).
+- [ ] **You can read it, in the theme the device is actually in.** Added
+      2026-08-22, because this is where a shipped defect was found and this block
+      had nothing that would have caught it: the widget set its background from
+      `GlanceTheme` and never set a text colour, and Glance's default is not
+      theme-aware, so a dark-themed device drew near-black text on a near-black
+      surface at a contrast ratio of 1.59. It *rendered* the whole time, so every
+      JVM test was green. `WidgetTextColourDarkTest` and its light-mode twin now
+      measure the ratio of every text the widget emits, in both themes — so the
+      part worth a human's eyes is what those cannot reach: **toggle the system
+      dark-mode setting and look at the widget in both**. Specifically check the
+      **checkbox glyph**, not just the label — it is the one thing on this
+      surface whose colour the app does not choose. It takes
+      `?android:attr/colorControlNormal` (unchecked) and `colorControlActivated`
+      (checked) from Glance's own selector, which ships no `-night` variant, so
+      it resolves in the **launcher's** theme against a background this app
+      picked. Confirm by eye that both states stand out.
+      `TodayWidget.kt` records why it is not simply pinned: handing a
+      `GlanceTheme` colour to `CheckBox(colors = …)` throws at runtime, because
+      every theme colour is resource-backed and `CheckBoxColors` refuses those,
+      so pinning would mean inventing hardcoded literals while PRD OQ-4 is open.
+      No test sees this colour either way.
 - [ ] **A tap completes.** Tap an unticked row: it ticks. Open the app — Today
       agrees, and the mascot has reacted if that was the last one.
 - [ ] **A tap again undoes.** Tap the ticked row: it unticks, and Today agrees.
@@ -683,9 +826,9 @@ stays checked and nothing looks undone. The log is correct; the render was not
 (docs/ux/widget.md §4).
 
 **Provoking it now takes deliberately stopping the wake, and that is the point of
-the change.** Moving the cutoff a couple of minutes ahead and waiting — which is
-what this paragraph used to tell you to do — will normally show the widget
-*refreshing*, because `RolloverWorker` runs. That validates the fix; it does not
+the change.** Moving the cutoff a couple of minutes ahead and waiting will
+normally show the widget *refreshing*, because `RolloverWorker` runs. That
+validates the fix; it does not
 reproduce the fault. To see the stale render, stop the worker from running across
 the boundary:
 
@@ -698,8 +841,8 @@ keeps yesterday's ticks and the periodic update is the only thing left, which is
 the pre-2026-08-21 behaviour. `adb shell dumpsys deviceidle unforce` afterwards.
 
 A lag *without* forcing Doze is worth investigating rather than expected — but it
-does **not** on its own mean the wake was never armed, which is what this paragraph
-used to claim. At least three things produce the same symptom: the wake armed and
+does **not** on its own mean the wake was never armed. At least three things
+produce the same symptom: the wake armed and
 deferred anyway (App Standby, an OEM battery policy, ordinary idle), the wake ran
 and the push failed silently — `GlanceProjectionListener` catches `Throwable` and
 only logs — or the push succeeded and Glance's own update did not. Raised in PR
@@ -776,12 +919,12 @@ that was not there.
       already stamped today, and it was read back in a process that did not write
       it.
 
-      **The force-stop is the point of the check**, and an earlier version left it
-      out while still claiming to prove the journal survives a process ending.
-      Without it the app is alive throughout — moving the reminder time means
-      opening Settings — so the read could come from the same in-memory `DataStore`
-      that wrote the stamp, and the one thing this adds over `ReminderCheckTest`
-      is the one thing it would not have done. Raised in PR review.
+      **The force-stop is the point of the check.** Skip it and nothing has been
+      shown about the journal surviving a process ending: the app is alive
+      throughout — moving the reminder time means opening Settings — so the read
+      could come from the same in-memory `DataStore` that wrote the stamp, and
+      the one thing this adds over `ReminderCheckTest` is the one thing it would
+      not have done.
 
       Reopening also re-arms both wakes through `ReminderScheduler.start()`, which
       is the documented repair path, so this check exercises that for free and does
@@ -877,6 +1020,47 @@ Open a habit from the **Habits** list — the row's name, not the Archive button
 
 ---
 
+### Accessibility — *device only, and the layer no test reaches*
+
+The automated half of this is already in `make test`: WCAG contrast ratios in
+`WidgetTextColourTest` and `HabitColorTest`, the 48dp touch-target floor in three
+screen tests, and semantics — roles, content descriptions, disabled state —
+throughout the screen tests. Architecture §8 records why the one automated
+ruleset worth wanting is not wired up yet.
+
+What is left is what a ruleset cannot judge: whether the app is actually usable
+without sight, and whether it survives a reader who needs it larger.
+
+- [ ] **A TalkBack pass over the three core flows.** Turn TalkBack on, then add a
+      habit, complete one from the Today view, and change the day cutoff — using
+      **swipe navigation only, never a direct tap**. Direct tapping is what hides
+      the failure: focus order and announcement are only observable when you are
+      forced through the tree in order. Watch for a control that is reachable but
+      unnamed, two targets that say the same thing, and a state change that
+      happens silently (WCAG 2.4.3 and 4.1.3).
+- [ ] **The retro strip, specifically.** It is the densest thing here: five cells
+      — four writable and one drawn shut — each carrying a day, a done state, a
+      note marker and up to two gestures. Every one of those is in the spoken
+      label by design (`RetroStrip`'s `cellAction`), so this is the check that the
+      label is *legible as speech* rather than merely complete. A shut day is the
+      one to listen to hardest: it must announce as unavailable, not as an
+      unchecked box.
+- [ ] **200% font scale.** Settings → Display → Font size, at maximum. Three
+      screens already carry reasoning about this in comments — `TodayScreen`,
+      `HabitDetailScreen` and `SettingsScreen` all scroll or floor a dimension
+      because of it — and **nothing verifies any of it**. Check that no text is
+      clipped, that the strip is still tappable, and that the streak's
+      `displaySmall` has not pushed the strip off a short screen.
+- [ ] **Accessibility Scanner**, as a pre-release sweep rather than routine.
+      Install Google's Accessibility Scanner, run it over each screen, and read
+      the report the way you would a Lighthouse audit: the touch-target and
+      contrast items are already asserted, so what it earns its place for is
+      unlabelled controls and text-contrast cases the theme tests do not reach.
+
+Not in CI, and not automatable: TalkBack cannot be driven from the instrumented
+source set, and §8's line that CI runs unit tests only is unaffected by this
+block.
+
 ### The day-rollover refresh
 
 Also built 2026-08-21, and the same mechanism (docs/ux/reminder.md §2). This is
@@ -905,8 +1089,8 @@ widget limitation.
 | Emulator window black, or never appears | GPU renderer. Try `-gpu host`, then `-gpu software`. On Wayland also `QT_QPA_PLATFORM=xcb`. |
 | AVD refuses to start on a Mac | Wrong ABI. Apple Silicon needs `arm64-v8a` (§2). |
 | `adb devices` shows `unauthorized` | The RSA prompt was not accepted. Replug and confirm on the phone; `adb kill-server` to re-offer it. |
-| `adb devices` shows `no permissions` | Linux udev rules or group membership (§3). |
-| `adb devices` empty with a cable attached | On Windows, the USB driver. Everywhere, check the cable is data-capable and the phone is not in charge-only mode. |
+| `adb devices` shows `no permissions` | Linux udev rules or group membership — and check the *server's* groups, not the shell's (§3). |
+| `adb devices` empty with a cable attached | Check `lsusb` first — absent from the bus is a cable, port or charge-only problem, not udev or adb (§3). On Windows, the USB driver. Wireless debugging sidesteps the whole USB path. |
 | Gradle fails on a missing SDK package | Licences: `sdkmanager --licenses`. |
 | `make run` fails with `adb: device '…' not found` | Nothing attached, or `ANDROID_SERIAL` points at something that has gone away. |
 | `make run` fails with `adb: more than one device/emulator` | Two or more targets attached. Set `ANDROID_SERIAL` (§2). |

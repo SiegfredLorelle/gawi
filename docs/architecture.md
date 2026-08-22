@@ -51,6 +51,40 @@ Dependency rule: `feature → core`, `widget → core`, `app → everything`,
 `core:data → core:domain`, `core:ui → core:domain`, and `:core:domain` depends
 on nothing but the Kotlin stdlib and kotlinx-serialization.
 
+```mermaid
+graph TD
+    app[":app"] --> today[":feature:today"]
+    app --> habits[":feature:habits"]
+    app --> settings[":feature:settings"]
+    app --> widget[":widget"]
+    app --> ui[":core:ui"]
+    app --> data[":core:data"]
+
+    today --> ui
+    habits --> ui
+    settings --> ui
+
+    today --> data
+    habits --> data
+    settings --> data
+    widget --> data
+
+    ui --> domain[":core:domain"]
+    data --> domain
+    widget --> domain
+```
+
+The diagram is the permitted **direction**, not an exact edge list.
+`:feature:today` and `:feature:habits` also name `:core:domain` directly, while
+`:app` and `:feature:settings` receive it transitively — `:core:data` and
+`:core:ui` both expose it with `api`, for the reasons their build files record.
+Drawing today's import list instead would make that difference look like a rule,
+and would be wrong the day a module adds an import.
+
+Two things the picture carries better than the line above it. **`widget →
+core:ui` is absent**, which is deliberate and explained below. And
+`:core:domain` is the only sink, which is the whole point.
+
 `core:ui → core:domain` was added 2026-08-21 with habit detail, which made the
 Today view's `StreakUi` a thing two feature modules need — and feature modules
 cannot see each other. It carries the type and its `StreakSnapshot` mapper, so
@@ -74,8 +108,8 @@ decisions are in [docs/ux/widget.md](ux/widget.md). It takes `:core:data` and
 a shared composable, and the module rule (`widget → core`) is satisfied without
 the one dependency that looks obvious. `app/src/debug/` is gone: the debug-only
 activity that set the day cutoff and the reminder time over `adb` was deleted
-when `:feature:settings` landed, as this paragraph used to promise, and there
-is no debug source set anywhere in the project now.
+when `:feature:settings` landed, and there is no debug source set anywhere in
+the project now.
 
 `:feature:settings` holds the three preferences the data layer stores — day
 boundary, week start and reminder time — and, below them in a labelled section
@@ -167,7 +201,7 @@ versions to the current shape at deserialization time. The log is never
 migrated in place — replaying a years-old log through current code must always
 work (PRD §7 "migrations replay-safe").
 
-**An export carries two version numbers and they mean different things.** The
+An export carries two version numbers and they mean different things. The
 envelope has a `format_version`, which says how to find the events; each event
 carries the `schema_version` above, which describes one payload. A newer
 envelope full of v1 payloads is an ordinary file, and so is the reverse. A
@@ -228,10 +262,10 @@ is not a subscriber. A widget tap goes through the same command path as the app,
 so open screens update via their `Flow` queries — but the reverse direction must
 be explicit.
 
-**Built 2026-08-21, and this paragraph used to describe it wrongly.** It said
-"the repository triggers a `GlanceAppWidget` update", which read literally puts
-Glance in `:core:data` and inverts the module rule (`widget → core`, §2). What
-it actually is: `:core:data` declares a `ProjectionListener` and calls it after
+**Built 2026-08-21.** Note what it is *not*: `:core:data` never triggers a
+`GlanceAppWidget` update itself. That would put Glance in `:core:data` and
+invert the module rule (`widget → core`, §2). What happens instead is that
+`:core:data` declares a `ProjectionListener` and calls it after
 the committing transactions — the commands' `appendLocked` and the import's
 `mergeLocked`, both inside the existing `NonCancellable` region, so a tap whose
 scope dies straight after the commit still announces. `:core:data` binds
@@ -253,7 +287,7 @@ the read itself throws — `catch` terminates the flow and the push cannot
 re-enter `provideGlance` — so that read carries a bounded retry above the
 catch.
 
-**What neither can cover: a day rollover and a settings edit are not events.**
+What neither can cover: a day rollover and a settings edit are not events.
 Nothing commits at the cutoff, and changing the cutoff is a DataStore write —
 yet it decides the logical date and so every `completedToday`. `observeToday()`
 re-emits on both, so a live session follows them; a widget with no session
@@ -346,7 +380,7 @@ not a setting.
 | Reminder | WorkManager + notification via PendingIntents (built 2026-08-21) |
 | IDs | UUIDv7, hand-rolled in `:core:domain` |
 
-**Glance pins to the newest stable, and brings WorkManager with it.** Glance is
+Glance pins to the newest stable, and brings WorkManager with it. Glance is
 not in the compose BOM — it ships on its own train, so its version is a number
 that moves by itself, and 1.1.1 is the newest stable one (the 1.2.0 line reached
 rc01 and was abandoned for 1.3.0-alpha01, so "the next one up" is a
@@ -372,7 +406,7 @@ claiming. `ManifestPermissionTest` asserts the whole requested set, so a Glance
 upgrade that reintroduces the network permission fails a test rather than
 shipping.
 
-**Reminder timing is deliberately inexact.** Both wakes are one-time requests
+Reminder timing is deliberately inexact. Both wakes are one-time requests
 with an initial delay, **not** periodic work, so there is no flex interval to
 quote: `setInitialDelay` makes a wake *eligible* once the delay elapses, and
 nothing bounds how long after that it runs. WorkManager defers under Doze and App
@@ -396,12 +430,12 @@ This paragraph has been wrong in the same direction three times — "~15 min", t
 line of warning to whoever edits it next: every phrasing that sounds like a
 delivery guarantee here is one.
 
-**Two wakes, and they arm each other.** The reminder arms the rollover refresh
+Two wakes, and they arm each other. The reminder arms the rollover refresh
 and the rollover arms the reminder; neither re-enqueues its own unique work,
 because `enqueueUniqueWork` with `REPLACE` cancels a run in progress and a worker
 re-arming itself would cancel itself every time.
 
-**The two directions use different policies, and the asymmetry is the design.**
+The two directions use different policies, and the asymmetry is the design.
 `ReminderWorker` arms the rollover with `KEEP` — "make sure it exists", which
 cannot cancel anything — and `RolloverWorker` arms the reminder with `REPLACE`.
 The invariant is that **at least one direction always replaces**, so every
@@ -504,6 +538,59 @@ this app's was added — both versions declare the same four.
 - Golden-image / screenshot testing is **deliberately not adopted yet**: Momo's
   art is placeholder copy (PRD OQ-4), so goldens would pin something designed
   to change. Revisit when the four moods have real art.
+- **A test harness that wraps its body in `runTest` needs its timeout stated, not
+  defaulted.** `runGlanceAppWidgetUnitTest` defaults to about two seconds where
+  plain `runTest` defaults to sixty, and that gap produced this repo's only flaky
+  test: Robolectric's one-time initialisation lands *inside* the timed block, so
+  `WidgetTextColourTest`'s first case takes 4.4s while its other five take 0.03s
+  each — 3.6s with the module alone, 32s under a loaded parallel suite, which is
+  where it failed. Around thirty other classes run Robolectric inside plain
+  `runTest` and cannot hit this, because sixty seconds absorbs the cost.
+  The convention: **align such a harness with `runTest`'s own 60s** rather than
+  guessing from an observed duration, since the duration is a property of machine
+  load. Raising the ceiling is the fix here and not a workaround — warming the
+  init outside the block was tried and moved the first case by 10%, inside noise,
+  because the expensive part is the harness rather than the application. CI
+  retries are deliberately not used: they hide a flake instead of removing it.
+- **Tools this stack's standard advice recommends and this repo does not use.**
+  Recorded because each is a decision with a reason, and a reader arriving with
+  a generic Android testing checklist will otherwise propose all of them.
+  - **A mocking library (MockK, Mockito).** Every fake here is hand-written;
+    `core/data/backup/EventLogArchive.kt` records why at the one point where a
+    mock would have been the easy answer. Four test files say the same. The cost
+    is accepted: substituting a `ContentResolver` needs a Robolectric shadow,
+    which is why the SAF path is tested off-device only.
+  - **MockWebServer, Retrofit, any network-layer harness.** There is no network
+    layer. The app declares no `INTERNET` permission and
+    `ManifestPermissionTest` fails if one appears, so there is nothing for a
+    fake server to stand in for.
+  - **Maestro, Firebase Test Lab, an emulator matrix in CI.** All three change
+    the "CI runs unit tests only" line above rather than adding to it, and that
+    line's own note already names what taking that step needs.
+  - **Compose's accessibility-check seam, and ATF behind it.** Measured on
+    `compose-ui-test 1.12.0` rather than assumed, because this is the one item
+    on the list with real pull — it is the nearest thing here to axe-core.
+    Three findings, any one of which is enough to defer it. The API is
+    `ComposeUiTest.setComposeAccessibilityValidator`, so `enableAccessibilityChecks()`
+    as generally advised does not exist in this version. What it takes is
+    `ComposeAccessibilityValidator`, an interface whose whole surface is
+    `check(android.view.View)` — Compose ships the seam and **no ruleset**, so
+    the rules would have to come from Google's Accessibility Test Framework via
+    `espresso-accessibility`, an instrumentation artifact this repo declares
+    nowhere. And the seam hangs off `ComposeUiTest`, not off `createComposeRule()`,
+    which is what every screen test here is built on. Revisit if ATF publishes a
+    JVM-usable validator, or alongside the first real instrumented UI suite.
+  - **UI Automator** is the one thing on the list with no substitute: it is the
+    only tool that reaches outside the app's own process, so it is the only
+    candidate for the launcher gap named above. It is listed as an open option
+    and not a plan — whether it can drive the widget picker is untested, and the
+    claim that pinning needs the user is not being retracted on a guess.
+
+  What *is* asserted instead, at the layer where it is cheap: WCAG contrast
+  ratios in `WidgetTextColourTest` and `HabitColorTest`, the 48dp touch-target
+  floor in three screen tests, and semantics — roles, content descriptions,
+  disabled state — throughout. `docs/running.md` §4 carries what only a device
+  and a person can check.
 
 ## 9. Repo integration (template contract)
 
@@ -513,7 +600,7 @@ The template's Makefile contract maps to Gradle as:
 |---|---|
 | `make setup` | `./gradlew help` warm-up (wrapper fetches everything) + git hooks |
 | `make fmt` | Spotless (ktlint) apply |
-| `make lint` | Spotless check + detekt + Android Lint |
+| `make lint` | `scripts/check-citations.sh`, then Spotless check + detekt + Android Lint |
 | `make test` | `./gradlew test` (module-generic: JVM modules' `test` plus Android modules' unit tests; a new module can never be silently skipped) |
 | `make itest` | `./gradlew :app:connectedDebugAndroidTest` — needs a device; not called by CI (see below) |
 | `make run` | `./gradlew :app:installDebug` + `adb shell am start` (see below) |
@@ -532,6 +619,41 @@ Deviations and notes:
   stay stack-blind — it calls `make test` and does not have to know that this
   repo grew instrumented tests. It is also why §8's "CI runs unit tests only"
   needs no exception clause.
+- **`make lint` gained a repo-local step**, `scripts/check-citations.sh`. It is a
+  step inside an existing target rather than a new one, so `ci.yml` needs no
+  change and stays stack-blind — it calls `make lint` and does not have to know
+  what this repo lints. What it checks: comments here cite `docs/` heavily (336
+  citations across 122 files) and nothing verified any of them, which is how the
+  `robolectric` comment in `gradle/libs.versions.toml` came to name a
+  `robolectric.properties` path that had never existed. It also refuses a bare
+  `§N` in a file that uses that number for two different documents.
+- **The citation check is a script, not a Gradle task.** A task would be the more
+  idiomatic home — `build-logic/` owns build configuration, and no convention
+  plugin registers a custom task today, so this is deliberately not the start of
+  one. But a Gradle task caches, and a check that passes by being `UP-TO-DATE`
+  has verified nothing; that has already bitten this repo, most recently a
+  `make test` that skipped 70 of its 71 suites and still exited 0. A script
+  cannot go `UP-TO-DATE`. Cross-platform reach is the accepted cost.
+- **There is deliberately no copy-paste detection in CI**, and this is measured
+  rather than assumed, because the obvious response to finding duplicated code is
+  to add a detector. Scanning all 123 main-source files for identical normalised
+  blocks — *after* the one real duplicate was extracted into `:core:ui` — still
+  reports 22 blocks at a five-line window, 11 at eight, and 5 at twelve. Every
+  one of the twelve-line survivors is the same thing seen through sliding
+  windows: `@ColumnInfo` field declarations shared between
+  `core/data/db/entity/DerivedEntities.kt` and its `TodayHabitRow` projection,
+  which is how Room works and which extracting would fight. So a gate would fail
+  on day one against framework-mandated repetition and catch nothing real, and
+  the fix for that is a baseline file, which rots into permanent suppression.
+  detekt also ships no copy-paste rule, so this would mean new tooling (jscpd,
+  PMD's CPD) rather than a config flag.
+
+  The scan is a good **audit** and a bad **gate**: it found the duplicate in
+  seconds, and it cannot tell deliberate repetition from accidental, which is
+  exactly why it cannot gate. Run it deliberately, about once a phase. What
+  guards the common case instead is a convention at the two moments it can be
+  acted on — `AGENTS.md`'s Conventions, which `claude-review.yml` reviews every
+  labelled PR against, and the PR checklist.
 - `ci.yml` gains JDK 17 setup and Gradle caching. This is a **conscious
   deviation** from the template's "never edit the workflow" rule: that rule
   prevents stack drift across many repos, and this repo has exactly one stack
@@ -541,3 +663,60 @@ Deviations and notes:
 - Secrets: nothing at MVP (no network). When release signing arrives, the
   keystore and its passwords stay out of git; signing config paths go in
   `.env.example` with placeholders.
+
+## 10. Where a new file goes
+
+§2 fixes what each module is *for*. This is the question that comes after it, and
+the one a first contribution hits immediately.
+
+**Source sets.** Every module has `src/main/kotlin` and `src/test/kotlin`.
+`app/src/androidTest/kotlin` is the only instrumented source set in the project;
+§8 owns the policy for what belongs there and why it is only `:app`. Test helpers
+shared between test classes go in a `testsupport/` package beside them — six of
+the eight modules have one, and the two that do not (`:app`, `:core:ui`) have
+four and two test files respectively, which is the honest threshold for bothering.
+
+**The core modules are packaged by concept, not by layer.**
+
+| Module | Packages |
+|---|---|
+| `:core:domain` | `command/` `event/` `id/` `mascot/` `model/` `projection/` `serialization/` (with `export/` and `wire/`) `streak/` `time/` |
+| `:core:data` | `backup/` `db/` (with `dao/`, `entity/`, `mapper/`) `di/` `model/` `projection/` `reminder/` `repository/` `settings/` `time/`, plus `ProjectionVersion.kt` at the package root |
+| `:core:ui` | `component/` `streak/` `theme/` |
+
+Two of those need a word, because the same name appears twice. `projection/`
+exists in both `:core:domain` and `:core:data`: the domain one is the pure
+replay logic, the data one writes its results into the derived tables and tells
+a listener. `time/` likewise splits — the domain owns the logical-date rules, and
+`:core:data` holds only the clock that reads the device.
+
+**Feature modules are flat, and that is deliberate.** Screen, ViewModel,
+UiState, Actions and mapper all sit in the one package: ten files in
+`:feature:today`, seventeen in `:feature:habits`, twelve in `:feature:settings`.
+Do not add `ui/`, `viewmodel/` and `state/` subdirectories. That splits a feature
+by *type* rather than by concept, so every change touches three directories and
+none of the three names tells you what the feature does. A feature this size has
+no internal concepts to separate. Worth revisiting if one passes roughly
+twenty-five files, which would be a sign the feature itself should split.
+
+`:app` keeps `navigation/` and `reminder/`, with `GawiApplication.kt` and
+`MainActivity.kt` at the root. `:widget` is flat apart from `di/`.
+
+**Outside the modules.**
+
+| Path | Holds |
+|---|---|
+| `build-logic/` | Convention plugins. Owns build configuration; module build files only apply `gawi.*` ids and declare dependencies |
+| `config/detekt/detekt.yml` | Overrides on top of detekt's bundled defaults |
+| `config/robolectric/robolectric.properties` | **The Robolectric SDK level, for every module.** Attached to each Android module's unit-test resources by `build-logic/src/main/kotlin/gawi/KotlinAndroid.kt` |
+| `scripts/` | Repo-local checks invoked from `make` (§9) |
+| `docs/` | `prd.md` what and why, this file how, `running.md` on a device, `ux/` per-screen decisions, `stacks/kotlin-android.md` the template wiring |
+
+The Robolectric line is the one most easily missed: a module inherits that SDK
+pin without declaring anything at all, which is exactly how a comment in
+`gradle/libs.versions.toml` came to name a path for it that had never existed.
+
+**And the rule that settles most cases.** If two modules need it, it belongs in
+`:core:*` and is never copied — §2 for which one, and `AGENTS.md`'s Conventions
+for the habit of looking before writing. Feature modules cannot see each other,
+so `:core:*` is not merely the tidy answer, it is the only one.

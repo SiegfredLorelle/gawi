@@ -25,6 +25,14 @@ contract, and it is the same in every repo regardless of language.
 | `make lint` | Lint and type-check |
 | `make test` | Run the test suite |
 | `make run` | Build, install and launch on a device or emulator |
+| `make itest` | Instrumented tests on a device — **destroys that device's app data** |
+
+`make itest` is the one target here that can lose something, so it is listed
+rather than left to be discovered: it uninstalls the app when it finishes and
+`allowBackup` is off, so the event log goes with it. Point it at a throwaway
+emulator, never at a device holding real data. `make run` and `make itest` are
+both stack-specific additions to the shared five, recorded in
+docs/architecture.md §9; the rest of the table is the same in every repo.
 
 Run `make lint` and `make test` before considering any change complete.
 
@@ -50,10 +58,13 @@ Full guide with examples: `.github/COMMIT_CONVENTION.md`
 
 ## Conventions
 
-- **Modules** (docs/architecture.md §2): `:app` (wiring, navigation),
-  `:core:domain` (pure Kotlin/JVM), `:core:data` (Room, DataStore,
-  repositories). Feature modules and `:core:ui` are created when their first
-  screen is built.
+- **Modules**: `:app` (wiring, navigation), `:core:domain` (pure Kotlin/JVM),
+  `:core:data` (Room, DataStore, repositories), `:core:ui` (theme, shared
+  composables), `:feature:today`, `:feature:habits`, `:feature:settings` and
+  `:widget` (Glance). **All eight exist**; none is pending, and `:widget` is not
+  a screen. **`docs/architecture.md` §2 owns the contents of each and the full
+  dependency rule** — read it rather than trusting this summary, which is the
+  drift this file warns about everywhere else.
 - **The dependency rule is non-negotiable**: `:core:domain` depends only on
   the Kotlin stdlib and kotlinx-serialization. Domain logic never lands in a
   module that can import Android.
@@ -64,6 +75,14 @@ Full guide with examples: `.github/COMMIT_CONVENTION.md`
   `hilt-navigation-compose` — its pom would drag navigation onto their
   classpath. Routes are type-safe `@Serializable` classes
   (docs/architecture.md §2).
+- **Look in `core/ui/component/` before writing a composable a second feature
+  could want.** Anything drawn by more than one feature belongs in `:core:ui`,
+  and so do presentation types shared by more than one (docs/architecture.md
+  §2). This is the rule most easily broken by accident: the habit icon badge was
+  written three times before it was shared, which meant three hand-copied
+  contrast decisions, and fixing two of the three would have looked exactly like
+  fixing it. The pointer is to the directory rather than to a list of what is in
+  it, because a list would be stale by Phase 1.
 - **Versions live only in `gradle/libs.versions.toml`.** Convention plugins
   in `build-logic/` own build configuration; module build files only apply
   `gawi.*` plugin ids and declare dependencies.

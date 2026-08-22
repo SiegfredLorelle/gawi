@@ -1,9 +1,9 @@
 # PRD: Gawi (working title) — habit tracker with Momo the axolotl
 
 **Version:** 0.5 (draft)
-**Author:** You
+**Author:** Siegfred Lorelle Mina
 **Status:** Baseline for iteration
-**Last updated:** 2026-08-16
+**Last updated:** 2026-08-22
 
 ---
 
@@ -64,6 +64,13 @@ All data is an **append-only event log** (habit created/edited/archived, complet
 
 ### Phase 0 — MVP (Android, personal daily driver)
 
+**Complete as of 2026-08-22.** Every bullet below is built and every §6 criterion
+is met; the one bullet that did not ship — notification quick-complete actions —
+was formally moved to Phase 1 on its own terms, which the bullet explicitly
+allowed. What remains is not construction but the success criterion at the end of
+this section: the 30-day trial. `docs/running.md` §3 covers getting it onto a
+phone, and §4's widget block is the part of the checklist that needs a launcher.
+
 **Habits**
 - Create/edit/archive habits: name, icon/color, schedule (daily or n-per-week), optional tag.
 - Weekly habits show per-week progress ("2/3 this week"), week start per settings.
@@ -92,10 +99,32 @@ All data is an **append-only event log** (habit created/edited/archived, complet
 
 ### Phase 1 — Mascot, quick actions & insights (committed)
 
+**Readiness order, assessed 2026-08-22** — nothing here starts before the 30-day
+trial, and this is the order to take it in when it does, cheapest-unblocked
+first:
+
+1. **Insights v1 heatmap** — the cleanest. `HabitRepository.observeCompletedDates`
+   already serves an arbitrary date range, and
+   [docs/ux/habits.md](ux/habits.md) §8 deliberately parked the month view here
+   rather than growing habit detail's writable strip into one. No open question
+   blocks it.
+2. **Tag-based effort distribution** — a pure read too, but it needs a new
+   aggregate query rather than an existing one. Build it single-tag: OQ-1 is a
+   trial question and multi-tag would be an event-payload schema bump.
+3. **Notification quick-complete actions** — blocked on **OQ-2** (what to do when
+   more than three habits remain, Android's action-button cap). Not urgent: §6.1
+   is already satisfied by the widget.
+4. **Momo** — blocked on **OQ-4** (art style), which is a design decision before
+   it is an engineering one. `Mood` already computes all four states; what is
+   missing is art, not logic ([docs/ux/today-view.md](ux/today-view.md) §4).
+
+Note that 4 partly unblocks OQ-3's second half — see §8.
+
 **Mascot (committed feature)**
 - Momo with emotional states (thriving, content, worried, regenerating) driven by streak health and today's completion status. "Regenerating" replaces "sad" on purpose — see §3.5.
 - Appears in Today view, widget, and reminder notifications ("Momo is worried — 2 habits left today!"). Placement in the Today view is fixed: see `docs/ux/today-view.md`.
 - Streak milestone celebrations (7, 30, 100 days; 4, 12, 52 weeks).
+- **The app icon rides on the same decision** (recorded 2026-08-22). There is no `mipmap/ic_launcher` in the app at all: the manifest points `android:icon` at `@android:drawable/sym_def_app_icon`, Android's generic default, as a deliberate placeholder. A logo drawn before Momo's art style is settled (OQ-4) would be drawn twice, since the character and the mark should agree. Phase 1 moves the visual surface anyway — the three-face placeholder becomes Momo, and Insights v1 adds screens that do not exist yet — so UI polish before then is also work done twice. Note that `sym_def_app_icon` is not public API; replacing it is the fix, not depending on it further.
 - **Design tooling plan:**
   - Concepting: iterate on character personality, expression sheets, and design briefs with Claude; AI image tools for visual concept exploration.
   - Production: **Rive** (recommended) — purpose-built for interactive, state-driven character animation with an official Android runtime; state machine maps directly to mascot moods. Alternatives: **Lottie** (After Effects pipeline, good for one-shot animations, weaker for interactive states), **Krita/Inkscape** (free, Linux-native, for drawing the base character), **Figma** (layout/design, can feed into Rive).
@@ -149,8 +178,8 @@ All data is an **append-only event log** (habit created/edited/archived, complet
 
 - **OQ-1:** Multi-tag per habit, or is one tag enough? (Proposal: one at MVP.)
 - **OQ-2:** Notification quick-complete UX when >3 habits remain (Android caps 3 action buttons) — show top 3? "Complete all"? Opens the app?
-- **OQ-3:** Streak freeze / grace day mechanics — decide after the 30-day personal trial reveals how resets feel.
-- **OQ-4:** Mascot art style (round/chibi? pixel? flat vector?), and static-first vs animated-first. (Species and name decided: Momo the axolotl.)
+- **OQ-3:** Streak freeze / grace day mechanics — decide after the 30-day personal trial reveals how resets feel. **Two numbers ride on this, not one** (noted 2026-08-22): `Mascot.REGENERATING_WINDOW_DAYS = 3` is a separate guess at how long a broken streak keeps Momo regenerating, and its KDoc flags it for this same trial. **The trial as shipped cannot answer that half.** Phase 0 draws three faces and folds `regenerating` onto `neutral` ([docs/ux/today-view.md](ux/today-view.md) §4), so nothing on screen distinguishes a user recovering from a broken streak from one merely pottering — the window is decided, tested and unobservable. So either it waits for Phase 1's fourth face, or it is settled on the streak rules alone; what it is *not* is something 30 days of use will reveal. Recorded because the code says "flagged for the 30-day trial" and that instruction cannot be carried out as written.
+- **OQ-4:** Mascot art style (round/chibi? pixel? flat vector?), and static-first vs animated-first. (Species and name decided: Momo the axolotl.) **The app's launcher icon is part of this question, not a separate one** (noted 2026-08-22) — it is Android's default placeholder today, and a mark drawn before the character would have to be redrawn to match it. §5's Phase 1 has the detail.
 - ~~**OQ-5:** Should the widget show streaks or stay minimal (just checkboxes)?~~ **Settled 2026-08-21 with the widget: minimal.** A streak is the one number that reaches zero with no new event, so it is the value whose staleness is not bounded by user inaction — on the one surface with no live query. It also costs the width that rows need. §6.6 is narrowed accordingly rather than contradicted; see [docs/ux/widget.md](ux/widget.md) §2.
 - **OQ-6:** Final name call between Gawi / Hinabi / Araw; verify availability (Play Store, domain, trademark) closer to launch. ("Habi" rejected — existing habit tracker at habi.app.)
 

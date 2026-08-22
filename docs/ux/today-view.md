@@ -145,9 +145,11 @@ than a rounding of the weekly case: `regenerating` outranks `worried`, and a
 window that lasted the whole week would mask the now-or-never warning on
 exactly the days a weekly habit still has one chance left.
 
-The 3-day figure is a guess and is flagged for the 30-day trial, alongside
-PRD OQ-3. Grace mechanics, if they ever land, change `recentlyBroken` and
-therefore this whole section.
+The 3-day figure is a guess, and **the 30-day trial cannot settle it** — §6
+below and PRD §8's OQ-3 both carry the reason, which is that the MVP mapping
+makes `regenerating` unobservable. Argued in those two rather than a third time
+here. Grace mechanics, if they ever land, change `recentlyBroken` and therefore
+this whole section.
 
 ### MVP mapping
 
@@ -210,8 +212,8 @@ Small decisions that were easier to make once drawn:
 
 - **PRD OQ-4** — Momo's art style. The canvas art is placeholder line
   work; species and name are the only settled parts.
-- **PRD OQ-5** — whether the widget shows streaks. Both answers are drawn;
-  neither is chosen.
+- ~~**PRD OQ-5** — whether the widget shows streaks.~~ **Settled 2026-08-21:
+  minimal, no streak.** Reasoning in [widget.md](widget.md) §2.
 - The Phase 1 mascot treatment **in the widget and the reminder** (PRD §5).
   Only the Today-view slot is fixed here.
 - Milestone celebrations (7/30/100 days) have no visual treatment yet.

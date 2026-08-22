@@ -21,6 +21,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
+import com.gawi.core.ui.component.HabitIcon
 import com.gawi.core.ui.theme.GawiSpacing
 import com.gawi.core.ui.theme.glyphColorOn
 
@@ -52,7 +53,7 @@ internal fun HabitRow(row: HabitRowUi, onToggle: (Boolean) -> Unit, modifier: Mo
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(GawiSpacing.Gap),
     ) {
-        HabitIcon(row)
+        HabitIcon(icon = row.icon, tint = row.iconTint)
         HabitTitles(row, Modifier.weight(1f))
         StreakBadge(row.streak)
         Checkbox(
@@ -60,41 +61,6 @@ internal fun HabitRow(row: HabitRowUi, onToggle: (Boolean) -> Unit, modifier: Mo
             // The row owns the click. A checkbox that also handled it would be
             // a second tap target inside the first.
             onCheckedChange = null,
-        )
-    }
-}
-
-/**
- * §5 puts the habit's colour in exactly one place: behind its icon.
- *
- * The icon is drawn as text because `HabitState.icon` has no vocabulary yet —
- * it is a bare string off the event log, and the create form that will give it
- * one does not exist. Text is right if that turns out to be an emoji and is a
- * visible placeholder if it does not, which beats inventing a registry here.
- */
-@Composable
-private fun HabitIcon(row: HabitRowUi) {
-    val tint = row.iconTint
-    Box(
-        modifier = Modifier
-            .size(GawiSpacing.IconBox)
-            .clip(CircleShape)
-            .background(tint ?: MaterialTheme.colorScheme.secondaryContainer),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = row.icon,
-            style = MaterialTheme.typography.titleSmall,
-            // The glyph cannot take a theme role, because what it sits on is
-            // unvalidated: parseHabitColor checks that the stored string is a
-            // colour, deliberately not that it is a usable one. A pure black
-            // habit would otherwise draw a dark glyph on itself in light mode.
-            //
-            // The background is passed in because the tint may be translucent,
-            // in which case what the glyph really sits on is the two composited
-            // — see glyphColorOn.
-            color = tint?.let { glyphColorOn(it, MaterialTheme.colorScheme.background) }
-                ?: MaterialTheme.colorScheme.onSecondaryContainer,
         )
     }
 }
