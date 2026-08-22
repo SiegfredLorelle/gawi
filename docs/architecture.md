@@ -513,7 +513,7 @@ The template's Makefile contract maps to Gradle as:
 |---|---|
 | `make setup` | `./gradlew help` warm-up (wrapper fetches everything) + git hooks |
 | `make fmt` | Spotless (ktlint) apply |
-| `make lint` | Spotless check + detekt + Android Lint |
+| `make lint` | `scripts/check-citations.sh`, then Spotless check + detekt + Android Lint |
 | `make test` | `./gradlew test` (module-generic: JVM modules' `test` plus Android modules' unit tests; a new module can never be silently skipped) |
 | `make itest` | `./gradlew :app:connectedDebugAndroidTest` — needs a device; not called by CI (see below) |
 | `make run` | `./gradlew :app:installDebug` + `adb shell am start` (see below) |
@@ -532,6 +532,21 @@ Deviations and notes:
   stay stack-blind — it calls `make test` and does not have to know that this
   repo grew instrumented tests. It is also why §8's "CI runs unit tests only"
   needs no exception clause.
+- **`make lint` gained a repo-local step**, `scripts/check-citations.sh`. It is a
+  step inside an existing target rather than a new one, so `ci.yml` needs no
+  change and stays stack-blind — it calls `make lint` and does not have to know
+  what this repo lints. What it checks: comments here cite `docs/` heavily (336
+  citations across 122 files) and nothing verified any of them, which is how the
+  `robolectric` comment in `gradle/libs.versions.toml` came to name a
+  `robolectric.properties` path that had never existed. It also refuses a bare
+  `§N` in a file that uses that number for two different documents.
+- **Why that one is a script and not a Gradle task.** A task would be the more
+  idiomatic home — `build-logic/` owns build configuration, and no convention
+  plugin registers a custom task today, so this is deliberately not the start of
+  one. But a Gradle task caches, and a check that passes by being `UP-TO-DATE`
+  has verified nothing; that has already bitten this repo, most recently a
+  `make test` that skipped 70 of its 71 suites and still exited 0. A script
+  cannot go `UP-TO-DATE`. Cross-platform reach is the accepted cost.
 - `ci.yml` gains JDK 17 setup and Gradle caching. This is a **conscious
   deviation** from the template's "never edit the workflow" rule: that rule
   prevents stack drift across many repos, and this repo has exactly one stack
