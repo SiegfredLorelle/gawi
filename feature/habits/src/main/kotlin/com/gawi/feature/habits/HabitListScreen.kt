@@ -32,6 +32,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.gawi.core.ui.component.HabitIcon
 import com.gawi.core.ui.component.Notice
 import com.gawi.core.ui.theme.GawiSpacing
 import com.gawi.core.ui.theme.glyphColorOn
@@ -128,35 +129,11 @@ private fun HabitManageRow(row: HabitListRowUi, actions: HabitListActions, modif
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(GawiSpacing.Gap),
     ) {
-        HabitIcon(row)
+        HabitIcon(icon = row.icon, tint = row.iconTint)
         HabitTitles(row, Modifier.weight(1f), onOpen = { actions.onOpen(row.id) })
         TextButton(onClick = { actions.onArchiveToggle(row.id, row.archived) }) {
             Text(stringResource(if (row.archived) R.string.habits_unarchive else R.string.habits_archive))
         }
-    }
-}
-
-/** The habit's colour, in the one place it appears — behind its icon. */
-@Composable
-private fun HabitIcon(row: HabitListRowUi) {
-    val tint = row.iconTint
-    Box(
-        modifier = Modifier
-            .size(GawiSpacing.IconBox)
-            .clip(CircleShape)
-            .background(tint ?: MaterialTheme.colorScheme.secondaryContainer),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = row.icon,
-            style = MaterialTheme.typography.titleSmall,
-            // The stored colour is unvalidated, so the glyph cannot take a theme
-            // role — a black habit would draw a dark glyph on itself in light
-            // mode. The background is passed because a translucent tint means
-            // what the glyph really sits on is the two composited.
-            color = tint?.let { glyphColorOn(it, MaterialTheme.colorScheme.background) }
-                ?: MaterialTheme.colorScheme.onSecondaryContainer,
-        )
     }
 }
 

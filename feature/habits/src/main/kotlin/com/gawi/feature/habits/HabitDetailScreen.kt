@@ -33,6 +33,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import com.gawi.core.ui.component.HabitIcon
 import com.gawi.core.ui.component.Notice
 import com.gawi.core.ui.streak.StreakUi
 import com.gawi.core.ui.theme.GawiSpacing
@@ -226,7 +227,13 @@ private fun HabitHeader(state: HabitDetailUiState.Detail) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(GawiSpacing.Gap),
     ) {
-        HabitGlyph(state)
+        // Larger than the list's and the Today row's: this is the screen the
+        // habit is the subject of, not one line in a list of them.
+        HabitIcon(
+            icon = state.icon,
+            tint = state.iconTint,
+            style = MaterialTheme.typography.titleMedium,
+        )
         Column(verticalArrangement = Arrangement.spacedBy(GawiSpacing.Line)) {
             Text(text = state.name, style = MaterialTheme.typography.headlineSmall)
             Text(
@@ -254,30 +261,6 @@ private fun HabitHeader(state: HabitDetailUiState.Detail) {
                 )
             }
         }
-    }
-}
-
-/** The habit's colour, in the one place it appears — behind its icon. */
-@Composable
-private fun HabitGlyph(state: HabitDetailUiState.Detail) {
-    val tint = state.iconTint
-    Box(
-        modifier = Modifier
-            .size(GawiSpacing.IconBox)
-            .clip(CircleShape)
-            .background(tint ?: MaterialTheme.colorScheme.secondaryContainer),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = state.icon,
-            style = MaterialTheme.typography.titleMedium,
-            // The stored colour is unvalidated, so the glyph cannot take a theme
-            // role — a black habit would draw a dark glyph on itself in light
-            // mode. The background is passed because a translucent tint means
-            // what the glyph really sits on is the two composited.
-            color = tint?.let { glyphColorOn(it, MaterialTheme.colorScheme.background) }
-                ?: MaterialTheme.colorScheme.onSecondaryContainer,
-        )
     }
 }
 
