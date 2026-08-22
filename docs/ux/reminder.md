@@ -205,10 +205,10 @@ The first emission uses `ExistingWorkPolicy.KEEP` and every later one uses
 not disturb work already scheduled — or, worse, running. Every later one is a
 real edit, where replacing the pending wake is the entire point.
 
-**An edit re-arms only the wake that actually moved**, which an earlier version did
-not do: replacing both meant a reminder-time edit could cancel a `RolloverWorker`
-mid-run and lose its streak sweep and widget push, over a setting the rollover does
-not depend on. A `reminderTime` edit moves the reminder alone. A **`dayCutoff` edit
+**An edit re-arms only the wake that actually moved.** Replacing both would let a
+reminder-time edit cancel a `RolloverWorker` mid-run and lose its streak sweep and
+widget push, over a setting the rollover does not depend on. A `reminderTime` edit
+moves the reminder alone. A **`dayCutoff` edit
 moves both**, and that is the half worth stating: the cutoff is obviously the
 rollover's own instant, and it is *also* an input to `reminderOn`, which uses it to
 decide whether the reminder falls on today's calendar date or tomorrow's.
@@ -297,9 +297,9 @@ The escalation to the system's own notification page is decided **in the request
 callback and not before the launch**, because
 `shouldShowRequestPermissionRationale` is `false` in two unrelated states —
 before the permission has ever been requested, *and* after it has been refused
-for good. An earlier version of this used it before the launch, which would have
-sent every first-time user straight into system settings instead of showing them
-the dialog: the single commonest path through the row. By the time the callback
+for good. Using it before the launch would send every first-time user straight
+into system settings instead of showing them the dialog: the single commonest
+path through the row. By the time the callback
 runs, the "never asked" reading is impossible and `false` means one thing.
 
 The copy does not name a permission. Below API 33 there is nothing to grant — the

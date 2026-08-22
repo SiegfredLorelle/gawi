@@ -777,9 +777,9 @@ stays checked and nothing looks undone. The log is correct; the render was not
 (docs/ux/widget.md §4).
 
 **Provoking it now takes deliberately stopping the wake, and that is the point of
-the change.** Moving the cutoff a couple of minutes ahead and waiting — which is
-what this paragraph used to tell you to do — will normally show the widget
-*refreshing*, because `RolloverWorker` runs. That validates the fix; it does not
+the change.** Moving the cutoff a couple of minutes ahead and waiting will
+normally show the widget *refreshing*, because `RolloverWorker` runs. That
+validates the fix; it does not
 reproduce the fault. To see the stale render, stop the worker from running across
 the boundary:
 
@@ -792,8 +792,8 @@ keeps yesterday's ticks and the periodic update is the only thing left, which is
 the pre-2026-08-21 behaviour. `adb shell dumpsys deviceidle unforce` afterwards.
 
 A lag *without* forcing Doze is worth investigating rather than expected — but it
-does **not** on its own mean the wake was never armed, which is what this paragraph
-used to claim. At least three things produce the same symptom: the wake armed and
+does **not** on its own mean the wake was never armed. At least three things
+produce the same symptom: the wake armed and
 deferred anyway (App Standby, an OEM battery policy, ordinary idle), the wake ran
 and the push failed silently — `GlanceProjectionListener` catches `Throwable` and
 only logs — or the push succeeded and Glance's own update did not. Raised in PR
@@ -870,12 +870,12 @@ that was not there.
       already stamped today, and it was read back in a process that did not write
       it.
 
-      **The force-stop is the point of the check**, and an earlier version left it
-      out while still claiming to prove the journal survives a process ending.
-      Without it the app is alive throughout — moving the reminder time means
-      opening Settings — so the read could come from the same in-memory `DataStore`
-      that wrote the stamp, and the one thing this adds over `ReminderCheckTest`
-      is the one thing it would not have done. Raised in PR review.
+      **The force-stop is the point of the check.** Skip it and nothing has been
+      shown about the journal surviving a process ending: the app is alive
+      throughout — moving the reminder time means opening Settings — so the read
+      could come from the same in-memory `DataStore` that wrote the stamp, and
+      the one thing this adds over `ReminderCheckTest` is the one thing it would
+      not have done.
 
       Reopening also re-arms both wakes through `ReminderScheduler.start()`, which
       is the documented repair path, so this check exercises that for free and does
