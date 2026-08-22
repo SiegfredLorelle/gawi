@@ -538,6 +538,45 @@ this app's was added — both versions declare the same four.
 - Golden-image / screenshot testing is **deliberately not adopted yet**: Momo's
   art is placeholder copy (PRD OQ-4), so goldens would pin something designed
   to change. Revisit when the four moods have real art.
+- **Tools this stack's standard advice recommends and this repo does not use.**
+  Recorded because each is a decision with a reason, and a reader arriving with
+  a generic Android testing checklist will otherwise propose all of them.
+  - **A mocking library (MockK, Mockito).** Every fake here is hand-written;
+    `core/data/backup/EventLogArchive.kt` records why at the one point where a
+    mock would have been the easy answer. Four test files say the same. The cost
+    is accepted: substituting a `ContentResolver` needs a Robolectric shadow,
+    which is why the SAF path is tested off-device only.
+  - **MockWebServer, Retrofit, any network-layer harness.** There is no network
+    layer. The app declares no `INTERNET` permission and
+    `ManifestPermissionTest` fails if one appears, so there is nothing for a
+    fake server to stand in for.
+  - **Maestro, Firebase Test Lab, an emulator matrix in CI.** All three change
+    the "CI runs unit tests only" line above rather than adding to it, and that
+    line's own note already names what taking that step needs.
+  - **Compose's accessibility-check seam, and ATF behind it.** Measured on
+    `compose-ui-test 1.12.0` rather than assumed, because this is the one item
+    on the list with real pull — it is the nearest thing here to axe-core.
+    Three findings, any one of which is enough to defer it. The API is
+    `ComposeUiTest.setComposeAccessibilityValidator`, so `enableAccessibilityChecks()`
+    as generally advised does not exist in this version. What it takes is
+    `ComposeAccessibilityValidator`, an interface whose whole surface is
+    `check(android.view.View)` — Compose ships the seam and **no ruleset**, so
+    the rules would have to come from Google's Accessibility Test Framework via
+    `espresso-accessibility`, an instrumentation artifact this repo declares
+    nowhere. And the seam hangs off `ComposeUiTest`, not off `createComposeRule()`,
+    which is what every screen test here is built on. Revisit if ATF publishes a
+    JVM-usable validator, or alongside the first real instrumented UI suite.
+  - **UI Automator** is the one thing on the list with no substitute: it is the
+    only tool that reaches outside the app's own process, so it is the only
+    candidate for the launcher gap named above. It is listed as an open option
+    and not a plan — whether it can drive the widget picker is untested, and the
+    claim that pinning needs the user is not being retracted on a guess.
+
+  What *is* asserted instead, at the layer where it is cheap: WCAG contrast
+  ratios in `WidgetTextColourTest` and `HabitColorTest`, the 48dp touch-target
+  floor in three screen tests, and semantics — roles, content descriptions,
+  disabled state — throughout. `docs/running.md` §4 carries what only a device
+  and a person can check.
 
 ## 9. Repo integration (template contract)
 
