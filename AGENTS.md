@@ -25,6 +25,14 @@ contract, and it is the same in every repo regardless of language.
 | `make lint` | Lint and type-check |
 | `make test` | Run the test suite |
 | `make run` | Build, install and launch on a device or emulator |
+| `make itest` | Instrumented tests on a device — **destroys that device's app data** |
+
+`make itest` is the one target here that can lose something, so it is listed
+rather than left to be discovered: it uninstalls the app when it finishes and
+`allowBackup` is off, so the event log goes with it. Point it at a throwaway
+emulator, never at a device holding real data. `make run` and `make itest` are
+both stack-specific additions to the shared five, recorded in
+docs/architecture.md §9; the rest of the table is the same in every repo.
 
 Run `make lint` and `make test` before considering any change complete.
 
