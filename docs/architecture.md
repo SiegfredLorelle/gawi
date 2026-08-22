@@ -547,6 +547,26 @@ Deviations and notes:
   has verified nothing; that has already bitten this repo, most recently a
   `make test` that skipped 70 of its 71 suites and still exited 0. A script
   cannot go `UP-TO-DATE`. Cross-platform reach is the accepted cost.
+- **There is deliberately no copy-paste detection in CI**, and this is measured
+  rather than assumed, because the obvious response to finding duplicated code is
+  to add a detector. Scanning all 123 main-source files for identical normalised
+  blocks — *after* the one real duplicate was extracted into `:core:ui` — still
+  reports 22 blocks at a five-line window, 11 at eight, and 5 at twelve. Every
+  one of the twelve-line survivors is the same thing seen through sliding
+  windows: `@ColumnInfo` field declarations shared between
+  `core/data/db/entity/DerivedEntities.kt` and its `TodayHabitRow` projection,
+  which is how Room works and which extracting would fight. So a gate would fail
+  on day one against framework-mandated repetition and catch nothing real, and
+  the fix for that is a baseline file, which rots into permanent suppression.
+  detekt also ships no copy-paste rule, so this would mean new tooling (jscpd,
+  PMD's CPD) rather than a config flag.
+
+  The scan is a good **audit** and a bad **gate**: it found the duplicate in
+  seconds, and it cannot tell deliberate repetition from accidental, which is
+  exactly why it cannot gate. Run it deliberately, about once a phase. What
+  guards the common case instead is a convention at the two moments it can be
+  acted on — `AGENTS.md`'s Conventions, which `claude-review.yml` reviews every
+  labelled PR against, and the PR checklist.
 - `ci.yml` gains JDK 17 setup and Gradle caching. This is a **conscious
   deviation** from the template's "never edit the workflow" rule: that rule
   prevents stack drift across many repos, and this repo has exactly one stack
