@@ -3,7 +3,7 @@
 **Version:** 0.5 (draft)
 **Author:** You
 **Status:** Baseline for iteration
-**Last updated:** 2026-08-16
+**Last updated:** 2026-08-22
 
 ---
 
