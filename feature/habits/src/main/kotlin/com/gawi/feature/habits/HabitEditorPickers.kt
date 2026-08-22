@@ -49,11 +49,9 @@ internal fun IconPicker(form: HabitEditorUiState.Form, onEdit: (HabitEditorUiSta
         val selected = icon == form.icon
         Box(
             modifier = Modifier
-                // 48dp rather than the 40dp a habit icon takes on a row. There
-                // the row is the touch target; here the swatch is, and
-                // `selectable` does not expand it the way a Material
-                // component's own minimum size would.
-                .size(TOUCH_TARGET)
+                // The swatch itself is the touch target here, not a row
+                // containing it — see GawiSpacing.TouchTarget.
+                .size(GawiSpacing.TouchTarget)
                 .clip(CircleShape)
                 .background(MaterialTheme.colorScheme.surfaceVariant)
                 .selectableBorder(selected)
@@ -105,7 +103,7 @@ internal fun ColorPicker(form: HabitEditorUiState.Form, onEdit: (HabitEditorUiSt
         val tint = parseHabitColor(hex) ?: MaterialTheme.colorScheme.secondaryContainer
         Box(
             modifier = Modifier
-                .size(TOUCH_TARGET)
+                .size(GawiSpacing.TouchTarget)
                 .clip(CircleShape)
                 .background(tint)
                 .selectableBorder(selected)
@@ -215,8 +213,6 @@ private fun Modifier.selectableBorder(selected: Boolean): Modifier =
 
 private val SELECTION_RING = 3.dp
 
-/** The 48dp minimum. See [IconPicker] for why this is not GawiSpacing's 40. */
-private val TOUCH_TARGET = 48.dp
 private const val SWATCHES_PER_ROW = 5
 private const val MIN_WEEKLY_TARGET = 1
 private const val DEFAULT_WEEKLY_TARGET = 3

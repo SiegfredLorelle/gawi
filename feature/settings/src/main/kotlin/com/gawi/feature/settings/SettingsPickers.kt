@@ -158,7 +158,7 @@ private fun WeekStartOption(day: DayOfWeek, selected: Boolean, onSelect: () -> U
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = TOUCH_TARGET)
+            .heightIn(min = GawiSpacing.TouchTarget)
             .selectable(selected = selected, onClick = onSelect, role = Role.RadioButton)
             .padding(horizontal = GawiSpacing.Line),
         verticalAlignment = Alignment.CenterVertically,
@@ -171,6 +171,3 @@ private fun WeekStartOption(day: DayOfWeek, selected: Boolean, onSelect: () -> U
         Text(stringResource(labelFor(day)))
     }
 }
-
-/** Material's minimum touch target, which `selectable` does not apply on its own. */
-private val TOUCH_TARGET = 48.dp
