@@ -51,6 +51,40 @@ Dependency rule: `feature → core`, `widget → core`, `app → everything`,
 `core:data → core:domain`, `core:ui → core:domain`, and `:core:domain` depends
 on nothing but the Kotlin stdlib and kotlinx-serialization.
 
+```mermaid
+graph TD
+    app[":app"] --> today[":feature:today"]
+    app --> habits[":feature:habits"]
+    app --> settings[":feature:settings"]
+    app --> widget[":widget"]
+    app --> ui[":core:ui"]
+    app --> data[":core:data"]
+
+    today --> ui
+    habits --> ui
+    settings --> ui
+
+    today --> data
+    habits --> data
+    settings --> data
+    widget --> data
+
+    ui --> domain[":core:domain"]
+    data --> domain
+    widget --> domain
+```
+
+The diagram is the permitted **direction**, not an exact edge list.
+`:feature:today` and `:feature:habits` also name `:core:domain` directly, while
+`:app` and `:feature:settings` receive it transitively — `:core:data` and
+`:core:ui` both expose it with `api`, for the reasons their build files record.
+Drawing today's import list instead would make that difference look like a rule,
+and would be wrong the day a module adds an import.
+
+Two things the picture carries better than the line above it. **`widget →
+core:ui` is absent**, which is deliberate and explained below. And
+`:core:domain` is the only sink, which is the whole point.
+
 `core:ui → core:domain` was added 2026-08-21 with habit detail, which made the
 Today view's `StreakUi` a thing two feature modules need — and feature modules
 cannot see each other. It carries the type and its `StreakSnapshot` mapper, so
