@@ -6,6 +6,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -14,6 +15,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.unit.dp
 import com.gawi.core.data.backup.ImportResult
 import com.gawi.core.ui.theme.GawiTheme
 import org.junit.Assert.assertEquals
@@ -676,6 +678,31 @@ class SettingsScreenTest {
         assertEquals(emptyList<LocalTime>(), times)
     }
 
+    /**
+     * A day row in the week-start picker is big enough to hit.
+     *
+     * WCAG 2.5.5 and Android's minimum. The row reaches it through `heightIn`,
+     * because `selectable` applies no minimum of its own the way a Material
+     * component does — see `GawiSpacing.TouchTarget`.
+     *
+     * Against a literal, deliberately, and not against that constant: the row is
+     * sized *from* it, so comparing the two moves both sides together and the
+     * assertion could never fail. 48 is the external standard, so it is a number.
+     *
+     * Height only — the row is `fillMaxWidth`, so its width is not its own to get
+     * wrong. Inside the dialog rather than on the screen behind it, which is also
+     * why no scroll is needed: a dialog lays its rows out.
+     */
+    @Test
+    fun aWeekStartRowMeetsTheTouchTargetFloor() {
+        render(STORED)
+
+        compose.onNodeWithText(string(R.string.settings_week_start_label)).performClick()
+
+        compose.onNodeWithText(string(R.string.settings_day_friday))
+            .assertHeightIsAtLeast(MIN_TOUCH_TARGET)
+    }
+
     private fun render(
         state: SettingsUiState,
         actions: SettingsActions = NO_ACTIONS,
@@ -711,3 +738,6 @@ class SettingsScreenTest {
         )
     }
 }
+
+/** WCAG 2.5.5, and Android's own floor. A literal on purpose — see the test above. */
+private val MIN_TOUCH_TARGET = 48.dp

@@ -1,15 +1,19 @@
 package com.gawi.feature.habits
 
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.unit.dp
+import com.gawi.core.ui.theme.GawiSpacing
 import com.gawi.core.ui.theme.GawiTheme
 import com.gawi.core.ui.theme.HabitPalette
 import org.junit.Assert.assertEquals
@@ -265,4 +269,45 @@ class HabitEditorScreenTest {
         compose.onNodeWithText(string(R.string.habits_name_label)).assertDoesNotExist()
         compose.onNodeWithText(string(R.string.habits_editor_unavailable_title)).assertDoesNotExist()
     }
+
+    /**
+     * A swatch is big enough to hit.
+     *
+     * WCAG 2.5.5 and Android's own minimum. Both pickers reach it by naming
+     * [GawiSpacing.TouchTarget], because a `Box` made selectable by a modifier
+     * gets no minimum size the way a Material component does — that is the whole
+     * reason the constant exists, and nothing held them to it until now.
+     *
+     * **One named swatch rather than every `isSelectable()` node**, which was the
+     * first attempt and failed on layout instead of behaviour. Measuring them all
+     * reported ten controls at 0×0: the form is a `verticalScroll`, so anything
+     * below the fold at the test window's height is in the semantics tree but
+     * never placed. The same trap `choosingWeekly_revealsTheTargetStepper` above
+     * documents. A sweep over every control would need a scroll per node and
+     * would still be asserting on the viewport rather than on the code.
+     *
+     * Both dimensions, because a swatch is square by construction. The icon
+     * picker is not asserted separately: it applies the same constant on the same
+     * `.size()` line, so this holds the shared code path.
+     *
+     * **Asserted against a literal 48dp and deliberately not against
+     * [GawiSpacing.TouchTarget].** Using the constant was the first version and a
+     * mutation check exposed it: the swatch is sized *from* that constant, so
+     * both sides of the comparison move together and the assertion can never
+     * fail. Lowering the constant to 24dp left it green. 48 is WCAG 2.5.5 and
+     * Android's minimum — an external fact, not this project's variable — so it
+     * belongs on the right-hand side as a number.
+     */
+    @Test
+    fun aColourSwatchMeetsTheTouchTargetFloor() {
+        render(newHabitForm())
+
+        compose.onNodeWithContentDescription(string(COLOR_LABELS.first()))
+            .performScrollTo()
+            .assertWidthIsAtLeast(MIN_TOUCH_TARGET)
+            .assertHeightIsAtLeast(MIN_TOUCH_TARGET)
+    }
 }
+
+/** WCAG 2.5.5, and Android's own floor. A literal on purpose — see the test above. */
+private val MIN_TOUCH_TARGET = 48.dp
