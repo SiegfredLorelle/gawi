@@ -29,24 +29,22 @@ package com.gawi.core.data.projection
  * because a streak is the one thing the widget deliberately does not show (PRD
  * OQ-5) — if that is ever reversed, this is the omission to revisit first.
  *
- * **And from `:app`'s `RolloverWorker`, which is a third caller of a different
- * kind — added 2026-08-21 with the end-of-day reminder.** The two above follow a
- * commit; that one follows the *absence* of one. A day rollover writes nothing at
- * the cutoff, so there is no event to hang a push on, yet every `completedToday`
- * has just changed answer. The worker sweeps the streaks and then calls this by
- * hand, which is the mechanism the paragraph below used to describe as missing.
+ * **And from `:app`'s `RolloverWorker`, a third caller of a different kind.** The
+ * two above follow a commit; that one follows the *absence* of one. A day
+ * rollover writes nothing at the cutoff, so there is no event to hang a push on,
+ * yet every `completedToday` has just changed answer. The worker sweeps the
+ * streaks and then calls this by hand.
  *
- * **What still cannot be covered by a push alone, because neither is an event.**
- * A day rollover commits nothing at the cutoff, and neither does a settings edit
- * — the second matters more, because the day cutoff is what the logical date
- * derives from, so moving it changes every `completedToday` without writing
- * anything. A consumer that needs to follow either must observe for itself rather
- * than wait to be told, which is what the widget does by collecting
- * `observeToday()` inside its content; this push is what starts it when nothing
- * is listening. What the reminder step added is a *scheduled* wake that turns
- * both back into a push: `RolloverWorker` covers the boundary, and
- * `ReminderScheduler` re-arms it from a `SettingsSource` collector so a cutoff
- * edit moves the wake with it.
+ * **Neither a day rollover nor a settings edit is an event, so the log alone
+ * cannot push for either.** The settings edit matters more, because the day
+ * cutoff is what the logical date derives from, so moving it changes every
+ * `completedToday` without writing anything. A consumer that needs to follow
+ * either must observe for itself rather than wait to be told, which is what the
+ * widget does by collecting `observeToday()` inside its content; this push is
+ * what starts it when nothing is listening. A *scheduled* wake turns both back
+ * into a push: `RolloverWorker` covers the boundary, and `ReminderScheduler`
+ * re-arms it from a `SettingsSource` collector so a cutoff edit moves the wake
+ * with it.
  *
  * **Implementations must be main-safe, and are called under the command mutex.**
  * The caller's dispatcher is whatever tapped — `viewModelScope` is

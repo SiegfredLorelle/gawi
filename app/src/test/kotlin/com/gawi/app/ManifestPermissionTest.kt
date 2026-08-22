@@ -32,9 +32,9 @@ import org.robolectric.RuntimeEnvironment
  * the app cannot open a socket at all — which is the property PRD §5 is really
  * claiming.
  *
- * The end-of-day reminder uses WorkManager on purpose, and shipped **2026-08-21**
- * without disturbing any of that: the two `WorkRequest`s it arms carry no
- * constraints at all, which `ReminderScheduler.enqueue` records as a rule. If one
+ * The end-of-day reminder uses WorkManager on purpose, and disturbs none of
+ * that: the two `WorkRequest`s it arms carry no constraints at all, which
+ * `ReminderScheduler.enqueue` records as a rule. If one
  * ever takes a network constraint, the `tools:node="remove"` line is what has to
  * go first, and this test is what will say so.
  *

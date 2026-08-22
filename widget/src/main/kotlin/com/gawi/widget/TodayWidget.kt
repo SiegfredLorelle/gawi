@@ -133,8 +133,7 @@ private fun widgetTextStyle() = TextStyle(color = GlanceTheme.colors.onSurface)
 
 /*
  * The checkbox glyph is deliberately NOT pinned, and this is the measurement
- * behind that — raised in review on 2026-08-22 with the reasonable suggestion
- * that it should be.
+ * behind that. Review reasonably suggested it should be.
  *
  * The glyph does have the same defect shape as the label had. Left unset it
  * takes Glance's `res/color/glance_default_check_box.xml`, which is

@@ -136,7 +136,7 @@ class HabitListScreenTest {
      * together: a name that archived what it meant to open would lose a habit
      * off the list with no way to tell it had happened.
      *
-     * The name leads to detail rather than the editor as of 2026-08-21
+     * The name leads to detail rather than the editor
      * (docs/ux/habits.md §6). What this asserts is unchanged either way: the tap
      * reports the row's own id on the opening action and touches nothing else.
      */

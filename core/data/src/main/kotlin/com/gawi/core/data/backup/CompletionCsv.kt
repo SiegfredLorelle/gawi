@@ -107,8 +107,7 @@ internal object CompletionCsv {
      * LF and every Unicode space at once and lets the sigil set be the four
      * characters that are actually dangerous.
      *
-     * **What was measured, 2026-08-21, because the first version of this
-     * paragraph claimed more than it could show.** In LibreOffice a *bare*
+     * **What was measured, in LibreOffice on 2026-08-21.** A *bare*
      * quoted `"=1+1"` really does import as a formula and evaluate to 2 — so
      * the guard earns its place. But `" =1+1"` stayed text, and it stayed text
      * **even with the filter's leading-space removal on**, verified by a control
@@ -117,8 +116,8 @@ internal object CompletionCsv {
      * exploitable there. Excel and Google Sheets were not tested. The trim
      * guard is therefore defence in depth against readers nobody here has
      * measured, plus the consistency argument above — it is **not** a fix for a
-     * reproduced bypass, and a claim that `pandas` matters was simply wrong,
-     * since `pandas` strips spaces and evaluates nothing at all.
+     * reproduced bypass. `pandas` is not one of those readers: it strips spaces
+     * and evaluates nothing at all.
      *
      * **Quoting is not a substitute for this, and that part *is* measured.**
      * Quotes are a transport rule: a parser strips them and *then* the cell is
