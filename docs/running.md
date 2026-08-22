@@ -971,6 +971,47 @@ Open a habit from the **Habits** list — the row's name, not the Archive button
 
 ---
 
+### Accessibility — *device only, and the layer no test reaches*
+
+The automated half of this is already in `make test`: WCAG contrast ratios in
+`WidgetTextColourTest` and `HabitColorTest`, the 48dp touch-target floor in three
+screen tests, and semantics — roles, content descriptions, disabled state —
+throughout the screen tests. Architecture §8 records why the one automated
+ruleset worth wanting is not wired up yet.
+
+What is left is what a ruleset cannot judge: whether the app is actually usable
+without sight, and whether it survives a reader who needs it larger.
+
+- [ ] **A TalkBack pass over the three core flows.** Turn TalkBack on, then add a
+      habit, complete one from the Today view, and change the day cutoff — using
+      **swipe navigation only, never a direct tap**. Direct tapping is what hides
+      the failure: focus order and announcement are only observable when you are
+      forced through the tree in order. Watch for a control that is reachable but
+      unnamed, two targets that say the same thing, and a state change that
+      happens silently (WCAG 2.4.3 and 4.1.3).
+- [ ] **The retro strip, specifically.** It is the densest thing here: five cells
+      — four writable and one drawn shut — each carrying a day, a done state, a
+      note marker and up to two gestures. Every one of those is in the spoken
+      label by design (`RetroStrip`'s `cellAction`), so this is the check that the
+      label is *legible as speech* rather than merely complete. A shut day is the
+      one to listen to hardest: it must announce as unavailable, not as an
+      unchecked box.
+- [ ] **200% font scale.** Settings → Display → Font size, at maximum. Three
+      screens already carry reasoning about this in comments — `TodayScreen`,
+      `HabitDetailScreen` and `SettingsScreen` all scroll or floor a dimension
+      because of it — and **nothing verifies any of it**. Check that no text is
+      clipped, that the strip is still tappable, and that the streak's
+      `displaySmall` has not pushed the strip off a short screen.
+- [ ] **Accessibility Scanner**, as a pre-release sweep rather than routine.
+      Install Google's Accessibility Scanner, run it over each screen, and read
+      the report the way you would a Lighthouse audit: the touch-target and
+      contrast items are already asserted, so what it earns its place for is
+      unlabelled controls and text-contrast cases the theme tests do not reach.
+
+Not in CI, and not automatable: TalkBack cannot be driven from the instrumented
+source set, and §8's line that CI runs unit tests only is unaffected by this
+block.
+
 ### The day-rollover refresh
 
 Also built 2026-08-21, and the same mechanism (docs/ux/reminder.md §2). This is
