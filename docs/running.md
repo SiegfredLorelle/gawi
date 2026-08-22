@@ -11,9 +11,12 @@ this file picks up where that leaves off.
 **What has actually been run.** The Linux path in this document was executed end
 to end on 2026-08-20 (Arch, AMD Ryzen, AVD on Android 17 x86_64). The macOS and
 Windows sections come from Google's and Microsoft's documentation and have **not**
-been run by anyone here — they are marked as such. **No physical device has been
-attached on any platform**, so the whole of §3 is unverified. Corrections
-welcome; that is what those markers are for.
+been run by anyone here — they are marked as such. A physical device joined them
+on 2026-08-22 — a Nothing A059 on Android 16 (API 36) — but **over wireless
+debugging**: §3's USB path was attempted on Linux and never got as far as
+enumeration, so it stays unverified, and the macOS and Windows device notes are
+unrun like the rest of their sections. Corrections welcome; that is what those
+markers are for.
 
 ---
 
@@ -212,7 +215,7 @@ adb shell pm clear com.gawi.app                 # wipe the database and settings
 
 ---
 
-## 3. A physical device — *unverified on every platform*
+## 3. A physical device — *wireless path verified on Linux; USB unverified*
 
 PRD §7 makes a real device the primary target for widget and notification work,
 because launchers and OEM battery policies differ from emulators. That stopped
@@ -236,7 +239,9 @@ Per platform:
   symptom of missing rules is `adb devices` listing the serial with
   **`no permissions`** rather than `device`; after installing them,
   `sudo udevadm control --reload-rules && sudo udevadm trigger`, replug, then
-  `adb kill-server && adb start-server`.
+  `adb kill-server && adb start-server` — with the caveat about *which shell*
+  starts that server below. Or skip USB altogether: wireless debugging needs
+  none of this.
 - **macOS** — nothing needed.
 - **Windows** — install the USB driver (see §1).
 
@@ -253,6 +258,12 @@ adb connect 192.168.1.50:5555    # port from the main Wireless debugging screen
 The two ports differ, which is the usual stumbling block. Pairing is once per
 workstation.
 
+**Wireless debugging needs no udev rules and no group membership**, because udev
+governs USB device nodes and this path has no USB node in it. That makes it the
+way past a `no permissions` phone without logging out — and on 2026-08-22 it was
+the only way in at all. On Linux it is worth trying before the USB path below,
+not after it.
+
 `minSdk` is 29, so Android 10 testers are in scope and need the legacy route,
 which requires one initial cable:
 
@@ -261,6 +272,26 @@ adb tcpip 5555
 # unplug
 adb connect 192.168.1.50:5555
 ```
+
+### If USB never shows up at all
+
+Before auditing udev rules or adb groups, check the phone is on the USB bus at
+all. A device missing from `lsusb` is a cable, port or phone-mode problem, and no amount
+of udev or adb work will touch it. **Charging proves nothing** — only that VBUS
+and ground are connected, which a charge-only cable does too.
+
+```console
+$ lsusb                              # the phone should appear by name
+$ ls /sys/bus/usb/devices/usb*/      # per-port detail when it does not
+```
+
+`dmesg` is the usual tool for this and it is **not available here**: the machine
+runs with `kernel.dmesg_restrict = 1`, so kernel logs need root and USB
+enumeration cannot be read from them. `lsusb` and `/sys` are the substitutes.
+
+Measured on 2026-08-22: the phone above never enumerated, on any port or cable,
+while charging normally throughout — and wireless debugging is what got the app
+on. That is why the USB half of this section is still marked unverified.
 
 ### Check the udev group *before* you plug in
 
@@ -278,6 +309,22 @@ If you are missing, `sudo usermod -aG adbusers $USER` and **log out and back in*
 group membership only refreshes at login, so a new terminal is not enough and
 neither is restarting `adb`. Measured on this machine on 2026-08-22: rules
 present, group present, group empty.
+
+**Then beware that any `adb` command silently starts a server.** With no server
+running, an `adb devices` from a shell that is *not* in `adbusers` forks one
+**without** the group, and that server cannot open the phone's USB node however
+correct the rules are. So the `adb kill-server && adb start-server` above will
+undo the fix rather than complete it if it runs before the logout, or from a
+script or tool that inherited the old groups. Verify the *server's* groups, not
+the shell's:
+
+```console
+$ getent group adbusers                            # note the gid
+$ grep ^Groups: /proc/$(pgrep -f 'adb -L')/status  # the gid must be in this list
+```
+
+Whoever holds the group has to be the one who starts the server, and nobody else
+may call `adb` while it is down.
 
 ### Installing it
 
@@ -303,7 +350,9 @@ $ ANDROID_SERIAL=<serial> make run
 
 `ANDROID_SERIAL` is read by both AGP and `adb`, which is why it is the one knob
 that steers the whole target rather than just half of it. The `ADB` variable the
-Makefile documents only reaches the second command.
+Makefile documents only reaches the second command. Confirmed on 2026-08-22 with
+a phone and an emulator attached at once: the install landed on the phone alone,
+checked against the two targets' install timestamps.
 
 **The reminder does nothing until you visit its settings row.**
 `POST_NOTIFICATIONS` is the app's only hand-declared permission and it is a
@@ -1040,8 +1089,8 @@ widget limitation.
 | Emulator window black, or never appears | GPU renderer. Try `-gpu host`, then `-gpu software`. On Wayland also `QT_QPA_PLATFORM=xcb`. |
 | AVD refuses to start on a Mac | Wrong ABI. Apple Silicon needs `arm64-v8a` (§2). |
 | `adb devices` shows `unauthorized` | The RSA prompt was not accepted. Replug and confirm on the phone; `adb kill-server` to re-offer it. |
-| `adb devices` shows `no permissions` | Linux udev rules or group membership (§3). |
-| `adb devices` empty with a cable attached | On Windows, the USB driver. Everywhere, check the cable is data-capable and the phone is not in charge-only mode. |
+| `adb devices` shows `no permissions` | Linux udev rules or group membership — and check the *server's* groups, not the shell's (§3). |
+| `adb devices` empty with a cable attached | Check `lsusb` first — absent from the bus is a cable, port or charge-only problem, not udev or adb (§3). On Windows, the USB driver. Wireless debugging sidesteps the whole USB path. |
 | Gradle fails on a missing SDK package | Licences: `sdkmanager --licenses`. |
 | `make run` fails with `adb: device '…' not found` | Nothing attached, or `ANDROID_SERIAL` points at something that has gone away. |
 | `make run` fails with `adb: more than one device/emulator` | Two or more targets attached. Set `ANDROID_SERIAL` (§2). |
