@@ -119,7 +119,9 @@ private fun HabitRows(rows: List<WidgetRow>) {
  * a Nothing A059 (Android 16) on 2026-08-22: near-black text on `#303030`, a
  * contrast ratio of **1.59:1** against WCAG's 4.5:1 floor. It rendered, so
  * `WidgetHostTest` was green throughout; it was only ever visible on a device in
- * dark mode, which is what docs/running.md §4's widget block is for.
+ * dark mode. `WidgetTextColourDarkTest` and its light-mode twin now measure the
+ * ratio in both themes, and docs/running.md §4's widget block gained the
+ * by-hand check that block was missing when this shipped.
  *
  * `onSurface` rather than `onBackground` because `widgetBackground` is the surface
  * this text sits on. Both resolve correctly in either mode; this one is the pair.
