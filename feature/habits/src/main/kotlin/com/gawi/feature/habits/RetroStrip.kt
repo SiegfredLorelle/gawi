@@ -71,10 +71,9 @@ private fun RowScope.RetroCell(cell: RetroCellUi, onCell: (RetroCellUi) -> Unit,
     Column(
         modifier = Modifier
             .weight(1f)
-            // 48dp is the touch-target floor, and `toggleable` does not apply
-            // minimumInteractiveComponentSize the way a Material component does
-            // — the same note HabitEditorPickers carries about `selectable`.
-            .defaultMinSize(minHeight = TOUCH_TARGET)
+            // The cell is the touch target — see GawiSpacing.TouchTarget for why
+            // `toggleable` does not reach it on its own.
+            .defaultMinSize(minHeight = GawiSpacing.TouchTarget)
             .cellSurface(cell)
             .cellAction(cell, onCell, onCellNote)
             .padding(vertical = GawiSpacing.Gap),
@@ -207,6 +206,5 @@ private const val EMPTY_GLYPH = "·"
 
 /** Marks a day that carries a note. Distinct from EMPTY_GLYPH, which means "not done". */
 private const val NOTE_GLYPH = "•"
-private val TOUCH_TARGET = 48.dp
 private val CELL_CORNER = 8.dp
 private val CELL_BORDER = 1.dp

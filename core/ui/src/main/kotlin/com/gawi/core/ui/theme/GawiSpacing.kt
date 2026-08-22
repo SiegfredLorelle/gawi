@@ -23,4 +23,21 @@ object GawiSpacing {
 
     /** The tinted circle a habit's icon sits in. */
     val IconBox: Dp = 40.dp
+
+    /**
+     * Material's minimum interactive size, and the floor for anything a finger
+     * has to hit.
+     *
+     * Named here because bare `selectable`, `toggleable` and `clickable` do
+     * **not** apply it — only a Material component's own
+     * `minimumInteractiveComponentSize` does. So a control made interactive by a
+     * modifier has to reach this itself, which is how three separate pickers
+     * came to declare the same 48 with three different explanations of it.
+     *
+     * Distinct from [IconBox] rather than a bigger version of it. 40dp is the
+     * circle a habit's icon is *drawn* in, and where that circle sits in a list
+     * row the row is the target. This is the floor for a control that **is** the
+     * target.
+     */
+    val TouchTarget: Dp = 48.dp
 }
