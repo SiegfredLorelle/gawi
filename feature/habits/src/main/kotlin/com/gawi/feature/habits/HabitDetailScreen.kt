@@ -300,7 +300,7 @@ private fun StreakPanel(streak: StreakUi, modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.spacedBy(GawiSpacing.Line),
     ) {
         when (streak) {
-            // §5's rule about never reading zero is about a live streak, which
+            // today-view §5's rule about never reading zero is about a live streak, which
             // this is not: nothing has ever run, so there is no number to draw.
             StreakUi.None -> Text(
                 text = stringResource(R.string.habits_detail_streak_none),
@@ -336,7 +336,7 @@ private fun StreakCount(count: String, caption: String, color: Color) {
     )
 }
 
-/** Zero, with what was lost kept beside it — §5's "was 4" and its cut thread. */
+/** Zero, with what was lost kept beside it — today-view §5's "was 4" and its cut thread. */
 @Composable
 private fun BrokenStreak(streak: StreakUi.Broken) {
     Row(
@@ -367,7 +367,7 @@ private fun BrokenStreak(streak: StreakUi.Broken) {
 /**
  * Where the habit stands on the day being shown.
  *
- * The week line is drawn for a weekly habit only, which is §5's rule and the
+ * The week line is drawn for a weekly habit only, which is today-view §5's rule and the
  * same one the Today row follows — a detail screen that disagreed with the row
  * that led to it would be its own bug.
  */

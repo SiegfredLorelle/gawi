@@ -19,7 +19,7 @@ import java.time.temporal.ChronoUnit
  * every other rule in this module, "today" is a parameter and there is no
  * clock here.
  *
- * Provisional in the way §4 is provisional: this is Phase 1 behaviour, written
+ * Provisional in the way today-view §4 is provisional: this is Phase 1 behaviour, written
  * down so the MVP placeholder and the eventual Rive state machine are driven by
  * one rule. Grace mechanics, if they ever land (PRD OQ-3), change what
  * "recently broken" means and therefore this whole file.
@@ -30,10 +30,10 @@ object Mascot {
      * How long a broken streak keeps Momo regenerating, in logical days,
      * counting the day the break became visible.
      *
-     * §4 sizes this window in days while `StreakSnapshot.brokenOn` is
+     * today-view §4 sizes this window in days while `StreakSnapshot.brokenOn` is
      * denominated in the schedule's own unit — a date for a daily habit, a week
      * start for a weekly one — so the two do not compose on their own. Days for
-     * both is the reading taken: it is literal to §4, and because
+     * both is the reading taken: it is literal to today-view §4, and because
      * [Mood.REGENERATING] outranks [Mood.WORRIED], a short window is exactly
      * what lets a weekly habit's now-or-never warning surface late in the week
      * instead of being masked by the recovery face. For a weekly habit that
@@ -49,7 +49,7 @@ object Mascot {
     const val REGENERATING_WINDOW_DAYS = 3L
 
     /**
-     * The mood for one reading of the Today view — §4's precedence table, first
+     * The mood for one reading of the Today view — today-view §4's precedence table, first
      * match wins.
      *
      * The table is the `when` rather than something the code happens to do, so
@@ -85,10 +85,11 @@ object Mascot {
     }
 
     /**
-     * Whether [habit] is due today and not yet satisfied — §4's `outstanding`.
+     * Whether [habit] is due today and not yet satisfied — today-view §4's `outstanding`.
      *
-     * Nothing completed today is outstanding today, whatever its schedule. §4
-     * writes that gate into the daily rule only, and stating the weekly rule as
+     * Nothing completed today is outstanding today, whatever its schedule. The
+     * today-view §4 rule writes that gate into the daily case only, and stating
+     * the weekly rule as
      * a bare `remaining >= daysLeft` leaves a habit outstanding after the user
      * has done everything today allows: 3×/week with none done reaches Saturday
      * needing 3 in 2 days, and completing Saturday leaves 2 needed in a
@@ -126,7 +127,7 @@ object Mascot {
     }
 
     /**
-     * §4's `recentlyBroken`, answered from [StreakSnapshot.brokenOn] with
+     * today-view §4's `recentlyBroken`, answered from [StreakSnapshot.brokenOn] with
      * nothing stored.
      *
      * A null `brokenOn` is [StreakSnapshot.NONE] — a habit with no completions
@@ -140,7 +141,7 @@ object Mascot {
     }
 
     /**
-     * §4's `nearBoundary`: at or past the configured reminder time, and before
+     * today-view §4's `nearBoundary`: at or past the configured reminder time, and before
      * the day boundary. One threshold, shared with the end-of-day reminder, so
      * there is no second one to keep in sync.
      *
