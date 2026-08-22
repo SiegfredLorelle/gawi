@@ -3,7 +3,7 @@
 **Version:** 0.5 (draft)
 **Author:** Siegfred Lorelle Mina
 **Status:** Baseline for iteration
-**Last updated:** 2026-08-22
+**Last updated:** 2026-08-23
 
 ---
 
@@ -67,9 +67,18 @@ All data is an **append-only event log** (habit created/edited/archived, complet
 **Complete as of 2026-08-22.** Every bullet below is built and every §6 criterion
 is met; the one bullet that did not ship — notification quick-complete actions —
 was formally moved to Phase 1 on its own terms, which the bullet explicitly
-allowed. What remains is not construction but the success criterion at the end of
-this section: the 30-day trial. `docs/running.md` §3 covers getting it onto a
-phone, and §4's widget block is the part of the checklist that needs a launcher.
+allowed.
+
+**The 30-day trial was waived on 2026-08-23** and Phase 1 was started instead —
+the success criterion at the end of this section records what that costs, and §8
+and §9 record what it cost the two open questions and the two risks that were
+parked on it. What remains is therefore not construction and no longer a trial:
+it is `docs/running.md` §4's device checks, still owed, specifically its widget
+and accessibility blocks. Those are worth running **before** Phase 1 rather than
+after, because Phase 1's first two entries add screens and its fourth replaces
+the three-face placeholder on both the Today view and the widget — the surfaces
+those checks exist to verify. `docs/running.md` §3 covers getting the app onto a
+phone.
 
 **Habits**
 - Create/edit/archive habits: name, icon/color, schedule (daily or n-per-week), optional tag.
@@ -95,13 +104,14 @@ phone, and §4's widget block is the part of the checklist that needs a launcher
 - Gentle in-app nudge when no export has been made for 30 days (local check, shown in-app only — never a notification). Compensates for backup being disabled.
 - Configurable: day boundary time, week start day (default Monday), reminder time, timezone behavior (default: device timezone).
 
-**MVP success criteria:** I use it every day for 30 consecutive days without reverting to my old method.
+**MVP success criteria:** I use it every day for 30 consecutive days without reverting to my old method. **Waived on 2026-08-23 — not met, not failed, not run.** Kept rather than deleted because three other things in this document were leaning on it: §9's first risk named it as its only mitigation, and OQ-1 and OQ-3 were both explicitly parked on what it would reveal. Deleting the criterion would have left those three pointing at nothing, which is the failure mode this repo keeps finding. It is also **not rescheduled**: 30 days on a Phase 1 build measures a different app, so this criterion cannot be picked up later — it can only be replaced by a new one.
 
 ### Phase 1 — Mascot, quick actions & insights (committed)
 
-**Readiness order, assessed 2026-08-22** — nothing here starts before the 30-day
-trial, and this is the order to take it in when it does, cheapest-unblocked
-first:
+**Readiness order, assessed 2026-08-22; the gate in front of it removed
+2026-08-23.** This used to open "nothing here starts before the 30-day trial".
+The trial was waived, so what is left is simply the order to take Phase 1 in,
+cheapest-unblocked first:
 
 1. **Insights v1 heatmap** — the cleanest. `HabitRepository.observeCompletedDates`
    already serves an arbitrary date range, and
@@ -109,8 +119,14 @@ first:
    rather than growing habit detail's writable strip into one. No open question
    blocks it.
 2. **Tag-based effort distribution** — a pure read too, but it needs a new
-   aggregate query rather than an existing one. Build it single-tag: OQ-1 is a
-   trial question and multi-tag would be an event-payload schema bump.
+   aggregate query rather than an existing one. **Build it single-tag**, because
+   one tag is what the wire format holds today — but OQ-1 was settled the other
+   way on 2026-08-23 (multi-tag is committed, unscheduled), so build it knowing
+   the *metric* moves when the schema does: once a completion can carry more
+   than one tag, "share of completions per tag" stops summing to 100% and has to
+   choose between fractional and full attribution. That choice belongs to the
+   schema bump, not to this screen. What this screen owes it is not to be shaped
+   as though one tag were permanent.
 3. **Notification quick-complete actions** — blocked on **OQ-2** (what to do when
    more than three habits remain, Android's action-button cap). Not urgent: §6.1
    is already satisfied by the widget.
@@ -176,9 +192,9 @@ Note that 4 partly unblocks OQ-3's second half — see §8.
 
 ## 8. Open Questions
 
-- **OQ-1:** Multi-tag per habit, or is one tag enough? (Proposal: one at MVP.)
+- ~~**OQ-1:** Multi-tag per habit, or is one tag enough? (Proposal: one at MVP.)~~ **Settled 2026-08-23: multi-tag, eventually.** The proposal held for the MVP and one tag is what ships, but the answer to the question as asked is that one tag is *not* enough for good. It is committed and **deliberately not assigned to a phase** — what is decided is the direction, not the date. The cost is known and is why it is not being rushed: `HabitMetadata.tag` is a single field in the domain *and in the wire format*, so this is an event-payload schema bump with an upcast-on-read rather than a UI change, which the event log's embedded schema versioning (§7) exists to absorb. The practical consequence today is a prohibition rather than a task — nothing new should be built as though one tag were permanent, and §5's Phase 1 item 2 is where that bites first. Settled on the reasoning above rather than on the 30-day trial, which is where this question used to be parked and which was waived (§5).
 - **OQ-2:** Notification quick-complete UX when >3 habits remain (Android caps 3 action buttons) — show top 3? "Complete all"? Opens the app?
-- **OQ-3:** Streak freeze / grace day mechanics — decide after the 30-day personal trial reveals how resets feel. **Two numbers ride on this, not one** (noted 2026-08-22): `Mascot.REGENERATING_WINDOW_DAYS = 3` is a separate guess at how long a broken streak keeps Momo regenerating, and its KDoc flags it for this same trial. **The trial as shipped cannot answer that half.** Phase 0 draws three faces and folds `regenerating` onto `neutral` ([docs/ux/today-view.md](ux/today-view.md) §4), so nothing on screen distinguishes a user recovering from a broken streak from one merely pottering — the window is decided, tested and unobservable. So either it waits for Phase 1's fourth face, or it is settled on the streak rules alone; what it is *not* is something 30 days of use will reveal. Recorded because the code says "flagged for the 30-day trial" and that instruction cannot be carried out as written.
+- **OQ-3:** Streak freeze / grace day mechanics. **Re-parked 2026-08-23 on OQ-4 rather than on usage.** This used to read "decide after the 30-day personal trial reveals how resets feel"; the trial was waived (§5), and a question whose only trigger has been removed is a question with no owner, so it was given a new one rather than left floating. **The new trigger is Momo's fourth face** — this opens when OQ-4 does, and gets decided on a build where a reset is actually visible on screen. Until then the mechanics stay unbuilt and `Mascot.REGENERATING_WINDOW_DAYS` stays 3 and stays a guess. Waiving the trial costs *this* question less than it looks, for the reason the rest of this bullet already gave: **two numbers ride on this, not one** (noted 2026-08-22), and the trial could never have answered the second. `Mascot.REGENERATING_WINDOW_DAYS = 3` is a separate guess at how long a broken streak keeps Momo regenerating, and its KDoc flags it for this same trial. **The trial as shipped cannot answer that half.** Phase 0 draws three faces and folds `regenerating` onto `neutral` ([docs/ux/today-view.md](ux/today-view.md) §4), so nothing on screen distinguishes a user recovering from a broken streak from one merely pottering — the window is decided, tested and unobservable. So it waits for Phase 1's fourth face — which is now the whole question's trigger and not just this half's. Recorded because the code said "flagged for the 30-day trial" and that instruction could not be carried out as written; `Mascot.REGENERATING_WINDOW_DAYS`' KDoc now names the fourth face instead.
 - **OQ-4:** Mascot art style (round/chibi? pixel? flat vector?), and static-first vs animated-first. (Species and name decided: Momo the axolotl.) **The app's launcher icon is part of this question, not a separate one** (noted 2026-08-22) — it is Android's default placeholder today, and a mark drawn before the character would have to be redrawn to match it. §5's Phase 1 has the detail.
 - ~~**OQ-5:** Should the widget show streaks or stay minimal (just checkboxes)?~~ **Settled 2026-08-21 with the widget: minimal.** A streak is the one number that reaches zero with no new event, so it is the value whose staleness is not bounded by user inaction — on the one surface with no live query. It also costs the width that rows need. §6.6 is narrowed accordingly rather than contradicted; see [docs/ux/widget.md](ux/widget.md) §2.
 - **OQ-6:** Final name call between Gawi / Hinabi / Araw; verify availability (Play Store, domain, trademark) closer to launch. ("Habi" rejected — existing habit tracker at habi.app.)
@@ -186,8 +202,8 @@ Note that 4 partly unblocks OQ-3's second half — see §8.
 ## 9. Risks
 
 - **Sync scope creep.** Mitigation: export/import at MVP; event-log model de-risks Phase 2 now.
-- **Building it but not using it.** Mitigation: 30-day personal-use success criterion gates Phase 1+.
-- **Streak resets causing abandonment.** Mitigation: observe own behavior in trial; OQ-3 escape hatch.
+- **Building it but not using it.** **Unmitigated as of 2026-08-23.** The 30-day personal-use criterion was this risk's only mitigation and it was waived (§5), so the risk is now carried open rather than covered. Nothing in Phase 1 restores it — shipping more features is the opposite move — so the honest statement is that this risk is live and accepted. Written down because an unmitigated risk that still *lists* a mitigation is worse than one that admits it has none.
+- **Streak resets causing abandonment.** Mitigation: OQ-3's escape hatch, now triggered by Momo's fourth face rather than by the trial (§8). **Half of this mitigation is gone**: "observe own behavior in a trial" had no replacement and was not given one, so what remains is the escape hatch without the evidence that would have sized it.
 - **Mascot becomes an art project.** Mitigation: emotive indicator at MVP; static expressions before animation; Rive state machine keeps engineering simple.
 - **Notification quick-complete complexity.** Mitigation: explicitly allowed to slip to Phase 1; documented so it isn't lost.
 - **Emulator friction on Arch.** Mitigation: KVM setup notes above; physical device as primary target; macOS fallback.
