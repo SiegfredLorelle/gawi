@@ -610,3 +610,60 @@ Deviations and notes:
 - Secrets: nothing at MVP (no network). When release signing arrives, the
   keystore and its passwords stay out of git; signing config paths go in
   `.env.example` with placeholders.
+
+## 10. Where a new file goes
+
+§2 fixes what each module is *for*. This is the question that comes after it, and
+the one a first contribution hits immediately.
+
+**Source sets.** Every module has `src/main/kotlin` and `src/test/kotlin`.
+`app/src/androidTest/kotlin` is the only instrumented source set in the project;
+§8 owns the policy for what belongs there and why it is only `:app`. Test helpers
+shared between test classes go in a `testsupport/` package beside them — six of
+the eight modules have one, and the two that do not (`:app`, `:core:ui`) have
+four and two test files respectively, which is the honest threshold for bothering.
+
+**The core modules are packaged by concept, not by layer.**
+
+| Module | Packages |
+|---|---|
+| `:core:domain` | `command/` `event/` `id/` `mascot/` `model/` `projection/` `serialization/` (with `export/` and `wire/`) `streak/` `time/` |
+| `:core:data` | `backup/` `db/` (with `dao/`, `entity/`, `mapper/`) `di/` `model/` `projection/` `reminder/` `repository/` `settings/` `time/`, plus `ProjectionVersion.kt` at the package root |
+| `:core:ui` | `component/` `streak/` `theme/` |
+
+Two of those need a word, because the same name appears twice. `projection/`
+exists in both `:core:domain` and `:core:data`: the domain one is the pure
+replay logic, the data one writes its results into the derived tables and tells
+a listener. `time/` likewise splits — the domain owns the logical-date rules, and
+`:core:data` holds only the clock that reads the device.
+
+**Feature modules are flat, and that is deliberate.** Screen, ViewModel,
+UiState, Actions and mapper all sit in the one package: ten files in
+`:feature:today`, seventeen in `:feature:habits`, twelve in `:feature:settings`.
+Do not add `ui/`, `viewmodel/` and `state/` subdirectories. That splits a feature
+by *type* rather than by concept, so every change touches three directories and
+none of the three names tells you what the feature does. A feature this size has
+no internal concepts to separate. Worth revisiting if one passes roughly
+twenty-five files, which would be a sign the feature itself should split.
+
+`:app` keeps `navigation/` and `reminder/`, with `GawiApplication.kt` and
+`MainActivity.kt` at the root. `:widget` is flat apart from `di/`.
+
+**Outside the modules.**
+
+| Path | Holds |
+|---|---|
+| `build-logic/` | Convention plugins. Owns build configuration; module build files only apply `gawi.*` ids and declare dependencies |
+| `config/detekt/detekt.yml` | Overrides on top of detekt's bundled defaults |
+| `config/robolectric/robolectric.properties` | **The Robolectric SDK level, for every module.** Attached to each Android module's unit-test resources by `build-logic/src/main/kotlin/gawi/KotlinAndroid.kt` |
+| `scripts/` | Repo-local checks invoked from `make` (§9) |
+| `docs/` | `prd.md` what and why, this file how, `running.md` on a device, `ux/` per-screen decisions, `stacks/kotlin-android.md` the template wiring |
+
+The Robolectric line is the one most easily missed: a module inherits that SDK
+pin without declaring anything at all, which is exactly how a comment in
+`gradle/libs.versions.toml` came to name a path for it that had never existed.
+
+**And the rule that settles most cases.** If two modules need it, it belongs in
+`:core:*` and is never copied — §2 for which one, and `AGENTS.md`'s Conventions
+for the habit of looking before writing. Feature modules cannot see each other,
+so `:core:*` is not merely the tidy answer, it is the only one.
