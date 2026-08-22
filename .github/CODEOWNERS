@@ -1,10 +1,8 @@
 # Routes review requests. Without this, required reviews in branch protection
 # have nobody to assign to.
-#
-# TEMPLATE.md step 8: replace with the real owner(s) for this repo.
 
 * @SiegfredLorelle
 
-# Narrow ownership for sensitive paths, e.g.:
-# /.github/       @SiegfredLorelle
-# /infra/         @some-team
+# Narrower rules would go below, last match winning — e.g. giving /.github/ or
+# the build-logic/ convention plugins their own reviewer. One owner for
+# everything is the honest state of a single-maintainer project.

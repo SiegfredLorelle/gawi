@@ -1,7 +1,7 @@
 # PRD: Gawi (working title) — habit tracker with Momo the axolotl
 
 **Version:** 0.5 (draft)
-**Author:** You
+**Author:** Siegfred Lorelle Mina
 **Status:** Baseline for iteration
 **Last updated:** 2026-08-22
 
