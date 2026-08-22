@@ -62,4 +62,6 @@ repos:
         additional_dependencies:
           - "@commitlint/cli@^19.2.1"
           - "@commitlint/config-conventional@^19.1.0"
-# Stack linters go here — copy the block from docs/stacks/<your-stack>.md
+# Stack linters would go here. This repo deliberately has none: Spotless and
+# detekt need a warm Gradle daemon, which is too slow for a pre-commit hook, so
+# `make lint` owns them and CI is the backstop. See docs/stacks/kotlin-android.md.
