@@ -364,19 +364,22 @@ API level with `adb shell getprop ro.build.version.sdk`.
 
 ### If the device is one you actually use — read this
 
-A phone carrying the PRD §5 30-day trial holds the only copy of the trial. Two
-ways to destroy it, both easy:
+**There is no 30-day trial any more** — PRD §5's criterion was waived on
+2026-08-23 — but nothing in this section ever depended on the data being a
+*trial*. It depends on the device holding the only copy, which is true of any
+real use and true from the first habit you create: `allowBackup` is off, so there
+is no second copy anywhere by design. Two ways to destroy it, both easy:
 
 - **`make itest` uninstalls the app**, and `allowBackup=false` (architecture §6)
   means the OS has no copy. See the warning above §4's widget block — it is not
   theoretical, one run wiped an emulator holding 345 events. Point `make itest` at
-  a throwaway AVD, never at the trial device. `ANDROID_SERIAL` is how you make
-  sure.
+  a throwaway AVD, never at a device holding data you want. `ANDROID_SERIAL` is
+  how you make sure.
 - **The debug keystore is per-machine** (`~/.android/debug.keystore`). PRD §7 names
   macOS as a fallback build environment, and a build from a second machine is
   signed with that machine's key — so it cannot install over the first one. The
-  only way through is an uninstall, which is the data loss above. Build the trial
-  app from one machine, or copy the keystore deliberately.
+  only way through is an uninstall, which is the data loss above. Build the app
+  you actually use from one machine, or copy the keystore deliberately.
 
 The JSON export is the only recovery path either way. Take one when real habits
 exist, which also arms the 30-day export nudge.
