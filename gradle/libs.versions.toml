@@ -66,9 +66,14 @@ spotless = "8.9.0"
 # Consumed by the Spotless config in the root build file, not a plugin.
 ktlint = "1.8.0"
 junit = "4.13.2"
-# :core:data pins the test SDK to 35 in robolectric.properties rather than
-# taking the targetSdk default, which would be 37. Read that file before
-# bumping this: the ceiling is the project's JDK 17, not this version.
+# The test SDK is pinned to 35 in `config/robolectric/robolectric.properties`
+# rather than taking the targetSdk default, which would be 37. That is one
+# shared file, attached to every android module's unit-test resources by
+# configureAndroid in build-logic — this comment used to name a
+# :core:data/robolectric.properties, which has never existed. It matters more
+# since :widget became the second Robolectric module and inherited the pin
+# without declaring anything. Read the real file before bumping this: the
+# ceiling is the project's JDK 17, not this version.
 robolectric = "4.16.1"
 turbine = "1.2.0"
 # SDK levels and JDK, read by the convention plugins in build-logic.
