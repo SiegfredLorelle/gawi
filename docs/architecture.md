@@ -167,7 +167,7 @@ versions to the current shape at deserialization time. The log is never
 migrated in place — replaying a years-old log through current code must always
 work (PRD §7 "migrations replay-safe").
 
-**An export carries two version numbers and they mean different things.** The
+An export carries two version numbers and they mean different things. The
 envelope has a `format_version`, which says how to find the events; each event
 carries the `schema_version` above, which describes one payload. A newer
 envelope full of v1 payloads is an ordinary file, and so is the reverse. A
@@ -253,7 +253,7 @@ the read itself throws — `catch` terminates the flow and the push cannot
 re-enter `provideGlance` — so that read carries a bounded retry above the
 catch.
 
-**What neither can cover: a day rollover and a settings edit are not events.**
+What neither can cover: a day rollover and a settings edit are not events.
 Nothing commits at the cutoff, and changing the cutoff is a DataStore write —
 yet it decides the logical date and so every `completedToday`. `observeToday()`
 re-emits on both, so a live session follows them; a widget with no session
@@ -346,7 +346,7 @@ not a setting.
 | Reminder | WorkManager + notification via PendingIntents (built 2026-08-21) |
 | IDs | UUIDv7, hand-rolled in `:core:domain` |
 
-**Glance pins to the newest stable, and brings WorkManager with it.** Glance is
+Glance pins to the newest stable, and brings WorkManager with it. Glance is
 not in the compose BOM — it ships on its own train, so its version is a number
 that moves by itself, and 1.1.1 is the newest stable one (the 1.2.0 line reached
 rc01 and was abandoned for 1.3.0-alpha01, so "the next one up" is a
@@ -372,7 +372,7 @@ claiming. `ManifestPermissionTest` asserts the whole requested set, so a Glance
 upgrade that reintroduces the network permission fails a test rather than
 shipping.
 
-**Reminder timing is deliberately inexact.** Both wakes are one-time requests
+Reminder timing is deliberately inexact. Both wakes are one-time requests
 with an initial delay, **not** periodic work, so there is no flex interval to
 quote: `setInitialDelay` makes a wake *eligible* once the delay elapses, and
 nothing bounds how long after that it runs. WorkManager defers under Doze and App
@@ -396,12 +396,12 @@ This paragraph has been wrong in the same direction three times — "~15 min", t
 line of warning to whoever edits it next: every phrasing that sounds like a
 delivery guarantee here is one.
 
-**Two wakes, and they arm each other.** The reminder arms the rollover refresh
+Two wakes, and they arm each other. The reminder arms the rollover refresh
 and the rollover arms the reminder; neither re-enqueues its own unique work,
 because `enqueueUniqueWork` with `REPLACE` cancels a run in progress and a worker
 re-arming itself would cancel itself every time.
 
-**The two directions use different policies, and the asymmetry is the design.**
+The two directions use different policies, and the asymmetry is the design.
 `ReminderWorker` arms the rollover with `KEEP` — "make sure it exists", which
 cannot cancel anything — and `RolloverWorker` arms the reminder with `REPLACE`.
 The invariant is that **at least one direction always replaces**, so every
@@ -540,7 +540,7 @@ Deviations and notes:
   `robolectric` comment in `gradle/libs.versions.toml` came to name a
   `robolectric.properties` path that had never existed. It also refuses a bare
   `§N` in a file that uses that number for two different documents.
-- **Why that one is a script and not a Gradle task.** A task would be the more
+- **The citation check is a script, not a Gradle task.** A task would be the more
   idiomatic home — `build-logic/` owns build configuration, and no convention
   plugin registers a custom task today, so this is deliberately not the start of
   one. But a Gradle task caches, and a check that passes by being `UP-TO-DATE`
