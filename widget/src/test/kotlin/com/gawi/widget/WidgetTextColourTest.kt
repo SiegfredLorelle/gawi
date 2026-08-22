@@ -3,12 +3,14 @@ package com.gawi.widget
 import androidx.compose.ui.graphics.Color
 import androidx.glance.EmittableWithText
 import androidx.glance.GlanceTheme
+import androidx.glance.appwidget.testing.unit.GlanceAppWidgetUnitTest
 import androidx.glance.appwidget.testing.unit.runGlanceAppWidgetUnitTest
 import androidx.glance.testing.GlanceNodeMatcher
 import androidx.glance.testing.unit.MappedNode
 import com.gawi.widget.testsupport.habitId
 import com.gawi.widget.testsupport.todayHabit
 import com.gawi.widget.testsupport.todaySnapshot
+import org.junit.Assert.assertNotEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -17,43 +19,59 @@ import org.robolectric.annotation.Config
 
 /**
  * Every piece of text the widget draws is legible against the background it is
- * drawn on — asserted as a contrast ratio, in dark mode, because that is the
- * defect this exists for.
+ * drawn on, asserted as a WCAG contrast ratio in **both** themes.
  *
- * The one test in this module that renders rather than deciding.
+ * The only test in this module that renders rather than deciding.
  * `WidgetBodyTest` asserts *which* body is chosen; nothing asserted how it
  * looked, and a real defect shipped through the gap: Glance's default text
  * colour is not theme-aware while the container's background is, so on a
- * dark-themed device the widget drew near-black text on `#303030` — **1.59:1**,
- * against WCAG's 4.5:1 floor. Found by hand on a Nothing A059 (Android 16) on
- * 2026-08-22, after a whole phase of green builds.
+ * dark-themed device the widget drew near-black text on a near-black surface —
+ * a ratio of 1.59 against WCAG's 4.5 floor. Found by hand on a Nothing A059
+ * (Android 16) on 2026-08-22, after a phase of green builds.
  *
  * **Contrast rather than "names a colour", because the weaker property is
- * hollow.** The first version of this test asserted `style?.color != null` and
- * a mutation check exposed it: Glance fills in a default `TextStyle`, so the
- * plain-`Text` branch passed with the fix removed. Only the `CheckBox` branch
- * failed. The colour was never absent — it was *wrong*, and only a test that
- * knows what the text sits on can tell the difference.
+ * hollow.** The first version asserted `style?.color != null`, and a mutation
+ * check exposed it: Glance fills in a default `TextStyle`, so the plain-`Text`
+ * branch passed with the fix removed and only the `CheckBox` branch failed. The
+ * colour was never absent, it was *wrong*, and only a test that knows what the
+ * text sits on can tell those apart.
  *
- * `@Config(qualifiers = "night")` is load-bearing. In light mode the broken
- * code looks fine — a dark default on a light background is perfectly legible —
- * which is exactly why this went unnoticed.
+ * **Both themes, because either one alone is a trapdoor.** Night-only was the
+ * first version, and it would have let a dark-mode-only literal through —
+ * `Color.White`, say — shipping unreadable light-mode text, the mirror image of
+ * the bug being fixed. Light-only would have missed the original defect
+ * entirely, a dark default on a light background being perfectly legible. The
+ * subclasses below are the whole difference.
  *
  * [EmittableWithText] is the supertype of both `EmittableText` and
  * `EmittableCheckBox`, so one matcher covers the copy and the habit rows. That
  * matters: the rows are the case a `Text`-only matcher skips.
  *
- * `setContext` is not optional — the copy branch resolves its string through
- * `LocalContext.current`, and Glance's unit-test environment supplies no default
- * one. Resolving a `ColorProvider` needs the same context.
- *
- * **Each test also asserts the text it expects is actually there**, because
- * "nothing has bad contrast" is trivially true of an empty tree, which is how a
- * check that verifies nothing comes to look like a check that passes.
+ * **Known limit, stated rather than hidden.** [Probe] resolves the background
+ * from a second `GlanceTheme { }`, not from the one inside [WidgetBody], because
+ * `BackgroundModifier` exposes no colour to read back off the emitted tree. So
+ * if `WidgetBody` ever takes an explicit palette — `GlanceTheme(colors = …)` —
+ * this test would compare against the *default* background and stop measuring
+ * what is drawn. It would not silently pass empty, which is the failure that
+ * matters and which [Probe.resolved] rules out, but it would need updating.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(qualifiers = "night")
-class WidgetTextColourTest {
+class WidgetTextColourDarkTest : WidgetTextColourContract()
+
+/** The mirror. See the contract's note on why one theme alone is not enough. */
+@RunWith(RobolectricTestRunner::class)
+@Config(qualifiers = "notnight")
+class WidgetTextColourLightTest : WidgetTextColourContract()
+
+/**
+ * The assertions themselves, run once per theme by the two classes above.
+ *
+ * Each test also asserts the text it expects is present, because "nothing has
+ * bad contrast" is trivially true of an empty tree — which is how a check that
+ * verifies nothing comes to look like a check that passes.
+ */
+abstract class WidgetTextColourContract {
 
     @Test
     fun `the empty copy is legible on the widget background`() = runGlanceAppWidgetUnitTest {
@@ -86,16 +104,29 @@ class WidgetTextColourTest {
 }
 
 /**
- * What the widget is drawn against, read from the same theme the composable
- * reads. Captured during composition because `GlanceTheme.colors` exists only
- * there, and returned so the matchers can resolve a `ColorProvider` afterwards.
+ * What the widget is drawn against. Captured during composition because
+ * `GlanceTheme.colors` exists only there, and held so the matchers can resolve a
+ * `ColorProvider` afterwards.
  */
 private class Probe {
     lateinit var context: android.content.Context
     var background: Color = Color.Unspecified
+
+    /**
+     * That the capture actually happened.
+     *
+     * Load-bearing, not defensive. `Color.Unspecified` is `Color(0)`, whose
+     * channels are all zero, so [relativeLuminance] reads it as **pure black**
+     * and every light-on-dark assertion below would pass at about 16:1 having
+     * measured nothing at all. A composition that never ran the probe lambda
+     * would leave three green tests proving only that the default is black.
+     */
+    fun resolved(): Probe = apply {
+        assertNotEquals("the probe never resolved a background", Color.Unspecified, background)
+    }
 }
 
-private fun androidx.glance.appwidget.testing.unit.GlanceAppWidgetUnitTest.renderWithProbe(content: WidgetContent): Probe {
+private fun GlanceAppWidgetUnitTest.renderWithProbe(content: WidgetContent): Probe {
     val probe = Probe()
     probe.context = RuntimeEnvironment.getApplication()
     setContext(probe.context)
@@ -104,7 +135,7 @@ private fun androidx.glance.appwidget.testing.unit.GlanceAppWidgetUnitTest.rende
         WidgetBody(content)
     }
     awaitIdle()
-    return probe
+    return probe.resolved()
 }
 
 private fun anyText() = GlanceNodeMatcher<MappedNode>("draws text") { node ->
