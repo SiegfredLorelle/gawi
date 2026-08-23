@@ -17,9 +17,25 @@ right now is to stop three questions being answered by accident: which module
 this lives in, what a cell in a heatmap is allowed to mean, and what happens to
 the tag metric when OQ-1 lands.
 
-Nothing here is built. `:feature:insights` does not exist, and `insights` is
-**not** in `scope-enum` in `.commitlintrc.yaml` — it has to be added there
-before the module's first commit, or the `commit-msg` hook rejects it.
+`:feature:insights` still does not exist. `insights` **is** now in `scope-enum`
+in `.commitlintrc.yaml`, added 2026-08-23 ahead of the module rather than with
+it, because the `commit-msg` hook rejects a module's *first* commit if its scope
+is missing — so the entry has to exist before the module does.
+
+The module itself was deliberately **not** created empty, and that is worth
+recording because it was tried. An Android library always has test sources
+configured for its unit-test variant, so Gradle 9 fails
+`:feature:insights:testDebugUnitTest` with "there are test sources present …
+but the test task did not discover any tests" the moment the module is included
+with nothing in it. The available workarounds are setting
+`failOnNoDiscoveredTests = false`, which would mask a real misconfiguration
+later, or inventing a placeholder test, which asserts nothing. Neither is worth
+it: **the module gets created together with its first real file.**
+
+What *is* built, as of 2026-08-23, is the two layers underneath — §6's owed tag
+aggregate query, and §4's completion-rate denominator. Both were unblocked while
+the screens were not, for the reason PRD §5 now records: they have no colour in
+them.
 
 ---
 
@@ -78,15 +94,40 @@ was *supposed* to be done on. Two consequences, and neither is cosmetic:
 - **A heatmap cell cannot be coloured "missed" for a weekly habit.** It can say
   completed or not-completed, and not-completed is not a miss — the week is the
   unit that can be missed, not the day. A three-state day cell (done / missed /
-  not scheduled) is honest for `Daily` and dishonest for `Weekly`, so either the
-  grid is two-state for everyone, or a weekly habit's grid is a grid of **weeks**
-  showing n-of-target. Not yet decided; §7.
+  not scheduled) is honest for `Daily` and dishonest for `Weekly`.
+  **Settled 2026-08-23: two-state days for every schedule.** The alternative — a
+  grid of weeks for weekly habits — is marginally more honest and is a second
+  layout to build, test and explain, and the honesty it buys is already bought
+  by the cells simply not claiming a miss. One grid, two states, both schedules.
 - **"Completion rate" is two different fractions.** Daily is completions over
   days elapsed. Weekly is completions over `timesPerWeek × weeks elapsed`. One
   percentage label over both is comparing unlike things, and a single query that
   returns "rate" without the schedule beside it will get used as though it were
   comparable. The denominator has to come from `:core:domain`'s schedule rules,
   not from counting rows.
+
+  **Built 2026-08-23** as `Rates.completionRate` in `:core:domain`, beside
+  `Streaks`. Three decisions were forced by writing it, none of them visible from
+  the requirement:
+
+  - It returns `CompletionRate.Daily` or `CompletionRate.Weekly`, never a bare
+    `Double`. The schedule travels with the number so a caller has to look at it
+    before rendering a percentage; that is the whole defence against the two
+    fractions being compared.
+  - **Only finished units count.** An unfinished day, or a week still below
+    target, is not a miss — the same liveness rule `Streaks` follows. It matters
+    more here: a rate that charged the current week in full would read as a
+    collapse every Monday morning. Whole weeks only at *both* ends, so a period
+    starting mid-week does not get billed for a week it only partly contains.
+  - `fraction` is **null**, not `0.0`, when nothing in the window has finished.
+    A habit created this morning has not failed anything, and `0.0` renders as
+    "0%" — the screen accusing the user on no evidence. Callers draw a dash.
+
+  One limitation is the screen's to solve and is recorded rather than hidden:
+  nothing in the projection stores when a habit was created — `HabitState` has no
+  such field — so a window reaching back before the habit existed yields a rate
+  that is arithmetically right and meaningless. The earliest completed date is
+  the available proxy, and whether to clamp to it is a presentation decision.
 
 Recorded here because both mistakes are cheap to make and invisible once made —
 a heatmap full of grey cells for a 3-per-week habit looks like a user with a
@@ -120,9 +161,45 @@ covered by `TodayQueryTest`). This is the whole read the heatmap needs. It was
 built for habit detail's five cells and takes a range because ranges were
 cheaper than a special case, which is why §1's first surface is unblocked.
 
-Owed: **a tag aggregate query**, which does not exist in any form. It is the
-one piece of Insights v1 that is not a read of something already served, and it
-belongs in `:core:data` beside the other projections.
+Was owed, **built 2026-08-23**: the **tag aggregate query**, the one piece of
+Insights v1 that is not a read of something already served. It lives in
+`:core:data` beside the other projections — `ReadModelDao.observeTagEffort`,
+surfaced as `HabitRepository.observeTagEffort(from, to)` returning
+`Flow<List<TagEffort>>`, covered by `TagEffortQueryTest`.
+
+It returns per-tag **totals**, never shares, for §5's reason. Two further
+decisions came out of writing it:
+
+- **Archived habits count.** Effort spent is history, and archiving is a decision
+  about the future; hiding an archived habit's past completions would make a
+  period's distribution change retroactively every time something was tidied
+  away. This is deliberately the opposite of `observeToday`, which is about what
+  to do now.
+- **A completion whose `HabitCreated` has not arrived is excluded**, because it
+  has no known tag and folding it into the untagged slice would invent data and
+  make that slice mean two things. Unreachable before Phase 2 sync — locally a
+  completion cannot precede its habit — and pinned by a test so it stays a
+  decision rather than an accident.
+- **`Health`, `health` and `health ` are one slice, not three.** Tags are
+  unnormalized free text: the editor stores `tag.ifBlank { null }` with no trim
+  and no case fold, and `Commands` validates only the name. SQLite groups on
+  BINARY by default, so the obvious query splits one human tag into three
+  slices that each understate its share — and, because the ordering is
+  `COLLATE NOCASE`, drops them side by side where the split is most visible.
+  The query groups on a trimmed, case-insensitive key and picks its label with
+  `MIN` so it is deterministic. **This is a patch over a gap, not the fix:**
+  what a tag *is* — whether two spellings are one thing — is a domain question,
+  and answering it on write is the real answer. It is worth settling before the
+  multi-tag schema bump rather than after, since that bump is where tags stop
+  being one nullable string.
+- **Re-tagging a habit re-attributes its whole history.** The query joins on
+  current metadata, so re-tagging "run" from `health` to `fitness` makes last
+  January's distribution say `fitness`. The log could answer otherwise —
+  `HabitUpdated` carries the old value — but the read model does not keep it,
+  and the reading taken is that a tag describes the habit rather than the
+  completion. Recorded because it is a narrower guarantee than the archiving
+  decision above sounds: archiving cannot *remove* effort, which is not the
+  same as saying no edit can move it.
 
 Not owed but worth stating: the heatmap needs **no new domain logic**. Trends do
 — §4's denominator — and that lands in `:core:domain` where the schedule rules
@@ -130,8 +207,9 @@ already live, never in the feature module.
 
 ## 7. Still open
 
-- **Weekly habits' grid**: two-state days for everyone, or a grid of weeks for
-  weekly habits (§4). The second is more honest and is a second layout.
+- ~~**Weekly habits' grid**: two-state days for everyone, or a grid of weeks for
+  weekly habits (§4).~~ **Settled 2026-08-23: two-state days for everyone.** §4
+  carries the reasoning.
 - **The period picker.** "Over a selected period" (PRD §5) does not say which
   periods. Whether this is a fixed set (month / quarter / year) or a range, and
   whether it is shared with Phase 1.5's retrospectives, is undecided — sharing it
@@ -139,8 +217,13 @@ already live, never in the feature module.
 - **The colour scale**, and specifically whether intensity encodes anything at
   all. A binary done/not-done grid needs two colours; a count-per-day scale needs
   more and has nothing to count, because completions are idempotent per logical
-  date (architecture §4). Likely two colours, which makes this easier than a
-  heatmap usually is.
+  date (architecture §4). Two colours, then, which makes this easier than a
+  heatmap usually is — but **it is blocked, and it is why this whole screen is**.
+  The app has no palette: `GawiTheme` is stock Material 3 by an explicit
+  deferral to PRD §8's OQ-4. Choosing two colours here before that lands means
+  choosing them twice, which is what inverted PRD §5's Phase 1 order. Whatever is
+  chosen must come from `MaterialTheme` colour roles rather than literals, so the
+  palette reaches this grid the same way it reaches every other screen.
 - **Where it is reached from.** Habit detail for the per-habit grid is the
   obvious door; the tag distribution has no obvious one, and inventing a
   top-level destination is a navigation decision that belongs to `:app`.
