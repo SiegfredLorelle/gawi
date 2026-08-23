@@ -6,7 +6,11 @@
          core/ui/src/main/kotlin/com/gawi/core/ui/theme/Color.kt, duplicated
          because the window is painted by the platform from XML before
          setContent runs and XML cannot read Kotlin. Nothing else in the app
-         hardcodes a scheme colour; keep it that way, and change this one only
-         together with that file. -->
+         hardcodes a scheme colour; keep it that way.
+
+         Asking the next person to change both files is not a mechanism, so
+         WindowBackgroundTest compares this against gawiWindowBackground() in
+         both themes. Change the scheme without changing this and that test
+         fails rather than a cold start flashing. -->
     <color name="gawi_window_background">#F4FBFA</color>
 </resources>

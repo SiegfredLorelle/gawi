@@ -42,6 +42,20 @@ internal sealed interface HabitEditorUiState {
         val color: String,
         val schedule: ScheduleUi,
         val tag: String,
+        /**
+         * The colour this habit was opened with, or null for a new one.
+         *
+         * Carried so the picker can keep offering a colour `HabitPalette` no
+         * longer does (docs/ux/visual-identity.md §6.3). It has to be *held*
+         * rather than derived from [color], for the reason this whole class is
+         * held: derived from the live value, the extra swatch disappears on the
+         * first tap, the row reflows under the finger and every remaining
+         * swatch shifts one place — and the original colour becomes unreachable
+         * without abandoning the form. `selectableBorder` picks a border over a
+         * scale so that nothing reflows on tap; this is the same rule one level
+         * up.
+         */
+        val originalColor: String?,
     ) : HabitEditorUiState {
 
         /**

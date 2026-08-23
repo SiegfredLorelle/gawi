@@ -20,12 +20,30 @@ import org.junit.Test
  * how it looked. `HabitColorTest` covers a habit's own colour; this covers
  * everything the theme decides.
  *
- * **What it deliberately does not assert.** `surfaceVariant` and the container
- * roles sit close to `surface` on purpose — they are fills (the icon-picker
- * swatch, [HabitIcon]'s fallback circle), and the contrast they owe is to their
- * own contents, which is the `onX` pair below. Holding a fill to 3:1 against the
- * page would pin the wrong property and force a design that looks like a
- * button.
+ * **What it deliberately does not assert, and the reasoning for each.**
+ *
+ *  - **A fill against the page.** `surfaceVariant` and the container roles sit
+ *    close to `surface` on purpose — they are grounds (the icon-picker swatch,
+ *    [HabitIcon]'s fallback circle, the strip's today cell), and the contrast
+ *    they owe is to their own contents, which is what the pairs below check.
+ *    Holding a fill to 3:1 against the page would pin the wrong property and
+ *    force every quiet surface to look like a button.
+ *  - **`outlineVariant` anywhere.** It draws exactly one thing, the shut cell's
+ *    border in `RetroStrip`, at about 1.5:1 on `surface` in both themes — well
+ *    under 1.4.11's 3:1. Accepted rather than overlooked: Material specifies
+ *    this role as a low-contrast divider, a shut day is meant to be the quietest
+ *    thing on the strip, and the state has two louder carriers anyway — the
+ *    struck-through number and its dimmed `outline` colour, both asserted. A 3:1
+ *    border would make the disabled cell the most emphatic one on screen.
+ *  - **Accent roles on grounds nothing pairs them with.** `primary`, `tertiary`,
+ *    `outline` and `error` are checked on `surface` and, where the app draws
+ *    them there, on `secondaryContainer`. They are not swept across the whole
+ *    surface family, because which role sits on which is a fact about the
+ *    screens. **The known constraint, so it is not rediscovered the hard way:**
+ *    `outline` on `surfaceContainerHigh` — Material's default `AlertDialog`
+ *    ground — is about 4.1:1 in dark. A broken-streak or shut-day label inside a
+ *    dialog would ship under the floor, so add the pair here when something
+ *    draws it.
  */
 class GawiColorSchemeTest {
 
@@ -191,9 +209,13 @@ private fun ColorScheme.pairings(): List<Pairing> = buildList {
     ).forEach { (fixed, ons) ->
         val (family, plain, dim) = fixed
         val (on, onVariant) = ons
-        text("on${family}Fixed on ${family}Fixed", on, plain)
-        text("on${family}Fixed on ${family}FixedDim", on, dim)
-        text("on${family}FixedVariant on ${family}Fixed", onVariant, plain)
-        text("on${family}FixedVariant on ${family}FixedDim", onVariant, dim)
+        // Capitalised, because these four are among the tightest pairs in the
+        // scheme and so the likeliest to actually print. "onprimaryFixed" names
+        // no role and sends the reader looking for one.
+        val onName = "on" + family.replaceFirstChar(Char::uppercaseChar)
+        text("${onName}Fixed on ${family}Fixed", on, plain)
+        text("${onName}Fixed on ${family}FixedDim", on, dim)
+        text("${onName}FixedVariant on ${family}Fixed", onVariant, plain)
+        text("${onName}FixedVariant on ${family}FixedDim", onVariant, dim)
     }
 }

@@ -175,3 +175,24 @@ internal val GawiDarkColors: ColorScheme = darkColorScheme(
     onTertiaryFixed = Color(0xFF372900),
     onTertiaryFixedVariant = Color(0xFF5C4B1A),
 )
+
+/**
+ * The colour a host should paint its window before Compose runs.
+ *
+ * Exists because that window is not drawn by this module and cannot be. A
+ * platform window is painted from an XML theme attribute before `setContent`,
+ * XML cannot read Kotlin, and so `:app` keeps a hand-copy of this value in
+ * `values/colors.xml`. This is the seam that makes the copy *checkable*:
+ * `WindowBackgroundTest` compares the resource against this function in both
+ * themes, so retuning `surface` fails a test instead of shipping a cold start
+ * that flashes one colour and settles on another.
+ *
+ * `surface` and not `background`: they are equal by design and
+ * `GawiColorSchemeTest` pins that, but what a window sits under is the surface
+ * the first screen draws.
+ *
+ * The two [ColorScheme]s stay `internal`. This is deliberately the only value
+ * that leaves the module without going through [GawiTheme], because it is the
+ * only one another module has to reproduce rather than consume.
+ */
+fun gawiWindowBackground(darkTheme: Boolean): Color = if (darkTheme) GawiDarkColors.surface else GawiLightColors.surface

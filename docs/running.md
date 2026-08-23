@@ -1066,9 +1066,13 @@ app is not.
       in a swatch. Light mode's `tertiary` is a dark bronze rather than the gold
       the drawings showed — this is where that either reads as deliberate or does
       not.
-- [ ] **Habit detail's retro strip.** A completed cell is `primary` and an
-      incomplete or shut one is `outline`. The strip is the densest use of the
-      scheme and the place a recessive role that is too recessive shows up.
+- [ ] **Habit detail's retro strip.** Three marker states, not two: a completed
+      day is `primary`, an open day not yet done is `onSurfaceVariant`, and a
+      shut day is `outline` — which should be the quietest of the three. The
+      strip is the densest use of the scheme and the place a recessive role that
+      is *too* recessive shows up. Look at today's cell especially: it is the one
+      with a filled ground, and the ground is what made the first version of
+      this fail (`visual-identity.md` §3).
 - [ ] **The editor's colour swatches, and the tick on every one.** All eight
       retuned hues take a black glyph by design. Look at the tick on each: the
       old palette drew six of the eight below the contrast floor and the ring
