@@ -537,10 +537,15 @@ The alternative — exempting yellow from the rule so it can stay bright — was
 rejected because a bright yellow fails the 3:1 badge floor against every light
 surface in §3, which is a worse defect than a renamed swatch.
 
-Values stay **uppercase and six digits**, for the reason `HabitPalette`'s KDoc
-gives: `ColorPicker` matches on the exact string, so a lowercase palette hex
-would offer the same colour twice — once as a hue and once as §6.3's "colour you
-already have".
+Values stay **uppercase and six digits**, as a convention that keeps what the
+palette owns canonical. It is no longer load-bearing, and the story of that is
+worth a line: it used to be justified by a real defect, because `ColorPicker`
+compared hexes as strings, so a stored lowercase palette colour was offered twice
+— once as a hue and once as §6.3's "colour you already have", with the wrong one
+selected. Review caught it. The picker now compares what two hexes *draw*, which
+also covers the eight-digit spelling of the same colour that a case-insensitive
+comparison would still have duplicated. The convention stays because canonical
+storage is worth having; the editor no longer depends on it.
 
 **That rule binds the palette and nothing else.** `parseHabitColor` accepts six
 digits or eight, upper case or lower, deliberately, and an import replays
