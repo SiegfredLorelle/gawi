@@ -392,6 +392,22 @@ Architecture §8 puts instrumented tests outside CI, so this is the substitute.
 Work through it for any change to the data path or the Today view; note in the PR
 which parts you ran.
 
+**The widget and accessibility blocks are deferred, not dropped** (recorded
+2026-08-23). PRD §5 wanted them run before Phase 1, on the reasoning that Phase 1
+adds screens and replaces the three-face placeholder on both the Today view and
+the widget — the surfaces these checks exist to verify. Phase 1 then turned out
+to open with a whole-app restyle rather than with those screens (PRD §8, OQ-4
+widened to the visual identity), which makes the argument sharper, not weaker:
+a TalkBack pass, a 200% font-scale pass and a widget legibility check run *now*
+would all be measuring a theme that is about to be replaced.
+
+**Their new trigger is the restyle landing**, and they run once, together, on the
+build that carries the real palette — the widget check especially, since a Glance
+tree cannot consume the Compose theme (architecture §2) and takes any palette
+separately. This is a scheduled debt with a named trigger rather than a silent
+gap, which is the only reason it is acceptable to have skipped them. Nothing else
+in this section is deferred.
+
 The clock-dependent checks below used to need an `adb` call into a debug
 activity. They drive the settings screen now, which is the same code path a user
 takes — so what they verify is the app rather than a test fixture beside it.
