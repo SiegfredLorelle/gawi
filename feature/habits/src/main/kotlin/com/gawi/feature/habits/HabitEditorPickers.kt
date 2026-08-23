@@ -101,6 +101,34 @@ internal val COLOR_LABELS = listOf(
 private data class Swatch(val hex: String, val label: String)
 
 /**
+ * Whether two stored hexes are the same swatch — which means the same *colour*,
+ * not the same string.
+ *
+ * The editor used to compare strings, and a colour off the event log does not
+ * have to be spelled the way the palette spells it. `HabitState.color` is
+ * unvalidated and [parseHabitColor] accepts six digits or eight, upper case or
+ * lower, by design. So an imported `"#f22935"` was not a palette member and not
+ * equal to the palette's `"#F22935"`: the row grew a leading swatch carrying the
+ * lowercase value **and showed it selected**, while the identical colour sat
+ * beside it unselected. Two swatches, one colour, the wrong one ticked.
+ *
+ * Comparing what the two *draw* also covers `"#FFF22935"`, the eight-digit
+ * opaque form, which a case-insensitive comparison would still duplicate. A
+ * translucent `"#80F22935"` is genuinely a different colour and still gets its
+ * own swatch.
+ *
+ * The string comparison is not a shortcut, it is the fallback for a value
+ * [parseHabitColor] cannot read: those parse to null, and null must not match
+ * null, or every unparseable hex would be "the same colour" as every other. An
+ * unparseable stored value still selects its own swatch this way.
+ *
+ * Nothing here rewrites the stored value. Casing changes only when the user taps
+ * a swatch, which is a write they asked for.
+ */
+private fun sameColour(a: String, b: String?): Boolean = b != null &&
+    (a.equals(b, ignoreCase = true) || parseHabitColor(a)?.let { it == parseHabitColor(b) } == true)
+
+/**
  * The colour, chosen from a fixed palette, which is what keeps it valid — plus
  * one exception the palette cannot cover.
  *
@@ -130,9 +158,9 @@ internal fun ColorPicker(form: HabitEditorUiState.Form, onEdit: (HabitEditorUiSt
         // form.originalColor, never form.color: see its KDoc. Derived from the
         // live colour this entry vanishes on the first tap and takes the row's
         // layout with it.
-        form.originalColor?.takeUnless { it in HabitPalette.Colors }?.let { dropped ->
-            add(Swatch(dropped, stringResource(R.string.habits_color_current)))
-        }
+        form.originalColor
+            ?.takeIf { dropped -> HabitPalette.Colors.none { sameColour(it, dropped) } }
+            ?.let { dropped -> add(Swatch(dropped, stringResource(R.string.habits_color_current))) }
         HabitPalette.Colors.forEachIndexed { index, hex ->
             // getOrNull, not [index]. The palette lives in :core:ui while these
             // labels live here, so whoever adds a swatch is in the other module
@@ -144,7 +172,7 @@ internal fun ColorPicker(form: HabitEditorUiState.Form, onEdit: (HabitEditorUiSt
         }
     }
     FlowingRow(swatches) { (hex, label) ->
-        val selected = hex == form.color
+        val selected = sameColour(hex, form.color)
         // Never null for a palette entry — HabitColorTest pins that — so the
         // fallback here is for a colour that arrived from somewhere else, which
         // is exactly what the leading swatch above can be.

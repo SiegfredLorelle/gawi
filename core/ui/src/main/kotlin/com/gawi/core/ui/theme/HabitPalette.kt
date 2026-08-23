@@ -27,12 +27,12 @@ package com.gawi.core.ui.theme
 object HabitPalette {
 
     /**
-     * Uppercase and six digits, and **that is a rule about these values only.**
-     * The editor matches by exact string — `ColorPicker` compares
-     * `hex == form.color` — so a lowercase `"#a94ff6"` here would not open an
-     * *unselected* form, §6.3's leading swatch catches that, but it would open
-     * one offering the same colour twice: once as a hue and once as "the colour
-     * you already have".
+     * Uppercase and six digits, and **that is a rule about these values only** —
+     * a convention that keeps what this object owns canonical, not something the
+     * editor's correctness rests on. It used to be the latter, and the editor is
+     * better for no longer needing it: `ColorPicker` compares what two hexes
+     * *draw* rather than how they are spelled, so a value off the log that means
+     * a palette colour is treated as one however it arrived.
      *
      * **Nothing else is asked to spell a colour this way, and an import
      * especially is not.** [parseHabitColor] takes six digits or eight, upper

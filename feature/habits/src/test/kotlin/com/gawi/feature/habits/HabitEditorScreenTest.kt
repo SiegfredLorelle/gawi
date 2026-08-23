@@ -291,6 +291,58 @@ class HabitEditorScreenTest {
             .assertIsSelected()
     }
 
+    /**
+     * A stored colour spelled differently is still the same swatch.
+     *
+     * `HabitState.color` is unvalidated off the event log and `parseHabitColor`
+     * takes lower case and eight digits on purpose, so an import can hold a
+     * palette colour spelled its own way. Compared as strings, the editor grew a
+     * leading swatch for it *and selected that*, leaving the identical palette
+     * colour beside it unticked — two swatches drawing one colour. Both forms are
+     * pinned because a case-insensitive comparison alone fixes only the first.
+     */
+    @Test
+    fun aLowercaseStoredColour_isStillThePaletteSwatch() {
+        assertSpellingSelectsThePaletteSwatch(HabitPalette.Colors.last().lowercase())
+    }
+
+    /** The other spelling, and the one a case-insensitive fix alone would miss. */
+    @Test
+    fun anEightDigitStoredColour_isStillThePaletteSwatch() {
+        assertSpellingSelectsThePaletteSwatch(HabitPalette.Colors.last().replace("#", "#FF"))
+    }
+
+    /**
+     * One [render] per case, in its own test.
+     *
+     * A loop over both spellings reads better and cannot work: the compose rule
+     * allows one `setContent`, so the second iteration throws rather than fails.
+     */
+    private fun assertSpellingSelectsThePaletteSwatch(spelling: String) {
+        render(habitState(color = spelling).toForm())
+
+        compose.onNodeWithContentDescription(string(R.string.habits_color_current)).assertDoesNotExist()
+        compose.onNodeWithContentDescription(string(COLOR_LABELS.last()))
+            .performScrollTo()
+            .assertIsSelected()
+    }
+
+    /**
+     * The boundary: translucent is a different colour, not a spelling of one.
+     *
+     * Worth pinning next to the case above, because the fix for that one could
+     * easily have swallowed this: `"#80…"` parses to a genuinely different colour
+     * and has to keep its own swatch.
+     */
+    @Test
+    fun aTranslucentStoredColour_keepsItsOwnSwatch() {
+        render(habitState(color = HabitPalette.Colors.last().replace("#", "#80")).toForm())
+
+        compose.onNodeWithContentDescription(string(R.string.habits_color_current))
+            .performScrollTo()
+            .assertIsSelected()
+    }
+
     /** And it is not offered when there is nothing orphaned to offer. */
     @Test
     fun aColourThePaletteStillOffers_addsNoExtraSwatch() {
