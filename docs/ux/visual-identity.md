@@ -254,7 +254,8 @@ candidate wins. Every number below was computed and checked, not estimated.
 `tertiary`. Those are the two schedule kinds (PRD §4), and colour is part of how
 the badge distinguishes them — the text differs only by a trailing `w` (`5` vs
 `5w`). `primary` also marks a completed cell in habit detail's `RetroStrip`,
-against `outline` for an incomplete or shut one.
+against `onSurfaceVariant` for an open day not yet done and `outline` for a shut
+one — three states, not two, since the correction in §3.
 
 So the requirement is not just that each role is legible on `surface`. **`primary`
 and `tertiary` must be clearly distinguishable from each other**, in both themes,
@@ -438,9 +439,13 @@ is judged together. Constraints on the choice:
 
 **Decision: keep eight slots; retune all eight to one tonal rule.**
 
-Eight rather than fewer, because the count is load-bearing in three places —
-`COLOR_LABELS`, the test that pins the two lists parallel, and the debug seeder's
-expectations. Retuned rather than left alone, because eight saturated stock
+Eight rather than fewer, because the count is load-bearing in two places —
+`COLOR_LABELS` and the test that pins the two lists parallel. (An earlier
+revision counted a third, the debug seeder's expectations. There is no debug
+seeder in this repo and there is no `debug` source set; the claim came from
+`HabitPalette`'s own KDoc, which said the same and has been corrected. A
+citation to code that does not exist is the defect `scripts/check-citations.sh`
+was written for, in the one direction it cannot check.) Retuned rather than left alone, because eight saturated stock
 Material hues sitting next to a designed scheme is the single most visible
 remaining tell.
 
@@ -493,9 +498,12 @@ The alternative — exempting yellow from the rule so it can stay bright — was
 rejected because a bright yellow fails the 3:1 badge floor against every light
 surface in §3, which is a worse defect than a renamed swatch.
 
-Values stay **uppercase and six digits**, matching what the seeder writes, for
-the reason `HabitPalette`'s KDoc already gives: reopening a seeded habit should
-find its colour already selected rather than showing an unpicked form.
+Values stay **uppercase and six digits**, for the reason `HabitPalette`'s KDoc
+gives: `ColorPicker` matches on the exact string, so a lowercase hex opens a form
+offering the same colour twice — once as a hue and once as §6.3's "colour you
+already have". Anything else that writes a colour, an import for instance, has to
+spell it the same way. (This used to be justified by what a debug seeder wrote;
+there is no seeder — see §6.1.)
 
 ### 6.3 The orphaned hexes, and what to do about them
 

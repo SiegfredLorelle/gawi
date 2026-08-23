@@ -28,10 +28,12 @@ object HabitPalette {
 
     /**
      * Uppercase and six digits, because [HabitPalette] is not the only thing
-     * that writes a habit colour and the editor matches by exact string.
-     * `ColorPicker` compares `hex == form.color`, so `"#a94ff6"` would render
-     * as an unselected form holding a colour it is already set to. Anything
-     * else that writes one — an import, a seeder — has to spell it this way.
+     * that writes a habit colour and the editor matches by exact string:
+     * `ColorPicker` compares `hex == form.color`. A lowercase `"#a94ff6"` no
+     * longer opens an *unselected* form — §6.3's leading swatch catches it — but
+     * it does open one offering the same colour twice, once as a hue and once as
+     * "the colour you already have". Anything else that writes one, an import or
+     * a seeder, has to spell it this way.
      *
      * Retuning this list migrates nothing, and must not: a colour lives as raw
      * hex in an append-only log, and rewriting history to restyle it is the

@@ -1,6 +1,10 @@
 package com.gawi.feature.habits
 
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
@@ -17,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import com.gawi.core.ui.theme.GawiSpacing
 import com.gawi.core.ui.theme.GawiTheme
 import com.gawi.core.ui.theme.HabitPalette
+import com.gawi.feature.habits.testsupport.habitState
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -43,6 +48,9 @@ class HabitEditorScreenTest {
 
     private fun string(id: Int): String = resources.getString(id)
 
+    /** A real orphan: the purple this palette offered before the retune. */
+    private val orphanColour = "#7E57C2"
+
     private val edits = mutableListOf<HabitEditorUiState.Form>()
     private var saves = 0
     private var cancels = 0
@@ -54,6 +62,35 @@ class HabitEditorScreenTest {
                     state = state,
                     actions = HabitEditorActions(
                         onEdit = { edits += it },
+                        onSave = { saves++ },
+                        onCancel = { cancels++ },
+                    ),
+                    snackbarHostState = SnackbarHostState(),
+                )
+            }
+        }
+    }
+
+    /**
+     * Like [render], but the form it draws follows the edits it reports.
+     *
+     * [render] holds one immutable state, which is right for almost everything
+     * here — what is asserted is how a given state draws. It cannot see a defect
+     * that only appears *after* an edit, and the picker had one: a swatch list
+     * whose length changed on tap. Feeding `onEdit` back is what makes the second
+     * composition real rather than a second `setContent`, which the rule rejects.
+     */
+    private fun renderFollowingEdits(initial: HabitEditorUiState.Form) {
+        compose.setContent {
+            var form by remember { mutableStateOf(initial) }
+            GawiTheme {
+                HabitEditorScreen(
+                    state = form,
+                    actions = HabitEditorActions(
+                        onEdit = {
+                            edits += it
+                            form = it
+                        },
                         onSave = { saves++ },
                         onCancel = { cancels++ },
                     ),
@@ -246,7 +283,7 @@ class HabitEditorScreenTest {
      */
     @Test
     fun aColourThePaletteDropped_isOfferedAsTheCurrentOne() {
-        render(newHabitForm().copy(color = "#7E57C2"))
+        render(habitState(color = orphanColour).toForm())
 
         compose.onNodeWithContentDescription(string(R.string.habits_color_current))
             .performScrollTo()
@@ -257,9 +294,34 @@ class HabitEditorScreenTest {
     /** And it is not offered when there is nothing orphaned to offer. */
     @Test
     fun aColourThePaletteStillOffers_addsNoExtraSwatch() {
-        render(newHabitForm().copy(color = HabitPalette.Colors.last()))
+        render(habitState(color = HabitPalette.Colors.last()).toForm())
 
         compose.onNodeWithContentDescription(string(R.string.habits_color_current)).assertDoesNotExist()
+        compose.onNodeWithContentDescription(string(COLOR_LABELS.last())).performScrollTo().assertIsSelected()
+    }
+
+    /**
+     * The dropped colour stays offered after picking something else.
+     *
+     * The defect this pins is a layout one and it was a real bug: derived from
+     * the live `form.color`, the extra swatch vanished the moment any hue was
+     * tapped, so the row went from nine entries to eight, re-chunked from 5+4 to
+     * 5+3, and every swatch slid one place along — under the finger that had
+     * just tapped. A second tap in the same spot then picked a different colour,
+     * and the habit's own colour was no longer reachable without abandoning the
+     * form. Rendering the *result* of that edit is what catches it, which is why
+     * this asserts on a second render rather than on the first.
+     */
+    @Test
+    fun pickingAnotherColour_keepsOfferingTheDroppedOne() {
+        renderFollowingEdits(habitState(color = orphanColour).toForm())
+
+        compose.onNodeWithContentDescription(string(COLOR_LABELS.last())).performScrollTo().performClick()
+
+        assertEquals(HabitPalette.Colors.last(), edits.last().color)
+        compose.onNodeWithContentDescription(string(R.string.habits_color_current))
+            .performScrollTo()
+            .assertExists()
         compose.onNodeWithContentDescription(string(COLOR_LABELS.last())).performScrollTo().assertIsSelected()
     }
 

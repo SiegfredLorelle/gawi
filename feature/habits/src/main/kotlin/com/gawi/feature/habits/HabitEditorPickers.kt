@@ -112,7 +112,9 @@ private data class Swatch(val hex: String, val label: String)
  * would open with **nothing** selected. That is worse than untidy — the obvious
  * repair is to tap a swatch, which silently changes a colour the user never
  * asked to change. So a colour the palette does not offer is shown as a leading
- * swatch of its own (docs/ux/visual-identity.md §6.3), already selected.
+ * swatch of its own (docs/ux/visual-identity.md §6.3), already selected — and it
+ * **stays** for as long as the form is open, so picking a hue and changing your
+ * mind is possible rather than a one-way door.
  *
  * No new mechanism is needed for it: [parseHabitColor] survives arbitrary hex by
  * design and [glyphColorOn] already picks a glyph for anything.
@@ -125,8 +127,11 @@ internal fun ColorPicker(form: HabitEditorUiState.Form, onEdit: (HabitEditorUiSt
     // as the wrong colour, which §4.3 calls an accessibility defect and which no
     // test can catch.
     val swatches = buildList {
-        form.color.takeUnless { it in HabitPalette.Colors }?.let { orphan ->
-            add(Swatch(orphan, stringResource(R.string.habits_color_current)))
+        // form.originalColor, never form.color: see its KDoc. Derived from the
+        // live colour this entry vanishes on the first tap and takes the row's
+        // layout with it.
+        form.originalColor?.takeUnless { it in HabitPalette.Colors }?.let { dropped ->
+            add(Swatch(dropped, stringResource(R.string.habits_color_current)))
         }
         HabitPalette.Colors.forEachIndexed { index, hex ->
             // getOrNull, not [index]. The palette lives in :core:ui while these

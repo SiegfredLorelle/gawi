@@ -47,6 +47,8 @@ internal fun HabitState.toForm(): HabitEditorUiState.Form = HabitEditorUiState.F
     schedule = schedule.toUi(),
     // Nullable in the model, a field on screen. The inverse of toMetadata.
     tag = tag.orEmpty(),
+    // What the log actually holds, kept so the picker can still offer it.
+    originalColor = color,
 )
 
 /**
@@ -63,6 +65,8 @@ internal fun newHabitForm(): HabitEditorUiState.Form = HabitEditorUiState.Form(
     color = HabitPalette.DefaultColor,
     schedule = ScheduleUi.Daily,
     tag = "",
+    // Nothing to preserve: a new habit starts on the palette by construction.
+    originalColor = null,
 )
 
 /**
