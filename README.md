@@ -20,9 +20,12 @@ and Phase 1 started in its place. PRD §5 records what waiving it cost, and §9
 records the risk it leaves uncovered.
 
 Phase 1 is under way. It is being taken in a different order from the one
-PRD §5 first assessed: the visual identity comes first, because the app is
-still on stock Material 3 by an explicit deferral (PRD §8, OQ-4) and the
-screens Phase 1 adds would otherwise be styled twice.
+PRD §5 first assessed: the visual identity came first, because the app was on
+stock Material 3 by an explicit deferral (PRD §8, OQ-4) and the screens Phase 1
+adds would otherwise have been styled twice. The colour half of that has landed —
+a designed light and dark scheme and eight retuned habit hues
+([docs/ux/visual-identity.md](docs/ux/visual-identity.md)). Typography and Momo's
+own art are still open, and Insights v1 is what the reordering was for.
 
 What comes next, and in what order, is recorded in [PRD §5](docs/prd.md). The
 open design questions are in §8 of the same file.

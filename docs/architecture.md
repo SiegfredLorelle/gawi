@@ -608,10 +608,20 @@ this app's was added — both versions declare the same four.
     claim that pinning needs the user is not being retracted on a guess.
 
   What *is* asserted instead, at the layer where it is cheap: WCAG contrast
-  ratios in `WidgetTextColourTest` and `HabitColorTest`, the 48dp touch-target
-  floor in three screen tests, and semantics — roles, content descriptions,
-  disabled state — throughout. `docs/running.md` §4 carries what only a device
-  and a person can check.
+  ratios in `WidgetTextColourTest`, `HabitColorTest` and `GawiColorSchemeTest`,
+  the 48dp touch-target floor in three screen tests, and semantics — roles,
+  content descriptions, disabled state — throughout. `docs/running.md` §4 carries
+  what only a device and a person can check.
+
+  The third of those arrived with the designed theme (2026-08-23) and is worth
+  naming separately, because it covers the thing the other two could not: a
+  `ColorScheme` is ordinary Kotlin, so every foreground/background pair the app
+  draws can be asserted against its floor in both themes without a device or
+  Robolectric. Before it there was no test over `GawiTheme` at all. It is also a
+  reminder of what a contrast test has to be: the seven tests over
+  `glyphColorOn` passed for a phase while the function picked the *worse* of two
+  glyphs, because they asserted which colour came back rather than what it
+  measured.
 
 ## 9. Repo integration (template contract)
 
@@ -695,7 +705,11 @@ the one a first contribution hits immediately.
 §8 owns the policy for what belongs there and why it is only `:app`. Test helpers
 shared between test classes go in a `testsupport/` package beside them — six of
 the eight modules have one, and the two that do not (`:app`, `:core:ui`) have
-four and two test files respectively, which is the honest threshold for bothering.
+four each, which is the honest threshold for bothering. `:core:ui` came close
+when the designed scheme landed and two test classes needed the same WCAG
+formula: the helper went in a plain `Contrast.kt` next to them in the same
+package instead, because a `testsupport/` package for one file two neighbours
+share is ceremony. It earns one when a third module-crossing helper appears.
 
 **The core modules are packaged by concept, not by layer.**
 

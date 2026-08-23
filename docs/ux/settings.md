@@ -118,8 +118,9 @@ moment a settings destination exists beside it, because the gear is the one
 symbol a reader will read as settings.
 
 So the gear now opens settings and manage-habits takes a list glyph. Both are
-glyphs with no text — there is no icon pack in this project (PRD OQ-4 is
-undesigned, and stock Material is deliberate until Momo has real art) — which
+glyphs with no text — there is no icon pack in this project (the colour scheme
+is designed now, but the icon vocabulary is still open:
+[visual-identity.md](visual-identity.md) §7.3) — which
 means the content description is the *only* thing distinguishing them, to a
 screen reader and to a test alike. `settingsButton_isNamedAndLeadsToSettings`
 and `todaysAppBarLeadsToSettings` both exist to catch the two being crossed, and
