@@ -152,19 +152,29 @@ private fun widgetTextStyle() = TextStyle(color = GlanceTheme.colors.onSurface)
  * have. Glance 1.1.1 offers only `ColorProvider(Color)` and
  * `ColorProvider(@ColorRes Int)` publicly, and the second is the kind being
  * rejected — so pinning means two hardcoded literals per state, chosen to work
- * in both themes without a day/night provider to express them.
+ * in both themes without a day/night provider to express them. That much has
+ * not changed with the palette: a designed scheme is still Compose-side, and a
+ * `RemoteViews` tree cannot reach it.
  *
- * That is a palette decision, and this project does not have one yet:
- * `HabitPalette` says in as many words that it is "not a design system" because
- * Momo's palette is PRD OQ-4 and undesigned. Inventing two widget-only
- * constants here to fix an unobserved contrast problem is the wrong trade, so
- * the glyph keeps the host's tint and docs/running.md §4 keeps the by-hand
- * check. Revisit with OQ-4.
+ * That used to be the end of it, because the project had no palette to pin the
+ * glyph to. It has one now — `GawiTheme` carries designed light and dark
+ * schemes — so the reason this is still unpinned has changed and is worth
+ * restating rather than leaving as a stale deferral:
  *
- * Note also that pinning would NOT have made the glyph testable, which was the
- * stated reason to do it: `EmittableCheckBox.colors` is readable, but
- * `CheckBoxColors` exposes only an `internal` accessor returning
- * `CheckableColorProvider`, a public interface with no members.
+ *  - `ColorProvider(Color)` literals are now available, and picking two is no
+ *    longer inventing a palette. But `:widget` cannot see `:core:ui`, so it
+ *    means *copying* two hexes into this module, and the widget's own palette is
+ *    a separate piece of work with three more surfaces in it
+ *    (docs/ux/visual-identity.md §7.4). Doing a third of it here would leave the
+ *    widget half-styled and the duplication undocumented.
+ *  - Pinning still would not make the glyph assertable, which was the stated
+ *    reason to do it. `EmittableCheckBox.colors` is readable, but
+ *    `CheckBoxColors` exposes only an `internal` accessor returning
+ *    `CheckableColorProvider`, a public interface with no members.
+ *
+ * So the glyph keeps the host's tint for now and docs/running.md §4 keeps the
+ * by-hand check. Revisit with the widget set, not with the palette:
+ * docs/ux/visual-identity.md §7.4 is the scope and the price.
  */
 
 private const val WIDGET_PADDING = 8
