@@ -73,7 +73,18 @@ internal fun IconPicker(form: HabitEditorUiState.Form, onEdit: (HabitEditorUiSta
  * Positional, matching [HabitPalette.Colors]. `HabitsUiMapperTest` asserts the
  * two lists stay the same length, so adding a swatch without a name is a
  * failing test rather than a swatch that announces itself as
- * "number sign E F 5 3 5 0".
+ * "number sign E F 2 9 3 5".
+ *
+ * "Gold" and not "Yellow": the retuned hue at that slot is `#9C851F`, which is
+ * a gold and not a yellow. These strings are content descriptions rather than
+ * decoration (docs/ux/visual-identity.md §4.3), so a label that no longer names
+ * its colour is an accessibility defect, and nothing in the suite can catch it
+ * — a name is not a checkable property of a hex. §6.2 moved the string with the
+ * value for that reason.
+ *
+ * The leading "current" swatch is deliberately **not** in this list. It has no
+ * fixed position and names no hue, so indexing it here would shift every label
+ * by one against the palette.
  */
 internal val COLOR_LABELS = listOf(
     R.string.habits_color_red,
@@ -82,24 +93,56 @@ internal val COLOR_LABELS = listOf(
     R.string.habits_color_blue,
     R.string.habits_color_teal,
     R.string.habits_color_green,
-    R.string.habits_color_yellow,
+    R.string.habits_color_gold,
     R.string.habits_color_orange,
 )
 
-/** The colour, chosen from a fixed palette, which is what keeps it valid. */
+/** A swatch to draw: the hex it writes, and what assistive technology calls it. */
+private data class Swatch(val hex: String, val label: String)
+
+/**
+ * The colour, chosen from a fixed palette, which is what keeps it valid — plus
+ * one exception the palette cannot cover.
+ *
+ * **The exception, and why it has to exist.** A habit's colour is raw hex in an
+ * append-only log, so retuning [HabitPalette.Colors] migrates nothing and must
+ * not: rewriting history to restyle a habit is the thing an event log exists not
+ * to do. A habit created before the retune therefore holds a hex this list no
+ * longer offers, and selection here is exact string equality, so its editor
+ * would open with **nothing** selected. That is worse than untidy — the obvious
+ * repair is to tap a swatch, which silently changes a colour the user never
+ * asked to change. So a colour the palette does not offer is shown as a leading
+ * swatch of its own (docs/ux/visual-identity.md §6.3), already selected.
+ *
+ * No new mechanism is needed for it: [parseHabitColor] survives arbitrary hex by
+ * design and [glyphColorOn] already picks a glyph for anything.
+ */
 @Composable
 internal fun ColorPicker(form: HabitEditorUiState.Form, onEdit: (HabitEditorUiState.Form) -> Unit) {
-    FlowingRow(HabitPalette.Colors.withIndex().toList()) { (index, hex) ->
+    // Carrying the label on the item rather than looking it up by index. The
+    // leading swatch has no slot in COLOR_LABELS, so a synthetic index would
+    // shift every name one place along the palette — a swatch announcing itself
+    // as the wrong colour, which §4.3 calls an accessibility defect and which no
+    // test can catch.
+    val swatches = buildList {
+        form.color.takeUnless { it in HabitPalette.Colors }?.let { orphan ->
+            add(Swatch(orphan, stringResource(R.string.habits_color_current)))
+        }
+        HabitPalette.Colors.forEachIndexed { index, hex ->
+            // getOrNull, not [index]. The palette lives in :core:ui while these
+            // labels live here, so whoever adds a swatch is in the other module
+            // and will not see HabitsUiMapperTest's length assertion until CI.
+            // Reading the hex aloud is a poor announcement; taking the editor
+            // down with an IndexOutOfBoundsException is worse.
+            val labelRes = COLOR_LABELS.getOrNull(index)
+            add(Swatch(hex, if (labelRes != null) stringResource(labelRes) else hex))
+        }
+    }
+    FlowingRow(swatches) { (hex, label) ->
         val selected = hex == form.color
-        // getOrNull, not [index]. The palette lives in :core:ui while these
-        // labels live here, so whoever adds a swatch is in the other module and
-        // will not see HabitsUiMapperTest's length assertion until CI. Reading
-        // the hex aloud is a poor announcement; taking the editor down with an
-        // IndexOutOfBoundsException is worse.
-        val labelRes = COLOR_LABELS.getOrNull(index)
-        val label = if (labelRes != null) stringResource(labelRes) else hex
         // Never null for a palette entry — HabitColorTest pins that — so the
-        // fallback here is for a colour that arrived from somewhere else.
+        // fallback here is for a colour that arrived from somewhere else, which
+        // is exactly what the leading swatch above can be.
         val tint = parseHabitColor(hex) ?: MaterialTheme.colorScheme.secondaryContainer
         Box(
             modifier = Modifier
