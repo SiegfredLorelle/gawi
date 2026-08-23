@@ -74,9 +74,11 @@ fun glyphColorOn(tint: Color, background: Color): Color =
  * passed. `HabitColorTest` pins the ratios rather than the value, so a future
  * edit has to keep the property and not merely the number.
  *
- * The useful consequence: at the true crossover *every* tint clears 4.49:1
+ * The useful consequence: at the true crossover *every* tint clears 4.58:1
  * whichever glyph it takes, so contrast stops being a property of the palette
- * and becomes a property of this function.
+ * and becomes a property of this function. That figure is the minimum, attained
+ * at the crossover itself where the two options are equal — `√0.0525 / 0.05`,
+ * and the same number a sweep of the whole luminance range returns.
  */
 private const val CONTRAST_PIVOT = 0.17912878f
 
