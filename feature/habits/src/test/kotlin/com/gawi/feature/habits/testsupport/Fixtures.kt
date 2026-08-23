@@ -6,6 +6,7 @@ import com.gawi.core.domain.model.HabitId
 import com.gawi.core.domain.model.Schedule
 import com.gawi.core.domain.projection.HabitState
 import com.gawi.core.domain.streak.StreakSnapshot
+import com.gawi.core.ui.theme.HabitPalette
 import java.time.LocalDate
 
 /**
@@ -29,13 +30,24 @@ val TODAY: LocalDate = LocalDate.parse("2026-08-18")
 /**
  * Suppressed at the declaration: a fixture builder's parameters are its whole
  * point. Every one is defaulted, so a test names only the field it is about.
+ *
+ * **[color] defaults to a colour the editor still offers, and that is a rule
+ * rather than a detail.** It used to be the literal `"#7E57C2"`, which the hue
+ * retune turned into a colour `HabitPalette` no longer lists — so an editor
+ * rendered from this default would quietly grow the leading "current colour"
+ * swatch that only an orphaned hex is supposed to produce, and a test written
+ * from the default would be exercising that path without saying so. Nothing
+ * renders from the default today, so this is a trap rather than a defect; the
+ * symbolic value keeps it shut through the next retune too, which the literal
+ * did not. A test that wants an orphan names one, as `HabitEditorScreenTest`
+ * does.
  */
 @Suppress("LongParameterList")
 fun habitState(
     id: HabitId = habitId(1),
     name: String = "read",
     icon: String = "📖",
-    color: String = "#7E57C2",
+    color: String = HabitPalette.DefaultColor,
     schedule: Schedule = Schedule.Daily,
     tag: String? = null,
     archived: Boolean = false,
