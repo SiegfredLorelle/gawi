@@ -695,10 +695,16 @@ widget. Before any of it is built, the price:
 - **Momo's art style, expressions, and whether it is static or animated.** OQ-4's
   second half, still open. PRD §5 has the tooling plan (Rive recommended, Lottie
   and static-first as fallbacks).
-- **The launcher icon.** Same half. There is no `mipmap/ic_launcher` at all today
-  — the manifest points `android:icon` at `@android:drawable/sym_def_app_icon`,
-  which is Android's generic default and *not* public API. Replacing it is the
-  fix; depending on it further is not.
+- **The launcher icon — its drawing and its wiring, not its design.** §7.1 does
+  decide the icon: Momo as a mark, the composition, and the woven thread as the
+  monochrome layer. What is open is everything downstream of that, and for the
+  reason §7.1 gives itself — the mark derives from the character, so it cannot be
+  drawn until Momo's style is. Nor is any of it implemented: there is no
+  `mipmap/ic_launcher` at all today and the manifest points `android:icon` at
+  `@android:drawable/sym_def_app_icon`, which is Android's generic default and
+  *not* public API. Replacing it is the fix; depending on it further is not.
+  Listed here rather than under §7.1 because a decision nothing has drawn is
+  still a thing this document has not delivered.
 - **Spacing.** `GawiSpacing` parks itself on OQ-4 along with the rest, but
   dimensions were genuinely not part of this brief. Its KDoc gets narrowed rather
   than rewritten.
