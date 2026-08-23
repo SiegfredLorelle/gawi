@@ -81,8 +81,13 @@ surfaces those checks exist to verify. **They were skipped anyway on 2026-08-23,
 and re-triggered rather than dropped.** The argument survived the decision and
 changed sides: Phase 1 opens with a whole-app restyle (§8, OQ-4 widened), so a
 TalkBack pass, a 200% font-scale pass and a widget legibility check run now would
-measure a theme that is about to be replaced. Their trigger is the restyle
-landing, and `docs/running.md` §4 carries it. `docs/running.md` §3 covers getting
+measure a theme that is about to be replaced. Their trigger was the restyle
+landing — **and it has fired.** The restyle is in, so these are due rather than
+deferred, and `docs/running.md` §4 carries the list plus a new block for what
+only a device can judge about the scheme itself. Two of them were run with it:
+the 200% font-scale pass, and a mechanical check that every colour swatch
+announces the hue it actually draws. TalkBack focus order, the widget on a
+launcher and Accessibility Scanner are still owed. `docs/running.md` §3 covers getting
 the app onto a phone.
 
 **Habits**
@@ -157,10 +162,22 @@ about to be replaced.
 
 The order actually being taken is therefore: **OQ-4's brief first, then
 Insights.** The brief is split where its lead times split. Its palette,
-typography and habit hues are what Insights needs and land first, unblocking
+typography and habit hues are what Insights needs and go first, unblocking
 `Theme.kt`, the widget and the two feature modules together; Momo's own art and
 the launcher icon are a longer job and run behind them, so a Rive state machine
-never holds the phase up. The cost is honest and worth stating: engineering now
+never holds the phase up.
+
+**What actually landed on 2026-08-23 was two thirds of that first half.** The
+colour scheme and the eight retuned hues are in the code and verified on a
+device. **Typography is not** — §5 of
+[visual-identity.md](ux/visual-identity.md) commits to bundling a variable font
+and names the ten roles the app draws, but the typeface waits on an experiment
+(can a Glance widget be handed a bundled font at all), because the app and the
+widget sit side by side on a home screen and a face that cannot reach the widget
+is a different choice from one that can. So the app is no longer generic in
+colour and still is in type, which is the largest remaining gap between it and
+the design canvas. The widget also still draws on Glance's defaults; §7.4 of that
+document scopes its palette and the three further surfaces. The cost is honest and worth stating: engineering now
 waits on a design decision that has been open since this document was written,
 and the split is what bounds that wait rather than removing it.
 
