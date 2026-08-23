@@ -1106,11 +1106,19 @@ without sight, and whether it survives a reader who needs it larger.
       than a hex, and after the retune one of those names moved: the seventh is
       "Gold", not "Yellow", because the hue at that slot is `#9C851F` and calling
       it yellow would be a false description
-      ([visual-identity.md](ux/visual-identity.md) §6.2). **Nothing in the suite
-      can check this** — `HabitsUiMapperTest` pins that the labels and the hues
-      are the same length, and a name is not a checkable property of a hex
-      (§4.3). So this is the only thing standing between a swatch and announcing
-      the wrong colour. Listen to all eight against what you see.
+      ([visual-identity.md](ux/visual-identity.md) §6.2). No *unit* test can check
+      this — `HabitsUiMapperTest` pins only that the labels and the hues are the
+      same length, and a name is not a checkable property of a hex (§4.3).
+
+      **But it is checkable on a device, and that is better than listening.**
+      `adb shell uiautomator dump` gives every swatch's `content-desc` together
+      with its `bounds`; a screenshot gives the pixel inside those bounds. Pair
+      them and the announced name is checked against the colour actually drawn,
+      which is the whole defect §4.3 describes. Run on 2026-08-23 with the
+      designed palette: all nine — the eight hues plus "Current colour" —
+      matched. Worth re-running rather than re-reading whenever a hue or a label
+      moves, and it needs no TalkBack. Still listen once for *focus order*, which
+      this cannot see.
 - [ ] **"Current colour", on a habit older than the restyle.** A habit created
       before the retune keeps its hex, and the editor offers it as a leading
       ninth swatch (§6.3). It is the one swatch whose name describes a role

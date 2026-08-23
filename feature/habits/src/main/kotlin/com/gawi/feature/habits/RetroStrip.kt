@@ -97,9 +97,18 @@ private fun RowScope.RetroCell(cell: RetroCellUi, onCell: (RetroCellUi) -> Unit,
         Text(
             text = if (cell.completed) DONE_GLYPH else EMPTY_GLYPH,
             style = MaterialTheme.typography.labelLarge,
+            // Three states rather than two, and `outline` is only the shut one.
+            // An unfinished open day used to share `outline` with a shut day, so
+            // the strike-through and the border carried that distinction alone —
+            // and on today's filled cell `outline` measured 2.70:1 in dark mode,
+            // because `outline` is Material's role for a *border* and this is
+            // text. `onSurfaceVariant` is the role for recessive content, clears
+            // the floor on both grounds, and leaves the shut day as the quietest
+            // marker on the strip, which is what §5 asks for.
             color = when {
-                cell.completed && cell.open -> MaterialTheme.colorScheme.primary
-                else -> MaterialTheme.colorScheme.outline
+                !cell.open -> MaterialTheme.colorScheme.outline
+                cell.completed -> MaterialTheme.colorScheme.primary
+                else -> MaterialTheme.colorScheme.onSurfaceVariant
             },
         )
         // A note is otherwise invisible: it reaches the cell but only the sheet
