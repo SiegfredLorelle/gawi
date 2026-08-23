@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The one colour that has to exist twice.
+
+         This is GawiLightColors.surface from
+         core/ui/src/main/kotlin/com/gawi/core/ui/theme/Color.kt, duplicated
+         because the window is painted by the platform from XML before
+         setContent runs and XML cannot read Kotlin. Nothing else in the app
+         hardcodes a scheme colour; keep it that way, and change this one only
+         together with that file. -->
+    <color name="gawi_window_background">#F4FBFA</color>
+</resources>
