@@ -6,9 +6,12 @@ import androidx.compose.ui.unit.dp
 /**
  * Named dimensions, so a composable body holds no bare numbers.
  *
- * Not a design system and not trying to be one — Momo's visual language is PRD
- * OQ-4 and undesigned. These are the few measurements the Today view actually
- * uses, named where more than one place needs to agree on them.
+ * Not a spacing system, and narrower than it looks. The app's colours and hues
+ * are designed now (docs/ux/visual-identity.md §7.2), but §8 records that
+ * dimensions were genuinely not part of that brief — so these stay what they
+ * have always been: the few measurements the screens actually use, named where
+ * more than one place needs to agree on them, and nothing inferred from them.
+ * A real scale arrives with the type scale or not at all.
  */
 object GawiSpacing {
 
