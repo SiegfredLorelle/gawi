@@ -403,10 +403,20 @@ would all be measuring a theme that is about to be replaced.
 
 **Their trigger was the restyle landing, and it has fired** (2026-08-23): the
 designed scheme and the retuned hues are in the code, so the theme these checks
-would measure is no longer about to be replaced. **They are due.** The
-accessibility block below and the widget block are both live work now, not
-deferred, and the restyle block immediately before them is new and comes from the
-same change.
+would measure is no longer about to be replaced. **They are due**, and part of
+the debt has since been paid. The accessibility block below and the widget block
+are live work, and the restyle block before them is new and comes from the same
+change.
+
+**What has actually run, and where.** Everything ticked in the restyle block and
+three items in the accessibility block ran on an **emulator** on 2026-08-23, and
+each says so at the tick. That is the honest ceiling for those checks: colour,
+contrast and layout render the same there, so a tick means "seen and correct",
+not "verified on the target device". What an emulator cannot settle is left
+unticked and named at the end of each block — the TalkBack items, Accessibility
+Scanner, and the widget on a launcher, which is the only end-to-end
+`ProjectionListener` exercise and has still never run. The Nothing A059 pass
+(§3) is what would upgrade the rest.
 
 One part of the debt does *not* come due yet, and the distinction matters. The
 widget still draws on Glance's default theme on purpose — a Glance tree cannot
@@ -1054,11 +1064,20 @@ cannot see: `GawiColorSchemeTest` asserts every contrast ratio the app draws in
 both themes, which is the part a number can answer. Whether it *looks* like one
 app is not.
 
-- [ ] **Every screen, in both system themes.** Settings → Display → Dark theme,
+**Ticked items ran on an emulator, not on a phone, and are labelled so.** That
+is enough for this block: everything in it is colour, contrast and layout, which
+an emulator renders with the same Compose and the same resource qualifiers a
+device would. It is *not* enough for the widget or for TalkBack below, and those
+stay unticked — a widget lives in a launcher's process against a background it
+does not own, and TalkBack cannot be driven from `adb` at all. A tick here means
+"seen and correct", never "shipped and verified on the target device"; the
+Nothing A059 pass in §3 is still owed and is what would upgrade these.
+
+- [x] **Every screen, in both system themes.** Settings → Display → Dark theme,
       and walk Today, the habit list, habit detail, the editor and settings in
       each. What the ratio test cannot catch: two roles that both pass and still
       look wrong together, and any surface that reads as a different app.
-- [ ] **A day streak next to a week streak.** `StreakBadge` distinguishes them by
+- [x] **A day streak next to a week streak.** `StreakBadge` distinguishes them by
       `primary` versus `tertiary` and a trailing `w`
       ([visual-identity.md](ux/visual-identity.md) §4.1). Both roles are measured
       to be a lightness step apart, so this check is the other half: that the two
@@ -1066,19 +1085,19 @@ app is not.
       in a swatch. Light mode's `tertiary` is a dark bronze rather than the gold
       the drawings showed — this is where that either reads as deliberate or does
       not.
-- [ ] **Habit detail's retro strip.** Three marker states, not two: a completed
+- [x] **Habit detail's retro strip.** Three marker states, not two: a completed
       day is `primary`, an open day not yet done is `onSurfaceVariant`, and a
       shut day is `outline` — which should be the quietest of the three. The
       strip is the densest use of the scheme and the place a recessive role that
       is *too* recessive shows up. Look at today's cell especially: it is the one
       with a filled ground, and the ground is what made the first version of
       this fail (`visual-identity.md` §3).
-- [ ] **The editor's colour swatches, and the tick on every one.** All eight
+- [x] **The editor's colour swatches, and the tick on every one.** All eight
       retuned hues take a black glyph by design. Look at the tick on each: the
       old palette drew six of the eight below the contrast floor and the ring
       around the selection hid it (§4.2), so a swatch that looks fine at a glance
       is exactly the failure mode here.
-- [ ] **Cold start in dark mode, watching for a flash.** Force-stop the app, then
+- [x] **Cold start in dark mode, watching for a flash.** Force-stop the app, then
       launch it. The window is painted from `values-night/themes.xml` before
       Compose runs, and its `windowBackground` was pointed at the scheme's dark
       surface for this reason. Any visible flip from a lighter grey to the app's
@@ -1106,7 +1125,7 @@ without sight, and whether it survives a reader who needs it larger.
       forced through the tree in order. Watch for a control that is reachable but
       unnamed, two targets that say the same thing, and a state change that
       happens silently (WCAG 2.4.3 and 4.1.3).
-- [ ] **The colour picker's swatch names.** Every swatch announces a name rather
+- [x] **The colour picker's swatch names.** Every swatch announces a name rather
       than a hex, and after the retune one of those names moved: the seventh is
       "Gold", not "Yellow", because the hue at that slot is `#9C851F` and calling
       it yellow would be a false description
@@ -1118,16 +1137,20 @@ without sight, and whether it survives a reader who needs it larger.
       `adb shell uiautomator dump` gives every swatch's `content-desc` together
       with its `bounds`; a screenshot gives the pixel inside those bounds. Pair
       them and the announced name is checked against the colour actually drawn,
-      which is the whole defect §4.3 describes. Run on 2026-08-23 with the
-      designed palette: all nine — the eight hues plus "Current colour" —
-      matched. Worth re-running rather than re-reading whenever a hue or a label
-      moves, and it needs no TalkBack. Still listen once for *focus order*, which
-      this cannot see.
-- [ ] **"Current colour", on a habit older than the restyle.** A habit created
+      which is the whole defect §4.3 describes. **Run on an emulator on
+      2026-08-23: all nine — the eight hues plus "Current colour" — matched the
+      colour drawn at their own bounds.** Worth re-running rather than re-reading
+      whenever a hue or a label moves, and it needs no TalkBack. Ticked on that
+      basis; *focus order* is the TalkBack item above and is still owed, because
+      this check cannot see it.
+- [x] **"Current colour", on a habit older than the restyle.** A habit created
       before the retune keeps its hex, and the editor offers it as a leading
       ninth swatch (§6.3). It is the one swatch whose name describes a role
       rather than a hue. Check it announces as selected, and that tapping a real
-      hue moves the selection off it.
+      hue moves the selection off it **without taking it off screen** — that last
+      clause is the bug review caught, where the row reflowed under the finger.
+      Run on an emulator on 2026-08-23 against a habit holding the pre-retune
+      red: nine swatches before and after the tap, no bounds moved.
 - [ ] **The retro strip, specifically.** It is the densest thing here: five cells
       — four writable and one drawn shut — each carrying a day, a done state, a
       note marker and up to two gestures. Every one of those is in the spoken
@@ -1135,17 +1158,27 @@ without sight, and whether it survives a reader who needs it larger.
       label is *legible as speech* rather than merely complete. A shut day is the
       one to listen to hardest: it must announce as unavailable, not as an
       unchecked box.
-- [ ] **200% font scale.** Settings → Display → Font size, at maximum. Three
+- [x] **200% font scale.** Settings → Display → Font size, at maximum. Three
       screens already carry reasoning about this in comments — `TodayScreen`,
       `HabitDetailScreen` and `SettingsScreen` all scroll or floor a dimension
       because of it — and **nothing verifies any of it**. Check that no text is
       clipped, that the strip is still tappable, and that the streak's
-      `displaySmall` has not pushed the strip off a short screen.
+      `displaySmall` has not pushed the strip off a short screen. Run on an
+      emulator on 2026-08-23, including the `displaySmall` case, which needs a
+      habit with a live streak to draw at all: nothing clipped and the whole
+      strip still on screen.
 - [ ] **Accessibility Scanner**, as a pre-release sweep rather than routine.
       Install Google's Accessibility Scanner, run it over each screen, and read
       the report the way you would a Lighthouse audit: the touch-target and
       contrast items are already asserted, so what it earns its place for is
       unlabelled controls and text-contrast cases the theme tests do not reach.
+
+**Still owed, and an emulator does not discharge any of them:** the TalkBack
+pass and the retro strip's *spoken* labels — note that item is a different check
+from the restyle block's visual one above, and the two are easy to conflate —
+plus Accessibility Scanner, which needs a Play install. The widget's three device
+checks in its own block are owed twice over: once against the widget as it stands
+and again when it takes the palette (visual-identity.md §7.4).
 
 Not in CI, and not automatable: TalkBack cannot be driven from the instrumented
 source set, and §8's line that CI runs unit tests only is unaffected by this
