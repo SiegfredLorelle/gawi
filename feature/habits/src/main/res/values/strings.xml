@@ -45,8 +45,14 @@
     <string name="habits_color_blue">Blue</string>
     <string name="habits_color_teal">Teal</string>
     <string name="habits_color_green">Green</string>
-    <string name="habits_color_yellow">Yellow</string>
+    <string name="habits_color_gold">Gold</string>
     <string name="habits_color_orange">Orange</string>
+    <!-- The leading swatch shown only when a habit holds a colour the
+         palette no longer offers. It names the swatch by its role rather
+         than by a hue, because the hue is unknown by definition: this is
+         whatever hex the event log carries. Not part of COLOR_LABELS,
+         which is positional against HabitPalette.Colors. -->
+    <string name="habits_color_current">Current colour</string>
     <string name="habits_tag_label">Tag (optional)</string>
     <string name="habits_schedule_label">Schedule</string>
     <string name="habits_schedule_daily_option">Daily</string>

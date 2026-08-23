@@ -69,6 +69,20 @@ class GawiColorSchemeTest {
     }
 
     @Test
+    fun `every habit hue is visible as a badge on both surfaces`() {
+        // A habit's colour is a graphic that carries meaning, so 3:1 rather
+        // than 4.5:1 — the glyph drawn on top of it is text and HabitColorTest
+        // holds that to the text floor. Here because the floor is a property of
+        // the surface the badge sits on, which is this file's subject.
+        schemes.forEach { (theme, scheme) ->
+            HabitPalette.Colors.forEach { hex ->
+                val ratio = contrastRatio(parseHabitColor(hex)!!, scheme.surface)
+                assertTrue("$theme badge $hex drew at $ratio", ratio >= WCAG_NON_TEXT_FLOOR)
+            }
+        }
+    }
+
+    @Test
     fun `background and surface agree, because the glyph tests depend on it`() {
         // Not a style rule — a dependency between two test files. HabitIcon and
         // ColorPicker composite a habit's tint over `background` before choosing

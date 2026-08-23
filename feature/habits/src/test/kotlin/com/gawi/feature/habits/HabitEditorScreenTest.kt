@@ -5,6 +5,7 @@ import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -227,6 +228,39 @@ class HabitEditorScreenTest {
         compose.onNodeWithContentDescription(string(COLOR_LABELS.last())).performScrollTo().performClick()
 
         assertEquals(HabitPalette.Colors.last(), edits.last().color)
+    }
+
+    /**
+     * A habit whose colour the palette no longer offers still opens on it.
+     *
+     * The retune in docs/ux/visual-identity.md §6 migrated nothing — a colour is
+     * raw hex in an append-only log — so every habit created before it holds a
+     * hex `HabitPalette.Colors` has dropped. Selection is exact string equality,
+     * so without the leading swatch this form would open with nothing selected,
+     * and the obvious repair would be to tap a swatch and silently change a
+     * colour the user never touched. `#7E57C2` is a real orphan: the purple this
+     * palette used to offer.
+     *
+     * `HabitsUiMapperTest` cannot catch this. It pins that COLOR_LABELS and the
+     * palette are the same length, and this swatch is in neither list.
+     */
+    @Test
+    fun aColourThePaletteDropped_isOfferedAsTheCurrentOne() {
+        render(newHabitForm().copy(color = "#7E57C2"))
+
+        compose.onNodeWithContentDescription(string(R.string.habits_color_current))
+            .performScrollTo()
+            .assertExists()
+            .assertIsSelected()
+    }
+
+    /** And it is not offered when there is nothing orphaned to offer. */
+    @Test
+    fun aColourThePaletteStillOffers_addsNoExtraSwatch() {
+        render(newHabitForm().copy(color = HabitPalette.Colors.last()))
+
+        compose.onNodeWithContentDescription(string(R.string.habits_color_current)).assertDoesNotExist()
+        compose.onNodeWithContentDescription(string(COLOR_LABELS.last())).performScrollTo().assertIsSelected()
     }
 
     /**
