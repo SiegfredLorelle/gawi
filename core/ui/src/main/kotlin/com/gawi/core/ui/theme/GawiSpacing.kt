@@ -6,12 +6,13 @@ import androidx.compose.ui.unit.dp
 /**
  * Named dimensions, so a composable body holds no bare numbers.
  *
- * Not a spacing system, and narrower than it looks. The app's colours and hues
- * are designed now (docs/ux/visual-identity.md §7.2), but §8 records that
- * dimensions were genuinely not part of that brief — so these stay what they
- * have always been: the few measurements the screens actually use, named where
- * more than one place needs to agree on them, and nothing inferred from them.
- * A real scale arrives with the type scale or not at all.
+ * Not a spacing system, and narrower than it looks. The app's colours are
+ * designed now — the scheme in docs/ux/visual-identity.md §7.2 and the habit
+ * hues in §6 — but §8 of the same document records that dimensions were
+ * genuinely not part of that brief. So these stay what they have always been:
+ * the few measurements the screens actually use, named where more than one
+ * place needs to agree on them, and nothing inferred from them. A real scale
+ * arrives with the type scale or not at all.
  */
 object GawiSpacing {
 
