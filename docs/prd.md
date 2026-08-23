@@ -74,11 +74,16 @@ the success criterion at the end of this section records what that costs, and §
 and §9 record what it cost the two open questions and the two risks that were
 parked on it. What remains is therefore not construction and no longer a trial:
 it is `docs/running.md` §4's device checks, still owed, specifically its widget
-and accessibility blocks. Those are worth running **before** Phase 1 rather than
-after, because Phase 1's first two entries add screens and its fourth replaces
-the three-face placeholder on both the Today view and the widget — the surfaces
-those checks exist to verify. `docs/running.md` §3 covers getting the app onto a
-phone.
+and accessibility blocks. Those were argued to be worth running **before** Phase 1
+rather than after, because Phase 1's first two entries add screens and its fourth
+replaces the three-face placeholder on both the Today view and the widget — the
+surfaces those checks exist to verify. **They were skipped anyway on 2026-08-23,
+and re-triggered rather than dropped.** The argument survived the decision and
+changed sides: Phase 1 opens with a whole-app restyle (§8, OQ-4 widened), so a
+TalkBack pass, a 200% font-scale pass and a widget legibility check run now would
+measure a theme that is about to be replaced. Their trigger is the restyle
+landing, and `docs/running.md` §4 carries it. `docs/running.md` §3 covers getting
+the app onto a phone.
 
 **Habits**
 - Create/edit/archive habits: name, icon/color, schedule (daily or n-per-week), optional tag.
@@ -135,6 +140,31 @@ cheapest-unblocked first:
    missing is art, not logic ([docs/ux/today-view.md](ux/today-view.md) §4).
 
 Note that 4 partly unblocks OQ-3's second half — see §8.
+
+**The order was inverted on 2026-08-23, before any of it was built.** What is
+above is a readiness assessment and it still reads correctly; what it does not
+weigh is that items 1 and 2 *draw* things. The app is on stock Material 3 — no
+bespoke `ColorScheme`, no typography — and that is not an oversight but this
+same OQ-4 deferral, written into `core/ui`'s own source: `GawiTheme`'s KDoc says
+it stays stock "because Momo's palette is PRD OQ-4 and undesigned", and
+`HabitPalette` repeats it. So the palette is not a fifth workstream that could be
+scheduled against Insights; **it is item 4, and items 1 and 2 are downstream of
+it.** Building the heatmap first means choosing its colour scale — the one
+undecided piece of it most tightly bound to a palette — against a theme that is
+about to be replaced.
+
+The order actually being taken is therefore: **OQ-4's brief first, then
+Insights.** The brief is split where its lead times split. Its palette,
+typography and habit hues are what Insights needs and land first, unblocking
+`Theme.kt`, the widget and the two feature modules together; Momo's own art and
+the launcher icon are a longer job and run behind them, so a Rive state machine
+never holds the phase up. The cost is honest and worth stating: engineering now
+waits on a design decision that has been open since this document was written,
+and the split is what bounds that wait rather than removing it.
+
+Everything below that is not colour — the completion-rate denominator and the
+tag aggregate query — is unblocked either way, and was built first for that
+reason (2026-08-23).
 
 **Mascot (committed feature)**
 - Momo with emotional states (thriving, content, worried, regenerating) driven by streak health and today's completion status. "Regenerating" replaces "sad" on purpose — see §3.5.
@@ -195,7 +225,7 @@ Note that 4 partly unblocks OQ-3's second half — see §8.
 - ~~**OQ-1:** Multi-tag per habit, or is one tag enough? (Proposal: one at MVP.)~~ **Settled 2026-08-23: multi-tag, eventually.** The proposal held for the MVP and one tag is what ships, but the answer to the question as asked is that one tag is *not* enough for good. It is committed and **deliberately not assigned to a phase** — what is decided is the direction, not the date. The cost is known and is why it is not being rushed: `HabitMetadata.tag` is a single field in the domain *and in the wire format*, so this is an event-payload schema bump with an upcast-on-read rather than a UI change, which the event log's embedded schema versioning (§7) exists to absorb. The practical consequence today is a prohibition rather than a task — nothing new should be built as though one tag were permanent, and §5's Phase 1 item 2 is where that bites first. Settled on the reasoning above rather than on the 30-day trial, which is where this question used to be parked and which was waived (§5).
 - **OQ-2:** Notification quick-complete UX when >3 habits remain (Android caps 3 action buttons) — show top 3? "Complete all"? Opens the app?
 - **OQ-3:** Streak freeze / grace day mechanics. **Re-parked 2026-08-23 on OQ-4 rather than on usage.** This used to read "decide after the 30-day personal trial reveals how resets feel"; the trial was waived (§5), and a question whose only trigger has been removed is a question with no owner, so it was given a new one rather than left floating. **The new trigger is Momo's fourth face** — this opens when OQ-4 does, and gets decided on a build where a reset is actually visible on screen. Until then the mechanics stay unbuilt and `Mascot.REGENERATING_WINDOW_DAYS` stays 3 and stays a guess. Waiving the trial costs *this* question less than it looks, for the reason the rest of this bullet already gave: **two numbers ride on this, not one** (noted 2026-08-22), and the trial could never have answered the second. `Mascot.REGENERATING_WINDOW_DAYS = 3` is a separate guess at how long a broken streak keeps Momo regenerating, and its KDoc flags it for this same trial. **The trial as shipped cannot answer that half.** Phase 0 draws three faces and folds `regenerating` onto `neutral` ([docs/ux/today-view.md](ux/today-view.md) §4), so nothing on screen distinguishes a user recovering from a broken streak from one merely pottering — the window is decided, tested and unobservable. So it waits for Phase 1's fourth face — which is now the whole question's trigger and not just this half's. Recorded because the code said "flagged for the 30-day trial" and that instruction could not be carried out as written; `Mascot.REGENERATING_WINDOW_DAYS`' KDoc now names the fourth face instead.
-- **OQ-4:** Mascot art style (round/chibi? pixel? flat vector?), and static-first vs animated-first. (Species and name decided: Momo the axolotl.) **The app's launcher icon is part of this question, not a separate one** (noted 2026-08-22) — it is Android's default placeholder today, and a mark drawn before the character would have to be redrawn to match it. §5's Phase 1 has the detail.
+- **OQ-4:** Mascot art style (round/chibi? pixel? flat vector?), and static-first vs animated-first. (Species and name decided: Momo the axolotl.) **The app's launcher icon is part of this question, not a separate one** (noted 2026-08-22) — it is Android's default placeholder today, and a mark drawn before the character would have to be redrawn to match it. §5's Phase 1 has the detail. **Widened 2026-08-23 to the whole visual identity: the app's colour scheme, its typography and the habit hues are part of this question too.** Not a new decision so much as the discovery of an old one — `core/ui`'s `GawiTheme` is stock Material 3 and its KDoc already says why ("Momo's palette is PRD OQ-4 and undesigned — inventing one here would mean choosing it in the module least able to explain the choice"), and `HabitPalette`'s says the same of its hues. Both had parked themselves here; nothing recorded that they had. The practical consequence is that this question now blocks more than a character, which is why §5's Phase 1 order was inverted to put it first. It has two halves with different lead times — palette, typography and hues, then Momo's art and the icon — and only the first half blocks Insights. **Two surfaces, not one:** a Glance tree is `RemoteViews` and cannot consume a Compose theme (architecture §2), so the widget takes any palette a second time, and `WidgetTextColourDarkTest` and its light twin must be re-run against the new values.
 - ~~**OQ-5:** Should the widget show streaks or stay minimal (just checkboxes)?~~ **Settled 2026-08-21 with the widget: minimal.** A streak is the one number that reaches zero with no new event, so it is the value whose staleness is not bounded by user inaction — on the one surface with no live query. It also costs the width that rows need. §6.6 is narrowed accordingly rather than contradicted; see [docs/ux/widget.md](ux/widget.md) §2.
 - **OQ-6:** Final name call between Gawi / Hinabi / Araw; verify availability (Play Store, domain, trademark) closer to launch. ("Habi" rejected — existing habit tracker at habi.app.)
 
