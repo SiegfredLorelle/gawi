@@ -1,6 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Compose draws everything; this only styles the window before
-         setContent. No appcompat on purpose. -->
-    <style name="Theme.Gawi" parent="android:Theme.Material.Light.NoActionBar" />
+         setContent. No appcompat on purpose.
+
+         windowBackground is the scheme's surface rather than the framework
+         default, because this style is what a cold start shows before Compose
+         paints. The framework defaults track light and dark, so this is not the
+         white-in-dark-mode flash it would be without values-night — it is a
+         shade mismatch: Material's own window greys are not this scheme's
+         surface, and the gap is widest in dark mode, where GawiDarkColors sits
+         much deeper than the platform's. Reasoned rather than measured; the
+         cold-start check in docs/running.md §4 is what confirms it. -->
+    <style name="Theme.Gawi" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/gawi_window_background</item>
+    </style>
 </resources>

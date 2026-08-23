@@ -2,7 +2,6 @@ package com.gawi.core.ui.theme
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
-import androidx.compose.ui.graphics.luminance
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -17,8 +16,12 @@ import org.junit.Test
  */
 class HabitColorTest {
 
-    private val lightBackground = Color(0xFFFFFBFE)
-    private val darkBackground = Color(0xFF141218)
+    // The surfaces the app actually draws on, not literals. These used to be
+    // Material's default surfaces, which stopped being what the app draws the
+    // moment GawiTheme got a scheme of its own — a test measuring the wrong
+    // background is the failure mode this whole file exists to catch.
+    private val lightBackground = GawiLightColors.surface
+    private val darkBackground = GawiDarkColors.surface
 
     @Test
     fun `a habit colour is parsed in both lengths and survives anything else`() {
@@ -111,24 +114,5 @@ class HabitColorTest {
     fun `the palette offers no duplicates`() {
         assertEquals(HabitPalette.Colors.size, HabitPalette.Colors.toSet().size)
         assertEquals(HabitPalette.Icons.size, HabitPalette.Icons.toSet().size)
-    }
-
-    /**
-     * WCAG relative contrast between two opaque colours.
-     *
-     * Here rather than in production code because nothing the app draws needs to
-     * know a ratio — [glyphColorOn] only needs to know which side of the pivot a
-     * colour falls on. The tests need the number so they can assert the property
-     * the pivot exists to deliver rather than the constant that delivers it.
-     */
-    private fun contrastRatio(a: Color, b: Color): Float {
-        val high = maxOf(a.luminance(), b.luminance())
-        val low = minOf(a.luminance(), b.luminance())
-        return (high + 0.05f) / (low + 0.05f)
-    }
-
-    private companion object {
-        /** WCAG 2.1 AA for normal-sized text. */
-        const val WCAG_TEXT_FLOOR = 4.5f
     }
 }
