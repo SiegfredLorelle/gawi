@@ -385,9 +385,12 @@ the function restating itself. The two added with the fix assert the property
 instead: one sweeps 101 greys checking the better of the two glyphs is always the
 one chosen, the other checks every offered hue clears the floor *as drawn*. Both
 were mutation-checked against `0.5f`. The useful consequence is that at the true
-crossover every tint clears 4.49:1 whichever glyph it takes, so contrast stopped
-being a property of the palette and became a property of the function — which is
-what let §6 retune all eight hues without re-deriving their glyphs.
+crossover every tint clears **4.58:1** whichever glyph it takes, so contrast
+stopped being a property of the palette and became a property of the function —
+which is what let §6 retune all eight hues without re-deriving their glyphs. That
+is the same 4.58 quoted above and it is the *minimum*, attained at the crossover
+where the two options are equal; an earlier revision of this paragraph said 4.49,
+which was simply wrong.
 
 ### 4.3 The hue labels are content descriptions, so they have to stay true
 
