@@ -1,6 +1,7 @@
 package com.gawi.core.data.repository
 
 import com.gawi.core.data.model.HabitDetail
+import com.gawi.core.data.model.TagEffort
 import com.gawi.core.data.model.TodayHabit
 import com.gawi.core.data.model.TodaySnapshot
 import com.gawi.core.domain.command.CommandResult
@@ -110,6 +111,19 @@ interface HabitRepository {
 
     /** Completed logical dates in a range, mapped to the note showing on each. */
     fun observeCompletedDates(habitId: HabitId, from: LocalDate, to: LocalDate): Flow<Map<LocalDate, String?>>
+
+    /**
+     * Completions per tag over an inclusive date range, across every habit —
+     * the tag effort distribution's read (docs/ux/insights.md §5).
+     *
+     * Totals rather than shares, and untagged habits are an entry rather than
+     * an omission; [TagEffort] carries the reasoning for both. Archived habits
+     * count, because effort spent does not stop having happened.
+     *
+     * Not per-habit, which is why it takes no [HabitId] and why the screen that
+     * draws it has no home in `:feature:habits` (docs/architecture.md §2).
+     */
+    fun observeTagEffort(from: LocalDate, to: LocalDate): Flow<List<TagEffort>>
 
     /**
      * Recomputes every cached streak for the current logical date. The only
