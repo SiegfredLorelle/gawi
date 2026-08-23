@@ -115,6 +115,8 @@ class ReminderCheckTest {
 
             override fun observeCompletedDates(habitId: HabitId, from: LocalDate, to: LocalDate) = error("not used")
 
+            override fun observeTagEffort(from: LocalDate, to: LocalDate) = error("not used")
+
             override suspend fun refreshStreaks() = error("not used")
 
             override suspend fun rebuildProjections() = error("not used")

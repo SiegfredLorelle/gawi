@@ -12,6 +12,7 @@ import com.gawi.core.data.db.entity.ProjectionMetaEntity
 import com.gawi.core.data.db.mapper.toDomain
 import com.gawi.core.data.db.mapper.toEntity
 import com.gawi.core.data.model.HabitDetail
+import com.gawi.core.data.model.TagEffort
 import com.gawi.core.data.model.TodayHabit
 import com.gawi.core.data.model.TodaySnapshot
 import com.gawi.core.data.projection.ProjectionListener
@@ -270,6 +271,16 @@ internal class OfflineFirstHabitRepository @Inject constructor(
             readModel
                 .observeCompletedDates(habitId.value, from.toString(), to.toString())
                 .map { rows -> rows.associate { LocalDate.parse(it.logicalDate) to it.note } }
+                .distinctUntilChanged(),
+        )
+    }
+
+    override fun observeTagEffort(from: LocalDate, to: LocalDate): Flow<List<TagEffort>> = flow {
+        ensureProjectionCurrent()
+        emitAll(
+            readModel
+                .observeTagEffort(from.toString(), to.toString())
+                .map { rows -> rows.map { TagEffort(tag = it.tag, completions = it.completions) } }
                 .distinctUntilChanged(),
         )
     }

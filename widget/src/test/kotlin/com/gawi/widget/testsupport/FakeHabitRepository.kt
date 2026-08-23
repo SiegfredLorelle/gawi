@@ -1,6 +1,7 @@
 package com.gawi.widget.testsupport
 
 import com.gawi.core.data.model.HabitDetail
+import com.gawi.core.data.model.TagEffort
 import com.gawi.core.data.model.TodayHabit
 import com.gawi.core.data.model.TodaySnapshot
 import com.gawi.core.data.repository.HabitRepository
@@ -93,6 +94,8 @@ class FakeHabitRepository(
 
     override fun observeCompletedDates(habitId: HabitId, from: LocalDate, to: LocalDate): Flow<Map<LocalDate, String?>> =
         error("not reached by the widget")
+
+    override fun observeTagEffort(from: LocalDate, to: LocalDate): Flow<List<TagEffort>> = error("not reached by the widget")
 
     override suspend fun refreshStreaks() = error("not reached by the widget")
 

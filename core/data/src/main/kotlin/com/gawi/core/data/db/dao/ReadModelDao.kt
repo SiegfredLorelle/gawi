@@ -122,7 +122,71 @@ internal interface ReadModelDao {
         """,
     )
     fun observeCompletedDates(habitId: String, from: String, to: String): Flow<List<CompletedDateRow>>
+
+    /**
+     * Completions in a date range, totalled per tag — the tag effort
+     * distribution's whole read (docs/ux/insights.md §5).
+     *
+     * Counts, never percentages: shares are the screen's arithmetic, for the
+     * reason [com.gawi.core.data.model.TagEffort] gives. Untagged habits group
+     * under a null `tag` and are a row like any other.
+     *
+     * **Grouped case- and whitespace-insensitively, which the default collation
+     * would not do.** Tags are unnormalized free text — the editor stores
+     * `tag.ifBlank { null }` with no trim and no case fold, and `Commands`
+     * validates only the name — so `Health`, `health` and `health ` are three
+     * stored values for one human tag. SQLite groups on BINARY by default, so
+     * the obvious query splits them into three slices, each understating the
+     * real share, and the `COLLATE NOCASE` ordering below then lands them side
+     * by side where the split is most visible. `MIN` picks the representative
+     * so the label is deterministic rather than whichever row the group
+     * happened to yield. The better fix is normalizing on write, which is a
+     * domain decision about what a tag *is* and is deliberately not made here.
+     *
+     * **Re-tagging a habit re-attributes its whole history, and that is the
+     * decision rather than an oversight.** The join reads `habits.tag`, which is
+     * current metadata under whole-record LWW, not the tag in force when each
+     * completion was logged. Re-tag "run" from `health` to `fitness` and last
+     * January's distribution shows `fitness`. The log could answer otherwise —
+     * `HabitUpdated` carries the old value — but the read model does not keep
+     * it, and the reading taken here is that a tag describes the habit rather
+     * than the completion, so the current answer is the true one. Note this is a
+     * narrower guarantee than the archiving paragraph above may suggest: what
+     * archiving cannot do is remove effort, not that no edit can move it.
+     *
+     * **Archived habits are included.** Effort spent is history, and archiving
+     * a habit is a decision about the future — hiding its past completions here
+     * would make a period's distribution change retroactively every time
+     * something was tidied away. This is deliberately the opposite of
+     * [observeToday], which is about what to do now.
+     *
+     * An inner join, so a completion whose `HabitCreated` has not arrived is
+     * not counted: it has no known tag, and guessing it into the untagged slice
+     * would be inventing data. Unreachable before Phase 2 sync — locally a
+     * completion cannot precede its habit — and worth revisiting when sync
+     * makes out-of-order delivery real. `TagEffortQueryTest` pins the exclusion
+     * so it stays a decision rather than an accident.
+     *
+     * Ordered by count, then tag, so the biggest slice leads and ties hold a
+     * stable order between emissions instead of swapping places. `COLLATE
+     * NOCASE` for the same reason [observeAllHabits] uses it.
+     */
+    @Query(
+        """
+        SELECT MIN(TRIM(h.tag)) AS tag,
+               COUNT(*) AS completions
+          FROM completions c
+          JOIN habits h ON h.habit_id = c.habit_id
+         WHERE c.logical_date BETWEEN :from AND :to
+         GROUP BY TRIM(h.tag) COLLATE NOCASE
+         ORDER BY completions DESC, tag COLLATE NOCASE
+        """,
+    )
+    fun observeTagEffort(from: String, to: String): Flow<List<TagEffortRow>>
 }
+
+/** One tag's completion total over the queried range; null [tag] is untagged. */
+internal data class TagEffortRow(@ColumnInfo(name = "tag") val tag: String?, @ColumnInfo(name = "completions") val completions: Int)
 
 /** A completed cell and the note showing on it. */
 internal data class CompletedDateRow(
