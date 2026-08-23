@@ -218,12 +218,20 @@ already live, never in the feature module.
   all. A binary done/not-done grid needs two colours; a count-per-day scale needs
   more and has nothing to count, because completions are idempotent per logical
   date (architecture §4). Two colours, then, which makes this easier than a
-  heatmap usually is — but **it is blocked, and it is why this whole screen is**.
-  The app has no palette: `GawiTheme` is stock Material 3 by an explicit
-  deferral to PRD §8's OQ-4. Choosing two colours here before that lands means
-  choosing them twice, which is what inverted PRD §5's Phase 1 order. Whatever is
-  chosen must come from `MaterialTheme` colour roles rather than literals, so the
-  palette reaches this grid the same way it reaches every other screen.
+  heatmap usually is — and **no longer blocked, as of 2026-08-23**. It was: the
+  app had no palette, `GawiTheme` was stock Material 3 by an explicit deferral to
+  PRD §8's OQ-4, and choosing two colours before that landed would have meant
+  choosing them twice — which is what inverted PRD §5's Phase 1 order. The
+  designed scheme has now landed
+  ([visual-identity.md](visual-identity.md) §7.2), so this is a live decision
+  rather than a deferred one. What has not changed is the constraint on it:
+  whatever is chosen must come from `MaterialTheme` colour roles rather than
+  literals, so the palette reaches this grid the same way it reaches every other
+  screen. `primary` is the obvious "done" — it is already what marks a completed
+  cell in habit detail's `RetroStrip`, and reusing it means the two history
+  surfaces agree — with the "not done" role picked so it does not read as
+  disabled-because-broken. That is a decision for the screen, not for this
+  paragraph.
 - **Where it is reached from.** Habit detail for the per-habit grid is the
   obvious door; the tag distribution has no obvious one, and inventing a
   top-level destination is a navigation decision that belongs to `:app`.
