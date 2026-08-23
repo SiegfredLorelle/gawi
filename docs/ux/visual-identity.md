@@ -237,6 +237,42 @@ not-done marker in `outline`, which is Material's *border* role, at 2.70:1 on
 that fill; recessive **content** is `onSurfaceVariant`, and using it leaves
 `outline` to the shut day alone, which sharpens the hierarchy §5 asks for.
 
+### The canvas and this table disagreed, and the table was wrong
+
+Recorded 2026-08-23, after the code landed and the two were compared directly —
+which had not been done, because §3 was written *from* the canvas and nobody read
+it back the other way.
+
+The canvas does not hold four role values per candidate. It holds a **twelve-role
+scheme in both themes**, in a `PALETTES` object, and its candidate A differs from
+the table above. Most of the difference is nothing: canvas `primary` `#027273`
+against the shipped `#1F6F78` is a contrast ratio of **1.01**, and the two
+surfaces likewise — different hex, indistinguishable to an eye. Two differences
+are not nothing:
+
+- **The canvas's light `tertiary` is `#553F00`**, a dark gold at 9.61:1. The table
+  above recorded `#C9A227`, the bright one, which measured 2.31:1 and had to be
+  replaced during the build. **The canvas was right and the transcription was
+  wrong**, and the replacement arrived at `#665012` — the same decision, made
+  twice, the second time the expensive way.
+- **The canvas's own scheme has two flaws the shipped one does not.** Its light
+  `outline` is 3.77:1, under the text floor, and its dark `primary`-to-`tertiary`
+  step is 1.27, the bottom of §4.1's range and the same near-collapse the table
+  had. Shipped is 5.18 and 1.42.
+
+**So the shipped values stay, and the canvas is not the contract for them — the
+code is** (`core/ui/theme/Color.kt`, asserted by `GawiColorSchemeTest`). Adopting
+the canvas wholesale would trade two measured improvements for a 1.01 difference
+nobody can see. What the canvas remains authoritative on is everything a number
+cannot hold: Momo, the tank, the icon comparison, the widget surfaces, and the
+typeface.
+
+The lesson generalises past colour. A drawing and a document drift the moment one
+is edited without the other, and the drift is invisible while nothing compares
+them. §3 also declared 44 roles undecided that the canvas had already chosen —
+harmless here, because they were re-derived to the same place or better, and
+wasteful all the same.
+
 One thing it deliberately does not assert: `surfaceVariant` and the container
 roles sit at 1.2-2.0:1 against `surface`, and that is correct. They are fills —
 the icon-picker swatch, `HabitIcon`'s fallback circle — and what they owe
@@ -540,6 +576,16 @@ rejected because saving from that state would silently change the habit's colour
 which is a data change the user did not ask for.
 
 ## 7. Round three: what the drawings settled
+
+**Reading the canvas: it holds rejected work on purpose.** Anything on it is a
+drawing, not a decision, and two of its Today artboards are options
+[today-view.md](today-view.md) §2 explicitly **rejected** — "A — ambient tank",
+the whole screen as habitat with cards floating over water, and "C — bottom
+dock". They stay on the canvas so the tradeoff that was accepted stays legible,
+which is worth having and is also a trap: the built app does not look like the
+tank artboard, and it is not meant to. When the app and the canvas disagree,
+check which artboard before treating it as a defect — and check this document,
+because a decision only counts once it is written here.
 
 Recorded 2026-08-23, after the redesign canvas gained dark mode, an icon
 comparison, four widget surfaces and the launcher mark.
