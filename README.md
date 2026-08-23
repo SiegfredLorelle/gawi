@@ -13,9 +13,16 @@ release, and not on Play Store. Build it from source with the commands below.
 
 Phase 0, the MVP, is feature-complete: habits, logging, streaks, the
 home-screen widget, the end-of-day reminder, and export/import all work. Its
-success criterion is deliberately a usage one and not a code one: thirty
-consecutive days of real daily use without reverting to the old method
-(PRD §5). That has not happened yet, and Phase 1 waits on it.
+success criterion was deliberately a usage one and not a code one: thirty
+consecutive days of real daily use without reverting to the old method.
+**That criterion was waived on 2026-08-23 — not met, not failed, not run** —
+and Phase 1 started in its place. PRD §5 records what waiving it cost, and §9
+records the risk it leaves uncovered.
+
+Phase 1 is under way. It is being taken in a different order from the one
+PRD §5 first assessed: the visual identity comes first, because the app is
+still on stock Material 3 by an explicit deferral (PRD §8, OQ-4) and the
+screens Phase 1 adds would otherwise be styled twice.
 
 What comes next, and in what order, is recorded in [PRD §5](docs/prd.md). The
 open design questions are in §8 of the same file.
