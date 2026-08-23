@@ -57,8 +57,28 @@ fun parseHabitColor(hex: String): Color? {
 fun glyphColorOn(tint: Color, background: Color): Color =
     if (tint.compositeOver(background).luminance() > CONTRAST_PIVOT) Color.Black else Color.White
 
-/** Above this, a background is light enough to want dark text on it. */
-private const val CONTRAST_PIVOT = 0.5f
+/**
+ * Above this, a background is light enough to want dark text on it.
+ *
+ * **This is the crossover, not the midpoint, and the difference was a defect.**
+ * It used to be `0.5f`, which is the middle of the luminance range and reads as
+ * the obvious answer. It is not: WCAG contrast against black is
+ * `(L + 0.05) / 0.05` and against white is `1.05 / (L + 0.05)`, and those are
+ * equal where `(L + 0.05)² = 0.0525` — that is, at `√0.0525 - 0.05`, the value
+ * below. Black wins above it and white wins below it.
+ *
+ * So `0.5f` picked white for every tint between here and 0.5, which is exactly
+ * where mid-tone hues live. Six of the eight colours [HabitPalette] offers drew
+ * their glyph below WCAG's 4.5:1 floor because of it — orange at 1.94:1, where
+ * black would have given 10.81:1 — and in all six the other choice would have
+ * passed. `HabitColorTest` pins the ratios rather than the value, so a future
+ * edit has to keep the property and not merely the number.
+ *
+ * The useful consequence: at the true crossover *every* tint clears 4.49:1
+ * whichever glyph it takes, so contrast stops being a property of the palette
+ * and becomes a property of this function.
+ */
+private const val CONTRAST_PIVOT = 0.17912878f
 
 private const val HEX_RADIX = 16
 private const val RGB_DIGITS = 6

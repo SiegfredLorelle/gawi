@@ -1,6 +1,8 @@
 package com.gawi.core.ui.theme
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.luminance
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -55,10 +57,44 @@ class HabitColorTest {
     }
 
     @Test
-    fun `a half-transparent colour is judged on the blend, not the tint`() {
-        // White at 50% over black renders mid-grey, which sits below the pivot
-        // and so still wants a light glyph.
-        assertEquals(Color.White, glyphColorOn(Color(0x80FFFFFF), darkBackground))
+    fun `a mostly-transparent colour is judged on the blend, not the tint`() {
+        // White at 12% over the dark background renders nearly as dark as the
+        // background, so it wants a light glyph. Judged on the tint alone it is
+        // white and would pick a dark one — which is the whole point of
+        // compositing first.
+        assertEquals(Color.White, glyphColorOn(Color(0x20FFFFFF), darkBackground))
+        assertEquals(Color.Black, glyphColorOn(Color(0xFFFFFFFF), darkBackground))
+    }
+
+    @Test
+    fun `every colour the editor offers clears the contrast floor as drawn`() {
+        // The defect this pins: the pivot used to be 0.5f, the midpoint of the
+        // range rather than the crossover, and six of these eight drew below
+        // 4.5:1 — in every case picking the worse of the two available glyphs.
+        // Asserted as a ratio rather than as an expected colour, so the
+        // property survives a future retune of the hues.
+        listOf(lightBackground, darkBackground).forEach { background ->
+            HabitPalette.Colors.forEach { hex ->
+                val tint = parseHabitColor(hex)!!
+                val ratio = contrastRatio(glyphColorOn(tint, background), tint.compositeOver(background))
+                assertTrue("$hex on $background drew at $ratio", ratio >= WCAG_TEXT_FLOOR)
+            }
+        }
+    }
+
+    @Test
+    fun `the pivot picks the better of the two glyphs at every luminance`() {
+        // A sweep rather than a spot check, because the old value was wrong for
+        // a whole band and not for one colour. Grey is enough: the decision
+        // reads luminance only.
+        (0..100).forEach { step ->
+            val grey = Color(step / 100f, step / 100f, step / 100f)
+            val picked = glyphColorOn(grey, lightBackground)
+            val rejected = if (picked == Color.Black) Color.White else Color.Black
+            val chosen = contrastRatio(picked, grey)
+            assertTrue("grey $step picked the worse glyph", chosen >= contrastRatio(rejected, grey))
+            assertTrue("grey $step drew at $chosen", chosen >= WCAG_TEXT_FLOOR)
+        }
     }
 
     @Test
@@ -75,5 +111,24 @@ class HabitColorTest {
     fun `the palette offers no duplicates`() {
         assertEquals(HabitPalette.Colors.size, HabitPalette.Colors.toSet().size)
         assertEquals(HabitPalette.Icons.size, HabitPalette.Icons.toSet().size)
+    }
+
+    /**
+     * WCAG relative contrast between two opaque colours.
+     *
+     * Here rather than in production code because nothing the app draws needs to
+     * know a ratio — [glyphColorOn] only needs to know which side of the pivot a
+     * colour falls on. The tests need the number so they can assert the property
+     * the pivot exists to deliver rather than the constant that delivers it.
+     */
+    private fun contrastRatio(a: Color, b: Color): Float {
+        val high = maxOf(a.luminance(), b.luminance())
+        val low = minOf(a.luminance(), b.luminance())
+        return (high + 0.05f) / (low + 0.05f)
+    }
+
+    private companion object {
+        /** WCAG 2.1 AA for normal-sized text. */
+        const val WCAG_TEXT_FLOOR = 4.5f
     }
 }
