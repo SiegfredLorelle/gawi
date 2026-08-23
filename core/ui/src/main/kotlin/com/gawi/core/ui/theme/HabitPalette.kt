@@ -27,13 +27,21 @@ package com.gawi.core.ui.theme
 object HabitPalette {
 
     /**
-     * Uppercase and six digits, because [HabitPalette] is not the only thing
-     * that writes a habit colour and the editor matches by exact string:
-     * `ColorPicker` compares `hex == form.color`. A lowercase `"#a94ff6"` no
-     * longer opens an *unselected* form — §6.3's leading swatch catches it — but
-     * it does open one offering the same colour twice, once as a hue and once as
-     * "the colour you already have". Anything else that writes one, an import or
-     * a seeder, has to spell it this way.
+     * Uppercase and six digits, and **that is a rule about these values only.**
+     * The editor matches by exact string — `ColorPicker` compares
+     * `hex == form.color` — so a lowercase `"#a94ff6"` here would not open an
+     * *unselected* form, §6.3's leading swatch catches that, but it would open
+     * one offering the same colour twice: once as a hue and once as "the colour
+     * you already have".
+     *
+     * **Nothing else is asked to spell a colour this way, and an import
+     * especially is not.** [parseHabitColor] takes six digits or eight, upper
+     * case or lower, on purpose, and `HabitColor.kt` says why: the value is
+     * unvalidated off the event log, no command checks it and no projection
+     * normalises it. An import replays what an export held, so requiring a
+     * format would mean rewriting somebody's colour on the way in — the same
+     * thing the next paragraph refuses to do on a retune, arriving by a
+     * different door.
      *
      * Retuning this list migrates nothing, and must not: a colour lives as raw
      * hex in an append-only log, and rewriting history to restyle it is the

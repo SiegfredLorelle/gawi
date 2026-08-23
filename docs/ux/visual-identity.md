@@ -535,11 +535,15 @@ rejected because a bright yellow fails the 3:1 badge floor against every light
 surface in §3, which is a worse defect than a renamed swatch.
 
 Values stay **uppercase and six digits**, for the reason `HabitPalette`'s KDoc
-gives: `ColorPicker` matches on the exact string, so a lowercase hex opens a form
-offering the same colour twice — once as a hue and once as §6.3's "colour you
-already have". Anything else that writes a colour, an import for instance, has to
-spell it the same way. (This used to be justified by what a debug seeder wrote;
-there is no seeder — see §6.1.)
+gives: `ColorPicker` matches on the exact string, so a lowercase palette hex
+would offer the same colour twice — once as a hue and once as §6.3's "colour you
+already have".
+
+**That rule binds the palette and nothing else.** `parseHabitColor` accepts six
+digits or eight, upper case or lower, deliberately, and an import replays
+whatever an export held; asking it to normalise would rewrite a stored colour on
+read, which is what §6.3 exists so we never have to do. (The convention used to
+be justified by what a debug seeder wrote; there is no seeder — see §6.1.)
 
 ### 6.3 The orphaned hexes, and what to do about them
 
