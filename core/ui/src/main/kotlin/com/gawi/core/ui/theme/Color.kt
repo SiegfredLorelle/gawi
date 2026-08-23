@@ -110,6 +110,16 @@ internal val GawiLightColors: ColorScheme = lightColorScheme(
  * greyscale and under deuteranopia. `#C9A227` restores the step at 1.42 while
  * staying above 4.5:1 on this surface.
  *
+ * `secondaryContainer` is darker than a straight mirror of the light scheme
+ * would make it, and that came out of a device pass rather than a table. It is a
+ * *ground*: `RetroStrip` fills today's cell with it and then draws the weekday
+ * letter in `onSurfaceVariant` on top. At the lighter value that pair measured
+ * 4.24:1 — a real text failure, on the one cell every user looks at every day.
+ * Recessive content needs a dark enough ground to be recessive *on*, which a
+ * mid-tone container does not give. The cost is that today's cell reads as a
+ * slightly subtler fill: 1.59:1 against `surface` rather than 1.96:1, still more
+ * visible than the light scheme's own 1.21:1.
+ *
  * The `*Fixed` roles are shared with the light scheme by definition — Material
  * specifies them as theme-invariant — so the two declarations repeat those
  * twelve values rather than either scheme owning them.
@@ -123,7 +133,7 @@ internal val GawiDarkColors: ColorScheme = darkColorScheme(
     inversePrimary = Color(0xFF1F6F78),
     secondary = Color(0xFFA1C1C6),
     onSecondary = Color(0xFF1B3235),
-    secondaryContainer = Color(0xFF344D50),
+    secondaryContainer = Color(0xFF273F42),
     onSecondaryContainer = Color(0xFFCAE4E7),
     tertiary = Color(0xFFC9A227),
     onTertiary = Color(0xFF2B2000),
