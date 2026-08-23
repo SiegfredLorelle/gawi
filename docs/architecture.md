@@ -701,7 +701,7 @@ four and two test files respectively, which is the honest threshold for botherin
 
 | Module | Packages |
 |---|---|
-| `:core:domain` | `command/` `event/` `id/` `mascot/` `model/` `projection/` `serialization/` (with `export/` and `wire/`) `streak/` `time/` |
+| `:core:domain` | `command/` `event/` `id/` `mascot/` `model/` `projection/` `rate/` `serialization/` (with `export/` and `wire/`) `streak/` `time/` |
 | `:core:data` | `backup/` `db/` (with `dao/`, `entity/`, `mapper/`) `di/` `model/` `projection/` `reminder/` `repository/` `settings/` `time/`, plus `ProjectionVersion.kt` at the package root |
 | `:core:ui` | `component/` `streak/` `theme/` |
 
@@ -710,6 +710,15 @@ exists in both `:core:domain` and `:core:data`: the domain one is the pure
 replay logic, the data one writes its results into the derived tables and tells
 a listener. `time/` likewise splits — the domain owns the logical-date rules, and
 `:core:data` holds only the clock that reads the device.
+
+`rate/` and `streak/` are neighbours rather than one package (added 2026-08-23,
+for Insights v1). Both are pure calculators over projected completion dates, both
+are kept out of projection for the same reason — they depend on "today", which is
+not in the event log — and both answer a different question: `streak/` how long a
+run is, `rate/` what share of the target a window held. Keeping the completion
+rate here rather than in `:feature:insights` is the point of it: the denominator
+is `timesPerWeek × weeks` for a weekly habit and days for a daily one, and a
+feature module counting rows would get that wrong quietly.
 
 **Feature modules are flat, and that is deliberate.** Screen, ViewModel,
 UiState, Actions and mapper all sit in the one package: ten files in
