@@ -3,6 +3,7 @@ package com.gawi.app
 import androidx.compose.ui.graphics.toArgb
 import com.gawi.core.ui.theme.gawiWindowBackground
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -59,14 +60,49 @@ class WindowBackgroundDarkTest {
 }
 
 /**
+ * Resolved through `Theme.Gawi`, not read off `R.color` directly.
+ *
+ * That distinction is the whole test. Reading the colour resource pins its
+ * *value* and says nothing about the *wiring*: with
+ * `<item name="android:windowBackground">` deleted from either `themes.xml` the
+ * resource still matches this scheme, the assertion still passes, and a cold
+ * start still flashes — the defect intact and the guard green. Resolving the
+ * attribute covers both links in one assertion, because it can only arrive at
+ * this colour if the theme names it. Mutation-checked in both directions:
+ * deleting the item fails the matching case, and changing the colour value fails
+ * it differently.
+ *
  * Compared as hex strings, because the failure is read by a person: an `Int`
  * mismatch reports two nine-digit negatives with no hint which channel moved.
  */
 private fun assertWindowBackgroundMatches(darkTheme: Boolean) {
-    val fromXml = RuntimeEnvironment.getApplication().getColor(R.color.gawi_window_background)
+    val theme = RuntimeEnvironment.getApplication().resources.newTheme()
+    theme.applyStyle(R.style.Theme_Gawi, true)
+    val attrs = theme.obtainStyledAttributes(intArrayOf(android.R.attr.windowBackground))
+    val resolved = try {
+        attrs.getColor(0, NOT_A_COLOUR)
+    } finally {
+        attrs.recycle()
+    }
+
+    // A guard against getColor silently defaulting, which it does whenever the
+    // attribute resolves to something that is not a colour — a drawable, as many
+    // window themes use. Measured, so as not to overclaim: it is *not* what
+    // catches a deleted item here. Both framework parents answer with a colour
+    // of their own, so removing the item is caught by the comparison below
+    // (light resolved fffafafa against fff4fbfa). This guard is for the day a
+    // parent changes, or someone points the item at a drawable.
+    assertNotEquals(
+        "Theme.Gawi resolved no colour for android:windowBackground",
+        NOT_A_COLOUR,
+        resolved,
+    )
     assertEquals(
-        "values/themes.xml and GawiTheme disagree, so a cold start will flash",
+        "Theme.Gawi and GawiTheme disagree, so a cold start will flash",
         Integer.toHexString(gawiWindowBackground(darkTheme).toArgb()),
-        Integer.toHexString(fromXml),
+        Integer.toHexString(resolved),
     )
 }
+
+/** A value no scheme colour can take: every surface here is fully opaque. */
+private const val NOT_A_COLOUR = 0
