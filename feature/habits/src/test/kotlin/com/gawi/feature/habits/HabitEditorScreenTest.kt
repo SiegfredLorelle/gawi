@@ -236,7 +236,7 @@ class HabitEditorScreenTest {
     /**
      * Every colour swatch announces a name, not its hex.
      *
-     * Read out character by character otherwise — "number sign E F 5 3 5 0".
+     * Read out character by character otherwise — "number sign F 2 2 9 3 5".
      */
     @Test
     fun colourSwatches_areNamedForAssistiveTechnology() {

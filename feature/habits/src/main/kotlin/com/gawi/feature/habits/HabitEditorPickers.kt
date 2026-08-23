@@ -73,7 +73,7 @@ internal fun IconPicker(form: HabitEditorUiState.Form, onEdit: (HabitEditorUiSta
  * Positional, matching [HabitPalette.Colors]. `HabitsUiMapperTest` asserts the
  * two lists stay the same length, so adding a swatch without a name is a
  * failing test rather than a swatch that announces itself as
- * "number sign E F 2 9 3 5".
+ * "number sign F 2 2 9 3 5".
  *
  * "Gold" and not "Yellow": the retuned hue at that slot is `#9C851F`, which is
  * a gold and not a yellow. These strings are content descriptions rather than
