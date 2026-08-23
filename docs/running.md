@@ -401,12 +401,20 @@ widened to the visual identity), which makes the argument sharper, not weaker:
 a TalkBack pass, a 200% font-scale pass and a widget legibility check run *now*
 would all be measuring a theme that is about to be replaced.
 
-**Their new trigger is the restyle landing**, and they run once, together, on the
-build that carries the real palette — the widget check especially, since a Glance
-tree cannot consume the Compose theme (architecture §2) and takes any palette
-separately. This is a scheduled debt with a named trigger rather than a silent
-gap, which is the only reason it is acceptable to have skipped them. Nothing else
-in this section is deferred.
+**Their trigger was the restyle landing, and it has fired** (2026-08-23): the
+designed scheme and the retuned hues are in the code, so the theme these checks
+would measure is no longer about to be replaced. **They are due.** The
+accessibility block below and the widget block are both live work now, not
+deferred, and the restyle block immediately before them is new and comes from the
+same change.
+
+One part of the debt does *not* come due yet, and the distinction matters. The
+widget still draws on Glance's default theme on purpose — a Glance tree cannot
+consume the Compose theme (architecture §2), so the widget takes any palette
+separately and that is its own piece of work ([visual-identity.md](ux/visual-identity.md)
+§7.4). So the widget legibility check is due against the *unchanged* widget, and
+it will be owed a second time when the widget gets the palette. Nothing else in
+this section is deferred.
 
 The clock-dependent checks below used to need an `adb` call into a debug
 activity. They drive the settings screen now, which is the same code path a user
@@ -1039,6 +1047,43 @@ Open a habit from the **Habits** list — the row's name, not the Archive button
 
 ---
 
+### The restyle — both themes, once
+
+New with the designed scheme (2026-08-23). Everything here is a thing the tests
+cannot see: `GawiColorSchemeTest` asserts every contrast ratio the app draws in
+both themes, which is the part a number can answer. Whether it *looks* like one
+app is not.
+
+- [ ] **Every screen, in both system themes.** Settings → Display → Dark theme,
+      and walk Today, the habit list, habit detail, the editor and settings in
+      each. What the ratio test cannot catch: two roles that both pass and still
+      look wrong together, and any surface that reads as a different app.
+- [ ] **A day streak next to a week streak.** `StreakBadge` distinguishes them by
+      `primary` versus `tertiary` and a trailing `w`
+      ([visual-identity.md](ux/visual-identity.md) §4.1). Both roles are measured
+      to be a lightness step apart, so this check is the other half: that the two
+      are *tellable apart at a glance*, in both themes, on a real row rather than
+      in a swatch. Light mode's `tertiary` is a dark bronze rather than the gold
+      the drawings showed — this is where that either reads as deliberate or does
+      not.
+- [ ] **Habit detail's retro strip.** A completed cell is `primary` and an
+      incomplete or shut one is `outline`. The strip is the densest use of the
+      scheme and the place a recessive role that is too recessive shows up.
+- [ ] **The editor's colour swatches, and the tick on every one.** All eight
+      retuned hues take a black glyph by design. Look at the tick on each: the
+      old palette drew six of the eight below the contrast floor and the ring
+      around the selection hid it (§4.2), so a swatch that looks fine at a glance
+      is exactly the failure mode here.
+- [ ] **Cold start in dark mode, watching for a flash.** Force-stop the app, then
+      launch it. The window is painted from `values-night/themes.xml` before
+      Compose runs, and its `windowBackground` was pointed at the scheme's dark
+      surface for this reason. Any visible flip from a lighter grey to the app's
+      background means the two have drifted apart.
+- [ ] **The habit hues against a real photo wallpaper**, on the Today list. Not
+      because anything composites against the wallpaper — nothing does — but
+      because the eight are tuned to one lightness and the failure to look for is
+      the set reading as muddy rather than as eight distinguishable colours.
+
 ### Accessibility — *device only, and the layer no test reaches*
 
 The automated half of this is already in `make test`: WCAG contrast ratios in
@@ -1057,6 +1102,20 @@ without sight, and whether it survives a reader who needs it larger.
       forced through the tree in order. Watch for a control that is reachable but
       unnamed, two targets that say the same thing, and a state change that
       happens silently (WCAG 2.4.3 and 4.1.3).
+- [ ] **The colour picker's swatch names.** Every swatch announces a name rather
+      than a hex, and after the retune one of those names moved: the seventh is
+      "Gold", not "Yellow", because the hue at that slot is `#9C851F` and calling
+      it yellow would be a false description
+      ([visual-identity.md](ux/visual-identity.md) §6.2). **Nothing in the suite
+      can check this** — `HabitsUiMapperTest` pins that the labels and the hues
+      are the same length, and a name is not a checkable property of a hex
+      (§4.3). So this is the only thing standing between a swatch and announcing
+      the wrong colour. Listen to all eight against what you see.
+- [ ] **"Current colour", on a habit older than the restyle.** A habit created
+      before the retune keeps its hex, and the editor offers it as a leading
+      ninth swatch (§6.3). It is the one swatch whose name describes a role
+      rather than a hue. Check it announces as selected, and that tapping a real
+      hue moves the selection off it.
 - [ ] **The retro strip, specifically.** It is the densest thing here: five cells
       — four writable and one drawn shut — each carrying a day, a done state, a
       note marker and up to two gestures. Every one of those is in the spoken

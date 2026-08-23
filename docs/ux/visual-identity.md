@@ -6,17 +6,20 @@ style and, since 2026-08-23, for the app's whole visual identity under the same
 question. This document is where the first half of it gets decided — the colour
 scheme, the typography and the habit hues.
 
-**Status: a sketch, written 2026-08-23, before anything is built.** Read it the
-way you read [insights.md](insights.md) and not the way you read
-[habits.md](habits.md), [widget.md](widget.md), [settings.md](settings.md) or
-[reminder.md](reminder.md): those four were written *after* their screens and
-record what building decided, and this one is provisional until the code lands.
-Expect it to be rewritten rather than appended to.
+**Status: the colour half is built, as of 2026-08-23.** Written as a sketch
+before anything existed, and revised once the scheme landed in `Theme.kt` — so
+§§3, 4 and 6 now record what building decided rather than what was proposed, in
+the way [habits.md](habits.md), [widget.md](widget.md),
+[settings.md](settings.md) and [reminder.md](reminder.md) do. §5 (typography)
+and §7's second half (Momo's art, the icon) are still sketch, and
+[insights.md](insights.md) is still the document to read the sketchy way.
 
-**The colour scheme is deliberately still open in this revision.** §3 lists the
-candidates with their exact values, and the choice is being made by looking at
-them side by side rather than off a description. What §4 and §5 record is
-already settled and does not move with that choice.
+**Building it changed two of the published values, and that is recorded rather
+than quietly fixed.** §3's `tertiary` failed the requirement §4.1 sets for it,
+in both themes and for two different reasons. The measurements and the
+replacements are in §3; the short version is that a palette approved from
+drawings is not a palette that has been measured, which is exactly what §3's
+own "honest limit" paragraph warned about.
 
 ---
 
@@ -27,12 +30,17 @@ the typography and the habit hues, which was less a new decision than the
 discovery of an old one: **four separate places in this codebase had already
 parked themselves on OQ-4 and nothing recorded that they had.**
 
-| Where | What it says |
-|---|---|
-| `GawiTheme` KDoc | Stock Material 3, no `ColorScheme`, no typography, "because Momo's palette is PRD OQ-4 and undesigned" |
-| `HabitPalette` KDoc | "Not a design system" — mid-tone Material hues, same deferral |
-| `GawiSpacing` KDoc | "Not a design system and not trying to be one — Momo's visual language is PRD OQ-4" |
-| `TodayWidget`'s glyph comment | Checkbox glyph left unpinned because pinning needs two literals and "this project does not have a palette yet". Ends: "Revisit with OQ-4." |
+| Where | What it said | What it says now |
+|---|---|---|
+| `GawiTheme` KDoc | Stock Material 3, no `ColorScheme`, no typography, "because Momo's palette is PRD OQ-4 and undesigned" | The designed schemes, and why dynamic colour stays off. Type is the one stock thing left, and says what it waits on |
+| `HabitPalette` KDoc | "Not a design system" — mid-tone Material hues, same deferral | Designed, and to the rule in §6, with the two rules that failed |
+| `GawiSpacing` KDoc | "Not a design system and not trying to be one — Momo's visual language is PRD OQ-4" | Narrowed, not rewritten: §8 records that dimensions were genuinely not in this brief, so it still defers — but only about spacing |
+| `TodayWidget`'s glyph comment | Checkbox glyph left unpinned because pinning needs two literals and "this project does not have a palette yet". Ends: "Revisit with OQ-4." | Still unpinned, for the two reasons that outlived the palette: `:widget` cannot see `:core:ui`, and pinning would still not make the glyph assertable. Now points at §7.4 |
+
+All four were rewritten when the scheme landed. Recorded this way rather than
+edited away, because "four places had quietly parked on one open question"
+is the finding, and a table showing only the current text would not show it.
+A stale disclaimer is the same defect as a stale citation: it is believed.
 
 That is why PRD §5's Phase 1 order was inverted. The palette is not a fifth
 workstream that could be scheduled against Insights v1 — Insights *draws* things,
@@ -104,7 +112,7 @@ Two more things follow that are easy to miss:
   `CheckBoxColors` exposes only an `internal` accessor returning an empty public
   interface. `docs/running.md` §4 keeps its by-hand check either way.
 
-## 3. The colour scheme — candidates, not yet a decision
+## 3. The colour scheme — the candidates, and what shipped
 
 Three candidates, chosen to span the actual decision rather than three shades of
 one idea. The question they disagree about is **where Momo's coral goes**.
@@ -114,10 +122,13 @@ one idea. The question they disagree about is **where Momo's coral goes**.
 | Role | Light | Dark |
 |---|---|---|
 | `primary` | `#1F6F78` | `#7FD4DC` |
-| `tertiary` | `#C9A227` | `#E8C55E` |
+| `tertiary` | `#C9A227` †  | `#E8C55E` † |
 | `surface` | `#F4FBFA` | `#0E1A1C` |
 | `onSurface` | `#101C1E` | `#DCEEF0` |
 | Momo only | `#E0708F` | `#FFB1C4` |
+
+† Neither `tertiary` survived measurement. Kept here as the record of what was
+chosen from the drawings; "What shipped" below has the replacements and why.
 
 The UI is the tank; Momo is the only warm thing in it. The mascot cannot be lost
 against chrome in its own colours, and teal is the natural ramp for the heatmap.
@@ -164,6 +175,54 @@ hand and font rasterisation differs from Android's. The preview decides the
 palette; the device decides the result, and `make run` in both system themes is
 still the check that matters. The widget cannot be previewed faithfully at all.
 
+### What shipped, and the two corrections to candidate A
+
+Candidate A won (§7.2). Two of its four roles went in unchanged; `tertiary` did
+not survive being measured, in either theme, for two unrelated reasons.
+
+**Light `#C9A227` → `#665012`.** `tertiary` is drawn as plain text — a week
+streak in `StreakBadge` — so WCAG's 4.5:1 applies to it, and `#C9A227` on
+`#F4FBFA` is **2.31:1**. It also fails §4.1's own direction: §4.1 requires
+`tertiary` to step *darker* than `primary` in light mode, and `#C9A227` is
+lighter. `#665012` is 7.36:1 with a 1.32 step. The cost, stated because it is
+real: gold at that lightness reads as bronze, and the light theme's accent is
+duller than the drawings promised. There is no way around it — a gold light
+enough to look like gold cannot clear 4.5:1 on a near-white surface, which is
+the same gamut wall §6.1 hit from the other side.
+
+**Dark `#E8C55E` → `#C9A227`.** Against dark `primary` `#7FD4DC` the published
+value gives a luminance ratio of **1.02** — identical lightness, distinguished by
+hue alone. That is precisely the failure §4.1 says it measured and rejected, and
+it would take the day-versus-week distinction out in greyscale and under
+deuteranopia. `#C9A227` restores the step at 1.42 and stays at 7.34:1 on the dark
+surface. Light's discarded value turns out to be dark's correct one.
+
+**The other 44 roles are derived, and the code is their contract.** §3 fixes four
+roles and reserves one colour; a Material 3 `ColorScheme` has 48, and the screens
+already draw `outline`, `outlineVariant`, `surfaceVariant`, `onSurfaceVariant`,
+`secondaryContainer`, `onSecondaryContainer`, `error` and `background`. Leaving
+Material's baseline underneath was not an option — the baseline is a purple
+family, so those roles would have shown lavender through a teal app, and §4.1
+makes `outline` semantic rather than decorative. They are generated in OKLCH from
+the three hue families the four anchors imply — teal at hue 206, gold at 89, a
+teal-tinted neutral at 209 — plus a warm red at 27 for `error`. The values live in
+`core/ui/src/main/kotlin/com/gawi/core/ui/theme/Color.kt`; reproducing 48 hexes
+here would guarantee two copies and one of them stale.
+
+**What holds them honest is a test, not this table.** `GawiColorSchemeTest`
+asserts every foreground/background pair the app draws against its floor in both
+themes, the `primary`/`tertiary` lightness step, and that `outline` and
+`onSurfaceVariant` stay recessive. Tightest surviving margins: `outline` on
+`surface` at 5.18 light and 5.31 dark, and `onSurfaceVariant` on dark
+`surfaceBright` at 4.84. It was mutation-checked by putting §3's two published
+values back, and it fails on both with the ratios above.
+
+One thing it deliberately does not assert: `surfaceVariant` and the container
+roles sit at 1.2-2.0:1 against `surface`, and that is correct. They are fills —
+the icon-picker swatch, `HabitIcon`'s fallback circle — and what they owe
+contrast to is their own contents, not the page. Holding a fill to 3:1 would pin
+the wrong property and force every quiet surface to look like a button.
+
 ## 4. Four constraints the palette has to satisfy
 
 These come from what the screens already do, and they hold for whichever
@@ -187,19 +246,32 @@ to do: every candidate then came out with a `primary`-to-`tertiary` *luminance*
 ratio of about 1.05 — identical lightness, distinguished by hue only, so the
 day-versus-week distinction would disappear entirely in greyscale or under
 deuteranopia. **`tertiary` therefore takes a deliberate lightness step away from
-`primary`** (darker in light mode, lighter in dark), which brings the ratio to
-1.27-1.74 across the candidates while keeping `tertiary` above 4.5:1 on
-`surface`. The badge text also differs by a trailing `w`, so colour was never the
-only channel — but making lightness carry it too costs nothing.
+`primary`**, which should bring the ratio to 1.27-1.74 while keeping `tertiary`
+above 4.5:1 on `surface`. The badge text also differs by a trailing `w`, so
+colour was never the only channel — but making lightness carry it too costs
+nothing.
+
+Two things this originally got wrong, corrected once the scheme was built and
+measured rather than drawn. It said the step goes "darker in light mode, lighter
+in dark", and in the winning scheme it is darker in *both*: dark `primary` sits
+at 10.4:1 on its surface already, so there is no room above it and the step has
+to go down. And it read as though the published candidates satisfied the
+requirement — candidate A's `tertiary` satisfied neither half, at 2.31:1 in light
+and a 1.02 step in dark. §3's "What shipped" carries the replacements. The
+requirement stated here was right and worth stating; what was missing was
+anything that checked it, which is now `GawiColorSchemeTest`.
 
 `outline` and `onSurfaceVariant` carry the broken-streak and shut-day states and
 must read as *recessive* against `onSurface` while still clearing the contrast
 floor. Dimmed is a meaning here, not a leftover.
 
-### 4.2 `CONTRAST_PIVOT` is wrong, and it blocks the hue retune
+### 4.2 `CONTRAST_PIVOT` was wrong, and it blocked the hue retune
 
-Found while generating the hues, and it is the most actionable thing in this
-document. `HabitColor.kt` picks a glyph colour with:
+**Fixed on 2026-08-23, before the hues, in `fix(ui): pick the better habit glyph
+colour`.** Kept in full rather than deleted, because the defect is the reason the
+retune was safe to do at all and because how it survived is worth remembering.
+
+Found while generating the hues. `HabitColor.kt` picked a glyph colour with:
 
 ```kotlin
 if (tint.compositeOver(background).luminance() > CONTRAST_PIVOT) Color.Black else Color.White
@@ -244,10 +316,21 @@ point where the better choice changes.
   through a colour emoji font, which ignores the text colour. Worth confirming on
   device rather than asserting either way — and it does not change the fix.
 
-**This lands before the hues, not with them.** It is a one-constant change with
-its own test, it is independent of whichever scheme wins, and §6's retuned set
-*requires* it: at the chosen lightness all eight new hues sit in the mispicked
-band and would draw at about 4.1:1 under the current pivot.
+**It landed before the hues, not with them.** A one-constant change with its own
+test, independent of whichever scheme won — and §6's retuned set *required* it:
+at the chosen lightness all eight new hues sit in the band the old pivot got
+wrong and would have drawn at about 4.1:1.
+
+**How it survived a phase of green builds, which is the part worth keeping.** All
+seven tests over this function passed either way, because none of them knew what
+a ratio was — they asserted which colour came back for a given input, which is
+the function restating itself. The two added with the fix assert the property
+instead: one sweeps 101 greys checking the better of the two glyphs is always the
+one chosen, the other checks every offered hue clears the floor *as drawn*. Both
+were mutation-checked against `0.5f`. The useful consequence is that at the true
+crossover every tint clears 4.49:1 whichever glyph it takes, so contrast stopped
+being a property of the palette and became a property of the function — which is
+what let §6 retune all eight hues without re-deriving their glyphs.
 
 ### 4.3 The hue labels are content descriptions, so they have to stay true
 
@@ -378,6 +461,8 @@ Luminance spread 0.205-0.260, so all eight take a **black** glyph — uniform, a
 
 ### 6.2 One label has to move: Yellow becomes Gold
 
+**Done.** `habits_color_gold` is the string and "Gold" is what TalkBack reads.
+
 At a uniform lightness the yellow family lands at `#9C851F`, which is a gold or
 olive and is not yellow. Per §4.3 the string is a content description, so the
 honest fix is to move the label with the value: `habits_color_yellow` becomes
@@ -401,15 +486,26 @@ habit created before the restyle keeps its old hex, and reopening its editor sho
 a form with nothing selected: the precise failure the uppercase-six-digit
 convention exists to avoid, arriving by a different door.
 
-**Decision: when `form.color` is not in `HabitPalette.Colors`, render it as a
-leading "current" swatch.** The machinery is already there —
+**Decision, and now the behaviour: when `form.color` is not in
+`HabitPalette.Colors`, render it as a leading "current" swatch.** The machinery is already there —
 `parseHabitColor` survives arbitrary hex by design ("these are what the editor
 offers, not a guarantee about what is in the log") and `glyphColorOn` already
 picks its glyph. What the picker needs is one extra entry, not a new mechanism.
 
 One wrinkle: `COLOR_LABELS` is positional, so the extra swatch cannot index into
 it and needs its own label string. Something naming it as the habit's current
-colour rather than naming a hue, since the hue is unknown by definition.
+colour rather than naming a hue, since the hue is unknown by definition. That is
+`habits_color_current`, "Current colour".
+
+**As built, the wrinkle turned out to be the whole risk.** `ColorPicker` looked
+its labels up by list index, so prepending an entry with a synthetic index would
+have shifted every name one place along the palette — eight swatches each
+announcing the wrong colour, which §4.3 calls an accessibility defect and which
+nothing in the suite can detect. The fix was to stop indexing: each swatch now
+carries its own label. `HabitsUiMapperTest`'s length assertion cannot see this
+swatch at all, so `HabitEditorScreenTest` gained the two cases that can — one
+that an orphaned hex is offered and starts selected, one that nothing extra
+appears when the colour is still on the palette.
 
 The alternative — offering nothing and letting the form open unselected — was
 rejected because saving from that state would silently change the habit's colour,
@@ -448,8 +544,10 @@ better. The role sets in §3 are the contract; `primary` and `tertiary` keep the
 lightness step §4.1 measured, so day-versus-week streaks survive a greyscale
 reading.
 
-This is what unblocks `Theme.kt`, the retuned hues, the widget's duplicate hexes
+This is what unblocked `Theme.kt`, the retuned hues, the widget's duplicate hexes
 and the Insights heatmap — the whole reason PRD §5's Phase 1 order was inverted.
+`Theme.kt` and the hues landed the same day; the widget's own palette and the
+heatmap are the two still to come, and both now have values to draw from.
 
 **Still a leaning: Momo's style is flat.** All three treatments stay on the
 canvas so it can move; the launcher mark derives from the character, so a change
