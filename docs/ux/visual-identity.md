@@ -212,10 +212,30 @@ here would guarantee two copies and one of them stale.
 **What holds them honest is a test, not this table.** `GawiColorSchemeTest`
 asserts every foreground/background pair the app draws against its floor in both
 themes, the `primary`/`tertiary` lightness step, and that `outline` and
-`onSurfaceVariant` stay recessive. Tightest surviving margins: `outline` on
-`surface` at 5.18 light and 5.31 dark, and `onSurfaceVariant` on dark
-`surfaceBright` at 4.84. It was mutation-checked by putting §3's two published
-values back, and it fails on both with the ratios above.
+`onSurfaceVariant` stay recessive. Tightest surviving margin is `primary` on
+`secondaryContainer` at 4.58 — the completed tick on today's cell in the retro
+strip. It was mutation-checked by putting §3's two published values back, and it
+fails on both with the ratios above.
+
+**A third value moved, and this one the test missed until a device found it.**
+Dark `secondaryContainer` was `#344D50`, a straight tonal mirror of the light
+value. But `secondaryContainer` is a **ground**, not only an accent: `RetroStrip`
+fills today's cell with it and draws the weekday letter on top in
+`onSurfaceVariant`, which measured **4.24:1** — a real text failure, on the one
+cell every user looks at every day. It is now `#273F42`, which puts that pair at
+5.25 and every other role drawn there above 4.5. The cost is a subtler fill:
+1.59:1 against `surface` rather than 1.96:1, still more visible than the light
+scheme's own 1.21:1.
+
+The lesson is the one worth keeping, because the test was *written* to prevent
+exactly this and did not: it enumerated the `surface` family as grounds and
+treated the containers purely as accents, checking each only against its own
+`onX`. A container that something fills a shape with is a ground, and every
+recessive role that lands on it is a pair. `secondaryContainer` is now
+enumerated as one. It also fixed a role misuse next door — the strip drew its
+not-done marker in `outline`, which is Material's *border* role, at 2.70:1 on
+that fill; recessive **content** is `onSurfaceVariant`, and using it leaves
+`outline` to the shut day alone, which sharpens the hierarchy §5 asks for.
 
 One thing it deliberately does not assert: `surfaceVariant` and the container
 roles sit at 1.2-2.0:1 against `surface`, and that is correct. They are fills —

@@ -152,6 +152,17 @@ private fun ColorScheme.pairings(): List<Pairing> = buildList {
     text("onErrorContainer on errorContainer", onErrorContainer, errorContainer)
     text("inverseOnSurface on inverseSurface", inverseOnSurface, inverseSurface)
 
+    // secondaryContainer is a *ground*, not just an accent: RetroStrip fills
+    // today's cell with it and HabitIcon uses it for a habit with no readable
+    // colour, so content lands on top of it. Missing that is how a 4.24:1
+    // weekday letter reached a device — the roles below are the ones actually
+    // drawn there, and enumerating a container as a ground is the general
+    // lesson. `outline` is deliberately absent: it borders cells, and after the
+    // fix in RetroStrip nothing draws it on this fill.
+    text("onSurface on secondaryContainer", onSurface, secondaryContainer)
+    text("onSurfaceVariant on secondaryContainer", onSurfaceVariant, secondaryContainer)
+    text("primary on secondaryContainer", primary, secondaryContainer)
+
     // The surface family. Any of these can end up under body text, so both
     // content roles are checked against all of them rather than against the one
     // surface a screen happens to use today.
