@@ -63,8 +63,13 @@ Full guide with examples: `.github/COMMIT_CONVENTION.md`
   composables), `:feature:today`, `:feature:habits`, `:feature:settings` and
   `:widget` (Glance). **All eight exist** and `:widget` is not a screen. A ninth,
   `:feature:insights`, is in architecture.md §2's table as of 2026-08-23 and is
-  **planned, not built** — it is the only row there that does not exist, and its
-  scope is not in `.commitlintrc.yaml` yet either. **`docs/architecture.md` §2
+  **planned, not built** — it is the only row there that does not exist. Its
+  scope *is* already in `.commitlintrc.yaml`, registered ahead of the module on
+  purpose, because the `commit-msg` hook rejects a module's first commit if its
+  scope is missing. **Do not create the module empty**: an Android library always
+  has test sources configured for its unit-test variant, so Gradle fails its test
+  task with "no tests discovered" until there is a real test in it. The module
+  arrives with its first real file. **`docs/architecture.md` §2
   owns the contents of each and the full dependency rule** — read it rather than
   trusting this summary, which is the drift this file warns about everywhere
   else.
