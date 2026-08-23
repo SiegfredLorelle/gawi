@@ -46,7 +46,13 @@ rules:
   # This project's real areas. Module scopes get added when those modules are
   # born (docs/architecture.md §2). today, habits, settings and widget all
   # exist; add the next one here before using it, or the commit is rejected.
+  #
+  # insights is the exception and is registered ahead of its module on purpose:
+  # the hook rejects a module's *first* commit if its scope is missing, so the
+  # entry has to exist before :feature:insights does
+  # (docs/ux/insights.md §1).
   scope-enum:
     - 2
     - always
-    - [app, domain, data, ui, today, habits, settings, widget, ux, gradle, quality, make, ci, deps, docs, stacks, repo, claude, arch, prd]
+    - [app, domain, data, ui, today, habits, settings, widget, insights, ux,
+       gradle, quality, make, ci, deps, docs, stacks, repo, claude, arch, prd]
