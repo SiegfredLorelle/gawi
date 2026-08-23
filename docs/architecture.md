@@ -705,11 +705,12 @@ the one a first contribution hits immediately.
 §8 owns the policy for what belongs there and why it is only `:app`. Test helpers
 shared between test classes go in a `testsupport/` package beside them — six of
 the eight modules have one, and the two that do not (`:app`, `:core:ui`) have
-four each, which is the honest threshold for bothering. `:core:ui` came close
-when the designed scheme landed and two test classes needed the same WCAG
-formula: the helper went in a plain `Contrast.kt` next to them in the same
-package instead, because a `testsupport/` package for one file two neighbours
-share is ceremony. It earns one when a third module-crossing helper appears.
+five and four test files respectively, which is the honest threshold for
+bothering. `:core:ui` came close when the designed scheme landed and two test
+classes needed the same WCAG formula: the helper went in a plain `Contrast.kt`
+next to them in the same package instead, because a `testsupport/` package for
+one file two neighbours share is ceremony. It earns one when a third
+module-crossing helper appears.
 
 **The core modules are packaged by concept, not by layer.**
 
