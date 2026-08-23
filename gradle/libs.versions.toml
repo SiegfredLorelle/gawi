@@ -50,7 +50,7 @@ work = "2.11.2"
 # from an artifact that only arrived through hilt-android and the compose BOM,
 # which is the trap the ApplicationProvider and ActivityScenarioRule entries
 # below already record.
-androidxCore = "1.18.0"
+androidxCore = "1.19.0"
 androidxTestExtJunit = "1.3.0"
 # The instrumented side, new 2026-08-21 with the widget. Latest stables:
 # everything else here is stable and these are too.
@@ -60,9 +60,9 @@ espresso = "3.7.0"
 kotlinxSerializationJson = "1.11.0"
 room = "2.8.4"
 datastore = "1.2.1"
-coroutines = "1.10.2"
+coroutines = "1.11.0"
 detekt = "1.23.8"
-spotless = "8.9.0"
+spotless = "8.10.0"
 # Consumed by the Spotless config in the root build file, not a plugin.
 ktlint = "1.8.0"
 junit = "4.13.2"
@@ -75,7 +75,7 @@ junit = "4.13.2"
 # without declaring anything. Read the real file before bumping this: the
 # ceiling is the project's JDK 17, not this version.
 robolectric = "4.16.1"
-turbine = "1.2.0"
+turbine = "1.2.1"
 # SDK levels and JDK, read by the convention plugins in build-logic.
 # ci.yml's setup-java pins the same JDK by hand — keep them in step.
 minSdk = "29"
