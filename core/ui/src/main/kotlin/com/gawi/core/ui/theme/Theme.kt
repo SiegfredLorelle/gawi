@@ -17,20 +17,20 @@ import androidx.compose.runtime.Composable
  * §8 keeps Material You off permanently: a designed identity is the point of
  * the whole brief, and dynamic colour would hand it back to the wallpaper.
  *
- * No typography yet, and as of 2026-08-24 the reason has changed. §5 decides to
- * bundle a variable font and defines the ten roles the app actually draws. The
- * typeface used to be parked on an experiment — whether a Glance widget can be
+ * **Type is Outfit, as of 2026-08-24, and nothing here is stock any more.**
+ * [GawiTypography] carries it; §5 chose the face and Type.kt records why. The
+ * typeface had been parked on an experiment — whether a Glance widget can be
  * handed a bundled font at all — so that the scale would not be chosen before
- * the face it was being chosen for. **That experiment has run and the answer is
+ * the face it was being chosen for. **That experiment ran and the answer was
  * no**: `RemoteViews` inflation resolves only the platform's generic family
- * names, and drops a bundled font resource silently. docs/ux/visual-identity.md
- * §2 has the measurement.
+ * names and drops a bundled font resource silently
+ * (docs/ux/visual-identity.md §2).
  *
- * So nothing here is waiting on a fact any more. What is left is the trade §5
- * now states: the app can render in a designed face only by accepting that the
- * widget renders in the system sans beside it, permanently. That is a taste
- * decision, it is not this file's to make, and until it is made type is still
- * `MaterialTheme`'s default here — the last stock thing left.
+ * So the divergence it warned about is real and was accepted rather than
+ * avoided: the app renders in Outfit and `:widget` renders in the system sans,
+ * permanently, one home screen apart. A quieter face would have hidden that and
+ * given up the identity this whole brief exists to buy. Type.kt has the rest,
+ * and docs/ux/visual-identity.md §5 is where to reopen the trade.
  *
  * A habit's own colour is per-row and comes from the event log, not from here;
  * [HabitPalette] is what the editor offers and [glyphColorOn] decides what is
@@ -42,5 +42,9 @@ import androidx.compose.runtime.Composable
  */
 @Composable
 fun GawiTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = if (darkTheme) GawiDarkColors else GawiLightColors, content = content)
+    MaterialTheme(
+        colorScheme = if (darkTheme) GawiDarkColors else GawiLightColors,
+        typography = GawiTypography,
+        content = content,
+    )
 }
