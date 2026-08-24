@@ -210,6 +210,17 @@ def main():
         sys.exit("no drawable directory at %s — run this from the repo root" % args.out)
 
     problems, pending, report = [], [], []
+
+    # Asserted rather than assumed, like everything else in this file, and
+    # because the untested direction is the one that bit: an AUTO_MIRRORED entry
+    # that matches no ICONS slug — a typo, or an upstream rename of the kind the
+    # docstring already records — silently stops mirroring that icon and exits 0.
+    # GawiIconsTest does catch it, but in another module and with a message about
+    # XML rather than about the typo.
+    unknown = sorted(AUTO_MIRRORED - set(ICONS))
+    if unknown:
+        problems.append("AUTO_MIRRORED names %s, which ICONS does not" % ", ".join(unknown))
+
     for slug, drawable in sorted(ICONS.items()):
         body, count, circled = convert(slug, drawable, args.svg_dir, problems)
         pending.append((os.path.join(args.out, drawable + ".xml"), body))
