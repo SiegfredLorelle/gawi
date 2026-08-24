@@ -580,20 +580,25 @@ draws in it; `:widget` draws in the system sans and cannot do otherwise. Anyone
 reopening that should read §2 first, and `core/ui/theme/Type.kt`, which records
 the rest.
 
-One limit on "the app draws in Outfit", stated because it is visible and would
-otherwise read as a bug: the file's `cmap` covers 360 characters, and five of the
-glyph characters the screens draw as *text* are outside it — `☰`, `◔`, `⚙`, `✎`
-and `✕`. Those fall back to the platform face, so an app bar can mix the two at
-one size. No tofu and no crash, but it is this document's own "looks like a
-design choice rather than a gap" failure, and the fix is icons rather than
-dingbats — which is §7's territory, not this section's.
+One limit on "the app draws in Outfit", kept because it is what drove the icon
+set: the file's `cmap` covers 360 characters, and five of the glyph characters
+the screens drew as *text* were outside it — `☰`, `◔`, `⚙`, `✎` and `✕`. Those
+fell back to the platform face, so an app bar mixed two faces at one size. No
+tofu and no crash, but it was this document's own "looks like a design choice
+rather than a gap" failure. **Fixed on 2026-08-24 by §7.5**, which converted
+every character-as-control to a vector, so the audit that follows is history
+rather than a live constraint. The `cmap` limit is not history: it still governs
+any character a future screen reaches for as text.
 
-**Checked and present**, recorded so the audit is not re-run: `←`, `‹`, `›`,
-`✓`, `•`, and — added after review noticed the first list was short — `−`
-(U+2212) and `·` (U+00B7). `−` is the one that mattered. `WeeklyTargetStepper`
-draws it beside an ASCII `+`, both `titleLarge`, in one `Row`; absent, that would
-have been a two-face pair *adjacent at one size*, worse than the app-bar case
-above. It is present, so the pair is wholly Outfit.
+**What the audit found present**, kept so nobody re-runs it: `←`, `‹`, `›`, `✓`,
+`•`, and — added after review noticed the first list was short — `−` (U+2212)
+and `·` (U+00B7). `−` was the one that mattered. `WeeklyTargetStepper` drew it
+beside an ASCII `+`, both `titleLarge`, in one `Row`; absent, that would have
+been a two-face pair *adjacent at one size*, worse than the app-bar case above.
+It was present — and that pair is two icons now regardless, which is the
+difference between the audit being wrong and it being superseded. `✓` and `·`
+are still drawn as text and still covered: `RetroStrip`'s marks are data in a
+grid rather than controls, which is why §7.5 left them where they are.
 
 **The habit-icon emoji are a separate matter, not a gap in that audit.**
 `HabitPalette`'s twelve are outside this `cmap` and always will be — Android
@@ -911,6 +916,88 @@ widget. Before any of it is built, the price:
   the resource-backed providers every `GlanceTheme` colour is. With hexes decided,
   `ColorProvider(Color)` literals become available — and pinning still will not
   make the glyph assertable, so `docs/running.md` §4 keeps its by-hand check.
+
+### 7.5 The icon set, and the dingbats it retires
+
+**Decided 2026-08-24: Lucide, vendored.** Ten VectorDrawables in `:core:ui`,
+generated from `lucide-static` **1.34.0** by `scripts/convert-lucide.py`, reached
+through `GawiIcons` and drawn by `GawiIconButton`. This closes the half of OQ-4
+that was never about Momo.
+
+**Why Lucide specifically.** The direction asked for was "something like Lucide
+or what's in the Claude design", and those turn out to be the same answer: Claude
+Code's own scaffold config pins `"iconLibrary": "lucide"`, and its design
+guidance refers to "outline icons (Lucide/Feather)". Anthropic has not published
+the claude.ai product set itself, so there is nothing closer to copy — but the
+family is the monoline one, and Lucide is its ISC-licensed member. Recorded
+because "it looks like the Claude design" is not a licence and would not have
+survived the next reader asking where the files came from.
+
+**It is not a dependency, and could not be.** Lucide ships no Android artifact.
+Ten files of about 300 bytes each, generated and reviewable in the diff, is what
+vendoring costs here; `material-icons-extended` was the alternative that
+`GlyphButton`'s KDoc rejected, correctly, for the dependency it named.
+
+**Licensing is not uniform.** Lucide is ISC. Six of these ten —
+`arrow-left`, `chevron-left`, `chevron-right`, `minus`, `plus`, `x` — are derived
+from Feather and are **additionally MIT** (Cole Bemis). Upstream's notice carries
+both texts and the derived-from list, so it is vendored verbatim as
+`licenses/Lucide-ISC.txt` and nothing here had to adjudicate which clause
+governs. Each drawable's header says which licence is its own. **This does not
+close the licences release gate**: nothing packages `licenses/` and there is
+still no about screen, exactly as §5 left it for the font.
+
+| Icon | Replaces | Where |
+|---|---|---|
+| `arrow-left` | `←` | Up, in five app bars |
+| `pencil` | `✎` | Habit detail, edit |
+| `list-checks` | `☰` | Today, manage habits |
+| `chart-pie` | `◔` | Today, insights |
+| `settings` | `⚙` | Today, settings |
+| `x` | `✕` | Habit editor, cancel |
+| `chevron-left`, `chevron-right` | `‹`, `›` | History, month pager |
+| `minus`, `plus` | `−`, `+` | Weekly-target stepper |
+
+**Arrows navigate, chevrons step.** `arrow-left` leaves the screen; a chevron
+moves a value inside one. The month pager is the only current chevron caller and
+the rule exists so the next control does not reopen the question.
+
+**`list-checks`, not `menu`.** `☰` is literally three lines and `menu` is its
+exact vector, but it implied a navigation drawer this app has never had. The
+destination is a list of things you tick, so the icon says that. `chart-pie` for
+Insights is the opposite case — a direct translation of `◔`, a part-filled
+circle, and a match for the rate cards that dominate the screen.
+
+**All fourteen call sites converted, not just the five broken ones.** §5's audit
+found five glyphs outside Outfit's `cmap`; `←`, `‹`, `›`, `−` and `+` were fine.
+Converting only the broken five would have traded a font mismatch for a
+stroke-weight mismatch — a 2px vector `✎` beside a typographic `←` in the same
+app bar is the same "looks like a design choice rather than a gap" failure, just
+harder to name. This is why §5's glyph audit is now retired rather than narrowed:
+the app no longer draws a character as a control anywhere.
+
+**Two consequences worth having written down.**
+
+- **Icons do not scale with font scale, and the characters did.** A `titleLarge`
+  glyph grew with `fontScale`; a 24dp `Icon` holds 24dp. At 200% the app-bar
+  icons now stay put while titles grow. That is Material-correct — touch targets
+  are 48dp either way — and it is still a visible change from what shipped, so
+  `docs/running.md` §4 checks it rather than assuming it reads as deliberate.
+- **`settings` is one path plus a circle, and `VectorDrawable` has no circle.**
+  The converter emits it as two exact semicircular arcs. It fails loudly on any
+  other primitive rather than converting it, because the failure being avoided is
+  a drawing that silently loses a part of itself. The generated files carry a
+  "do not hand-tune" header for the same reason.
+
+**Still not decided here: the launcher icon.** §7.1 designed it and §8 records
+why it cannot be drawn yet — the mark derives from Momo, so it waits on the
+character, not on an icon set. `android:icon` is still
+`@android:drawable/sym_def_app_icon`. What this section does give it is the
+visual language it has to agree with, which was the argument for doing icons
+first. `app/src/main/res/drawable/ic_reminder.xml` is a related loose end and a
+deliberate one: a notification small icon is drawn from its alpha channel only
+and must be solid, so it is a different medium rather than a set member that got
+missed.
 
 ## 8. What this does not decide
 
