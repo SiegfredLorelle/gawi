@@ -28,6 +28,9 @@ internal fun overviewOf(period: Period, breakdown: Breakdown, context: ReadConte
             completions = completions.values.sumOf { it.size },
             habits = habits.toRates(period, context, completions),
             tags = tagEffort.toShares(),
+            // The unfiltered list, which is the whole reason this is a separate
+            // field: `habits.toRates` drops the archived ones.
+            hasAnyHabit = habits.isNotEmpty(),
         )
     }
 

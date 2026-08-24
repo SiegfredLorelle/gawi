@@ -86,19 +86,32 @@ private fun Overview(state: InsightsUiState.Overview, actions: InsightsActions, 
         BreakdownPicker(state.breakdown, actions.onBreakdown)
 
         when {
-            // **Two empty states, because the two lists go empty for different
-            // reasons.** Tags is empty when the period holds no completions.
-            // Habits is empty when there is no *unarchived* habit to report on —
-            // and the headline above counts archived habits' completions, so
-            // sharing one "nothing logged" notice let the screen say "12 active
-            // days" and "no completions in this period" two rows apart. Caught
-            // in review; it needs a user who archived everything after logging.
+            // **Three empty states, because a list can be empty for three
+            // different reasons and each deserves different advice.**
+            //
+            // No habit at all: a fresh install, and the commonest way to reach
+            // this screen empty, since the app bar offers it before a first
+            // habit exists. This branch was missing until review caught it, and
+            // the archived copy below was being shown instead — telling a new
+            // user "every habit is archived", which was untrue.
+            state.breakdown == Breakdown.HABITS && !state.hasAnyHabit -> Notice(
+                title = stringResource(R.string.insights_no_habits_yet_title),
+                body = stringResource(R.string.insights_no_habits_yet_body),
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            // Habits exist and every one is archived. The headline above still
+            // counts their completions — deliberately, since effort spent is
+            // history — so this cannot say "nothing logged" without
+            // contradicting the two rows above it.
             state.breakdown == Breakdown.HABITS && state.habits.isEmpty() -> Notice(
                 title = stringResource(R.string.insights_no_habits_title),
                 body = stringResource(R.string.insights_no_habits_body),
                 modifier = Modifier.fillMaxWidth(),
             )
 
+            // And the period simply holds no completions, which is what the
+            // Tags breakdown runs out of.
             state.breakdown == Breakdown.TAGS && state.tags.isEmpty() -> Notice(
                 title = stringResource(R.string.insights_empty_title),
                 body = stringResource(R.string.insights_empty_body),

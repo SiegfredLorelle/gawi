@@ -54,7 +54,8 @@ class InsightsScreenTest {
             TagShareUi("career", 86, 1f),
             TagShareUi(null, 12, 0.14f),
         ),
-    ) = InsightsUiState.Overview(period, breakdown, activeDays, completions, habits, tags)
+        hasAnyHabit: Boolean = true,
+    ) = InsightsUiState.Overview(period, breakdown, activeDays, completions, habits, tags, hasAnyHabit)
 
     private fun render(state: InsightsUiState, actions: InsightsActions = NO_ACTIONS) {
         compose.setContent {
@@ -162,12 +163,41 @@ class InsightsScreenTest {
      */
     @Test
     fun `no unarchived habit says so rather than claiming nothing was logged`() {
-        render(overview(breakdown = Breakdown.HABITS, activeDays = 12, completions = 34, habits = emptyList()))
+        render(
+            overview(
+                breakdown = Breakdown.HABITS,
+                activeDays = 12,
+                completions = 34,
+                habits = emptyList(),
+                // Habits exist; they are simply all archived. Without this the
+                // fresh-install branch takes it, which is the bug below.
+                hasAnyHabit = true,
+            ),
+        )
 
         compose.onNodeWithText(string(R.string.insights_no_habits_title)).performScrollTo().assertIsDisplayed()
         compose.onAllNodesWithText(string(R.string.insights_empty_title)).assertCountEquals(0)
         // The headline it must not contradict is still on screen.
         compose.onNodeWithText(resources.getQuantityString(R.plurals.insights_active_days, 12, 12)).assertIsDisplayed()
+    }
+
+    /**
+     * A fresh install is told to make a habit, not that its habits are archived.
+     *
+     * The commonest way to reach this screen empty: Today's app bar offers
+     * Insights before a first habit exists, so `habits` is empty with nothing
+     * archived. The copy that used to show here said "Every habit is archived",
+     * which was a claim about the user's data that was untrue. Caught in review,
+     * and untested until now — the archived case above fixes `activeDays = 12`,
+     * so it never exercised this path.
+     */
+    @Test
+    fun `a fresh install is told to add a habit, not that they are archived`() {
+        render(overview(breakdown = Breakdown.HABITS, activeDays = 0, completions = 0, habits = emptyList(), hasAnyHabit = false))
+
+        compose.onNodeWithText(string(R.string.insights_no_habits_yet_title)).performScrollTo().assertIsDisplayed()
+        compose.onAllNodesWithText(string(R.string.insights_no_habits_title)).assertCountEquals(0)
+        compose.onAllNodesWithText(string(R.string.insights_empty_title)).assertCountEquals(0)
     }
 
     /** And with tags to show, the same state draws the bars rather than a notice. */
