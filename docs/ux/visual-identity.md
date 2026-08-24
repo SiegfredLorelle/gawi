@@ -662,6 +662,38 @@ there redraws the mark rather than reopening §7.1.
 **Parked, with an experiment rather than a question: the typeface.** §5 has the
 condition and §2 has the experiment.
 
+### 7.2.1 The Insights artboard, and its two wrong captions
+
+**"The screen the palette was blocking"** — four cards: the heatmap, a
+completion-rate sparkline, tag-effort bars, and a Month/Quarter/Year picker
+labelled *"a proposal, not a decision"*. Recorded here on **2026-08-24**, which
+is later than it was drawn, because until then it was a drawing and §7's opening
+rule says a decision only counts once it is written down.
+
+**What it settled**, and what got built from it: the picker's fixed set of three,
+the bar-and-total shape of the tag list, and the sparkline with its months
+labelled underneath. [insights.md](insights.md) §§8.7–8.8 carry the detail.
+
+**What it got wrong, twice, and both were caught by measuring.**
+
+- Its rate card draws the current month as a dash, and its caption justifies that
+  by saying `Rates.completionRate` returns null for a part-month. It does not —
+  it excludes unfinished units from both sides of the fraction, so a part-month
+  is already comparable to a finished one. The shipped card draws the number.
+- Its untagged bar is grey where the tagged bars are teal. Against `primary`,
+  every candidate for "a quieter bar" measures between **1.07 and 1.97** — the
+  same class of failure as §3's `tertiary` at 1.02 and the history grid's
+  today-fill at 1.04. The shipped bars are all `primary`, and untagged is set
+  apart by a recessive **label** and by sorting last.
+
+**Its heatmap is a rolling twelve-week grid with weekday rows and no day
+numbers, and the app draws a calendar month instead.** That divergence is
+deliberate and is the app's answer, not a defect: the calendar keeps a date
+reference and lets any month be reached, and the month grid was already built and
+verified when the artboard was reviewed. Left as it stands rather than reconciled
+— which is exactly the case §7's opening paragraph warns about, so it is written
+down here rather than left to be found.
+
 ### 7.3 The habit icon vocabulary is wire-neutral, and that is the finding
 
 `HabitMetadata.icon` is **already an opaque `String`** in the domain, in

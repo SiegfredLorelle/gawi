@@ -7,16 +7,21 @@ Companion to [the PRD](../prd.md) §5 Phase 1 and §8's OQ-1, and to
 period"* — and leaves every visual and definitional choice open. This document
 is where those get decided.
 
-**Status: written as a sketch on 2026-08-23; the first of its three surfaces was
-built on 2026-08-24.** So this file is now half of each kind — the parts about
-the heatmap record what was decided by building, like [habits.md](habits.md),
-[widget.md](widget.md), [settings.md](settings.md) and
-[reminder.md](reminder.md); the parts about trends and tag effort are still the
-sketch and are still provisional in a way those are not. Each section below says
-which it is. What the sketch was for was stopping three questions being answered
-by accident: which module this lives in, what a cell in a heatmap is allowed to
-mean, and what happens to the tag metric when OQ-1 lands. The first two are now
-settled by code.
+**Status: written as a sketch on 2026-08-23; all three of its surfaces were built
+on 2026-08-24.** So this file has stopped being a sketch and now records what was
+decided by building, like [habits.md](habits.md), [widget.md](widget.md),
+[settings.md](settings.md) and [reminder.md](reminder.md). What the sketch was
+for was stopping three questions being answered by accident: which module this
+lives in, what a cell in a heatmap is allowed to mean, and what happens to the
+tag metric when OQ-1 lands. All three are now settled by code, and §8 is the
+record of what building them decided — including the four places the reasoning
+here, and the artboard it came from, turned out to be wrong.
+
+What is *not* built is PRD §5's Phase 1.5, this module's second job. The app-wide
+screen (§8.8) borrows the first line of it — adherence per habit and per tag
+across a period — which is worth naming rather than leaving to be discovered: a
+quarterly retrospective now has a screen to grow out of rather than a blank
+module.
 
 `:feature:insights` **exists as of 2026-08-24**, and it arrived the way this
 file said it had to: with its first real file. `insights` was already in
@@ -81,9 +86,11 @@ module's second job, not a new one.
    reached from habit detail's "see full history". §8 below is what building it
    settled and what it cost.
 2. **Completion-rate trends.** Needs §4's definition settled before it can be a
-   number at all.
+   number at all. **Built 2026-08-24** — five trailing months under the month
+   grid, per habit, plus a row per habit on the app-wide screen. §8.7 and §8.8.
 3. **Tag effort distribution.** Needs a new aggregate query and carries §5's
-   problem.
+   problem. **Built 2026-08-24** as one breakdown of the app-wide screen (§8.8);
+   the query landed on 2026-08-23.
 
 ## 3. The heatmap is read-only
 
@@ -143,11 +150,26 @@ was *supposed* to be done on. Two consequences, and neither is cosmetic:
     A habit created this morning has not failed anything, and `0.0` renders as
     "0%" — the screen accusing the user on no evidence. Callers draw a dash.
 
-  One limitation is the screen's to solve and is recorded rather than hidden:
+  ~~One limitation is the screen's to solve and is recorded rather than hidden:
   nothing in the projection stores when a habit was created — `HabitState` has no
   such field — so a window reaching back before the habit existed yields a rate
   that is arithmetically right and meaningless. The earliest completed date is
-  the available proxy, and whether to clamp to it is a presentation decision.
+  the available proxy, and whether to clamp to it is a presentation decision.~~
+
+  **Fixed 2026-08-24, and not with the proxy.** `HabitState.createdOn` is
+  projected from the `HabitCreated` event's own envelope, so both rate surfaces
+  clip their window to it and a habit younger than the period draws a dash
+  instead of a low number. The proxy this paragraph offered — the earliest
+  completed date — was rejected on the way: it biases every rate *upward*,
+  because a window that begins at the first completion always begins on a day
+  the habit succeeded, and a habit created and then ignored for two weeks loses
+  those two weeks silently.
+
+  It cost the first schema migration in the repo, and it was the cheap kind:
+  `GawiDatabase`'s KDoc had already scoped a derived-table change as bump the
+  version, drop or extend the table, bump the projection version, replay. The
+  event log is untouched, so no payload changed and nothing upcasts. §8.7 has
+  the rest.
 
 Recorded here because both mistakes are cheap to make and invisible once made —
 a heatmap full of grey cells for a 3-per-week habit looks like a user with a
@@ -230,16 +252,22 @@ already live, never in the feature module.
 - ~~**Weekly habits' grid**: two-state days for everyone, or a grid of weeks for
   weekly habits (§4).~~ **Settled 2026-08-23: two-state days for everyone.** §4
   carries the reasoning.
-- **The period picker.** "Over a selected period" (PRD §5) does not say which
-  periods. Whether this is a fixed set (month / quarter / year) or a range, and
-  whether it is shared with Phase 1.5's retrospectives, is undecided — sharing it
-  is the reason to decide once rather than twice. **The heatmap deliberately did
-  not answer this.** Its two month arrows are not a picker and are not a
-  down-payment on one: a month grid can only show a month, so "which month" is
-  the whole of its range and needs no vocabulary for quarters or years. Trends
-  and the retrospectives are where the real question lands, and it is better
-  answered by the two of them together than by whatever this screen happened to
-  find convenient.
+- ~~**The period picker.** "Over a selected period" (PRD §5) does not say which
+  periods.~~ **Settled 2026-08-24: a fixed set of three — Month, Quarter,
+  Year — and calendar periods rather than trailing windows.** The labels say so,
+  and the reason this was worth deciding once is Phase 1.5's *quarterly and
+  yearly* review screens: a trailing thirty days cannot serve a quarterly
+  retrospective, so a trailing window would have meant deciding it twice after
+  all. Known consequence, recorded rather than hidden: on the 1st of a month,
+  Month holds almost nothing and Quarter is the answer.
+
+  **The heatmap deliberately did not answer this**, and that held. Its two month
+  arrows are not a picker and were not a down-payment on one: a month grid can
+  only show a month, so "which month" is the whole of its range. The picker lives
+  on the app-wide screen and governs that screen alone — the grid keeps its
+  arrows and the rate trend keeps its fixed five months, because a trend needs
+  several buckets and so "which period" is the wrong question to ask of it.
+  Three surfaces, three different time questions, one control each.
 - ~~**The colour scale**, and specifically whether intensity encodes anything at
   all.~~ **Settled 2026-08-24**, and §8 has the values and the measurements. The
   question was never hard once the palette existed — completions are idempotent
@@ -258,14 +286,24 @@ already live, never in the feature module.
   cost the cross-module dependency that section predicted: none. **The tag
   distribution still has no door**, and inventing a top-level destination is a
   navigation decision that belongs to `:app`.
+
+  **Closed 2026-08-24.** `Destination.Insights` is that top-level destination,
+  reached from a third action in Today's app bar — the app's only top-level
+  surface, so it was that or nowhere. What made it the right shape rather than a
+  convenience is that the screen turned out to want more than the tag bars: the
+  question it answers is "how am I doing overall", which nothing in the app
+  answered, and the tag distribution is one breakdown of it. §8.8 has the screen.
 - **Whether Momo appears here.** PRD §5 puts him in the Today view, the widget
   and the reminder. This screen is not on that list and should probably stay off
   it until OQ-4 is settled.
 
-## 8. What building the heatmap settled
+## 8. What building it settled
 
-Written 2026-08-24, after the screen. Everything above §7 was reasoning; this is
-what the code decided, including the two things the reasoning got wrong.
+Written 2026-08-24, after the screens. Everything above §7 was reasoning; this is
+what the code decided, including the several things the reasoning got wrong.
+
+§§8.1–8.6 are the heatmap. §§8.7–8.9 are the two surfaces that followed it the
+same week — the completion-rate trend and the app-wide screen.
 
 ### 8.1 The two grounds, and why the *pair* is what gets measured
 
@@ -359,3 +397,124 @@ resources.
 
 `GlyphButton` moved there too, from two identical copies. Nothing about the
 heatmap needed that beyond not being the third one.
+
+### 8.7 The completion-rate trend, and the artboard's two wrong captions
+
+The redesign canvas artboard **"The screen the palette was blocking"** is what
+prompted the rest of this. It draws four cards — the heatmap, a rate sparkline,
+tag-effort bars, and a Month/Quarter/Year picker marked *"a proposal, not a
+decision"*. It was recorded in neither this file nor
+[visual-identity.md](visual-identity.md), so by §7's own rule it was a drawing.
+It is a decision now, and building it corrected it twice.
+
+**The current month draws a real number, not the artboard's dash.** Its caption
+justified the dash by saying `Rates.completionRate` returns null for a
+part-month. It does not. It excludes unfinished units from *both* sides of the
+fraction, so a month three weeks in is 17 of 17 rather than 17 of 31 — already
+comparable to a finished month, which is the whole point of the liveness rule the
+caption was citing. Withholding that number would be withholding one the
+calculator went to some trouble to make safe. A dash now means only what
+`fraction`'s null means: nothing in the window had finished.
+
+**Five months, oldest first, ending on this one**, and the y scale is fixed at
+0–100% rather than scaled to the data. Five points spanning 71–90% auto-scaled
+would fill the plot and read as a collapse and a recovery; against a fixed scale
+they read as what they are, four flat months.
+
+**A null point breaks the line rather than being skipped over.** Joining the
+months either side of a gap draws a segment through a month that has no value.
+
+**The card carries the schedule**, because §4 forbids reading a daily habit's
+percentages as a weekly habit's and nothing else on the card distinguishes them.
+
+**The plot is omitted entirely when every point is a dash** — found on a device,
+where a reserved-but-empty 56dp reads as a chart that failed to draw rather than
+as a chart with nothing in it. The labelled dashes already said it.
+
+**The trend is not governed by the grid's steppers**, and the two reads are
+deliberately separate: the month offset is collected around the grid's query
+alone, so stepping a month does not re-read five months of rows. Pinned by a test
+that counts how many times the trend window is asked for.
+
+### 8.8 The screen that reports on everything
+
+Raised while reviewing the heatmap, and correct: every surface in the app was
+about one habit or one day. `Destination.Insights` is the answer — one period,
+two numbers about it, and one breakdown with a **Habits ⇄ Tags** toggle. One
+list with a toggle rather than two lists, so the screen reads as one view of a
+period rather than two screens sharing a title.
+
+**The headline is active days and completions.** Both are exact and neither needs
+a denominator, which is why it is not the *perfect days* count that was asked
+for first. Whether **every** habit was done on a past day is not answerable: a
+weekly habit has no due day at all (§4), and the honest definitions available all
+required either inventing due days for weekly habits or guessing which habits
+existed then. "You turned up on 18 days" claims nothing it cannot support.
+
+**A row per habit, never an average.** An app-wide completion rate would add the
+two fractions §4 exists to keep apart, so each row carries its own denominator
+and its own schedule label. Ordered by the habit list's order rather than by
+rate — a list that re-sorted itself as the numbers moved would make the same
+habit hard to find twice running.
+
+**Archived habits are out of the adherence list and still counted in the tag
+totals.** That looks inconsistent and is the asymmetry the data layer already
+draws: `observeTagEffort` counts them because effort spent does not stop having
+happened, and `observeToday` hides them because archiving is a decision about the
+future. Adherence is a question in the present tense. The visible consequence,
+seen on a device: an archived habit's completion is in the headline and in the
+tag bars but has no row under Habits, and Tags is where it is accounted for.
+
+**Every bar is `primary`, including untagged.** The artboard drew that one grey.
+Measured against `primary`, every candidate for "a quieter bar" is
+indistinguishable — `outline` 1.07 light / 1.97 dark, `secondary` 1.07 / 1.13,
+`tertiary` 1.32 / 1.42, `onSurfaceVariant` 1.37 / 1.25. Same class of defect as
+§8.2's 1.04. So the distinction moved to channels that survive a greyscale
+reading: the label is drawn in `onSurfaceVariant` where a tag's is `onSurface`,
+and untagged sorts **last regardless of size**, because it is the residual rather
+than a competitor.
+
+**The number is a total and no percentage is drawn** — narrower than PRD §5's
+word "share", deliberately. A total cannot become wrong the day OQ-1's multi-tag
+change lets a completion carry two tags; a percentage has to be redefined by it
+(§5). Bars scale to the largest total rather than to the sum, so they compare
+rather than sum: a bar whose length were its share of the whole would leave the
+longest one a third of the track on any realistic spread.
+
+**No new `GawiColorSchemeTest` pairing was needed**, which is worth saying so
+nobody adds one for completeness. The bar on its track is `primary` against
+`surfaceContainerHighest` — the pair §8.1 added — and everything else on the
+screen is text on `surface`. Verified on a device by sampling pixels in both
+themes: fill `#1F6F78` / `#7FD4DC`, track `#D3E3E6` / `#2C3A3D`.
+
+### 8.9 What the creation date bought, and what it cost
+
+§4's recorded limitation — nothing knew when a habit began — was load-bearing for
+both rate surfaces, and it is now `HabitState.createdOn`, projected from the
+`HabitCreated` event's own envelope. A window is clipped to it, so a habit made
+three weeks into a quarter is measured over three weeks rather than reading as
+though it had missed the first nine.
+
+Seen on a device, which is the clearest way to put it: a habit created today
+reads **—** across all five months of its trend. Without the clip it would have
+read about 13% — a number that is arithmetically right and accuses the user of
+twenty days that were never offered.
+
+It cost the first schema migration in the repo, and that migration is worth
+knowing about because it is the pattern for the next one. `GawiDatabase`'s KDoc
+had already scoped it: a derived-table change bumps `DATABASE_VERSION`, extends
+or drops the table, bumps `PROJECTION_VERSION`, and the next start replays the
+log to fill the new column. The event log is never rewritten, so no payload
+changed and nothing upcasts. Verified by upgrading a real v1 database on an
+emulator: 57 events and both habits survived, `created_on` came back populated
+with the dates those habits were actually made, and both versions moved to 2.
+
+One invariant was rewritten to do it. `Event`'s KDoc said `tzOffsetMin` was "kept
+for audit only — projection never reads it", and projection now reads it in
+exactly one place. Paired with `occurredAt` it gives the calendar date the habit
+was created on, in the offset it was written at. Both fields are stored at
+command time and neither can change, so the derivation is a pure function of
+immutable log data and every replay yields the same date — which is the property
+architecture §5 protects. It is deliberately **not** the logical date: the cutoff
+as it was then is not recorded anywhere, so this errs one day later at most, in
+the direction that cannot manufacture a miss.
