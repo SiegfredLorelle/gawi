@@ -18,11 +18,16 @@ data class WriteStamp(val occurredAt: Instant, val eventId: EventId) : Comparabl
 data class HabitMetadata(val name: String, val icon: String, val color: String, val schedule: Schedule, val tag: String?)
 
 /**
- * Everything the log has said about one habit id. Metadata (whole-record
- * LWW over HabitCreated/HabitUpdated) and the archived flag (LWW over
- * HabitArchived/HabitUnarchived) are independent registers, so events for a
- * habit whose create has not arrived yet still converge. [metadata] is null
- * until any metadata write arrives.
+ * Everything the log has said about one habit id, as **three** independent
+ * registers: metadata (whole-record LWW over HabitCreated/HabitUpdated), the
+ * archived flag (LWW over HabitArchived/HabitUnarchived), and the creation date
+ * (earliest-wins over HabitCreated). Independent so that events for a habit
+ * whose create has not arrived yet still converge — [metadata] is null until any
+ * metadata write arrives, and [createdOn] until the create itself does.
+ *
+ * The creation register is the odd one out twice over: it is written by one
+ * event type rather than two, and it resolves to the *earliest* write rather
+ * than the latest. Its own KDoc has the reasoning.
  */
 data class HabitRecord(
     val metadata: HabitMetadata? = null,
