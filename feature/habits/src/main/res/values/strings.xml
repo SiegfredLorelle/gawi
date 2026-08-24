@@ -94,16 +94,9 @@
     <string name="habits_detail_streak_was_weeks">was %dw</string>
 
     <!-- The retro strip (PRD §5's three-day window, docs/ux/today-view.md §5).
-         Short weekday labels, from resources rather than DayOfWeek.getDisplayName,
-         which reads the JVM locale instead of the app's configuration. -->
-    <string name="habits_day_mon">M</string>
-    <string name="habits_day_tue">T</string>
-    <string name="habits_day_wed">W</string>
-    <string name="habits_day_thu">T</string>
-    <string name="habits_day_fri">F</string>
-    <string name="habits_day_sat">S</string>
-    <string name="habits_day_sun">S</string>
-
+         The short weekday labels it draws are :core:ui's ui_day_* — the history
+         grid draws the same seven letters, and copy two features share lives
+         there (AGENTS.md). -->
     <string name="habits_strip_title">Recent days</string>
     <!-- Spoken labels. The date is the subject, so it leads; the two initials
          M and T repeat across the week and cannot identify a cell on their own. -->

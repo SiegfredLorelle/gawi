@@ -2,6 +2,7 @@ package com.gawi.feature.settings
 
 import androidx.annotation.StringRes
 import com.gawi.core.data.settings.UserSettings
+import com.gawi.core.ui.date.weekdayName
 import java.time.DayOfWeek
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -34,29 +35,21 @@ internal fun UserSettings.toUiState(
 )
 
 /**
- * The name of a day, as a string resource.
+ * The name of a day, as a string resource — the spelled-out form.
  *
- * Resources rather than `DayOfWeek.getDisplayName`, which would be shorter.
- * Three reasons, and the third is the one that decided it: the tests can then
- * assert against the same `R.string` the screen renders, the copy is
- * translatable in the one place every other string in this app is, and
- * `getDisplayName` varies with the JVM's locale data, so what the picker reads
- * would depend on which machine rendered it.
+ * `:core:ui`'s, since 2026-08-24: the seven names were here and the history
+ * grid's spoken cell labels needed the same seven, and copy two features draw
+ * belongs in `:core:ui` (AGENTS.md). The reasoning for resources over
+ * `DayOfWeek.getDisplayName` moved with them, including the one that decided it
+ * — `getDisplayName` varies with the JVM's locale *data*, so what the picker
+ * read would depend on which machine rendered it.
  *
- * Exhaustive rather than defaulted, so a `when` here is a compile error if
- * `java.time` ever grows an eighth day — the same bet [messageFor] makes about
- * `ImportResult`, and it costs nothing to hold.
+ * Kept as a name here rather than calling [weekdayName] at the two call sites.
+ * It says which of the two forms this screen wants, and it is what the tests
+ * assert through, so neither has to name another module's `R` class.
  */
 @StringRes
-internal fun labelFor(day: DayOfWeek): Int = when (day) {
-    DayOfWeek.MONDAY -> R.string.settings_day_monday
-    DayOfWeek.TUESDAY -> R.string.settings_day_tuesday
-    DayOfWeek.WEDNESDAY -> R.string.settings_day_wednesday
-    DayOfWeek.THURSDAY -> R.string.settings_day_thursday
-    DayOfWeek.FRIDAY -> R.string.settings_day_friday
-    DayOfWeek.SATURDAY -> R.string.settings_day_saturday
-    DayOfWeek.SUNDAY -> R.string.settings_day_sunday
-}
+internal fun labelFor(day: DayOfWeek): Int = weekdayName(day)
 
 /**
  * A time, in the device's own convention.

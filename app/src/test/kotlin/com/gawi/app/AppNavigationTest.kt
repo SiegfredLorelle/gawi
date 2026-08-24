@@ -18,6 +18,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import com.gawi.core.ui.R as UiR
 import com.gawi.feature.habits.R as HabitsR
 import com.gawi.feature.settings.R as SettingsR
 import com.gawi.feature.today.R as TodayR
@@ -211,12 +212,16 @@ class AppNavigationTest {
      * screen that could not resolve its binding fails here rather than on a
      * device. With nothing written yet it shows the PRD's defaults, and Monday
      * is the one of the three that is a word rather than a formatted time.
+     *
+     * The word comes from `:core:ui` since 2026-08-24 — the week-start names
+     * moved there when the history grid needed the same seven. It is still the
+     * string the picker renders; only which module owns it changed.
      */
     @Test
     fun settingsShowsTheStoredDefaults() {
         awaitDescribed(string(TodayR.string.today_settings)).performClick()
 
-        awaitText(string(SettingsR.string.settings_day_monday)).assertIsDisplayed()
+        awaitText(string(UiR.string.ui_weekday_monday)).assertIsDisplayed()
     }
 
     /**
