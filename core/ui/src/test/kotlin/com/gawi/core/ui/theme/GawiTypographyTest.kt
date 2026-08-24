@@ -70,10 +70,14 @@ class GawiTypographyTest {
         roles.forEach { (name, role) ->
             val ours = role(GawiTypography)
             val theirs = role(stock)
-            assertEquals("$name fontSize moved", theirs.fontSize, ours.fontSize)
-            assertEquals("$name lineHeight moved", theirs.lineHeight, ours.lineHeight)
-            assertEquals("$name letterSpacing moved", theirs.letterSpacing, ours.letterSpacing)
-            assertEquals("$name fontWeight moved", theirs.fontWeight, ours.fontWeight)
+            // One equality rather than a field list. `inOutfit()` is exactly
+            // `copy(fontFamily = Outfit)`, so this is the whole claim, and it
+            // covers the fields a hand-written list forgets — `platformStyle`
+            // and `lineHeightStyle` above all, which are what someone reaches
+            // for when tuning a new face's vertical rhythm — plus any field
+            // Compose adds later. An earlier version pinned four of about a
+            // dozen and still called itself "every metric".
+            assertEquals("$name is not Material's metrics in Outfit", theirs.copy(fontFamily = Outfit), ours)
         }
     }
 
