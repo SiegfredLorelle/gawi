@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Resource merging is flat across the whole app, so every name here carries an
+  insights_ prefix rather than risking a collision with :app's or another
+  feature's. The seven weekday letters the grid's columns need are not here:
+  :feature:habits draws the same seven, so they live in :core:ui as ui_day_*.
+-->
+<resources>
+
+    <string name="insights_history_title">History</string>
+    <string name="insights_back">Back</string>
+
+    <!-- The month name comes from resources rather than
+         java.time.format.DateTimeFormatter, for the reason :core:ui's
+         WeekdayLabels gives: a formatter reads the JVM's locale rather than the
+         app's resource configuration. -->
+    <string name="insights_month_title">%1$s %2$d</string>
+    <string name="insights_month_january">January</string>
+    <string name="insights_month_february">February</string>
+    <string name="insights_month_march">March</string>
+    <string name="insights_month_april">April</string>
+    <string name="insights_month_may">May</string>
+    <string name="insights_month_june">June</string>
+    <string name="insights_month_july">July</string>
+    <string name="insights_month_august">August</string>
+    <string name="insights_month_september">September</string>
+    <string name="insights_month_october">October</string>
+    <string name="insights_month_november">November</string>
+    <string name="insights_month_december">December</string>
+
+    <string name="insights_month_previous">Earlier month</string>
+    <string name="insights_month_next">Later month</string>
+
+    <!-- Spoken labels for one day: the weekday spelled out, then the date.
+
+         The weekday is here rather than left to the column headers because a
+         one-letter header cannot be read aloud — T and S each name two days —
+         so the headers are hidden from a screen reader and each cell carries
+         the weekday itself. That is a better answer than the columns could
+         give: "I keep missing Sundays" is a thing this grid should be able to
+         tell someone who cannot see it.
+
+         The month is not repeated per cell; it is in the header above the grid,
+         and thirty-one cells that each named it would be thirty-one stops of
+         mostly the same words.
+
+         "Not done" rather than "missed". docs/ux/insights.md §4: a weekly habit
+         has no scheduled days, so a day it was not done is not a day it was
+         missed, and the grid says the same thing to a screen reader as it does
+         in colour. -->
+    <string name="insights_day_done">%1$s %2$d, done</string>
+    <string name="insights_day_not_done">%1$s %2$d, not done</string>
+    <string name="insights_day_today_done">%1$s %2$d, today, done</string>
+    <string name="insights_day_today_not_done">%1$s %2$d, today, not done yet</string>
+
+    <string name="insights_unavailable_title">Can\'t show this history</string>
+    <string name="insights_unavailable_body">Something went wrong reading it. Close the app and open it again to retry.</string>
+
+</resources>
