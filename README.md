@@ -25,10 +25,11 @@ stock Material 3 by an explicit deferral (PRD §8, OQ-4) and the screens Phase 1
 adds would otherwise have been styled twice. The colour half of that has landed —
 a designed light and dark scheme and eight retuned habit hues
 ([docs/ux/visual-identity.md](docs/ux/visual-identity.md)). Typography and Momo's
-own art are still open. Insights v1 is what the reordering was for, and its first
-surface has landed: a per-habit history calendar, reached from habit detail
-([docs/ux/insights.md](docs/ux/insights.md)). Completion-rate trends and the
-tag-effort distribution are the two still to come.
+own art are still open. **Insights v1 is what the reordering was for, and all
+three of its surfaces have landed** — a per-habit history calendar and a
+completion-rate trend reached from habit detail, and an Insights screen reporting
+on every habit at once over a chosen month, quarter or year
+([docs/ux/insights.md](docs/ux/insights.md)).
 
 What comes next, and in what order, is recorded in [PRD §5](docs/prd.md). The
 open design questions are in §8 of the same file.
