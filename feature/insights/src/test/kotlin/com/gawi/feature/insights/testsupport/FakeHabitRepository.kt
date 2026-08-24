@@ -1,6 +1,7 @@
 package com.gawi.feature.insights.testsupport
 
 import com.gawi.core.data.model.HabitDetail
+import com.gawi.core.data.model.ReadContext
 import com.gawi.core.data.model.TagEffort
 import com.gawi.core.data.model.TodayHabit
 import com.gawi.core.data.model.TodaySnapshot
@@ -10,8 +11,12 @@ import com.gawi.core.domain.model.HabitId
 import com.gawi.core.domain.projection.HabitMetadata
 import com.gawi.core.domain.projection.HabitState
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
+import java.time.DayOfWeek
 import java.time.LocalDate
 
 /**
@@ -31,14 +36,11 @@ import java.time.LocalDate
 @Suppress("TooManyFunctions")
 class FakeHabitRepository : HabitRepository {
 
-    /** What [observeHabitDetail] resolves to. Null is "no habit with that id". */
+    /** What [observeHabit] resolves to. Null is "no habit with that id". */
     var habit: TodayHabit? = null
 
-    /** The logical date the detail read is answering for. */
-    var today: LocalDate = TODAY
-
-    /** Set to fail the detail read the way the real one can. */
-    var detailFailure: Throwable? = null
+    /** Set to fail the habit read the way the real one can. */
+    var habitFailure: Throwable? = null
 
     /** Every id a read was made for, so a screen reading the wrong habit fails. */
     val observedIds = mutableListOf<HabitId>()
@@ -51,11 +53,20 @@ class FakeHabitRepository : HabitRepository {
      */
     private fun configured(habitId: HabitId): TodayHabit? = habit?.takeIf { it.habit.id == habitId }
 
-    override fun observeHabitDetail(habitId: HabitId): Flow<HabitDetail?> {
+    /**
+     * The lean single-habit read, which is the one the history screen uses.
+     *
+     * [observeHabitDetail] is deliberately loud here even though it would work:
+     * it runs a completions query for the retro strip and carries a streak, and
+     * a screen reaching for it would be waiting on rows it discards. Failing
+     * makes that a red test rather than a slow screen.
+     */
+    override fun observeHabit(habitId: HabitId): Flow<TodayHabit?> {
         observedIds += habitId
-        val detail = configured(habitId)?.let { HabitDetail(habit = it, today = today, recent = emptyMap()) }
-        return detailFailure?.let { flow<HabitDetail?> { throw it } } ?: flowOf(detail)
+        return habitFailure?.let { flow<TodayHabit?> { throw it } } ?: flowOf(configured(habitId))
     }
+
+    override fun observeHabitDetail(habitId: HabitId): Flow<HabitDetail?> = unused()
 
     /**
      * Every window the grid asked for, in order.
@@ -93,9 +104,58 @@ class FakeHabitRepository : HabitRepository {
 
     override fun observeAllHabits(): Flow<List<HabitState>> = unused()
 
-    override fun observeHabit(habitId: HabitId): Flow<TodayHabit?> = unused()
+    /**
+     * Per-tag totals over the window, and the windows asked for.
+     *
+     * Shares the [ranges] list with the two other ranged reads on purpose: the
+     * screen is meant to ask all of them for the *same* period, and a test that
+     * recorded them separately could not see them drift apart.
+     */
+    var tagEffort: List<TagEffort> = emptyList()
 
-    override fun observeTagEffort(from: LocalDate, to: LocalDate): Flow<List<TagEffort>> = unused()
+    override fun observeTagEffort(from: LocalDate, to: LocalDate): Flow<List<TagEffort>> {
+        ranges += from..to
+        return effortFailure?.let { flow<List<TagEffort>> { throw it } } ?: flowOf(tagEffort)
+    }
+
+    /** Set to fail the tag read the way the real one can. */
+    var effortFailure: Throwable? = null
+
+    /**
+     * Completions across every habit, filtered to the window on the way out for
+     * the same reason [completions] is.
+     */
+    var completionsByHabit: Map<HabitId, Set<LocalDate>> = emptyMap()
+
+    override fun observeCompletionDatesByHabit(from: LocalDate, to: LocalDate): Flow<Map<HabitId, Set<LocalDate>>> {
+        ranges += from..to
+        return flowOf(
+            completionsByHabit
+                .mapValues { (_, dates) -> dates.filter { it in from..to }.toSet() }
+                // Absent rather than empty, matching the real read: a habit with
+                // nothing in the window is not a habit with an empty set.
+                .filterValues { it.isNotEmpty() },
+        )
+    }
+
+    private val context = MutableSharedFlow<ReadContext>(replay = 0)
+
+    /**
+     * Emits the logical date and week start, waiting for a subscriber first.
+     *
+     * Replay 0 so `Loading` is observable — the same reason the other fakes here
+     * withhold their first value, and what makes these tests deterministic
+     * rather than lucky.
+     */
+    suspend fun emitContext(today: LocalDate = TODAY, weekStart: DayOfWeek = DayOfWeek.MONDAY) {
+        context.subscriptionCount.first { it > 0 }
+        context.emit(ReadContext(today, weekStart))
+    }
+
+    /** Set to fail the context read; the real one fails if settings cannot be read. */
+    var contextFailure: Throwable? = null
+
+    override fun observeReadContext(): Flow<ReadContext> = contextFailure?.let { cause -> flow { throw cause } } ?: context.asSharedFlow()
 
     override suspend fun createHabit(metadata: HabitMetadata): CommandResult<HabitId> = unused()
 

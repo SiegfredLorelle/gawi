@@ -92,6 +92,11 @@ private fun MonthHistory(state: HistoryUiState.Month, actions: HistoryActions, m
         Text(text = state.habitName, style = MaterialTheme.typography.titleMedium)
         MonthHeader(state, actions)
         HistoryGrid(state)
+        // Under the grid, and pointedly not governed by the steppers above it.
+        // The grid answers "which days", the trend answers "how it is going" —
+        // two questions with two different time spans, which is why the months
+        // here do not move when the month up there does.
+        RateCard(state.rate)
     }
 }
 

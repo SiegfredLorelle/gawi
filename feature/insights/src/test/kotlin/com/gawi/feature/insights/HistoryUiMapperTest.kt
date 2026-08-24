@@ -1,12 +1,12 @@
 package com.gawi.feature.insights
 
+import com.gawi.core.domain.model.Schedule
+import com.gawi.core.domain.projection.HabitState
 import com.gawi.core.ui.date.weekdayLetter
 import com.gawi.feature.insights.testsupport.THIS_MONTH
 import com.gawi.feature.insights.testsupport.TODAY
-import com.gawi.feature.insights.testsupport.habitDetail
 import com.gawi.feature.insights.testsupport.habitState
 import com.gawi.feature.insights.testsupport.thisMonth
-import com.gawi.feature.insights.testsupport.todayHabit
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -32,7 +32,24 @@ class HistoryUiMapperTest {
         weekStart: DayOfWeek = DayOfWeek.MONDAY,
         completed: Map<LocalDate, String?> = emptyMap(),
         today: LocalDate = TODAY,
-    ): HistoryUiState.Month = habitDetail(today = today).toMonthUiState(month, weekStart, completed)
+        habit: HabitState = habitState(),
+    ): HistoryUiState.Month = habit.toMonthUiState(
+        month = month,
+        today = today,
+        weekStart = weekStart,
+        completedDates = completed,
+        // The trend is its own function with its own tests; passing an empty one
+        // keeps a grid assertion from depending on five months of arithmetic.
+        rate = RateTrendUi(schedule = habit.schedule.toLabelUi(), points = emptyList()),
+    )
+
+    /** The trend, over the same fixtures the grid uses. */
+    private fun trend(
+        habit: HabitState = habitState(),
+        completed: Set<LocalDate> = emptySet(),
+        today: LocalDate = TODAY,
+        weekStart: DayOfWeek = DayOfWeek.MONDAY,
+    ): RateTrendUi = habit.toRateTrend(today, weekStart, completed)
 
     /**
      * August 2026 starts on a Saturday, which is five columns after Monday and
@@ -134,9 +151,99 @@ class HistoryUiMapperTest {
 
     @Test
     fun `the habit's name comes through`() {
-        val state = habitDetail(habit = todayHabit(habitState(name = "swim"))).toMonthUiState(THIS_MONTH, DayOfWeek.MONDAY, emptyMap())
+        val state = map(habit = habitState(name = "swim"))
 
         assertEquals("swim", state.habitName)
         assertEquals(THIS_MONTH.year, state.year)
+    }
+
+    // ---- the completion-rate trend ----
+
+    @Test
+    fun `the trend is five months, oldest first, ending on this one`() {
+        val points = trend().points
+
+        assertEquals(5, points.size)
+        assertEquals(
+            listOf(
+                R.string.insights_month_april,
+                R.string.insights_month_may,
+                R.string.insights_month_june,
+                R.string.insights_month_july,
+                R.string.insights_month_august,
+            ),
+            points.map { it.monthName },
+        )
+    }
+
+    /**
+     * The decision this slice reversed, and the one worth a test of its own.
+     *
+     * The artboard drew the current month as a dash and justified it by saying
+     * `Rates` returns null for a part-month. It does not: it counts only
+     * *finished* units on both sides, so with today the 18th the month offers 17
+     * opportunities and taking all 17 is 100% — not 17/31 = 55%. A dash here
+     * would be withholding a number that is already comparable.
+     */
+    @Test
+    fun `the current month draws a real number, not a dash`() {
+        val everyFinishedDay = (1..17).map { thisMonth(it) }.toSet()
+
+        val august = trend(completed = everyFinishedDay).points.last()
+
+        assertEquals(100, august.percent)
+    }
+
+    /** Today itself is not an opportunity either, so missing it costs nothing. */
+    @Test
+    fun `today is excluded from its own month's rate`() {
+        val everythingButToday = (1..17).map { thisMonth(it) }.toSet()
+
+        assertEquals(100, trend(completed = everythingButToday).points.last().percent)
+    }
+
+    /**
+     * A month wholly before the habit existed has no rate, because it offered no
+     * opportunity — not a rate of zero, which would read as a month of failure.
+     */
+    @Test
+    fun `a month before the habit existed draws a dash`() {
+        val born = habitState(createdOn = thisMonth(1))
+
+        val points = trend(habit = born).points
+
+        assertEquals(listOf(null, null, null, null), points.dropLast(1).map { it.percent })
+        assertEquals("the month it was created in still has a rate", 0, points.last().percent)
+    }
+
+    /**
+     * And the month it was created in is measured from that day, not from the 1st.
+     *
+     * Created on the 12th, completed every finished day after — that is 100%, not
+     * the 41% it would be if the eleven days before it existed counted as missed.
+     * This is the limitation insights.md §4 recorded as unfixable before the
+     * creation date was projected.
+     */
+    @Test
+    fun `the month a habit was created in is measured from its creation`() {
+        val born = habitState(createdOn = thisMonth(12))
+        val since = (12..17).map { thisMonth(it) }.toSet()
+
+        assertEquals(100, trend(habit = born, completed = since).points.last().percent)
+    }
+
+    @Test
+    fun `a habit with no completions at all reads zero rather than a dash`() {
+        // Zero is right here and a dash is not: the months are over, they offered
+        // opportunities, and none were taken. A dash means "nothing had finished".
+        assertEquals(0, trend().points.first().percent)
+    }
+
+    @Test
+    fun `a weekly habit's trend says what it is a rate of`() {
+        val weekly = habitState(schedule = Schedule.Weekly(3))
+
+        assertEquals(ScheduleLabelUi(R.string.insights_schedule_weekly, timesPerWeek = 3), trend(habit = weekly).schedule)
+        assertEquals(ScheduleLabelUi(R.string.insights_schedule_daily, timesPerWeek = null), trend().schedule)
     }
 }

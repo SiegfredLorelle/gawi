@@ -3,9 +3,10 @@ package com.gawi.feature.insights
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.gawi.core.data.model.ReadContext
 import com.gawi.core.data.repository.HabitRepository
-import com.gawi.core.data.settings.SettingsSource
 import com.gawi.core.domain.model.HabitId
+import com.gawi.core.domain.projection.HabitState
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -18,7 +19,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -36,10 +36,11 @@ import java.time.YearMonth
  * throwing out of the constructor, since `HabitId` rejects anything that is not
  * a canonical UUIDv7.
  *
- * Injects [SettingsSource] as well as the repository, which no other screen
- * that draws habits does. It has to: the grid's columns start on the user's week
- * start, and `HabitDetail` carries the logical date but not that setting.
- * `:feature:settings` is the precedent for a feature reading the store directly.
+ * Takes the logical date and the week start from
+ * `HabitRepository.observeReadContext`, which hands both over together. It used
+ * to take the date from the habit read and the week start from `SettingsSource`,
+ * and that pairing was the one thing `readContext`'s own comment warns against:
+ * two independently deduped copies of values that have to stay in step.
  *
  * Reads only — docs/ux/insights.md §3. So there is no message channel, no
  * snackbar and no command path here, which is most of what habit detail's
@@ -49,7 +50,6 @@ import java.time.YearMonth
 internal class HistoryViewModel @AssistedInject constructor(
     @Assisted private val rawHabitId: String,
     private val habits: HabitRepository,
-    private val settings: SettingsSource,
 ) : ViewModel() {
 
     @AssistedFactory
@@ -108,32 +108,57 @@ internal class HistoryViewModel @AssistedInject constructor(
         null -> flowOf(HistoryUiState.Unavailable)
 
         else -> combine(
-            // Keyed on the two fields this screen actually reads, because
-            // HabitDetail also carries the streak and the strip's five cells:
-            // without this, completing anything at all in the last few days
-            // would re-subscribe the month query below for an unchanged header.
-            // The cells stay live regardless — observeCompletedDates is its own
-            // flow and is what the grid is drawn from.
-            habits.observeHabitDetail(habitId).distinctUntilChangedBy { detail ->
-                detail?.let { it.habit.habit.name to it.today }
-            },
-            settings.observe().map { it.weekStart }.distinctUntilChanged(),
-            monthOffset,
-        ) { detail, weekStart, offset -> Triple(detail, weekStart, offset) }
-            .flatMapLatest { (detail, weekStart, offset) ->
-                if (detail == null) {
-                    flowOf(HistoryUiState.Unavailable)
-                } else {
-                    val month = YearMonth.from(detail.today).plusMonths(offset)
-                    habits
-                        .observeCompletedDates(habitId, month.atDay(1), month.atEndOfMonth())
-                        .map { completedDates -> detail.toMonthUiState(month, weekStart, completedDates) }
-                }
-            }
+            // observeHabit, not observeHabitDetail. Detail runs a completions
+            // query of its own for the retro strip's five cells and carries a
+            // streak, none of which this screen draws — and it re-emits on every
+            // write to any of them. Its own KDoc names this case: the lean read
+            // exists so a caller does not wait on rows it discards.
+            habits.observeHabit(habitId).distinctUntilChanged(),
+            // Both dated values from one flow. Taking the date from the habit
+            // read and the week start from the settings would be two
+            // independently deduped copies of a pair the read model keeps in
+            // step, which is the disagreement ReadContext exists to prevent.
+            habits.observeReadContext(),
+        ) { habit, context -> habit to context }
+            .flatMapLatest { (habit, context) -> screenFor(habitId, habit?.habit, context) }
+    }
+
+    /**
+     * Two completion reads, and where the offset sits between them is the point.
+     *
+     * The grid's window moves when the user steps; the trend's never does. So
+     * `monthOffset` is collected **inside** this function, around the grid query
+     * only — the trend query is subscribed once per habit-and-context and
+     * survives every step. Putting the offset in the outer `combine` instead
+     * would tear both queries down on every tap of a stepper, and stepping back
+     * a year would re-read a year and a half of rows to redraw one month.
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun screenFor(habitId: HabitId, habit: HabitState?, context: ReadContext): Flow<HistoryUiState> {
+        if (habit == null) return flowOf(HistoryUiState.Unavailable)
+        val trendFrom = YearMonth.from(context.today).minusMonths(TREND_SPAN).atDay(1)
+        val grid = monthOffset.flatMapLatest { offset ->
+            val month = YearMonth.from(context.today).plusMonths(offset)
+            habits
+                .observeCompletedDates(habitId, month.atDay(1), month.atEndOfMonth())
+                .map { cells -> month to cells }
+        }
+        return combine(grid, habits.observeCompletedDates(habitId, trendFrom, context.today)) { (month, cells), trend ->
+            habit.toMonthUiState(
+                month = month,
+                today = context.today,
+                weekStart = context.weekStart,
+                completedDates = cells,
+                rate = habit.toRateTrend(context.today, context.weekStart, trend.keys),
+            )
+        }
     }
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L
         const val TAG = "HistoryViewModel"
+
+        /** Months back the trend's window opens, so it spans five including this one. */
+        const val TREND_SPAN = 4L
     }
 }

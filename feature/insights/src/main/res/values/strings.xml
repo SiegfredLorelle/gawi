@@ -53,6 +53,23 @@
     <string name="insights_day_today_done">%1$s %2$d, today, done</string>
     <string name="insights_day_today_not_done">%1$s %2$d, today, not done yet</string>
 
+    <!-- The completion-rate trend. "Finished periods only" is not said here
+         because it is not true of the current month: Rates counts only finished
+         units on both sides of the fraction, so a part-month is 15 of 15 rather
+         than 15 of 31 and is already comparable. A dash means the month held
+         nothing that had finished at all. -->
+    <string name="insights_rate_title">Completion rate</string>
+    <string name="insights_rate_none">\u2014</string>
+    <string name="insights_rate_percent">%1$d%%</string>
+
+    <!-- What the percentages are a rate of. docs/ux/insights.md §4: a daily
+         habit's rate and a weekly habit's are different fractions, and only
+         this line says which these are. Same wording as :feature:habits'
+         schedule subtitle, in this module's own resources because ids do not
+         cross a module boundary. -->
+    <string name="insights_schedule_daily">Every day</string>
+    <string name="insights_schedule_weekly">%1$d\u00d7 a week</string>
+
     <string name="insights_unavailable_title">Can\'t show this history</string>
     <string name="insights_unavailable_body">Something went wrong reading it. Close the app and open it again to retry.</string>
 

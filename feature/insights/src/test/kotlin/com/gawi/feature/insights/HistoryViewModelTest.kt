@@ -1,10 +1,9 @@
 package com.gawi.feature.insights
 
 import app.cash.turbine.test
-import com.gawi.core.data.settings.UserSettings
 import com.gawi.feature.insights.testsupport.FakeHabitRepository
-import com.gawi.feature.insights.testsupport.FakeSettingsSource
 import com.gawi.feature.insights.testsupport.MainDispatcherRule
+import com.gawi.feature.insights.testsupport.TODAY
 import com.gawi.feature.insights.testsupport.habitId
 import com.gawi.feature.insights.testsupport.habitState
 import com.gawi.feature.insights.testsupport.thisMonth
@@ -32,14 +31,27 @@ class HistoryViewModelTest {
     val mainDispatcher = MainDispatcherRule()
 
     private val repository = FakeHabitRepository()
-    private val settings = FakeSettingsSource()
 
-    private fun historyFor(rawHabitId: String) = HistoryViewModel(rawHabitId, repository, settings)
+    private fun historyFor(rawHabitId: String) = HistoryViewModel(rawHabitId, repository)
 
     private fun theHabit() = habitId(1).also { repository.habit = todayHabit(habitState(id = it)) }
 
     private val august = thisMonth(1)..thisMonth(31)
     private val july = LocalDate.parse("2026-07-01")..LocalDate.parse("2026-07-31")
+
+    /**
+     * The trend's window: five months back to the 1st, ending today.
+     *
+     * Fixed, and that is the assertion. It must appear **once** however many
+     * times the grid is stepped — the whole reason the offset is collected
+     * around the grid query alone rather than in the outer combine.
+     */
+    private val trendWindow = LocalDate.parse("2026-04-01")..TODAY
+
+    /** Every window asked for, with the trend's taken out. */
+    private fun gridRanges() = repository.ranges.filter { it != trendWindow }
+
+    private fun trendReads() = repository.ranges.count { it == trendWindow }
 
     /**
      * Blank before the first read comes back.
@@ -62,7 +74,7 @@ class HistoryViewModelTest {
 
         historyFor(habitId(1).value).uiState.test {
             assertEquals(HistoryUiState.Loading, awaitItem())
-            settings.emit()
+            repository.emitContext()
 
             val month = awaitItem() as HistoryUiState.Month
             assertEquals("read", month.habitName)
@@ -74,7 +86,8 @@ class HistoryViewModelTest {
             cancelAndIgnoreRemainingEvents()
         }
 
-        assertEquals(listOf(august), repository.ranges)
+        assertEquals(listOf(august), gridRanges())
+        assertEquals(1, trendReads())
     }
 
     /**
@@ -103,7 +116,7 @@ class HistoryViewModelTest {
 
         historyFor(habitId(1).value).uiState.test {
             assertEquals(HistoryUiState.Loading, awaitItem())
-            settings.emit()
+            repository.emitContext()
 
             assertEquals(HistoryUiState.Unavailable, awaitItem())
             cancelAndIgnoreRemainingEvents()
@@ -121,7 +134,7 @@ class HistoryViewModelTest {
         val viewModel = historyFor(habitId(1).value)
         viewModel.uiState.test {
             assertEquals(HistoryUiState.Loading, awaitItem())
-            settings.emit()
+            repository.emitContext()
             awaitItem()
 
             viewModel.onEarlier()
@@ -139,7 +152,8 @@ class HistoryViewModelTest {
             cancelAndIgnoreRemainingEvents()
         }
 
-        assertEquals(listOf(august, july), repository.ranges)
+        assertEquals(listOf(august, july), gridRanges())
+        assertEquals("stepping must not re-read the trend", 1, trendReads())
     }
 
     @Test
@@ -149,7 +163,7 @@ class HistoryViewModelTest {
         val viewModel = historyFor(habitId(1).value)
         viewModel.uiState.test {
             assertEquals(HistoryUiState.Loading, awaitItem())
-            settings.emit()
+            repository.emitContext()
             awaitItem()
 
             viewModel.onLater()
@@ -159,7 +173,7 @@ class HistoryViewModelTest {
             cancelAndIgnoreRemainingEvents()
         }
 
-        assertEquals(listOf(august), repository.ranges)
+        assertEquals(listOf(august), gridRanges())
     }
 
     @Test
@@ -169,7 +183,7 @@ class HistoryViewModelTest {
         val viewModel = historyFor(habitId(1).value)
         viewModel.uiState.test {
             assertEquals(HistoryUiState.Loading, awaitItem())
-            settings.emit()
+            repository.emitContext()
             awaitItem()
 
             viewModel.onEarlier()
@@ -182,7 +196,8 @@ class HistoryViewModelTest {
             cancelAndIgnoreRemainingEvents()
         }
 
-        assertEquals(listOf(august, july, august), repository.ranges)
+        assertEquals(listOf(august, july, august), gridRanges())
+        assertEquals("two steps, still one trend read", 1, trendReads())
     }
 
     /**
@@ -198,10 +213,10 @@ class HistoryViewModelTest {
         historyFor(habitId(1).value).uiState.test {
             assertEquals(HistoryUiState.Loading, awaitItem())
 
-            settings.emit(UserSettings(weekStart = DayOfWeek.SUNDAY))
+            repository.emitContext(weekStart = DayOfWeek.SUNDAY)
             assertEquals(6, (awaitItem() as HistoryUiState.Month).leadingBlanks)
 
-            settings.emit(UserSettings(weekStart = DayOfWeek.MONDAY))
+            repository.emitContext(weekStart = DayOfWeek.MONDAY)
             assertEquals(5, (awaitItem() as HistoryUiState.Month).leadingBlanks)
             cancelAndIgnoreRemainingEvents()
         }
@@ -214,7 +229,7 @@ class HistoryViewModelTest {
     @Test
     fun `a failing habit read is unavailable rather than a crash`() = runTest {
         theHabit()
-        repository.detailFailure = IllegalStateException("the database is gone")
+        repository.habitFailure = IllegalStateException("the database is gone")
 
         // Loading is not awaited here, and that is not an oversight: the throw
         // happens on subscription under the unconfined dispatcher, so the state
@@ -234,7 +249,7 @@ class HistoryViewModelTest {
 
         historyFor(habitId(1).value).uiState.test {
             assertEquals(HistoryUiState.Loading, awaitItem())
-            settings.emit()
+            repository.emitContext()
 
             assertEquals(HistoryUiState.Unavailable, awaitItem())
             cancelAndIgnoreRemainingEvents()
@@ -244,7 +259,7 @@ class HistoryViewModelTest {
     @Test
     fun `a failing settings read is unavailable rather than a crash`() = runTest {
         theHabit()
-        settings.readFailure = IllegalStateException("the preferences file is unreadable")
+        repository.contextFailure = IllegalStateException("the preferences file is unreadable")
 
         // Throws on subscription too, so Loading is gone before collection —
         // see the habit-read case above.
