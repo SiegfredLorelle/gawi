@@ -2,6 +2,10 @@ package com.gawi.core.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.font.ResourceFont
+import androidx.compose.ui.unit.Density
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
@@ -97,5 +101,74 @@ class GawiTypographyTest {
         // 0x00010000 is the TrueType outline version tag a variable .ttf carries.
         assertEquals(listOf(0x00, 0x01, 0x00, 0x00), signature)
         assertTrue("a whole variable face should not be ${font.length()} bytes", font.length() > 50_000)
+    }
+
+    /**
+     * The weights the app can *request*, which is not the set it writes.
+     *
+     * Material's fifteen roles ask for W400 and W500 and no source sets a weight
+     * by hand, so two entries look sufficient and are not. Compose installs an
+     * `AndroidFontResolveInterceptor` holding `Configuration.fontWeightAdjustment`
+     * and adds it to every request, so with the system's *Bold text* setting on
+     * (+300, API 31+) every role asks for W700 or W800. Unregistered, those fall
+     * to the nearest entry plus platform synthesis — fake bold drawn over a real
+     * bold that is already inside the same file. Nothing about that is visible
+     * without turning the setting on, which is why it is pinned here.
+     */
+    @Test
+    fun `the weights Bold text can request have real instances, not synthesis`() {
+        @Suppress("UNCHECKED_CAST")
+        val registered = (Outfit as List<Font>).map { it.weight }.toSet()
+        assertTrue(
+            "W700 is unregistered, so Bold text gets synthesis over a real bold",
+            FontWeight.Bold in registered,
+        )
+        assertTrue(
+            "W800 is unregistered, so Bold text gets synthesis over a real bold",
+            FontWeight.ExtraBold in registered,
+        )
+        assertEquals(
+            "OutfitWeights must describe the family it claims to document",
+            OutfitWeights.toSet(),
+            registered,
+        )
+    }
+
+    /**
+     * Every entry names the `wght` axis explicitly, and that is not decoration.
+     *
+     * `Font(resId, weight, …)`'s default for `variationSettings` reads, in the
+     * decompiled bytecode, as though it already derives
+     * `FontVariation.Settings(weight, style)` — so the explicit argument in
+     * Type.kt looks redundant, and a code review argued from that bytecode that
+     * it should go. On a device it is not redundant: removing it renders the whole
+     * app at the font's `fvar` default of 100, "Outfit Thin", measured and
+     * reproduced on 2026-08-24.
+     *
+     * A rendering property cannot be asserted from a JVM test, so this asserts
+     * the input to it instead — that each entry carries a `wght` setting equal to
+     * its own declared weight. That is enough to make the deletion red, which is
+     * the point: the failure it prevents is a uniformly thin app that no test
+     * would otherwise notice and that looks like a font choice.
+     */
+    @Test
+    fun `every entry names the wght axis, matching its declared weight`() {
+        @Suppress("UNCHECKED_CAST")
+        val fonts = (Outfit as List<Font>).map { it as ResourceFont }
+        assertEquals("the family should hold one entry per documented weight", OutfitWeights.size, fonts.size)
+        fonts.forEach { font ->
+            val axes = font.variationSettings.settings
+            assertEquals(
+                "the ${font.weight} entry must name exactly the wght axis",
+                listOf("wght"),
+                axes.map { it.axisName },
+            )
+            assertEquals(
+                "the ${font.weight} entry names a wght that is not its weight",
+                font.weight.weight.toFloat(),
+                axes.single().toVariationValue(Density(1f)),
+                0.01f,
+            )
+        }
     }
 }
