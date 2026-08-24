@@ -17,7 +17,7 @@ import androidx.compose.runtime.Composable
  * §8 keeps Material You off permanently: a designed identity is the point of
  * the whole brief, and dynamic colour would hand it back to the wallpaper.
  *
- * **Type is Outfit, as of 2026-08-24, and nothing here is stock any more.**
+ * **Type is Outfit, as of 2026-08-24.**
  * [GawiTypography] carries it; §5 chose the face and Type.kt records why. The
  * typeface had been parked on an experiment — whether a Glance widget can be
  * handed a bundled font at all — so that the scale would not be chosen before
@@ -25,6 +25,12 @@ import androidx.compose.runtime.Composable
  * no**: `RemoteViews` inflation resolves only the platform's generic family
  * names and drops a bundled font resource silently
  * (docs/ux/visual-identity.md §2).
+ *
+ * Not *everything* drawn is Outfit, and the gap is narrower than "the app is
+ * restyled" suggests: five of the glyph characters the screens draw as text are
+ * outside this font's `cmap` and fall back to the platform face, so an app bar
+ * can mix the two. [Outfit]'s KDoc lists them. It is a reason to replace those
+ * dingbats with icons, not a reason to doubt the face.
  *
  * So the divergence it warned about is real and was accepted rather than
  * avoided: the app renders in Outfit and `:widget` renders in the system sans,
