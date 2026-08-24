@@ -135,11 +135,48 @@ class InsightsScreenTest {
      */
     @Test
     fun `an empty period explains itself and leaves the pickers reachable`() {
-        render(overview(activeDays = 0, completions = 0, habits = emptyList(), tags = emptyList()))
+        render(
+            overview(
+                breakdown = Breakdown.TAGS,
+                activeDays = 0,
+                completions = 0,
+                habits = emptyList(),
+                tags = emptyList(),
+            ),
+        )
 
         compose.onNodeWithText(string(R.string.insights_empty_title)).performScrollTo().assertIsDisplayed()
         compose.onNodeWithText(string(R.string.insights_period_year)).assertIsDisplayed()
         compose.onNodeWithText(string(R.string.insights_breakdown_tags)).assertIsDisplayed()
+    }
+
+    /**
+     * No habit to report on is **not** "nothing logged", and saying so would
+     * contradict the headline two rows above it.
+     *
+     * Reachable by archiving every habit after logging against them: the counts
+     * include an archived habit's completions (deliberately — effort spent is
+     * history) while the adherence list excludes it. One shared notice made the
+     * screen say "12 active days" and "no completions in this period" at the
+     * same time. Caught in review, and this is the case that catches it again.
+     */
+    @Test
+    fun `no unarchived habit says so rather than claiming nothing was logged`() {
+        render(overview(breakdown = Breakdown.HABITS, activeDays = 12, completions = 34, habits = emptyList()))
+
+        compose.onNodeWithText(string(R.string.insights_no_habits_title)).performScrollTo().assertIsDisplayed()
+        compose.onAllNodesWithText(string(R.string.insights_empty_title)).assertCountEquals(0)
+        // The headline it must not contradict is still on screen.
+        compose.onNodeWithText(resources.getQuantityString(R.plurals.insights_active_days, 12, 12)).assertIsDisplayed()
+    }
+
+    /** And with tags to show, the same state draws the bars rather than a notice. */
+    @Test
+    fun `the tags breakdown is unaffected by there being no unarchived habit`() {
+        render(overview(breakdown = Breakdown.TAGS, habits = emptyList()))
+
+        compose.onNodeWithText("career").assertIsDisplayed()
+        compose.onAllNodesWithText(string(R.string.insights_no_habits_title)).assertCountEquals(0)
     }
 
     @Test

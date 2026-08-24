@@ -43,8 +43,17 @@
          stands where a tag name would, and tags are the user's own words. -->
     <string name="insights_untagged">Untagged</string>
 
+    <!-- Two empty states, not one. This pair is for a period with no
+         completions in it, which is what the Tags breakdown runs out of. -->
     <string name="insights_empty_title">Nothing logged yet</string>
     <string name="insights_empty_body">No completions in this period. Try a longer one, or tick something off on Today.</string>
+
+    <!-- And this pair is for having no habit to report adherence on, which is a
+         different thing: the period may be full of completions from habits that
+         have since been archived. Saying "nothing logged" there would
+         contradict the headline two rows above it. -->
+    <string name="insights_no_habits_title">No habits to report on</string>
+    <string name="insights_no_habits_body">Every habit is archived, so there is no adherence to measure. Tags still shows where the effort went.</string>
 
     <string name="insights_history_title">History</string>
     <string name="insights_back">Back</string>
