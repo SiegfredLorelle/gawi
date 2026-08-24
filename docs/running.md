@@ -1154,7 +1154,7 @@ and an upgrade not losing anything.
       it looks like a bug. **Not yet run against data spanning two months**; the
       query window moving is pinned by `InsightsViewModelTest` instead, which is
       not the same claim.
-- [ ] **Every icon draws, in both themes.** Fifteen controls, all vectors since
+- [x] **Every icon draws, in both themes.** Fifteen controls, all vectors since
       2026-08-24. The old check here was for tofu, which a vector cannot draw;
       the failure that replaced it is the opposite and worse. A `<path>` missing
       `strokeColor` inflates without complaint and draws *nothing*, and because
@@ -1162,14 +1162,24 @@ and an upgrade not losing anything.
       passes on a control that renders empty. `GawiIconsTest` pins the XML, so
       what is left for the eye is that the strokes read at a glance and that
       `Icon`'s tint carries them in dark mode as well as light. **Run on an
-      emulator 2026-08-24**: all ten drawables drew — the three app-bar icons,
-      back, pencil, close, both chevrons, the stepper's pair and the FAB — and
-      the strokes read at 24dp. Dark was confirmed on the Today app bar only, so
-      the other seven are **still owed a dark pass**; one tint mechanism
-      (`Icon`'s `LocalContentColor`) is a reason to expect them to follow, not a
-      check that they did. Worth knowing for that pass: this emulator does not
-      re-theme a running activity, so `cmd uimode night yes` needs a
-      `force-stop` after it or the screenshot lies.
+      emulator 2026-08-24, in both themes**: all ten drawables drew and the
+      strokes read at 24dp — the three app-bar icons, back, pencil, close, both
+      chevrons, the stepper's pair and the FAB. Light and dark were walked
+      separately rather than reasoned about from the one shared tint mechanism,
+      because "they all go through `LocalContentColor`" is a reason to expect
+      them to follow, not evidence that they did.
+
+      Three things that cost time here and will again. This emulator **does not
+      re-theme a running activity**, so `cmd uimode night yes` needs a
+      `force-stop` after it or the screenshot lies — it silently returned the
+      light screen once. Screen coordinates **are not stable between themes or
+      between data states**: *See full history* sits about 96px lower once the
+      habit has a live streak, because the `displaySmall` numeral appears above
+      it, so a replayed tap script lands on a retro-strip cell instead. And a
+      stray tap in that strip **writes a completion**, which is how this pass
+      silently ticked the test habit; it was reverted, but the log keeps both
+      events, which is what an event-sourced app is supposed to do. Drive this
+      by screenshot-then-tap, not by a fixed script.
 - [x] **The app-bar icons hold 24dp at 200% font scale, and that looks
       deliberate.** A behaviour change, not a regression: the characters these
       replaced were `titleLarge` and grew with `fontScale`; a 24dp `Icon` does
