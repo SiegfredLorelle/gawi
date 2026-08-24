@@ -10,9 +10,17 @@ scheme, the typography and the habit hues.
 before anything existed, and revised once the scheme landed in `Theme.kt` — so
 §§3, 4 and 6 now record what building decided rather than what was proposed, in
 the way [habits.md](habits.md), [widget.md](widget.md),
-[settings.md](settings.md) and [reminder.md](reminder.md) do. §5 (typography)
-and §7's second half (Momo's art, the icon) are still sketch, and
-[insights.md](insights.md) is still the document to read the sketchy way.
+[settings.md](settings.md) and [reminder.md](reminder.md) do. §7's second half
+(Momo's art, the icon) is still sketch, and [insights.md](insights.md) is still
+the document to read the sketchy way.
+
+**§5 (typography) is half-built as of 2026-08-24**, in the sense that matters
+for planning: nothing is implemented, but the experiment it was waiting on has
+run and §2 carries the result. A widget cannot be handed a bundled font. That
+frees §5 from a dependency and hands it back a trade-off, so what is left there
+is a decision someone has to make rather than a fact someone has to find. Type
+is still `MaterialTheme`'s default in `Theme.kt`, and still the last stock thing
+in the app.
 
 **Building it changed two of the published values, and that is recorded rather
 than quietly fixed.** §3's `tertiary` failed the requirement §4.1 sets for it,
@@ -90,9 +98,58 @@ downloadable-font path for `RemoteViews`. Bitmap text does work and is the
 fallback, at the cost of not responding to the system font scale, needing a
 `contentDescription`, and `RemoteViews`' hard size limit.
 
-**Unverified on a device**, and this module has form for green builds that are
-broken on a launcher (§2's widget bullet, and docs/ux/widget.md §5). Treat the
-`AndroidRemoteViews` route as an experiment to run, not a fact to design on.
+**Measured on 2026-08-24, and the route is dead.** The paragraph above was
+right about the API and wrong about the outcome, which is why it is kept rather
+than deleted: `AndroidRemoteViews` composes, the layout inflates, the launcher
+draws it — and the bundled font is **silently ignored**.
+
+A probe drew the same string at the same size four times inside one
+`AndroidRemoteViews` layout on the Today widget, varying only `fontFamily`.
+Rendered widths, read off the launcher's own accessibility tree on an API 37
+emulator (Android 17, 720x1280 at 320dpi, host `com.google.android.apps.nexuslauncher`):
+
+| `android:fontFamily` | Rendered | Verdict |
+|---|---|---|
+| *absent* — the control | 313 x 54 | the system sans |
+| `@font/outfit` — a bundled `.ttf` | 313 x 54 | **identical to the control** |
+| `@font/outfit_family` — an XML `<font-family>` wrapping it | 313 x 54 | **identical to the control** |
+| `serif` — a built-in family *name* | 329 x 52 | honoured |
+
+So the boundary is not "fonts do not reach a widget". It is narrower and more
+useful: **`RemoteViews` inflation honours the `fontFamily` attribute, and
+resolves only built-in family names from it.** A font resource of ours is
+dropped without a warning, in both spellings a font resource can take. And the
+four names it *will* resolve are exactly the four Glance's typed API already
+offers, so `AndroidRemoteViews` buys nothing at all for typography. It remains
+the correction to that earlier draft as an API fact; as a route it is a third
+dead one, recorded beside the other two so it is not tried a fourth time.
+
+**Why this negative is trustworthy, given how often a check here has measured
+nothing.** The `serif` row is a positive control, and it is the whole reason the
+zero-deltas mean something: it proves the ruler works on this surface, in this
+process, at this granularity — a 16px difference read cleanly, so the ~8px an
+Outfit that had loaded would have produced was well within reach. The bundled
+rows did not come back *close*, they came back **exactly equal**. Three further
+things were ruled out rather than assumed: the APK carried
+`res/font/outfit.ttf` at its unmodified 110,884 bytes; the compiled layout
+carried `android:fontFamily=@0x7f080000` on the bundled row and nothing on the
+control, confirmed with `aapt2 dump xmltree` against the installed APK; and a
+JVM test asserted the file's `sfnt` signature, because a saved error page with a
+`.ttf` extension would have failed in a way indistinguishable from the route
+failing. A 3x screenshot agrees with the ruler and is the check that does not
+depend on it at all — the three bundled rows are pixel-identical Roboto and the
+`serif` row is visibly serifed. Letterforms, not widths: Outfit's geometric
+`G`, `o` and `0` are nothing like Roboto's, so "the widths happened to match"
+is not available as an explanation.
+
+Two limits on the claim, stated because they are the honest edges of it. It was
+measured on an emulator and one launcher, not on the Nothing A059 the colour
+work used; a launcher is free to differ, though the thing that failed is
+framework-level font resolution rather than anything the launcher chooses. And
+it says nothing about *multiple weights*: `fontVariationSettings` is not a
+`@RemotableViewMethod`, so even a route that worked would have handed a widget
+one instance of a variable font. Moot while the route is dead; relevant again if
+it is ever reopened.
 
 Two more things follow that are easy to miss:
 
@@ -443,8 +500,14 @@ against the not-done ground — indistinguishable, the same way §3's published
 ## 5. Typography
 
 **Decision: bundle one variable font in `:core:ui` and define a real
-`Typography`.** `:core:ui` has no `res/` directory at all today, so
-`core/ui/src/main/res/font/` is new, and the OFL text ships beside the file.
+`Typography`.** `core/ui/src/main/res/font/` is where it goes. Two corrections
+to this line as it was first written, both found on 2026-08-24: `:core:ui` does
+have a `res/` directory now — the history screen's shared composables gave it
+one (docs/ux/insights.md §8.6) — so the directory the font needs already exists.
+And **the OFL text cannot ship beside the file.** `res/font/` accepts font files
+and XML families only, and a resource filename cannot carry uppercase letters,
+so an `OFL.txt` in there is a build error rather than good citizenship. The
+licence needs a home outside `res/`.
 
 The rejected alternative is worth writing down because it looks cheaper and is
 not. Downloadable fonts through the Google Fonts provider keep the APK smaller,
@@ -484,14 +547,31 @@ is judged together. Constraints on the choice:
 
 - **OFL-licensed and available on Google Fonts**, so the face previewed in the
   browser is the same file that gets bundled as a `.ttf`.
-- **Possibly close to the system sans in character** — conditional on §2's
+- ~~**Possibly close to the system sans in character** — conditional on §2's
   experiment. If a widget cannot get the bundled font it renders in the platform
   face, and the app and widget sit next to each other on a home screen: a quiet
   humanist face makes that divergence hard to notice, a strongly geometric one
   (Outfit, which the canvas uses) makes it obvious. If `AndroidRemoteViews` does
   carry `@font/…` through, the constraint disappears and the face can be chosen
-  on identity alone. **So the typeface waits on that experiment rather than on
+  on identity alone.~~ **So the typeface waits on that experiment rather than on
   taste** — decided 2026-08-23.
+
+  **The experiment ran on 2026-08-24 and the constraint is real, so it hardens
+  from *possibly* into the live tension in this choice.** §2 has the
+  measurement: a widget cannot be handed a bundled font, and the only faces it
+  can name are the platform's four generics. The app will render in ours and the
+  widget in the system sans, permanently, one home screen apart.
+
+  What that does **not** mean is "pick a humanist face and move on", and it is
+  worth saying so before the next session reads it as an instruction. It makes
+  the divergence a cost to weigh rather than a veto: a quiet face pays less of
+  it and gives up the identity this whole brief exists to buy, and a geometric
+  one — Outfit, still the canvas's face — buys the identity and pays the cost in
+  full on one surface, which is the smallest surface the app has. Bitmap text is
+  the only way to have both, at the price §2 lists, and it is not worth paying
+  for a checkbox list. **So the typeface no longer waits on the experiment. It
+  waits on that trade, which is taste, and it is now the only thing between this
+  section and a real `Typography`.**
 
 ## 6. The habit hues
 

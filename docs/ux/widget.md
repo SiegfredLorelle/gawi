@@ -369,3 +369,17 @@ all either `exported="false"` or guarded by `DUMP` / `BIND_JOB_SERVICE`.
 - **The widget is not in the launcher automatically.** Pinning one needs the
   user, or `requestPinAppWidget` from the app. There is no in-app "add the
   widget" affordance and PRD §4 does not ask for one.
+- ~~**Whether this widget can ever draw the app's own typeface.**~~ **Answered
+  on 2026-08-24: no, and permanently.** The route was not Glance's typed API,
+  which has never offered anything but four generic family names, but a
+  hand-written layout inside `AndroidRemoteViews` — `RemoteViews` are inflated
+  against our package's resources, so `android:fontFamily="@font/…"` looked like
+  it should resolve. Measured on a launcher, it does not: the attribute is
+  honoured for a built-in family name and a bundled font resource is dropped
+  **silently**, in both spellings a font resource can take. So this module's
+  divergence from the app is not only colour and not only structural — the
+  widget will render in the platform sans however the app is styled, and that is
+  now a fact to design around rather than a thing to try. Bitmap text is the
+  only escape and is not worth it for a checkbox list.
+  docs/ux/visual-identity.md §2 has the numbers and the controls;
+  docs/ux/visual-identity.md §5 has what it costs the typeface choice.
