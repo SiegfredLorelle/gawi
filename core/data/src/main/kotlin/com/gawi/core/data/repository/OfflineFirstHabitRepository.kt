@@ -12,6 +12,7 @@ import com.gawi.core.data.db.entity.ProjectionMetaEntity
 import com.gawi.core.data.db.mapper.toDomain
 import com.gawi.core.data.db.mapper.toEntity
 import com.gawi.core.data.model.HabitDetail
+import com.gawi.core.data.model.ReadContext
 import com.gawi.core.data.model.TagEffort
 import com.gawi.core.data.model.TodayHabit
 import com.gawi.core.data.model.TodaySnapshot
@@ -275,6 +276,29 @@ internal class OfflineFirstHabitRepository @Inject constructor(
         )
     }
 
+    override fun observeCompletionDatesByHabit(from: LocalDate, to: LocalDate): Flow<Map<HabitId, Set<LocalDate>>> = flow {
+        ensureProjectionCurrent()
+        emitAll(
+            readModel
+                .observeCompletionsInRange(from.toString(), to.toString())
+                .map { rows ->
+                    rows.groupBy(
+                        keySelector = { HabitId(it.habitId) },
+                        valueTransform = { LocalDate.parse(it.logicalDate) },
+                    ).mapValues { (_, dates) -> dates.toSet() }
+                }
+                .distinctUntilChanged(),
+        )
+    }
+
+    /**
+     * No `ensureProjectionCurrent()`, and that is not an oversight: this reads
+     * no derived row. It answers from the settings and the clock, so there is
+     * nothing a stale projection could make it get wrong — and calling it would
+     * mean asking the date could trigger a replay.
+     */
+    override fun observeReadContext(): Flow<ReadContext> = readContext()
+
     override fun observeTagEffort(from: LocalDate, to: LocalDate): Flow<List<TagEffort>> = flow {
         ensureProjectionCurrent()
         emitAll(
@@ -482,22 +506,19 @@ internal class OfflineFirstHabitRepository @Inject constructor(
      * completion state paired with today's streak. `distinctUntilChanged` is
      * downstream of that and would not filter it.
      */
-    private fun readContext(): Flow<QueryContext> = settings
+    private fun readContext(): Flow<ReadContext> = settings
         .observe()
         // A reminder-time edit changes nothing here, and must not cancel the
         // live query and re-run the streak sweep under every open screen.
         .distinctUntilChanged { old, new -> old.dayCutoff == new.dayCutoff && old.weekStart == new.weekStart }
         // The cutoff has to reach this far, even though it goes no further: a
         // new one restarts the boundary timer on the new schedule.
-        .flatMapLatest { current -> logicalDates(current).map { QueryContext(it, current.weekStart) } }
+        .flatMapLatest { current -> logicalDates(current).map { ReadContext(it, current.weekStart) } }
         // A wake that does not actually change what a query binds — clock skew,
         // a DST shift, a cutoff edit that leaves "today" where it was — must not
         // churn the query underneath an open screen. Emitting only real changes
         // is also what stops the sweep below running on every wake.
         .distinctUntilChanged()
-
-    /** The logical date and week start a read query is bound to. */
-    private data class QueryContext(val today: LocalDate, val weekStart: DayOfWeek)
 
     /**
      * The mood inputs no query binds: the wall clock, and the two thresholds
