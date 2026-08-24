@@ -848,6 +848,18 @@ Decisions and reasoning are in [docs/ux/widget.md](ux/widget.md).
 - [ ] **Resizing keeps it usable.** Drag the handles: rows reflow and the list
       scrolls rather than clipping.
 
+**The widget's text is in the platform sans, and that is not a bug to file.**
+Recorded here because it is the block most likely to notice it first, and it
+will look like an oversight once the app has a face of its own. It is not: a
+bundled font cannot reach a widget at all. Measured on 2026-08-24 —
+`RemoteViews` inflation honours `android:fontFamily` only for the platform's
+generic family names and drops a font resource of ours silently, so neither
+Glance's typed API nor a hand-written `AndroidRemoteViews` layout can carry one
+(docs/ux/visual-identity.md §2). No check is owed for it. If the app ever does
+ship a bundled face, what this block gains is not a font check but the
+*divergence* being deliberate — which docs/ux/visual-identity.md §5 is where to
+argue about, not here.
+
 Known and expected, not a bug — but **much narrower since 2026-08-21**: a widget
 left on the launcher across the day cutoff is now refreshed by a scheduled wake
 (`RolloverWorker`, docs/ux/reminder.md §2), so it normally clears by itself. What
