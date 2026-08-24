@@ -3,6 +3,7 @@ package com.gawi.core.ui.component
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.w3c.dom.Document
 import org.w3c.dom.Element
 import java.io.File
 import javax.xml.parsers.DocumentBuilderFactory
@@ -56,6 +57,26 @@ class GawiIconsTest {
          * leave a valid file that is missing part of its drawing.
          */
         val UNSUPPORTED = listOf("circle", "rect", "line", "polyline", "polygon", "ellipse")
+
+        /**
+         * The icons that must flip under an RTL layout direction, named here a
+         * second time rather than imported from the generator — two
+         * independent statements that have to agree is the whole point.
+         *
+         * The three the app navigates with replaced `←` (U+2190), `‹` (U+2039)
+         * and `›` (U+203A), which are all `Bidi_Mirrored`: the text shaper
+         * flipped them, and a `VectorDrawable` without the attribute does not.
+         * Missing it was a regression rather than a gap, and nothing here
+         * caught it — this test is what review turned into a check.
+         * `ic_list_checks` is consistency rather than regression: `☰` is
+         * symmetric, but the icon leads with marks and follows with rules.
+         */
+        val MIRRORED = setOf(
+            "ic_arrow_left.xml",
+            "ic_chevron_left.xml",
+            "ic_chevron_right.xml",
+            "ic_list_checks.xml",
+        )
     }
 
     private fun icons(): List<File> {
@@ -71,11 +92,14 @@ class GawiIconsTest {
         return files
     }
 
+    /**
+     * Namespace-unaware on purpose, so attributes read as the file spells
+     * them: "android:strokeWidth" rather than a resolved URI.
+     */
+    private fun document(file: File): Document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(file)
+
     private fun paths(file: File): List<Element> {
-        // Namespace-unaware on purpose, so attributes read as the file spells
-        // them: "android:strokeWidth" rather than a resolved URI.
-        val document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(file)
-        val nodes = document.getElementsByTagName("path")
+        val nodes = document(file).getElementsByTagName("path")
         return (0 until nodes.length).map { nodes.item(it) as Element }
     }
 
@@ -96,8 +120,7 @@ class GawiIconsTest {
     @Test
     fun `every icon is a 24dp square on a 24 unit viewport`() {
         icons().forEach { file ->
-            val document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(file)
-            val vector = document.documentElement
+            val vector = document(file).documentElement
             assertEquals("${file.name} root", "vector", vector.tagName)
             assertEquals("${file.name} width", SIZE, vector.getAttribute("android:width"))
             assertEquals("${file.name} height", SIZE, vector.getAttribute("android:height"))
@@ -134,9 +157,25 @@ class GawiIconsTest {
     }
 
     @Test
+    fun `exactly the directional icons flip under RTL`() {
+        // Asserted both ways round. A directional icon that lost the attribute
+        // reads backwards in Arabic or Hebrew, and a symmetric one that gained
+        // it is a gear that spins the wrong way for no reason — neither shows
+        // up in a light-mode English screenshot, which is all this suite and
+        // every device check so far has looked at.
+        icons().forEach { file ->
+            assertEquals(
+                "${file.name} android:autoMirrored",
+                file.name in MIRRORED,
+                document(file).documentElement.getAttribute("android:autoMirrored") == "true",
+            )
+        }
+    }
+
+    @Test
     fun `no icon carries an element VectorDrawable cannot draw`() {
         icons().forEach { file ->
-            val document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(file)
+            val document = document(file)
             UNSUPPORTED.forEach { tag ->
                 assertEquals(
                     "${file.name} carries <$tag>, which VectorDrawable cannot draw — convert it to path data",

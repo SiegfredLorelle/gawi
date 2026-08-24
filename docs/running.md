@@ -1189,6 +1189,28 @@ and an upgrade not losing anything.
       2026-08-24**: the title grew about double, the three icons held their size,
       and there was no clipping and no collision. It reads as a row of controls
       beside a large title, which is the intended result.
+- [x] **The directional icons flip under RTL, and the pager still reads
+      forwards.** The three glyphs replaced — `←` (U+2190), `‹` (U+2039), `›`
+      (U+203A) — are all `Bidi_Mirrored`, so the text shaper flipped them and
+      the app got RTL correctness for free. A `VectorDrawable` does not: it
+      needs `android:autoMirrored`, and the first cut of the set omitted it.
+      Found in review, not by any of the checks above, because every one of them
+      looks at a light-mode English screen. `GawiIconsTest` now pins the
+      attribute in both directions, and this is the other half — that the
+      framework honours it.
+
+      **`debug.force_rtl` did not work on this emulator** and silently returned
+      an LTR screen, which is the trap worth recording. What does work, without
+      touching system settings, is a per-app locale:
+
+          adb shell cmd locale set-app-locales com.gawi.app --user 0 --locales ar-EG
+          adb shell cmd locale set-app-locales com.gawi.app --user 0 --locales
+
+      **Run on an emulator 2026-08-24**: the Up arrow points right, toward the
+      edge it now sits on; `list-checks` leads with its marks on the right; and
+      in the month pager the *earlier* chevron sits on the leading right edge
+      pointing right, which is backwards in RTL and therefore correct. Restore
+      the locale afterwards — the second command above clears it.
 - [x] **Each sparkline dot sits above its own month label.** The plot's x
       positions are coupled to the label row's column centres and nothing in the
       suite can see that — an earlier edge-to-edge spacing put the outer two
@@ -1287,7 +1309,7 @@ Nothing A059 pass in §3 is still owed and is what would upgrade these.
 
       **The glyph third of this is now history, and a re-run should skip it.**
       Those five characters stopped being drawn later the same day — every
-      character-as-control is a vector now
+      character-as-icon is a vector now
       ([visual-identity.md](ux/visual-identity.md) §7.5) — so the face and the
       weight are all that is left to look at here, and the icons have their own
       check in §4. The record above stays as run rather than being edited: it
