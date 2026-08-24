@@ -6,17 +6,19 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import com.gawi.core.domain.model.Schedule
 import com.gawi.core.ui.date.weekdayLetter
 import com.gawi.core.ui.date.weekdayName
 import com.gawi.core.ui.theme.GawiTheme
 import com.gawi.feature.insights.testsupport.THIS_MONTH
-import com.gawi.feature.insights.testsupport.habitDetail
+import com.gawi.feature.insights.testsupport.TODAY
 import com.gawi.feature.insights.testsupport.habitState
 import com.gawi.feature.insights.testsupport.thisMonth
-import com.gawi.feature.insights.testsupport.todayHabit
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -63,7 +65,21 @@ class HistoryScreenTest {
         month: YearMonth = THIS_MONTH,
         name: String = "read",
         completed: Map<LocalDate, String?> = emptyMap(),
-    ): HistoryUiState.Month = habitDetail(habit = todayHabit(habitState(name = name))).toMonthUiState(month, DayOfWeek.MONDAY, completed)
+        schedule: Schedule = Schedule.Daily,
+    ): HistoryUiState.Month {
+        val habit = habitState(name = name, schedule = schedule)
+        return habit.toMonthUiState(
+            month = month,
+            today = TODAY,
+            weekStart = DayOfWeek.MONDAY,
+            completedDates = completed,
+            rate = habit.toRateTrend(TODAY, DayOfWeek.MONDAY, completed.keys),
+        )
+    }
+
+    /** A trend with nothing to say in any month — every point a dash. */
+    private fun dashes(): RateTrendUi = habitState(createdOn = TODAY.plusDays(1))
+        .toRateTrend(TODAY, DayOfWeek.MONDAY, emptySet())
 
     private fun render(state: HistoryUiState, actions: HistoryActions = NO_ACTIONS) {
         compose.setContent {
@@ -198,6 +214,65 @@ class HistoryScreenTest {
         compose.onNodeWithContentDescription(string(R.string.insights_back)).performClick()
 
         assertEquals(1, back)
+    }
+
+    // ---- the completion-rate card ----
+
+    @Test
+    fun `the rate card names its months and says what the rate is of`() {
+        render(month())
+
+        // Scrolled to individually: the card sits under a six-row grid, so more
+        // than one of these is off a short screen at once.
+        listOf(
+            string(R.string.insights_rate_title),
+            string(R.string.insights_schedule_daily),
+            // Five months, and the two ends of them.
+            string(R.string.insights_month_april),
+            string(R.string.insights_month_august),
+        ).forEach { text ->
+            compose.onNodeWithText(text).performScrollTo().assertIsDisplayed()
+        }
+    }
+
+    /**
+     * A weekly habit says so, because §4 forbids reading its percentages as a
+     * daily habit's. Asserted through the formatted string so the argument is
+     * checked too — an id with no target passed would render "%1$d× a week".
+     */
+    @Test
+    fun `a weekly habit's rate card carries its target`() {
+        render(month(schedule = Schedule.Weekly(3)))
+
+        compose.onNodeWithText(resources.getString(R.string.insights_schedule_weekly, 3)).performScrollTo().assertIsDisplayed()
+        compose.onAllNodesWithText(string(R.string.insights_schedule_daily)).assertCountEquals(0)
+    }
+
+    /**
+     * The line is hidden and the numbers are not — the trade the card's KDoc
+     * makes. If the Canvas ever announces itself, a reader gets "graphic" where
+     * they used to get five percentages.
+     */
+    @Test
+    fun `the sparkline is not in the semantics tree, and the percentages are`() {
+        // Every finished day of this month done, so the last point is a real 100%
+        // rather than a dash — the decision this slice reversed.
+        val everyFinishedDay = (1..17).associate { thisMonth(it) to null }
+        render(month(completed = everyFinishedDay))
+
+        compose.onNodeWithText(resources.getString(R.string.insights_rate_percent, 100)).performScrollTo().assertIsDisplayed()
+        // A Canvas with cleared semantics leaves nothing findable of its own; the
+        // labels above and below it are the whole of what a reader gets.
+        compose.onAllNodesWithContentDescription(string(R.string.insights_rate_title)).assertCountEquals(0)
+    }
+
+    @Test
+    fun `a month with nothing finished draws a dash rather than a zero`() {
+        // April is five months back and this habit was created this month, so
+        // April offered nothing — a dash, not 0%.
+        render(month(name = "new", completed = emptyMap()).copy(rate = dashes()))
+
+        compose.onAllNodesWithText(string(R.string.insights_rate_none)).onFirst().performScrollTo().assertIsDisplayed()
     }
 
     @Test

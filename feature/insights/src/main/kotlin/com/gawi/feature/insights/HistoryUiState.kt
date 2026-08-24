@@ -66,11 +66,43 @@ internal sealed interface HistoryUiState {
          * a grid with nothing in it. Earlier has no such bound: a month before
          * the habit existed draws as a month nothing was done in, which is
          * empty rather than untrue — unlike a *rate* over that window, which
-         * insights.md §4 records as arithmetically right and meaningless.
+         * [RateTrendUi] draws as a dash for exactly that reason.
          */
         val canGoLater: Boolean,
+        /** The trailing months, which do **not** move when the grid is stepped. */
+        val rate: RateTrendUi,
     ) : HistoryUiState
 }
+
+/**
+ * The completion-rate trend: a handful of finished months, and this one.
+ *
+ * Deliberately not driven by the grid's steppers, and not by a period picker
+ * either. A trend needs several buckets to be a trend, so "which period" is the
+ * wrong question to ask of it — the answer is always "the last few months" —
+ * while the grid can only ever show one month and the Insights screen's picker
+ * governs one window. Three surfaces, three different time questions.
+ *
+ * [scheduleLabel] is on the card rather than implied, because docs/ux/insights.md
+ * §4 forbids reading one habit's percentages as another's: a daily habit's rate
+ * is completions over days and a weekly habit's is completions over
+ * `timesPerWeek × weeks`, and only the label says which one these are.
+ */
+internal data class RateTrendUi(val schedule: ScheduleLabelUi, val points: List<RatePointUi>)
+
+/**
+ * One month of the trend. A null [percent] draws a dash.
+ *
+ * **Null means "nothing in this month had finished", and nothing else.** It is
+ * `CompletionRate.fraction`'s own null — a habit created this month, or a month
+ * that predates the habit entirely — never a stand-in for "this month is not
+ * over". The current month draws a real number: `Rates` counts only finished
+ * units on *both* sides of the fraction, so a month three weeks in is 15 of 15
+ * rather than 15 of 31, which is already comparable to a finished one. Drawing a
+ * dash there would be withholding a number the calculator went to some trouble
+ * to make safe.
+ */
+internal data class RatePointUi(@StringRes val monthName: Int, val percent: Int?)
 
 /**
  * One day in the grid.

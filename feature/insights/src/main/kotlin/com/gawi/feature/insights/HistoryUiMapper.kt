@@ -1,12 +1,14 @@
 package com.gawi.feature.insights
 
 import androidx.annotation.StringRes
-import com.gawi.core.data.model.HabitDetail
+import com.gawi.core.domain.projection.HabitState
+import com.gawi.core.domain.rate.Rates
 import com.gawi.core.ui.date.weekdayLetter
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.Month
 import java.time.YearMonth
+import kotlin.math.roundToInt
 
 /**
  * The read model as the history grid draws it.
@@ -25,12 +27,14 @@ import java.time.YearMonth
  * that marked one would be advertising an edit it cannot make, since this
  * screen is read-only by docs/ux/insights.md §3.
  */
-internal fun HabitDetail.toMonthUiState(
+internal fun HabitState.toMonthUiState(
     month: YearMonth,
+    today: LocalDate,
     weekStart: DayOfWeek,
     completedDates: Map<LocalDate, String?>,
+    rate: RateTrendUi,
 ): HistoryUiState.Month = HistoryUiState.Month(
-    habitName = habit.habit.name,
+    habitName = name,
     monthName = monthName(month.month),
     year = month.year,
     weekdayLetters = weekdayColumns(weekStart),
@@ -52,7 +56,48 @@ internal fun HabitDetail.toMonthUiState(
     // resolved on this side. A screen cannot resolve one: that needs a clock, a
     // zone and the day cutoff (architecture §5).
     canGoLater = month < YearMonth.from(today),
+    rate = rate,
 )
+
+/**
+ * The last few months as percentages, or dashes where there is nothing to say.
+ *
+ * The denominator comes from [Rates], never from counting rows, because "the
+ * completion rate" is two different fractions and only the schedule decides
+ * which (docs/ux/insights.md §4). That is also why this takes the habit as its
+ * receiver rather than a bare set of dates.
+ *
+ * **A month is clipped to [HabitState.createdOn], and dropped if it ends before
+ * it.** Without that, a habit created three weeks into a month reads as though
+ * it had missed the first three — a number that is arithmetically right and
+ * accuses the user of days they were never offered. insights.md §4 recorded this
+ * as a limitation with no fix; the fix is the creation date now being projected.
+ * A null `createdOn` clips nothing, which is the only honest response to not
+ * knowing.
+ */
+internal fun HabitState.toRateTrend(today: LocalDate, weekStart: DayOfWeek, completedDates: Set<LocalDate>): RateTrendUi = RateTrendUi(
+    schedule = schedule.toLabelUi(),
+    points = trendMonths(today).map { month ->
+        RatePointUi(monthName = monthName(month.month), percent = percentIn(month, today, weekStart, completedDates))
+    },
+)
+
+/** Oldest first, ending on the month [today] falls in. */
+private fun trendMonths(today: LocalDate): List<YearMonth> {
+    val current = YearMonth.from(today)
+    return (TREND_MONTHS - 1 downTo 0).map { back -> current.minusMonths(back.toLong()) }
+}
+
+private fun HabitState.percentIn(month: YearMonth, today: LocalDate, weekStart: DayOfWeek, completedDates: Set<LocalDate>): Int? {
+    val end = month.atEndOfMonth()
+    val born = createdOn
+    // The whole month is before the habit existed. Not a rate of zero — there
+    // was no opportunity to take, so there is no fraction to draw.
+    if (born != null && born > end) return null
+    val start = if (born != null) maxOf(month.atDay(1), born) else month.atDay(1)
+    val rate = Rates.completionRate(completedDates, schedule, start..end, today, weekStart)
+    return rate.fraction?.let { (it * PERCENT).roundToInt() }
+}
 
 /**
  * The seven column headers, ordered from the user's week start.
@@ -101,3 +146,11 @@ private fun monthName(month: Month): Int = when (month) {
 
 /** Shared with the grid, which chunks its slots by it. */
 internal const val DAYS_IN_WEEK = 7
+
+/**
+ * Five, which is the artboard's — enough to read a direction from and few enough
+ * that the labels stay legible at a phone's width without abbreviating a month.
+ */
+private const val TREND_MONTHS = 5
+
+private const val PERCENT = 100

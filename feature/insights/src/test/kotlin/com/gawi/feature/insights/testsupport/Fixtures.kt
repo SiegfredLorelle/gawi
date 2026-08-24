@@ -41,7 +41,26 @@ val TODAY: LocalDate = LocalDate.parse("2026-08-18")
 /** The month [TODAY] falls in — what the screen opens on. */
 val THIS_MONTH: YearMonth = YearMonth.from(TODAY)
 
-fun habitState(id: HabitId = habitId(1), name: String = "read", schedule: Schedule = Schedule.Daily): HabitState = HabitState(
+/**
+ * Suppressed at the declaration, like the other modules' fixture builders: every
+ * parameter is defaulted, so a test names only the field it is about.
+ *
+ * [createdOn] defaults to **null**, meaning "the log has not said".
+ *
+ * That is the neutral default rather than a convenient one: an unknown start
+ * date is the one value that makes a rate clip nothing, so a test that is not
+ * about the habit's age gets the whole window it asked for. A test that *is*
+ * about it names a date.
+ */
+@Suppress("LongParameterList")
+fun habitState(
+    id: HabitId = habitId(1),
+    name: String = "read",
+    schedule: Schedule = Schedule.Daily,
+    tag: String? = null,
+    archived: Boolean = false,
+    createdOn: LocalDate? = null,
+): HabitState = HabitState(
     id = id,
     name = name,
     icon = "📖",
@@ -50,8 +69,9 @@ fun habitState(id: HabitId = habitId(1), name: String = "read", schedule: Schedu
     // and a fixture that quietly exercised the orphan path would say so nowhere.
     color = HabitPalette.DefaultColor,
     schedule = schedule,
-    tag = null,
-    archived = false,
+    tag = tag,
+    archived = archived,
+    createdOn = createdOn,
 )
 
 /**
