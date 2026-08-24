@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -27,11 +28,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import com.gawi.core.ui.component.GlyphButton
+import com.gawi.core.ui.component.GawiIconButton
+import com.gawi.core.ui.component.GawiIcons
 import com.gawi.core.ui.component.HabitIcon
 import com.gawi.core.ui.component.Notice
 import com.gawi.core.ui.theme.GawiSpacing
@@ -58,7 +61,7 @@ internal fun HabitListScreen(
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.habits_title)) },
-                navigationIcon = { GlyphButton("←", R.string.habits_back, actions.onBack) },
+                navigationIcon = { GawiIconButton(GawiIcons.ArrowLeft, R.string.habits_back, onClick = actions.onBack) },
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -169,10 +172,11 @@ private fun RowScope.HabitTitles(row: HabitListRowUi, modifier: Modifier = Modif
 private fun AddHabitButton(onAdd: () -> Unit) {
     val label = stringResource(R.string.habits_add)
     FloatingActionButton(onClick = onAdd, modifier = Modifier.semantics { contentDescription = label }) {
-        // A glyph rather than a Material icon: material-icons-extended is not a
-        // dependency here, and a whole icon pack for one plus sign is not worth
-        // the download. The description above is what names it either way.
-        Text(text = "+", style = MaterialTheme.typography.headlineSmall)
+        // GawiIcons rather than a character, for the reason the rest of the
+        // set changed — and by hand rather than through GawiIconButton, which
+        // wraps an IconButton and cannot be a FAB. The description above is
+        // what names it either way.
+        Icon(painter = painterResource(GawiIcons.Plus), contentDescription = null)
     }
 }
 

@@ -956,7 +956,7 @@ still no about screen, exactly as §5 left it for the font.
 | `settings` | `⚙` | Today, settings |
 | `x` | `✕` | Habit editor, cancel |
 | `chevron-left`, `chevron-right` | `‹`, `›` | History, month pager |
-| `minus`, `plus` | `−`, `+` | Weekly-target stepper |
+| `minus`, `plus` | `−`, `+` | Weekly-target stepper, and `plus` again on the habit-list FAB |
 
 **Arrows navigate, chevrons step.** `arrow-left` leaves the screen; a chevron
 moves a value inside one. The month pager is the only current chevron caller and
@@ -968,13 +968,22 @@ destination is a list of things you tick, so the icon says that. `chart-pie` for
 Insights is the opposite case — a direct translation of `◔`, a part-filled
 circle, and a match for the rate cards that dominate the screen.
 
-**All fourteen call sites converted, not just the five broken ones.** §5's audit
+**All fifteen call sites converted, not just the five broken ones.** §5's audit
 found five glyphs outside Outfit's `cmap`; `←`, `‹`, `›`, `−` and `+` were fine.
 Converting only the broken five would have traded a font mismatch for a
 stroke-weight mismatch — a 2px vector `✎` beside a typographic `←` in the same
 app bar is the same "looks like a design choice rather than a gap" failure, just
 harder to name. This is why §5's glyph audit is now retired rather than narrowed:
 the app no longer draws a character as a control anywhere.
+
+**Fifteen, because the fourteenth was found by looking and the fifteenth was
+not.** The habit list's FAB drew a `+` as text inside a `FloatingActionButton`,
+which is not an `IconButton` and so was invisible to a sweep for `GlyphButton`
+callers — it turned up only in a grep for short string literals drawn as `Text`.
+It matters because the claim in the paragraph above is the kind that is either
+true or worthless: one character-as-control left anywhere, in the same feature
+as the stepper it would sit beside, and the set is not a set. `GawiIconButton`
+does not fit a FAB, so that one call site drops an `Icon` in by hand.
 
 **Two consequences worth having written down.**
 

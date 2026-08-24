@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -22,8 +21,8 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
+import com.gawi.core.ui.component.GawiIconButton
+import com.gawi.core.ui.component.GawiIcons
 import com.gawi.core.ui.component.Notice
 import com.gawi.core.ui.theme.GawiSpacing
 
@@ -50,10 +49,7 @@ internal fun HabitEditorScreen(
             TopAppBar(
                 title = { Text(stringResource(titleFor(state))) },
                 navigationIcon = {
-                    val label = stringResource(R.string.habits_cancel)
-                    IconButton(onClick = actions.onCancel, modifier = Modifier.semantics { contentDescription = label }) {
-                        Text(text = "✕", style = MaterialTheme.typography.titleLarge)
-                    }
+                    GawiIconButton(GawiIcons.Close, R.string.habits_cancel, onClick = actions.onCancel)
                 },
                 actions = {
                     // Disabled rather than hidden, so the reason a save is not

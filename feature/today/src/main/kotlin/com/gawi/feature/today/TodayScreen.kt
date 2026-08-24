@@ -19,7 +19,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.gawi.core.domain.model.HabitId
-import com.gawi.core.ui.component.GlyphButton
+import com.gawi.core.ui.component.GawiIconButton
+import com.gawi.core.ui.component.GawiIcons
 import com.gawi.core.ui.component.Notice
 import java.time.LocalDate
 
@@ -45,12 +46,12 @@ internal fun TodayScreen(state: TodayUiState, actions: TodayActions, snackbarHos
                 // with the rows would crowd the one thing PRD §6.1 wants to
                 // take a single tap.
                 actions = {
-                    // Three glyph buttons, all :core:ui's GlyphButton. The two
+                    // Three icon buttons, all :core:ui's GawiIconButton. The two
                     // that were here were that composable written out by hand,
                     // and a third copy beside them was the moment to stop.
-                    GlyphButton("\u2630", R.string.today_manage_habits, actions.onManageHabits)
-                    GlyphButton("\u25D4", R.string.today_insights, actions.onOpenInsights)
-                    GlyphButton("\u2699", R.string.today_settings, actions.onOpenSettings)
+                    GawiIconButton(GawiIcons.ListChecks, R.string.today_manage_habits, onClick = actions.onManageHabits)
+                    GawiIconButton(GawiIcons.ChartPie, R.string.today_insights, onClick = actions.onOpenInsights)
+                    GawiIconButton(GawiIcons.Settings, R.string.today_settings, onClick = actions.onOpenSettings)
                 },
             )
         },
@@ -139,20 +140,26 @@ private fun EmptyToday(onAddHabit: () -> Unit, modifier: Modifier = Modifier) {
 }
 
 /*
- * The three app-bar glyphs, and why each is what it is.
+ * The three app-bar icons, and why each is what it is.
  *
- * U+2630, a list: manage habits. It was a gear once, and the gear moved to
- * settings when settings became a destination — the one symbol a reader will
- * take to mean settings should point at it.
+ * Manage habits was a gear once, and the gear moved to settings when settings
+ * became a destination — the one symbol a reader will take to mean settings
+ * should point at it. It draws `list-checks` rather than a hamburger, because
+ * the destination is a list of things you tick and `☰`, which is what it used
+ * to be, implied a navigation drawer this app has never had.
  *
- * U+25D4, a quarter-filled circle: insights. Distinct in silhouette from both
- * the list and the gear, which is the whole requirement of a glyph in a row of
- * three. It has no accessible name of its own, so GlyphButton takes one.
+ * Insights draws `chart-pie`, which is what `◔` was reaching for, and is
+ * distinct in silhouette from both the list and the gear — the whole
+ * requirement of an icon in a row of three. None of the three has an
+ * accessible name of its own, so GawiIconButton takes one.
  *
- * U+2699, the gear: settings, which now means what it looks like.
+ * Settings draws `settings`, and means what it looks like.
  *
- * Each is a character rather than a vector because material-icons-extended is
- * not a dependency, and a whole icon pack for three glyphs is the wrong trade.
- * The cost is that a font without one draws a tofu box, which no unit test can
- * see — docs/running.md §4 carries the by-hand check.
+ * All three were characters until 2026-08-24, and the reason they are not is
+ * that all three — `☰`, `◔`, `⚙` — are outside Outfit's cmap, so they fell
+ * back to the platform face and this row rendered two typefaces at one size.
+ * docs/ux/visual-identity.md §7.5 records the replacement. The by-hand check
+ * in docs/running.md §4 is still owed, but what it is looking for has moved:
+ * not a tofu box, which a vector cannot draw, but whether the strokes read at
+ * a glance and hold their colour in both themes.
  */
