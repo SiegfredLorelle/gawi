@@ -197,8 +197,8 @@ reason (2026-08-23).
 
 **Other Phase 1**
 - Notification quick-complete actions (if not shipped in MVP).
-- Insights v1: per-habit heatmap/calendar history, completion-rate trends.
-- **Tag-based effort distribution**: share of completions per tag over a selected period.
+- Insights v1: per-habit heatmap/calendar history, completion-rate trends. (**The heatmap is built — 2026-08-24.** One calendar month of two-state days, stepped by two arrows, reached from habit detail's "see full history"; `:feature:insights` exists as of that commit. Trends are not built, and the completion-rate calculator they need already is — [docs/ux/insights.md](ux/insights.md) §8 records what building the grid settled, including the two colour measurements that decided how a cell and today are drawn.)
+- **Tag-based effort distribution**: share of completions per tag over a selected period. (Not built. Its aggregate query is — `observeTagEffort`, 2026-08-23 — and what it still lacks is a screen and a door: [docs/ux/insights.md](ux/insights.md) §7 has no answer yet for where a not-per-habit surface is reached from.)
 
 ### Phase 1.5 — Retrospectives (the long-horizon payoff)
 - **Quarterly / yearly review screens**: adherence per habit and per tag across the period, trend lines, best/worst streaks, "focus shifted from X to Y" summaries.
