@@ -62,9 +62,9 @@ Full guide with examples: `.github/COMMIT_CONVENTION.md`
   `:core:data` (Room, DataStore, repositories), `:core:ui` (theme, shared
   composables), `:feature:today`, `:feature:habits`, `:feature:insights`,
   `:feature:settings` and `:widget` (Glance). **All nine exist** and `:widget` is
-  not a screen. `:feature:insights` is the newest — created 2026-08-24 with the
-  per-habit heatmap, which is one of the three surfaces
-  `docs/ux/insights.md` gives it. **A new module is created together with its
+  not a screen. `:feature:insights` is the newest — created 2026-08-24, and by the
+  end of that day holding all three surfaces `docs/ux/insights.md` gives it,
+  across two screens: one per-habit, one top-level. **A new module is created together with its
   first real file, never empty**: an Android library always has test sources
   configured for its unit-test variant, so Gradle fails its test task with "no
   tests discovered" until there is a real test in it. That is a rule for the
