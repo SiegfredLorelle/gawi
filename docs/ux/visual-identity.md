@@ -586,9 +586,10 @@ the screens drew as *text* were outside it — `☰`, `◔`, `⚙`, `✎` and `�
 fell back to the platform face, so an app bar mixed two faces at one size. No
 tofu and no crash, but it was this document's own "looks like a design choice
 rather than a gap" failure. **Fixed on 2026-08-24 by §7.5**, which converted
-every character-as-control to a vector, so the audit that follows is history
-rather than a live constraint. The `cmap` limit is not history: it still governs
-any character a future screen reaches for as text.
+every character-as-icon to a vector, so the audit that follows is history
+rather than a live constraint. The `cmap` limit is not history, and it has live
+dependents rather than only hypothetical ones: `RetroStrip` still draws `✓`, `·`
+and `•` as text inside a clickable cell (§7.5).
 
 **What the audit found present**, kept so nobody re-runs it: `←`, `‹`, `›`, `✓`,
 `•`, and — added after review noticed the first list was short — `−` (U+2212)
@@ -974,15 +975,25 @@ Converting only the broken five would have traded a font mismatch for a
 stroke-weight mismatch — a 2px vector `✎` beside a typographic `←` in the same
 app bar is the same "looks like a design choice rather than a gap" failure, just
 harder to name. This is why §5's glyph audit is now retired rather than narrowed:
-the app no longer draws a character as a control anywhere.
+the app no longer draws a character as an *icon* anywhere.
+
+**The precise claim, because the loose one was wrong.** What went is every
+character standing in for a picture of an action. What stayed is `RetroStrip`'s
+`✓`, `·` and `•`: state marks in a grid, drawn as text — and the cell around
+them is a `combinedClickable(role = Role.Checkbox)`, so a character does still
+carry a control's state. Review caught "no character as a control anywhere",
+which read as licence to delete §5's `cmap` note; that note has live dependents
+and must stay. Whether those three marks should become icons too is a real
+question and a separate one — they are five-per-row, `labelLarge`, and sized by
+the type scale rather than by a 24dp box.
 
 **Fifteen, because the fourteenth was found by looking and the fifteenth was
 not.** The habit list's FAB drew a `+` as text inside a `FloatingActionButton`,
 which is not an `IconButton` and so was invisible to a sweep for `GlyphButton`
 callers — it turned up only in a grep for short string literals drawn as `Text`.
 It matters because the claim in the paragraph above is the kind that is either
-true or worthless: one character-as-control left anywhere, in the same feature
-as the stepper it would sit beside, and the set is not a set. `GawiIconButton`
+true or worthless: one character-as-icon left anywhere, in the same feature as
+the stepper it would sit beside, and the set is not a set. `GawiIconButton`
 does not fit a FAB, so that one call site drops an `Icon` in by hand.
 
 **Two consequences worth having written down.**
