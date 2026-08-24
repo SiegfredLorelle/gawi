@@ -1,0 +1,169 @@
+package com.gawi.feature.insights
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import com.gawi.core.ui.component.GlyphButton
+import com.gawi.core.ui.component.Notice
+import com.gawi.core.ui.theme.GawiSpacing
+
+/**
+ * Every habit at once, over one period — stateless.
+ *
+ * The app's only app-wide report, and the answer to the gap the per-habit
+ * surfaces left: the history grid and the rate trend are about one habit, and
+ * nothing said how things were going overall. docs/ux/insights.md §7's "the tag
+ * distribution has no obvious door" is closed by this being a destination of its
+ * own, reached from Today's app bar.
+ *
+ * One time control, at the top, scoping everything under it — not a picker per
+ * card. The per-habit history screen keeps its own month steppers and is
+ * deliberately not governed from here: a month grid can only show a month.
+ *
+ * No `SnackbarHostState`: nothing here writes, so there is no rejection to
+ * report.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun InsightsScreen(state: InsightsUiState, actions: InsightsActions, modifier: Modifier = Modifier) {
+    Scaffold(
+        modifier = modifier,
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.insights_title)) },
+                navigationIcon = { GlyphButton("←", R.string.insights_back, actions.onBack) },
+            )
+        },
+    ) { insets ->
+        // targetSdk 37 draws edge to edge with no opt-out, so every branch has
+        // to honour the insets or its first row sits under the status bar.
+        when (state) {
+            // Blank rather than a spinner: the first emission is a handful of
+            // Room queries.
+            InsightsUiState.Loading -> Box(Modifier.fillMaxSize().padding(insets))
+
+            InsightsUiState.Unavailable -> Notice(
+                title = stringResource(R.string.insights_unavailable_title),
+                body = stringResource(R.string.insights_unavailable_body),
+                modifier = Modifier.fillMaxSize().padding(insets),
+            )
+
+            is InsightsUiState.Overview -> Overview(
+                state = state,
+                actions = actions,
+                modifier = Modifier.fillMaxSize().padding(insets),
+            )
+        }
+    }
+}
+
+@Composable
+private fun Overview(state: InsightsUiState.Overview, actions: InsightsActions, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .verticalScroll(rememberScrollState())
+            .padding(GawiSpacing.Row),
+        verticalArrangement = Arrangement.spacedBy(GawiSpacing.Row),
+    ) {
+        PeriodPicker(state.period, actions.onPeriod)
+        Headline(state)
+        BreakdownPicker(state.breakdown, actions.onBreakdown)
+
+        val empty = when (state.breakdown) {
+            Breakdown.HABITS -> state.habits.isEmpty()
+            Breakdown.TAGS -> state.tags.isEmpty()
+        }
+        when {
+            // A period with nothing in it, or no habits at all. Copy rather than
+            // an empty list, so the screen says why it is blank instead of
+            // looking broken.
+            empty -> Notice(
+                title = stringResource(R.string.insights_empty_title),
+                body = stringResource(R.string.insights_empty_body),
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            state.breakdown == Breakdown.HABITS -> HabitRates(state.habits)
+
+            else -> TagBars(state.tags)
+        }
+    }
+}
+
+/**
+ * Two exact numbers about the period.
+ *
+ * Neither needs a denominator, which is why these two and not a "perfect days"
+ * count: whether *every* habit was done on a past day is not answerable — a
+ * weekly habit has no due day (docs/ux/insights.md §4) — and nothing records
+ * which habits existed then. Plurals, so "1 active day" reads.
+ */
+@Composable
+private fun Headline(state: InsightsUiState.Overview) {
+    Column(verticalArrangement = Arrangement.spacedBy(GawiSpacing.Line)) {
+        Text(
+            text = pluralStringResource(R.plurals.insights_active_days, state.activeDays, state.activeDays),
+            style = MaterialTheme.typography.titleMedium,
+        )
+        Text(
+            text = pluralStringResource(R.plurals.insights_completions, state.completions, state.completions),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+/**
+ * Month, Quarter, Year — docs/ux/insights.md §7's settled answer.
+ *
+ * `FilterChip`s, the idiom `:feature:habits`' schedule picker already uses and
+ * the shape the artboard drew. Not a `SegmentedButton`: it would be a second way
+ * of doing the same thing in an app that has one.
+ */
+@Composable
+private fun PeriodPicker(selected: Period, onPeriod: (Period) -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(GawiSpacing.Gap)) {
+        Period.entries.forEach { period ->
+            FilterChip(
+                selected = period == selected,
+                onClick = { onPeriod(period) },
+                label = { Text(stringResource(period.label)) },
+            )
+        }
+    }
+}
+
+/** Habits or tags, over the same period — one list, not two screens. */
+@Composable
+private fun BreakdownPicker(selected: Breakdown, onBreakdown: (Breakdown) -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(GawiSpacing.Gap)) {
+        Breakdown.entries.forEach { breakdown ->
+            FilterChip(
+                selected = breakdown == selected,
+                onClick = { onBreakdown(breakdown) },
+                label = { Text(stringResource(breakdown.label())) },
+            )
+        }
+    }
+}
+
+private fun Breakdown.label(): Int = when (this) {
+    Breakdown.HABITS -> R.string.insights_breakdown_habits
+    Breakdown.TAGS -> R.string.insights_breakdown_tags
+}
