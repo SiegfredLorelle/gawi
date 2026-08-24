@@ -1156,12 +1156,14 @@ and an upgrade not losing anything.
       the bar rows stay readable, and the rate card's five month labels do not
       collide. **Not yet run** — 200% was checked on the month grid, which is a
       different layout from either of these.
-- [ ] **An empty period says so.** Pick a period with nothing in it: copy, not an
-      empty list, and the pickers stay reachable so there is a way out of it.
-      **Three different notices**, and which one appears is the check: no habits
-      at all, every habit archived, and a period with no completions each say
-      their own thing (docs/ux/insights.md §8.8). The first is a fresh install,
-      so it needs cleared app data.
+- [x] **An empty period says so, and says *which* empty.** Copy, not an empty
+      list, and the pickers stay reachable so there is a way out of it. **Three
+      different notices**, and which one appears is the check: no habits at all,
+      every habit archived, and a period with no completions each say their own
+      thing (docs/ux/insights.md §8.8). **Run on an emulator 2026-08-24**, all
+      three — the first from cleared app data, and the archived one showing "1
+      active day · 1 completion" above "Every habit is archived", which is the
+      contradiction the three-way split was made to remove.
 
 ---
 
