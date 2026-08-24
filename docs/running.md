@@ -1154,9 +1154,21 @@ and an upgrade not losing anything.
       it looks like a bug. **Not yet run against data spanning two months**; the
       query window moving is pinned by `InsightsViewModelTest` instead, which is
       not the same claim.
-- [ ] **The app-bar glyph is a glyph and not a box.** Three now — ☰, ◔, ⚙. A font
-      without one draws tofu and no unit test can see it. **Renders on an
-      emulator 2026-08-24; a real device font is still owed.**
+- [ ] **Every icon draws, in both themes.** Fifteen controls, all vectors since
+      2026-08-24. The old check here was for tofu, which a vector cannot draw;
+      the failure that replaced it is the opposite and worse. A `<path>` missing
+      `strokeColor` inflates without complaint and draws *nothing*, and because
+      each button is named through `contentDescription`, every semantics test
+      passes on a control that renders empty. `GawiIconsTest` pins the XML, so
+      what is left for the eye is that the strokes read at a glance and that
+      `Icon`'s tint carries them in dark mode as well as light. **Not yet run
+      under the icon set.**
+- [ ] **The app-bar icons hold 24dp at 200% font scale, and that looks
+      deliberate.** A behaviour change, not a regression: the characters these
+      replaced were `titleLarge` and grew with `fontScale`; a 24dp `Icon` does
+      not. Material-correct, and touch targets are 48dp either way — but the
+      titles beside them still grow, so the thing to check is that the result
+      reads as a decision rather than as clipping. **Not yet run.**
 - [x] **Each sparkline dot sits above its own month label.** The plot's x
       positions are coupled to the label row's column centres and nothing in the
       suite can see that — an earlier edge-to-edge spacing put the outer two
