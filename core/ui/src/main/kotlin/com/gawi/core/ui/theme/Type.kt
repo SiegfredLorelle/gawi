@@ -13,7 +13,12 @@ import com.gawi.core.ui.R
  * accessibility half rather than the obvious half.
  *
  * Declared before [Outfit] because it initialises it — top-level properties run
- * in declaration order, and the other way round leaves the family empty.
+ * in declaration order, and the other way round reads this as null and throws
+ * during class init. An earlier revision said it "leaves the family empty",
+ * which is wrong twice: the null read comes first, and an empty family is not
+ * constructible anyway — `FontListFontFamily` throws "At least one font should
+ * be passed to FontFamily". Both failure modes are loud, so the ordering is a
+ * smaller hazard than that wording implied.
  */
 internal val OutfitWeights = listOf(
     FontWeight.Normal,
@@ -42,13 +47,28 @@ internal val OutfitWeights = listOf(
  * table reads "Outfit Thin" — hairline everywhere, 3,799 differing pixels on one
  * screen against the same build with the argument present.
  *
- * The mechanism is *not* explained, and that is recorded rather than guessed at.
- * The obvious theory was that the derived settings also name an `ital` axis this
- * font does not have, and that an unsupported axis voids the whole variation
- * string — refuted, because adding `FontVariation.italic(0f)` explicitly is
- * pixel-identical to weight-only. So what stands is the measurement and not a
- * story about it. [GawiTypographyTest] asserts every entry names `wght`
- * explicitly, so the deletion fails a test rather than shipping a thin app.
+ * **The mechanism is overload resolution, and it is worth naming precisely,
+ * because the bytecode that makes the argument look redundant is real — it just
+ * belongs to a function this call does not reach.** `FontKt` declares *three*
+ * `Font()` overloads for a resource id: `(resId, weight, style)`,
+ * `(… , loadingStrategy)`, and `(… , loadingStrategy, variationSettings)`. Only
+ * the third accepts variation settings. `Font(resId, weight)` binds to the
+ * **first**, whose body constructs `ResourceFont` without touching
+ * `FontVariation` at all, so the settings are empty rather than derived. Loading
+ * then runs `ResourcesCompat.getFont(context, resId)`, which hands back the
+ * variable face at its `fvar` default with nothing instanced, and
+ * `setFontVariationSettings` afterwards has nothing to apply. The
+ * `Font-…$default` bridge that *does* build `Settings(weight, style)` is the
+ * third overload's, and passing the argument is what selects it.
+ *
+ * That also settles the theory this paragraph used to be unable to rule out —
+ * that the derived settings name an `ital` axis this font lacks and an
+ * unsupported axis voids the string. `FontVariation.italic(0f)` added explicitly
+ * is pixel-identical to weight-only, so axes were never the variable; the
+ * overload was. **So the hazard is not "a redundant argument" but "deleting an
+ * argument silently changes which function you call".**
+ * [GawiTypographyTest] asserts every entry names `wght`, so the deletion fails
+ * a test rather than shipping a thin app.
  *
  * **Four weights, because that is what the app can *request*, not what it
  * writes.** Material's fifteen roles ask for W400 and W500, and no source in
@@ -64,12 +84,28 @@ internal val OutfitWeights = listOf(
  * **Five glyphs the app draws are not in this font**, which is worth knowing
  * before it reads as a bug: its `cmap` covers 360 characters, and `☰` (U+2630),
  * `◔` (U+25D4), `⚙` (U+2699), `✎` (U+270E) and `✕` (U+2715) are not among them,
- * so they fall back to the platform face. `←`, `‹`, `›`, `✓` and `•` are
- * present. The visible consequence is an app bar that mixes faces — habit
- * detail draws `←` in Outfit directly beside `✎` in the system font at the same
- * size. No tofu, and not a crash; but it is the "looks like a design choice
- * rather than a gap" failure this project keeps naming, and the honest fix is
- * icons rather than dingbats. docs/running.md §4's glyph check is where it lands.
+ * so they fall back to the platform face. The visible consequence is an app bar
+ * that mixes faces — habit detail draws `←` in Outfit directly beside `✎` in the
+ * system font at the same size. No tofu, and not a crash; but it is the "looks
+ * like a design choice rather than a gap" failure this project keeps naming, and
+ * the honest fix is icons rather than dingbats. docs/running.md §4's glyph check
+ * is where it lands.
+ *
+ * **Checked and present**, so nobody re-runs the audit: `←`, `‹`, `›`, `✓`, `•`,
+ * and — added after review pointed out the first list was short — `−` (U+2212)
+ * and `·` (U+00B7). `−` was the one worth checking rather than assuming.
+ * `WeeklyTargetStepper` draws it beside an ASCII `+`, both `titleLarge`, in one
+ * `Row`: had it been absent that would have been a two-face pair at one size,
+ * adjacent, and more visible than the app-bar case above. It is present, so the
+ * pair renders wholly in Outfit.
+ *
+ * **The habit-icon emoji are a different question and not an omission here.**
+ * `HabitPalette`'s twelve icons are outside this `cmap` too, and always will be:
+ * Android draws colour emoji through its own emoji font, which no text face
+ * substitutes for — docs/ux/visual-identity.md §4.2 already covers that, along
+ * with its consequence for tint. A sweep of every non-widget main source finds
+ * 36 distinct non-ASCII characters in all; the remainder are in KDoc and
+ * comments (`√`, `≡`, `≥`) and are never drawn.
  */
 internal val Outfit = FontFamily(OutfitWeights.map(::outfitAt))
 
@@ -119,8 +155,16 @@ private fun TextStyle.inOutfit(): TextStyle = copy(fontFamily = Outfit)
  * otherwise and has been corrected. What is **not** yet true is that a user can
  * read it: nothing packages `licenses/` into the artifact and the app has no
  * about-or-licences surface, so a release currently distributes Outfit with only
- * the notice in the font's own `name` table (IDs 0, 13 and 14). That is thin
- * cover for OFL 1.1 §2 and is an open item rather than a settled one.
+ * the notice in the font's own `name` table (IDs 0, 13 and 14).
+ *
+ * Review split on whether that is already compliant, so here is the clause
+ * rather than a judgement. OFL 1.1 §2 allows the notice "as stand-alone text
+ * files, human-readable headers or in the appropriate machine-readable metadata
+ * fields within text or binary files **as long as those fields can be easily
+ * viewed by the user**". The `name` table is such a field; inside an APK it is
+ * not easily viewable by anyone without extraction tooling, which is the half
+ * that fails. So this is not "probably fine" — it is **owed before a public
+ * release**, and it is a release gate rather than a merge gate.
  *
  * **The widget does not get this and cannot.** A `RemoteViews` tree resolves
  * only the platform's generic family names, measured on 2026-08-24
