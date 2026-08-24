@@ -1057,6 +1057,55 @@ Open a habit from the **Habits** list — the row's name, not the Archive button
 
 ---
 
+### The history grid
+
+New with `:feature:insights` (2026-08-24) — PRD §5's per-habit heatmap,
+docs/ux/insights.md §8. `make test` covers what the grid draws from a given month
+and what the steppers report; what it cannot cover is the colour distinction
+being *visible*, which is the point of the screen, and a month query reaching Room
+and coming back.
+
+Reach it from habit detail: **See full history**, under the five-cell strip.
+
+- [ ] **Done and not-done are obviously different, in both themes.** Tick a few
+      days, open the grid, and look at it from arm's length in light and in dark.
+      The pair is measured at 4.41 and 6.94, so this is not really in doubt — what
+      is worth confirming by eye is the other half of §8.1's claim: that a
+      not-done cell is *quiet* against the page rather than invisible, and that
+      you can still read its number.
+- [ ] **Today is findable without hunting.** The ring, not a different fill. Do
+      it on a day you have **not** ticked as well as one you have: the not-done
+      case is the one that fails if the ring is ever replaced by a
+      `secondaryContainer` ground, which measures 1.04 against the cell it would
+      sit next to.
+- [ ] **Nothing after today is drawn.** In the current month, the cells past
+      today are empty — no ground, no number. A grid that drew them as not-done
+      would read as a month already half lost.
+- [ ] **A tap does nothing at all.** Tap cells: done ones, empty ones, today.
+      No ripple, no prompt, no tick, no snackbar. Read-only is
+      docs/ux/insights.md §3, and the absence of a *refusal* is the check —
+      a message would mean the cell is being tapped and turned down.
+- [ ] **The columns line up with the week start.** Change **Week starts on** in
+      Settings from Monday to Sunday and come back. The header letters rotate and
+      the whole grid shifts by a column. It must not need reopening.
+- [ ] **Stepping back reads real months.** Step back past a month you have
+      history in, then back again into one you do not: the second draws an empty
+      month rather than repeating the first's cells. Then step forward to the
+      current month — the forward arrow disappears there and nowhere else.
+- [ ] **The month follows the day rollover.** With the grid open, set the **day
+      cutoff** a couple of minutes ahead and wait past it. Today's ring moves a
+      day, with nothing tapped. Worth doing at least once near a month end, where
+      the whole grid should change month. **Put the cutoff back to midnight
+      afterwards.**
+- [ ] **200% font scale.** Six rows of cells at 200% overflow the screen: the
+      column scrolls, and no cell clips its own number. Two-digit days are where
+      this shows first.
+- [ ] **A habit with no history at all.** Create a habit, open its history
+      immediately. A month of not-done cells, no crash, and nothing that reads as
+      an error — the habit is new, not failing.
+
+---
+
 ### The restyle — both themes, once
 
 New with the designed scheme (2026-08-23). Everything here is a thing the tests
@@ -1125,6 +1174,20 @@ without sight, and whether it survives a reader who needs it larger.
       forced through the tree in order. Watch for a control that is reachable but
       unnamed, two targets that say the same thing, and a state change that
       happens silently (WCAG 2.4.3 and 4.1.3).
+- [ ] **A TalkBack pass over the history grid, swipe-only.** Its own item because
+      it is the one screen in this app that **hides content from a screen
+      reader** — the seven column letters carry `clearAndSetSemantics`, since `T`
+      and `S` each name two days and are noise read aloud
+      ([insights.md](ux/insights.md) §8.4). That is only defensible if the trade
+      it was made for actually holds, so check both halves: **swipe through a
+      full month** and confirm you never land on a bare letter, and that every
+      cell says its weekday spelled out, its date and its state — *"Friday 14,
+      done"*. Then check the two that are easy to get wrong: today announces
+      itself as today and as *not done yet* rather than *not done*, and a day
+      after today is not a focus stop at all. Thirty-one stops is a lot of
+      swiping and that is the point — a calendar is read day by day, and if this
+      is tedious rather than usable it is worth knowing before the trends screen
+      copies the pattern.
 - [x] **The colour picker's swatch names.** Every swatch announces a name rather
       than a hex, and after the retune one of those names moved: the seventh is
       "Gold", not "Yellow", because the hue at that slot is `#9C851F` and calling
