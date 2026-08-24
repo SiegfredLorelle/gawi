@@ -115,13 +115,22 @@ private fun Sparkline(points: List<RatePointUi>, modifier: Modifier = Modifier) 
     val line = MaterialTheme.colorScheme.primary
     val ring = MaterialTheme.colorScheme.surface
     Canvas(modifier = modifier) {
-        if (points.size < 2) return@Canvas
+        if (points.isEmpty()) return@Canvas
         val inset = (DOT_RADIUS + RING_WIDTH).toPx()
-        val step = (size.width - inset * 2) / (points.size - 1)
         val plotHeight = size.height - inset * 2
 
+        // **A point sits above the centre of its own label's column**, which is
+        // a coupling to the row below rather than a property of the plot. Those
+        // labels are `points.size` equal `weight(1f)` columns, so their centres
+        // are at `(index + 0.5) / size`. Spreading the points edge to edge
+        // instead — the obvious reading of "fill the width" — put the outer two
+        // about 27dp from the months they belong to on a phone, which made this
+        // card's own claim that the labels are the chart's table view false.
+        // Only a device shows it; no test here can see it.
+        val column = size.width / points.size
+
         fun offsetOf(index: Int, percent: Int): Offset = Offset(
-            x = inset + step * index,
+            x = column * (index + 0.5f),
             y = inset + plotHeight * (1f - percent / PERCENT_SCALE),
         )
 

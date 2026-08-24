@@ -1141,6 +1141,11 @@ and an upgrade not losing anything.
 - [ ] **The app-bar glyph is a glyph and not a box.** Three now — ☰, ◔, ⚙. A font
       without one draws tofu and no unit test can see it. **Renders on an
       emulator 2026-08-24; a real device font is still owed.**
+- [ ] **Each sparkline dot sits above its own month label.** The plot's x
+      positions are coupled to the label row's column centres and nothing in the
+      suite can see that — an earlier edge-to-edge spacing put the outer two
+      dots about 27dp off, which a screenshot shows at a glance and a test never
+      will. Look at a habit with two or more months of history.
 - [ ] **200% font scale on both new surfaces.** The chips wrap rather than clip,
       the bar rows stay readable, and the rate card's five month labels do not
       collide.
