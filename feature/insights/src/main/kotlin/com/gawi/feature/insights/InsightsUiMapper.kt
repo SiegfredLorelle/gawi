@@ -26,7 +26,7 @@ internal fun overviewOf(period: Period, breakdown: Breakdown, context: ReadConte
             // The union, not the sum: two habits done on one day is one active day.
             activeDays = completions.values.flatten().toSet().size,
             completions = completions.values.sumOf { it.size },
-            habits = habits.toRates(period, context, completions),
+            habits = habits.toRates(window, context, completions),
             tags = tagEffort.toShares(),
             // The unfiltered list, which is the whole reason this is a separate
             // field: `habits.toRates` drops the archived ones.
@@ -35,14 +35,22 @@ internal fun overviewOf(period: Period, breakdown: Breakdown, context: ReadConte
     }
 
 /**
- * The three reads the screen is drawn from, as one value.
+ * The three reads the screen is drawn from, and the window they were made over.
  *
  * They arrive from one `combine`, so they travel as one thing — and grouping
  * them says what the mapper's shape otherwise only implies: these are the same
  * period, read three ways, not three independent inputs that happen to be
  * passed together.
+ *
+ * [window] rides along for a narrower reason than convenience. The rates are
+ * measured over a window and the rows were read over a window, and those have
+ * to be the same one. They were computed twice — once by the ViewModel to issue
+ * the reads, once per habit inside the mapper — from the same inputs, so they
+ * could not actually differ. Carrying the one that was used makes that
+ * structural rather than a coincidence two call sites have to keep up.
  */
 internal data class PeriodReads(
+    val window: ClosedRange<LocalDate>,
     val habits: List<HabitState>,
     val completions: Map<HabitId, Set<LocalDate>>,
     val tagEffort: List<TagEffort>,
@@ -62,14 +70,17 @@ internal data class PeriodReads(
  * numbers moved would make the same habit hard to find twice running, and
  * ranking your own habits against each other is not what this screen is for.
  */
-private fun List<HabitState>.toRates(period: Period, context: ReadContext, completions: Map<HabitId, Set<LocalDate>>): List<HabitRateUi> =
-    filterNot { it.archived }.map { habit ->
-        HabitRateUi(
-            name = habit.name,
-            schedule = habit.schedule.toLabelUi(),
-            percent = habit.percentOver(period.window(context.today), context, completions[habit.id].orEmpty()),
-        )
-    }
+private fun List<HabitState>.toRates(
+    window: ClosedRange<LocalDate>,
+    context: ReadContext,
+    completions: Map<HabitId, Set<LocalDate>>,
+): List<HabitRateUi> = filterNot { it.archived }.map { habit ->
+    HabitRateUi(
+        name = habit.name,
+        schedule = habit.schedule.toLabelUi(),
+        percent = habit.percentOver(window, context, completions[habit.id].orEmpty()),
+    )
+}
 
 /**
  * Clipped to the habit's start, and null when the period offered nothing.

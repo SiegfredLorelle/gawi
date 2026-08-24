@@ -80,7 +80,7 @@ internal class InsightsViewModel @Inject constructor(private val habits: HabitRe
                     habits.observeTagEffort(window.start, window.endInclusive),
                     breakdown,
                 ) { all, completions, tagEffort, mode ->
-                    overviewOf(period, mode, context, PeriodReads(all, completions, tagEffort))
+                    overviewOf(period, mode, context, PeriodReads(window, all, completions, tagEffort))
                 }
             }
 
