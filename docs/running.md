@@ -1228,6 +1228,26 @@ Nothing A059 pass in §3 is still owed and is what would upgrade these.
       because anything composites against the wallpaper — nothing does — but
       because the eight are tuned to one lightness and the failure to look for is
       the set reading as muddy rather than as eight distinguishable colours.
+- [x] **The app draws in Outfit, and the Medium roles are actually Medium.** New
+      with the type scale (2026-08-24). Two different things to look at. The face
+      is the easy one: Outfit is geometric, so its `o`, `a` and `0` are visibly
+      circular against the system sans — the status bar clock stays Roboto and
+      makes a free side-by-side. The weight is the one that can fail silently:
+      `GawiTypography` registers W400 and W500 from **one** variable file, and if
+      `variationSettings` were ever dropped both entries would resolve to the
+      font's default instance, Compose would treat the W500 entry as an exact
+      match and synthesise nothing, and every Medium role would render at Regular
+      *looking entirely deliberate*. So compare a W500 line against a W400 line
+      beside it — Settings' teal value lines against their body copy is the
+      easiest pair — and check the value line is genuinely heavier. Seen on an
+      emulator on 2026-08-24: the face is Outfit and the value lines are heavier.
+- [ ] **200% font scale, a second time, because the face changed.** The pass
+      below is ticked and was run on 2026-08-23 against Roboto. Outfit has its
+      own metrics — wider, different x-height — so every clipping and overflow
+      judgement in that pass was made about a face the app no longer draws. This
+      is not a doubt about the old run; it is that the old run answered a
+      different question. The `displaySmall` streak numeral and Settings' longest
+      body paragraph are where a wider face would show first.
 
 ### Accessibility — *device only, and the layer no test reaches*
 
@@ -1307,7 +1327,9 @@ without sight, and whether it survives a reader who needs it larger.
       `displaySmall` has not pushed the strip off a short screen. Run on an
       emulator on 2026-08-23, including the `displaySmall` case, which needs a
       habit with a live streak to draw at all: nothing clipped and the whole
-      strip still on screen.
+      strip still on screen. **Owed again since 2026-08-24**: this ran against
+      Roboto, and the app now draws in Outfit, whose metrics differ. See the
+      restyle block's note.
 - [ ] **Accessibility Scanner**, as a pre-release sweep rather than routine.
       Install Google's Accessibility Scanner, run it over each screen, and read
       the report the way you would a Lighthouse audit: the touch-target and
