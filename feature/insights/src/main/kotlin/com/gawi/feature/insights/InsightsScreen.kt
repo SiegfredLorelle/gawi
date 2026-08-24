@@ -19,7 +19,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import com.gawi.core.ui.component.GlyphButton
+import com.gawi.core.ui.component.GawiIconButton
+import com.gawi.core.ui.component.GawiIcons
 import com.gawi.core.ui.component.Notice
 import com.gawi.core.ui.theme.GawiSpacing
 
@@ -47,7 +48,7 @@ internal fun InsightsScreen(state: InsightsUiState, actions: InsightsActions, mo
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.insights_title)) },
-                navigationIcon = { GlyphButton("←", R.string.insights_back, actions.onBack) },
+                navigationIcon = { GawiIconButton(GawiIcons.ArrowLeft, R.string.insights_back, onClick = actions.onBack) },
             )
         },
     ) { insets ->

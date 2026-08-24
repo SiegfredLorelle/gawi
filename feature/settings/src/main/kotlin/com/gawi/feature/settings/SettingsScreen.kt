@@ -26,7 +26,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
-import com.gawi.core.ui.component.GlyphButton
+import com.gawi.core.ui.component.GawiIconButton
+import com.gawi.core.ui.component.GawiIcons
 import com.gawi.core.ui.component.Notice
 import com.gawi.core.ui.theme.GawiSpacing
 
@@ -57,7 +58,7 @@ internal fun SettingsScreen(
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.settings_title)) },
-                navigationIcon = { GlyphButton("←", R.string.settings_back, actions.onBack) },
+                navigationIcon = { GawiIconButton(GawiIcons.ArrowLeft, R.string.settings_back, onClick = actions.onBack) },
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },

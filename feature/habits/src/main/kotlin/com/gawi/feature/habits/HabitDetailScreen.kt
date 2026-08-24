@@ -33,7 +33,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
-import com.gawi.core.ui.component.GlyphButton
+import com.gawi.core.ui.component.GawiIconButton
+import com.gawi.core.ui.component.GawiIcons
 import com.gawi.core.ui.component.HabitIcon
 import com.gawi.core.ui.component.Notice
 import com.gawi.core.ui.streak.StreakUi
@@ -65,13 +66,13 @@ internal fun HabitDetailScreen(
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.habits_detail_title)) },
-                navigationIcon = { GlyphButton("←", R.string.habits_back, actions.onBack) },
+                navigationIcon = { GawiIconButton(GawiIcons.ArrowLeft, R.string.habits_back, onClick = actions.onBack) },
                 actions = {
                     // Only offered once there is a habit to edit. On Loading and
                     // Unavailable there is no id to hand back, and an action that
                     // navigates nowhere is worse than an absent one.
                     if (state is HabitDetailUiState.Detail) {
-                        GlyphButton("✎", R.string.habits_detail_edit) { actions.onEdit(state.id) }
+                        GawiIconButton(GawiIcons.Pencil, R.string.habits_detail_edit) { actions.onEdit(state.id) }
                     }
                 },
             )

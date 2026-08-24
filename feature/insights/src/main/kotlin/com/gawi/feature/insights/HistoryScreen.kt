@@ -20,7 +20,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
-import com.gawi.core.ui.component.GlyphButton
+import com.gawi.core.ui.component.GawiIconButton
+import com.gawi.core.ui.component.GawiIcons
 import com.gawi.core.ui.component.Notice
 import com.gawi.core.ui.theme.GawiSpacing
 
@@ -49,7 +50,7 @@ internal fun HistoryScreen(state: HistoryUiState, actions: HistoryActions, modif
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.insights_history_title)) },
-                navigationIcon = { GlyphButton("←", R.string.insights_back, actions.onBack) },
+                navigationIcon = { GawiIconButton(GawiIcons.ArrowLeft, R.string.insights_back, onClick = actions.onBack) },
             )
         },
     ) { insets ->
@@ -113,7 +114,7 @@ private fun MonthHeader(state: HistoryUiState.Month, actions: HistoryActions) {
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        GlyphButton("‹", R.string.insights_month_previous, actions.onEarlier)
+        GawiIconButton(GawiIcons.ChevronLeft, R.string.insights_month_previous, onClick = actions.onEarlier)
         Text(
             text = stringResource(R.string.insights_month_title, stringResource(state.monthName), state.year),
             modifier = Modifier.weight(1f),
@@ -121,7 +122,7 @@ private fun MonthHeader(state: HistoryUiState.Month, actions: HistoryActions) {
             textAlign = TextAlign.Center,
         )
         if (state.canGoLater) {
-            GlyphButton("›", R.string.insights_month_next, actions.onLater)
+            GawiIconButton(GawiIcons.ChevronRight, R.string.insights_month_next, onClick = actions.onLater)
         } else {
             StepperFootprint()
         }

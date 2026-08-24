@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,6 +22,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.gawi.core.domain.model.Schedule
+import com.gawi.core.ui.component.GawiIconButton
+import com.gawi.core.ui.component.GawiIcons
 import com.gawi.core.ui.theme.GawiSpacing
 import com.gawi.core.ui.theme.HabitPalette
 import com.gawi.core.ui.theme.glyphColorOn
@@ -242,28 +243,16 @@ private fun WeeklyTargetStepper(target: Int, onChange: (Int) -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(GawiSpacing.Gap),
     ) {
-        StepperButton("−", R.string.habits_target_fewer, enabled = target > MIN_WEEKLY_TARGET) {
+        GawiIconButton(GawiIcons.Minus, R.string.habits_target_fewer, enabled = target > MIN_WEEKLY_TARGET) {
             onChange(target - 1)
         }
         Text(
             text = stringResource(R.string.habits_weekly_target, target),
             style = MaterialTheme.typography.bodyLarge,
         )
-        StepperButton("+", R.string.habits_target_more, enabled = target < Schedule.DAYS_PER_WEEK) {
+        GawiIconButton(GawiIcons.Plus, R.string.habits_target_more, enabled = target < Schedule.DAYS_PER_WEEK) {
             onChange(target + 1)
         }
-    }
-}
-
-@Composable
-private fun StepperButton(glyph: String, labelRes: Int, enabled: Boolean, onClick: () -> Unit) {
-    val label = stringResource(labelRes)
-    IconButton(
-        onClick = onClick,
-        enabled = enabled,
-        modifier = Modifier.semantics { contentDescription = label },
-    ) {
-        Text(text = glyph, style = MaterialTheme.typography.titleLarge)
     }
 }
 
