@@ -1161,14 +1161,24 @@ and an upgrade not losing anything.
       each button is named through `contentDescription`, every semantics test
       passes on a control that renders empty. `GawiIconsTest` pins the XML, so
       what is left for the eye is that the strokes read at a glance and that
-      `Icon`'s tint carries them in dark mode as well as light. **Not yet run
-      under the icon set.**
-- [ ] **The app-bar icons hold 24dp at 200% font scale, and that looks
+      `Icon`'s tint carries them in dark mode as well as light. **Run on an
+      emulator 2026-08-24**: all ten drawables drew — the three app-bar icons,
+      back, pencil, close, both chevrons, the stepper's pair and the FAB — and
+      the strokes read at 24dp. Dark was confirmed on the Today app bar only, so
+      the other seven are **still owed a dark pass**; one tint mechanism
+      (`Icon`'s `LocalContentColor`) is a reason to expect them to follow, not a
+      check that they did. Worth knowing for that pass: this emulator does not
+      re-theme a running activity, so `cmd uimode night yes` needs a
+      `force-stop` after it or the screenshot lies.
+- [x] **The app-bar icons hold 24dp at 200% font scale, and that looks
       deliberate.** A behaviour change, not a regression: the characters these
       replaced were `titleLarge` and grew with `fontScale`; a 24dp `Icon` does
       not. Material-correct, and touch targets are 48dp either way — but the
       titles beside them still grow, so the thing to check is that the result
-      reads as a decision rather than as clipping. **Not yet run.**
+      reads as a decision rather than as clipping. **Run on an emulator
+      2026-08-24**: the title grew about double, the three icons held their size,
+      and there was no clipping and no collision. It reads as a row of controls
+      beside a large title, which is the intended result.
 - [x] **Each sparkline dot sits above its own month label.** The plot's x
       positions are coupled to the label row's column centres and nothing in the
       suite can see that — an earlier edge-to-edge spacing put the outer two
@@ -1264,6 +1274,14 @@ Nothing A059 pass in §3 is still owed and is what would upgrade these.
       font ([visual-identity.md](ux/visual-identity.md) §4.2). Seen on an
       emulator on 2026-08-24: face correct, weights correct, the five do fall
       back, and the stepper pair is wholly Outfit.
+
+      **The glyph third of this is now history, and a re-run should skip it.**
+      Those five characters stopped being drawn later the same day — every
+      character-as-control is a vector now
+      ([visual-identity.md](ux/visual-identity.md) §7.5) — so the face and the
+      weight are all that is left to look at here, and the icons have their own
+      check in §4. The record above stays as run rather than being edited: it
+      was true, and the fallback it describes is why the icons exist.
 - [x] **200% font scale, a second time, because the face changed.** The pass
       below is ticked and was run on 2026-08-23 against Roboto. Outfit has its
       own metrics — wider, different x-height — so every clipping and overflow
