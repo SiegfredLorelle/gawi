@@ -125,7 +125,16 @@
     <string name="insights_schedule_daily">Every day</string>
     <string name="insights_schedule_weekly">%1$d\u00d7 a week</string>
 
+    <!-- The history screen's failure. Names a history because that is what the
+         user opened; the app-wide screen has its own pair below, since a failed
+         read there is about no particular habit. -->
     <string name="insights_unavailable_title">Can\'t show this history</string>
     <string name="insights_unavailable_body">Something went wrong reading it. Close the app and open it again to retry.</string>
+
+    <!-- And the app-wide screen's. It reused the pair above until review caught
+         it, which told someone who had opened Insights that a *history* could
+         not be shown. -->
+    <string name="insights_read_failed_title">Can\'t show your insights</string>
+    <string name="insights_read_failed_body">Something went wrong reading them. Close the app and open it again to retry.</string>
 
 </resources>
