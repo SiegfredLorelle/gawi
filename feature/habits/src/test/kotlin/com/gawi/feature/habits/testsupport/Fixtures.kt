@@ -59,6 +59,9 @@ fun habitState(
     schedule = schedule,
     tag = tag,
     archived = archived,
+    // Unknown. No habits screen asks when a habit started — the history grid
+    // does, and it is another module's.
+    createdOn = null,
 )
 
 /**

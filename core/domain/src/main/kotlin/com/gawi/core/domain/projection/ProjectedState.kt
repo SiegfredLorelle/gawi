@@ -29,6 +29,22 @@ data class HabitRecord(
     val metadataStamp: WriteStamp? = null,
     val archived: Boolean = false,
     val archiveStamp: WriteStamp? = null,
+    /**
+     * The calendar date the habit was created on, from the creating event's own
+     * envelope — see `Projector.applyCreation`.
+     *
+     * A third register, and the only one that is **earliest**-wins rather than
+     * last-write-wins: a habit was created once, so two `HabitCreated` events
+     * for one id (reachable only through sync) resolve to the earlier of them
+     * rather than to the later. [createdStamp] is what that comparison is made
+     * on, so the outcome does not depend on arrival order.
+     *
+     * Null until a `HabitCreated` arrives. `HabitUpdated` alone is enough to
+     * materialize a [HabitState] — metadata is its own register — so a habit can
+     * be renderable while this is still unknown.
+     */
+    val createdOn: LocalDate? = null,
+    val createdStamp: WriteStamp? = null,
 )
 
 /** A habit as the UI sees it — only materialized once metadata exists. */
@@ -40,6 +56,29 @@ data class HabitState(
     val schedule: Schedule,
     val tag: String?,
     val archived: Boolean,
+    /**
+     * The date this habit came into existence, or null if the log has not said.
+     *
+     * **Nullable on purpose, and callers have to handle it.** Metadata and
+     * creation are separate registers ([HabitRecord]), so a `HabitUpdated` that
+     * arrives before its `HabitCreated` makes a habit renderable with no known
+     * start. Unreachable locally — a create always precedes its own updates —
+     * and reachable once Phase 2 sync can deliver a log out of order.
+     *
+     * What it is for: a window that reaches back before a habit existed yields
+     * a completion rate that is arithmetically right and meaningless
+     * (docs/ux/insights.md §4). This is what lets a screen clip such a window
+     * rather than draw a number that accuses the user of missing days that were
+     * never offered.
+     *
+     * **Not a logical date.** It is the calendar date in the offset the creating
+     * event was written at, because the day cutoff *as it was then* is not
+     * recorded anywhere. The consequence is bounded at one day, for a habit
+     * created between midnight and the cutoff, and it errs later — a start date
+     * a day late shortens the window rather than lengthening it, which is the
+     * direction that cannot manufacture a miss.
+     */
+    val createdOn: LocalDate?,
 )
 
 data class CompletionKey(val habitId: HabitId, val logicalDate: LocalDate)
@@ -100,7 +139,7 @@ data class ProjectedState(
 
     fun habit(id: HabitId): HabitState? = habitRecords[id]?.let { record ->
         record.metadata?.let { m ->
-            HabitState(id, m.name, m.icon, m.color, m.schedule, m.tag, record.archived)
+            HabitState(id, m.name, m.icon, m.color, m.schedule, m.tag, record.archived, record.createdOn)
         }
     }
 

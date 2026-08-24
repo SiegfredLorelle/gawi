@@ -55,6 +55,7 @@ internal fun HabitState.toEntity(): HabitEntity = HabitEntity(
     timesPerWeek = schedule.toTimesPerWeek(),
     tag = tag,
     archived = archived,
+    createdOn = createdOn?.toString(),
 )
 
 internal fun HabitEntity.toDomain(): HabitState = HabitState(
@@ -65,6 +66,7 @@ internal fun HabitEntity.toDomain(): HabitState = HabitState(
     schedule = schedule(scheduleKind, timesPerWeek),
     tag = tag,
     archived = archived,
+    createdOn = createdOn?.let(LocalDate::parse),
 )
 
 internal fun CompletionKey.toEntity(note: String?): CompletionEntity = CompletionEntity(
@@ -90,6 +92,7 @@ internal fun TodayHabitRow.toDomain(): TodayHabit = TodayHabit(
         schedule = schedule(scheduleKind, timesPerWeek),
         tag = tag,
         archived = archived,
+        createdOn = createdOn?.let(LocalDate::parse),
     ),
     completedToday = completedToday,
     note = note,

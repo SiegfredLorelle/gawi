@@ -10,6 +10,7 @@ import androidx.room.Room
 import com.gawi.core.data.backup.AppVersion
 import com.gawi.core.data.db.DATABASE_NAME
 import com.gawi.core.data.db.GawiDatabase
+import com.gawi.core.data.db.Migrations
 import com.gawi.core.data.settings.SETTINGS_NAME
 import com.gawi.core.data.settings.settingsDataStore
 import com.gawi.core.domain.id.UuidV7Generator
@@ -45,8 +46,14 @@ internal object DataModule {
     @Provides
     @Singleton
     fun database(@ApplicationContext context: Context): GawiDatabase = // No fallbackToDestructiveMigration, ever: this file holds the event
-        // log, which is the only copy of the user's history.
-        Room.databaseBuilder(context, GawiDatabase::class.java, DATABASE_NAME).build()
+        // log, which is the only copy of the user's history. Every migration is
+        // declared instead, which is what makes that absence safe rather than
+        // merely principled.
+        with(Migrations) {
+            Room.databaseBuilder(context, GawiDatabase::class.java, DATABASE_NAME)
+                .addGawiMigrations()
+                .build()
+        }
 
     @Provides
     @Singleton

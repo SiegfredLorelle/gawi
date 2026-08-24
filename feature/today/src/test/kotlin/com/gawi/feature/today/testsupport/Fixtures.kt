@@ -46,6 +46,8 @@ fun todayHabit(
         schedule = schedule,
         tag = tag,
         archived = archived,
+        // Unknown, because nothing on Today asks when a habit started.
+        createdOn = null,
     ),
     completedToday = completedToday,
     note = note,

@@ -39,6 +39,13 @@ internal data class HabitEntity(
     val tag: String?,
     @ColumnInfo(name = "archived")
     val archived: Boolean,
+    /**
+     * ISO-8601, and nullable — the log can describe a habit whose
+     * `HabitCreated` has not arrived. `HabitState.createdOn` carries the
+     * reasoning for both.
+     */
+    @ColumnInfo(name = "created_on")
+    val createdOn: String?,
 )
 
 /**

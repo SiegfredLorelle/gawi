@@ -10,6 +10,7 @@ import com.gawi.core.domain.event.HabitUnarchived
 import com.gawi.core.domain.event.HabitUpdated
 import com.gawi.core.domain.id.EventId
 import com.gawi.core.domain.model.HabitId
+import java.time.ZoneOffset
 
 /**
  * The replay side of the command-vs-replay split (architecture §1.6):
@@ -22,7 +23,11 @@ object Projector {
     fun apply(state: ProjectedState, event: Event): ProjectedState {
         val stamp = WriteStamp(event.occurredAt, event.id)
         return when (val payload = event.payload) {
-            is HabitCreated -> applyMetadata(state, payload.habitId, payload.toMetadata(), stamp)
+            // Two registers from one event: whole-record metadata, and the
+            // creation date. They are separate because they resolve differently
+            // — the newest metadata wins, the *earliest* creation does.
+            is HabitCreated ->
+                applyCreation(applyMetadata(state, payload.habitId, payload.toMetadata(), stamp), payload.habitId, event, stamp)
 
             is HabitUpdated -> applyMetadata(state, payload.habitId, payload.toMetadata(), stamp)
 
@@ -56,6 +61,34 @@ object Projector {
         val current = record.metadataStamp
         if (current != null && current >= stamp) return state
         val updated = record.copy(metadata = metadata, metadataStamp = stamp)
+        return state.copy(habitRecords = state.habitRecords + (habitId to updated))
+    }
+
+    /**
+     * The creation register: earliest wins, and the only place projection reads
+     * [Event.tzOffsetMin].
+     *
+     * **Why the offset rather than a payload field.** `HabitCreated` carries no
+     * date, and adding one would be an event-payload schema bump for every
+     * client — while the envelope already records the moment *and* the local
+     * offset it was written at. Both are stored at command time and neither can
+     * change, so this is a pure function of immutable log data: every replay, on
+     * every device, forever, produces the same date. That is the property
+     * architecture §5 is protecting when it says a date is decided once and
+     * stored, and it is why reading the offset here does not weaken it.
+     *
+     * **Earliest wins, not last-write-wins.** A habit is created once. Two
+     * `HabitCreated` events for one id can only arrive through sync, and the
+     * later one is a duplicate of a fact the earlier one already recorded — so
+     * taking the earlier keeps this commutative and idempotent like every other
+     * register here. Note the comparison is the inverse of the two below.
+     */
+    private fun applyCreation(state: ProjectedState, habitId: HabitId, event: Event, stamp: WriteStamp): ProjectedState {
+        val record = state.habitRecords[habitId] ?: HabitRecord()
+        val current = record.createdStamp
+        if (current != null && current <= stamp) return state
+        val on = event.occurredAt.atOffset(ZoneOffset.ofTotalSeconds(event.tzOffsetMin * SECONDS_PER_MINUTE)).toLocalDate()
+        val updated = record.copy(createdOn = on, createdStamp = stamp)
         return state.copy(habitRecords = state.habitRecords + (habitId to updated))
     }
 
@@ -113,4 +146,7 @@ object Projector {
         val updated = cell.copy(noteWrites = cell.noteWrites + (write.writeId to write))
         return state.copy(completions = state.completions + (key to updated))
     }
+
+    /** `tzOffsetMin` is minutes; `ZoneOffset` wants seconds. */
+    private const val SECONDS_PER_MINUTE = 60
 }

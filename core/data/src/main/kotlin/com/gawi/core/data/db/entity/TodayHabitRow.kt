@@ -24,6 +24,8 @@ internal data class TodayHabitRow(
     val tag: String?,
     @ColumnInfo(name = "archived")
     val archived: Boolean,
+    @ColumnInfo(name = "created_on")
+    val createdOn: String?,
     @ColumnInfo(name = "completed_today")
     val completedToday: Boolean,
     @ColumnInfo(name = "note")

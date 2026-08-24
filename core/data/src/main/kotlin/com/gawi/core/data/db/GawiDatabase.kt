@@ -59,7 +59,7 @@ internal abstract class GawiDatabase : RoomDatabase() {
     abstract fun readModelDao(): ReadModelDao
 }
 
-internal const val DATABASE_VERSION = 1
+internal const val DATABASE_VERSION = 2
 
 /** File name of the on-device database. */
 internal const val DATABASE_NAME = "gawi.db"

@@ -11,5 +11,10 @@ package com.gawi.core.data
  * A Room schema version cannot do this job. The columns do not move when the
  * rule that fills them changes, so Room sees nothing wrong and leaves rows in
  * place that current code would never have written.
+ *
+ * **2, since `HabitState.createdOn`.** That change moved a column *and* changed
+ * what fills it, so it needed both versions bumped — the migration adds the
+ * column and this replays the log to populate it. A schema bump on its own would
+ * have left every habit's start date null.
  */
-internal const val PROJECTION_VERSION = 1
+internal const val PROJECTION_VERSION = 2
