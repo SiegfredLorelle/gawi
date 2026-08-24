@@ -14,13 +14,12 @@ the way [habits.md](habits.md), [widget.md](widget.md),
 (Momo's art, the icon) is still sketch, and [insights.md](insights.md) is still
 the document to read the sketchy way.
 
-**§5 (typography) is half-built as of 2026-08-24**, in the sense that matters
-for planning: nothing is implemented, but the experiment it was waiting on has
-run and §2 carries the result. A widget cannot be handed a bundled font. That
-frees §5 from a dependency and hands it back a trade-off, so what is left there
-is a decision someone has to make rather than a fact someone has to find. Type
-is still `MaterialTheme`'s default in `Theme.kt`, and still the last stock thing
-in the app.
+**§5 (typography) is BUILT as of 2026-08-24.** The experiment it waited on ran
+(§2 has the result: a widget cannot be handed a bundled font), the trade that
+left was taken in favour of identity, and the app now draws in Outfit —
+`core/ui/theme/Type.kt`, `GawiTypography`, pinned by `GawiTypographyTest`.
+Nothing in the app is stock type any more. What §5 does **not** deliver is the
+widget, which renders in the platform sans by necessity rather than by choice.
 
 **Building it changed two of the published values, and that is recorded rather
 than quietly fixed.** §3's `tertiary` failed the requirement §4.1 sets for it,
@@ -572,6 +571,42 @@ is judged together. Constraints on the choice:
   for a checkbox list. **So the typeface no longer waits on the experiment. It
   waits on that trade, which is taste, and it is now the only thing between this
   section and a real `Typography`.**
+
+**Decided and BUILT on 2026-08-24: the face is Outfit, and the divergence is
+accepted.** The trade above was taken in the direction of identity rather than
+of hiding the seam — the canvas's own face, geometric, bundled as one variable
+font at 110,884 bytes, which is under half what this section budgeted. The app
+draws in it; `:widget` draws in the system sans and cannot do otherwise. Anyone
+reopening that should read §2 first, and `core/ui/theme/Type.kt`, which records
+the rest.
+
+Three things the code decided that this section had not:
+
+- **The family is set on all *fifteen* Material roles, not the ten in the table
+  above.** The table is still right about what the app draws, and that is what
+  makes the type reviewable — but it is a list of roles *used*, not a list of
+  roles permitted a face. Left at the default, the five nobody draws yet would
+  render the next screen's `headlineMedium` in Roboto, silently, and it would
+  look like a choice rather than a gap. Covering all fifteen invents no sizes,
+  which is what the "anything not in that table does not need a value" rule was
+  actually guarding against.
+- **Only the face changed. Every size, line height and letter spacing is still
+  Material's**, and `GawiTypographyTest` asserts that against a fresh
+  `Typography()` rather than trusting the claim. The sizes are the one part of
+  this already validated on a device, across four feature modules since Phase 0;
+  moving the face and the scale in one change would make any regression
+  unattributable to either. `letterSpacing` is the likeliest thing to want next —
+  Material's is tuned for Roboto and Outfit is wider — and that is a change to
+  make while looking at a screen.
+- **Two weight entries, both pointing at the same file.** Material's fifteen
+  roles ask for exactly W400 and W500 and nothing in the app sets a weight by
+  hand, so those are the only two registered. They need explicit
+  `variationSettings`: without the axis instance both entries resolve to the
+  font's default named instance, Compose treats the W500 entry as an exact match
+  and synthesises nothing, and every Medium role renders at Regular **looking
+  entirely deliberate**. Verified on a device by the converse — the W500 lines do
+  render heavier than W400 lines beside them, which they could not if the axis
+  were being dropped.
 
 ## 6. The habit hues
 
