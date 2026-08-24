@@ -92,14 +92,19 @@ internal val OutfitWeights = listOf(
  *
  * **That fix shipped on 2026-08-24** (`GawiIcons`, docs/ux/visual-identity.md
  * §7.5): every character the app drew as an *icon* is now a vendored vector.
- * **Not every character, and the difference matters here.** `RetroStrip` still
- * draws `✓`, `·` and `•` as text, inside a cell that is a
- * `combinedClickable(role = Role.Checkbox)` — so a character still carries a
- * control's *state*, even though none is an affordance any more. This `cmap`
- * therefore still has live dependents, and the number stays written down for
- * them as much as for the next character someone reaches for. Narrowed after
- * review caught the stronger claim, which was the kind that gets a limit
- * deleted.
+ * **Not every character, and the difference matters here.** Four things still
+ * draw text from this `cmap`: `RetroStrip`'s `✓`, `·` and `•`, and the `✓`
+ * `HabitEditorPickers` puts on the selected colour swatch. Each sits inside a
+ * control and carries its *state* rather than being an affordance — the swatch
+ * is a `Role.RadioButton` always, and the day cell a `Role.Checkbox` **only
+ * while the day is open**, since the shut branch is `disabled()` and every cell
+ * of an archived habit is shut. So the number stays written down for those four
+ * as much as for the next character someone reaches for.
+ *
+ * Two rounds of review landed here. The first killed "nothing is a control any
+ * more", the second killed "the cell is a `Role.Checkbox`" without the
+ * condition. Both were absolutes, and an absolute is the shape of sentence that
+ * gets this limit deleted — see docs/ux/visual-identity.md §7.5.
  *
  * **What the audit found present**, so nobody re-runs it: `←`, `‹`, `›`, `✓`,
  * `•`, and — added after review pointed out the first list was short — `−`
@@ -109,10 +114,10 @@ internal val OutfitWeights = listOf(
  * two-face pair at one size, adjacent, and more visible than the app-bar case.
  * It was present — and that pair is two icons now regardless, which is the
  * difference between an audit that was wrong and one that has been superseded.
- * `✓`, `·` and `•` are still drawn as text, and are still covered here. They
- * are state marks in a grid rather than pictures of an action, which is why
- * §7.5 left them alone — but they sit inside a clickable cell, so "not a
- * control" was the wrong way to say it.
+ * `✓`, `·` and `•` are still drawn as text, and are still covered here — as is
+ * the editor's swatch tick, which the first version of this paragraph forgot.
+ * They are state marks rather than pictures of an action, which is why §7.5 left
+ * them alone; "not controls" was simply the wrong way to say it.
  *
  * **The habit-icon emoji are a different question and not an omission here.**
  * `HabitPalette`'s twelve icons are outside this `cmap` too, and always will be:

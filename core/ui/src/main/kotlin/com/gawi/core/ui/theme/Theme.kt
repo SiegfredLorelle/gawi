@@ -27,10 +27,15 @@ import androidx.compose.runtime.Composable
  * (docs/ux/visual-identity.md §2).
  *
  * Not *everything* drawn is Outfit, and the gap is narrower than "the app is
- * restyled" suggests: five of the glyph characters the screens draw as text are
- * outside this font's `cmap` and fall back to the platform face, so an app bar
- * can mix the two. [Outfit]'s KDoc lists them. It is a reason to replace those
- * dingbats with icons, not a reason to doubt the face.
+ * restyled" suggests — narrower again since 2026-08-24. Five of the glyph
+ * characters the screens drew as text were outside this font's `cmap` and fell
+ * back to the platform face, so an app bar mixed the two. That was a reason to
+ * replace those dingbats with icons rather than to doubt the face, and it is
+ * what `GawiIcons` did. What still comes from this `cmap` is text that is not an
+ * icon: `RetroStrip`'s day marks and the editor's selection tick. [Outfit]'s
+ * KDoc has the audit and what outlived it — this paragraph asserted the
+ * fallback in the present tense for one commit too long, which is what a claim
+ * repeated in four files costs.
  *
  * So the divergence it warned about is real and was accepted rather than
  * avoided: the app renders in Outfit and `:widget` renders in the system sans,
