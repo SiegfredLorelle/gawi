@@ -597,9 +597,11 @@ and `·` (U+00B7). `−` was the one that mattered. `WeeklyTargetStepper` drew i
 beside an ASCII `+`, both `titleLarge`, in one `Row`; absent, that would have
 been a two-face pair *adjacent at one size*, worse than the app-bar case above.
 It was present — and that pair is two icons now regardless, which is the
-difference between the audit being wrong and it being superseded. `✓` and `·`
-are still drawn as text and still covered: `RetroStrip`'s marks are data in a
-grid rather than controls, which is why §7.5 left them where they are.
+difference between the audit being wrong and it being superseded. `✓`, `·` and `•`
+are still drawn as text and still covered, and so is the editor's selection tick
+(§4.3). "Data in a grid rather than controls" is what this paragraph said until
+2026-08-24 and it was the wrong way to put it — §7.5 has the accurate version.
+What holds either way is that the `cmap` still has live dependents.
 
 **The habit-icon emoji are a separate matter, not a gap in that audit.**
 `HabitPalette`'s twelve are outside this `cmap` and always will be — Android
@@ -977,15 +979,31 @@ app bar is the same "looks like a design choice rather than a gap" failure, just
 harder to name. This is why §5's glyph audit is now retired rather than narrowed:
 the app no longer draws a character as an *icon* anywhere.
 
-**The precise claim, because the loose one was wrong.** What went is every
-character standing in for a picture of an action. What stayed is `RetroStrip`'s
-`✓`, `·` and `•`: state marks in a grid, drawn as text — and the cell around
-them is a `combinedClickable(role = Role.Checkbox)`, so a character does still
-carry a control's state. Review caught "no character as a control anywhere",
-which read as licence to delete §5's `cmap` note; that note has live dependents
-and must stay. Whether those three marks should become icons too is a real
-question and a separate one — they are five-per-row, `labelLarge`, and sized by
-the type scale rather than by a 24dp box.
+**The precise claim, because two looser ones were wrong.** What went is every
+character standing in for a picture of an action. What stayed is text that still
+carries a control's *state*, and there are four of them, not three:
+`RetroStrip`'s `✓`, `·` and `•`, plus the `✓` `HabitEditorPickers` draws on the
+selected colour swatch — which §4.3 already recorded, and which §7.5 missed on
+its first pass because a line-based grep for short literals drawn as `Text` does
+not match a multi-line call.
+
+**And the control is conditional, which the first correction also got wrong.**
+The swatch is a `Role.RadioButton` always. The day cell is a
+`combinedClickable(role = Role.Checkbox)` **only while the day is open** —
+`RetroStrip`'s shut branch has no click, no role and a `disabled()` semantic, and
+`HabitsUiMapper` computes `open` as `!day.isBefore(oldestOpen) && !archived`, so
+on an archived habit *every* cell is shut and the marks carry no control at all.
+
+Two rounds of review landed on this paragraph: the first killed "no character is
+a control anywhere", the second killed "the cell is a `Role.Checkbox`" full stop.
+Both were absolutes, and an absolute here is the shape of sentence that gets §5's
+`cmap` note deleted — which is the thing that must not happen, because these four
+are what depend on it.
+
+Whether those marks should become icons is a real question and a separate one.
+The strip's are five-per-row `labelLarge` and sized by the type scale rather than
+by a 24dp box; the swatch tick is centred on a coloured ground and takes
+`glyphColorOn`, so it is a contrast decision as much as a drawing one.
 
 **Fifteen, because the fourteenth was found by looking and the fifteenth was
 not.** The habit list's FAB drew a `+` as text inside a `FloatingActionButton`,
@@ -996,7 +1014,7 @@ true or worthless: one character-as-icon left anywhere, in the same feature as
 the stepper it would sit beside, and the set is not a set. `GawiIconButton`
 does not fit a FAB, so that one call site drops an `Icon` in by hand.
 
-**Two consequences worth having written down.**
+**Three consequences worth having written down.**
 
 - **Icons do not scale with font scale, and the characters did.** A `titleLarge`
   glyph grew with `fontScale`; a 24dp `Icon` holds 24dp. At 200% the app-bar
@@ -1008,6 +1026,22 @@ does not fit a FAB, so that one call site drops an `Icon` in by hand.
   other primitive rather than converting it, because the failure being avoided is
   a drawing that silently loses a part of itself. The generated files carry a
   "do not hand-tune" header for the same reason.
+- **A directional icon must declare `android:autoMirrored="true"`, and the first
+  cut of this set did not.** `←` (U+2190), `‹` (U+2039) and `›` (U+203A) are all
+  `Bidi_Mirrored`, so the text shaper flipped them and the app had RTL
+  correctness *for free*; a `VectorDrawable` has to ask for it. Replacing them
+  without the attribute was therefore a regression rather than a gap — the Up
+  arrow pointed away from the edge it now sits on, and the month pager read
+  inverted. `arrow-left`, `chevron-left`, `chevron-right` and `list-checks` carry
+  it (the last for consistency, since `☰` was symmetric); nothing else should,
+  because a mirrored gear is wrong for no reason. `GawiIconsTest` asserts the set
+  both ways round, and `docs/running.md` §4 has the device recipe — the developer
+  option `debug.force_rtl` silently does nothing on an emulator, so a per-app
+  locale is what works.
+
+  **This is the one a reader adding an icon will need and would not guess**,
+  which is why it is here and not only in the generator: the first cut omitted it
+  precisely because no design note asked for it.
 
 **Still not decided here: the launcher icon.** §7.1 designed it and §8 records
 why it cannot be drawn yet — the mark derives from Momo, so it waits on the
