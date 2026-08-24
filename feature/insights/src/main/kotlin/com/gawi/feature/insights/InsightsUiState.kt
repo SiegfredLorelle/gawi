@@ -45,6 +45,18 @@ internal sealed interface InsightsUiState {
         val completions: Int,
         val habits: List<HabitRateUi>,
         val tags: List<TagShareUi>,
+        /**
+         * Whether the user has any habit at all, archived or not.
+         *
+         * Carried because [habits] cannot answer it: that list is the
+         * *unarchived* ones, so it is empty both on a fresh install and when
+         * everything has been archived — two states that deserve opposite
+         * advice. Without this the screen told a brand-new user "every habit is
+         * archived", which is a claim about their data that was simply untrue,
+         * and Insights is reachable from Today's app bar before a first habit
+         * exists.
+         */
+        val hasAnyHabit: Boolean,
     ) : InsightsUiState
 }
 

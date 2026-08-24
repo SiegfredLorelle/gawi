@@ -118,6 +118,27 @@ class InsightsUiMapperTest {
         assertEquals(listOf("read"), state.habits.map { it.name })
     }
 
+    /**
+     * `hasAnyHabit` reads the **unfiltered** list, which is the whole point of it
+     * being a separate field.
+     *
+     * An all-archived user has habits and an empty adherence list at the same
+     * time, and the screen needs to tell that apart from a fresh install — it
+     * showed the archived copy to new users until review caught it.
+     */
+    @Test
+    fun `an all-archived user has habits even though the list is empty`() {
+        val archived = overview(habits = listOf(habitState(archived = true)))
+
+        assertTrue(archived.hasAnyHabit)
+        assertTrue(archived.habits.isEmpty())
+
+        val fresh = overview(habits = emptyList())
+
+        assertEquals(false, fresh.hasAnyHabit)
+        assertTrue(fresh.habits.isEmpty())
+    }
+
     @Test
     fun `habits keep the order they arrived in, not the order of their rates`() {
         val state = overview(

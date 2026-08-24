@@ -48,10 +48,17 @@
     <string name="insights_empty_title">Nothing logged yet</string>
     <string name="insights_empty_body">No completions in this period. Try a longer one, or tick something off on Today.</string>
 
-    <!-- And this pair is for having no habit to report adherence on, which is a
-         different thing: the period may be full of completions from habits that
-         have since been archived. Saying "nothing logged" there would
-         contradict the headline two rows above it. -->
+    <!-- No habit at all, which is a fresh install and the commonest way to
+         reach this screen empty — the app bar offers Insights before a first
+         habit exists. Points at where a habit is made, because that is the one
+         thing to do about it. -->
+    <string name="insights_no_habits_yet_title">No habits yet</string>
+    <string name="insights_no_habits_yet_body">Add one on Today and its adherence shows up here.</string>
+
+    <!-- And this pair is for habits that all exist and are all archived, which
+         is a different thing again: the period may be full of completions from
+         them. Saying "nothing logged" there would contradict the headline two
+         rows above it, and saying "no habits yet" would be untrue. -->
     <string name="insights_no_habits_title">No habits to report on</string>
     <string name="insights_no_habits_body">Every habit is archived, so there is no adherence to measure. Tags still shows where the effort went.</string>
 
