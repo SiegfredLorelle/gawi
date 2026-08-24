@@ -17,11 +17,20 @@ import androidx.compose.runtime.Composable
  * §8 keeps Material You off permanently: a designed identity is the point of
  * the whole brief, and dynamic colour would hand it back to the wallpaper.
  *
- * No typography yet. §5 decides to bundle a variable font and defines the ten
- * roles the app actually draws, but the typeface is parked on an experiment —
- * whether a Glance widget can be handed a bundled font at all — so the scale
- * would be chosen before the face it is being chosen for. Type is still
- * `MaterialTheme`'s default here, and that is the last stock thing left.
+ * No typography yet, and as of 2026-08-24 the reason has changed. §5 decides to
+ * bundle a variable font and defines the ten roles the app actually draws. The
+ * typeface used to be parked on an experiment — whether a Glance widget can be
+ * handed a bundled font at all — so that the scale would not be chosen before
+ * the face it was being chosen for. **That experiment has run and the answer is
+ * no**: `RemoteViews` inflation resolves only the platform's generic family
+ * names, and drops a bundled font resource silently. docs/ux/visual-identity.md
+ * §2 has the measurement.
+ *
+ * So nothing here is waiting on a fact any more. What is left is the trade §5
+ * now states: the app can render in a designed face only by accepting that the
+ * widget renders in the system sans beside it, permanently. That is a taste
+ * decision, it is not this file's to make, and until it is made type is still
+ * `MaterialTheme`'s default here — the last stock thing left.
  *
  * A habit's own colour is per-row and comes from the event log, not from here;
  * [HabitPalette] is what the editor offers and [glyphColorOn] decides what is
