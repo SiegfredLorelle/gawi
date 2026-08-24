@@ -27,7 +27,10 @@ import org.junit.Test
  *    [HabitIcon]'s fallback circle, the strip's today cell), and the contrast
  *    they owe is to their own contents, which is what the pairs below check.
  *    Holding a fill to 3:1 against the page would pin the wrong property and
- *    force every quiet surface to look like a button.
+ *    force every quiet surface to look like a button. Two fills against *each
+ *    other* are a different question and are held: the history grid's cells say
+ *    done-versus-not-done with nothing but their ground, so that pair carries
+ *    meaning where a single fill does not.
  *  - **`outlineVariant` anywhere.** It draws exactly one thing, the shut cell's
  *    border in `RetroStrip`, at about 1.5:1 on `surface` in both themes — well
  *    under 1.4.11's 3:1. Accepted rather than overlooked: Material specifies
@@ -148,6 +151,17 @@ private data class Pairing(val what: String, val foreground: Color, val backgrou
 private fun ColorScheme.pairings(): List<Pairing> = buildList {
     fun text(what: String, foreground: Color, background: Color) = add(Pairing(what, foreground, background, WCAG_TEXT_FLOOR))
 
+    /**
+     * A pair where neither side is text — two fills whose difference *is* the
+     * information, so 1.4.11's 3:1 rather than the text floor.
+     *
+     * Distinct from the bullet in this file's KDoc about not holding a fill
+     * against the page. That rule is about a ground and the surface behind it,
+     * where the contrast owed is to the ground's own contents. Here both sides
+     * are grounds and the reader's question is which of the two a cell is.
+     */
+    fun graphic(what: String, foreground: Color, background: Color) = add(Pairing(what, foreground, background, WCAG_NON_TEXT_FLOOR))
+
     // Content on the page.
     text("onSurface on surface", onSurface, surface)
     text("onSurfaceVariant on surface", onSurfaceVariant, surface)
@@ -180,6 +194,24 @@ private fun ColorScheme.pairings(): List<Pairing> = buildList {
     text("onSurface on secondaryContainer", onSurface, secondaryContainer)
     text("onSurfaceVariant on secondaryContainer", onSurfaceVariant, secondaryContainer)
     text("primary on secondaryContainer", primary, secondaryContainer)
+
+    // The history grid's two cell fills (docs/ux/insights.md §7): `primary` for
+    // a completed day, `surfaceContainerHighest` for one that is not. Held as a
+    // pair because the pair is what says which day is which — the numbers drawn
+    // on them are `onPrimary on primary` and `onSurfaceVariant on
+    // surfaceContainerHighest`, both already above.
+    //
+    // Deliberately not `surfaceContainerHighest` against `surface`. That is
+    // 1.26 in light and 1.50 in dark, and it is meant to be: a month of quiet
+    // cells is a calendar, and a month of 3:1 cells is a keypad. The day number
+    // is what makes an unfilled cell readable against the page.
+    //
+    // Also why the grid marks today with a ring rather than the filled
+    // `secondaryContainer` ground `RetroStrip` uses. That fill against this one
+    // measures 1.04 in light and 1.05 in dark, so a not-done today would be
+    // indistinguishable from any other not-done day — the same failure §3's
+    // published `tertiary` had at 1.02, caught here rather than on a device.
+    graphic("primary against surfaceContainerHighest", primary, surfaceContainerHighest)
 
     // The surface family. Any of these can end up under body text, so both
     // content roles are checked against all of them rather than against the one
