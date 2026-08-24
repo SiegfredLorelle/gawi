@@ -146,6 +146,26 @@ class HabitDetailScreenTest {
     }
 
     /**
+     * The history door reports the habit the screen is showing.
+     *
+     * Closed over the state rather than over anything the Route captured, for
+     * the reason edit is: a screen that had re-read a different habit would
+     * otherwise open the old one's history and look right doing it.
+     *
+     * `performScrollTo` because the button sits under the strip, which is off a
+     * short screen at this font scale.
+     */
+    @Test
+    fun historyAction_reportsTheHabitOnScreen() {
+        var opened: HabitId? = null
+        render(detail(id = OTHER), NO_ACTIONS.copy(onHistory = { opened = it }))
+
+        compose.onNodeWithText(string(R.string.habits_detail_history)).performScrollTo().performClick()
+
+        assertEquals(OTHER, opened)
+    }
+
+    /**
      * And is absent when there is nothing to edit.
      *
      * On `Unavailable` there is no id to hand back, so the action would either
@@ -395,6 +415,7 @@ class HabitDetailScreenTest {
             onEdit = {},
             onToggle = { _, _, _ -> },
             onNote = { _, _, _ -> },
+            onHistory = {},
             onBack = {},
         )
 

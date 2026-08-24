@@ -9,17 +9,24 @@ import androidx.navigation.toRoute
 import com.gawi.feature.habits.HabitDetailRoute
 import com.gawi.feature.habits.HabitEditorRoute
 import com.gawi.feature.habits.HabitListRoute
+import com.gawi.feature.insights.HistoryRoute
 import com.gawi.feature.settings.SettingsRoute
 import com.gawi.feature.today.TodayRoute
 
 /**
- * The graph. Five destinations, and every navigation decision the app makes.
+ * The graph. Six destinations, and every navigation decision the app makes.
  *
  * Each feature module exposes Route composables that take plain lambdas, so
  * what a screen reports is what happened to it — "the user wants to add a
  * habit" — and where that goes is decided here. That is what lets
- * `:feature:today` and `:feature:habits` have no navigation dependency at all,
- * and what makes their tests need no `NavController`.
+ * `:feature:today`, `:feature:habits` and `:feature:insights` have no
+ * navigation dependency at all, and what makes their tests need no
+ * `NavController`.
+ *
+ * The history destination is that rule paying for itself: habit detail's "see
+ * full history" is a lambda, and it lands in a *different module's* Route
+ * without either feature knowing the other exists — which is the whole argument
+ * architecture §2 uses for the heatmap living outside `:feature:habits`.
  *
  * Cancelling pops, and so does saving an edit. Creating does not: it goes on to
  * the new habit's detail screen, which is what `createHabit`'s minted id was
@@ -93,6 +100,14 @@ internal fun GawiNavHost(navController: NavHostController = rememberNavControlle
             HabitDetailRoute(
                 habitId = entry.toRoute<Destination.HabitDetail>().habitId,
                 onEdit = { habitId -> go(Destination.HabitEditor(habitId)) },
+                onOpenHistory = { habitId -> go(Destination.HabitHistory(habitId)) },
+                onBack = ::back,
+            )
+        }
+
+        composable<Destination.HabitHistory> { entry ->
+            HistoryRoute(
+                habitId = entry.toRoute<Destination.HabitHistory>().habitId,
                 onBack = ::back,
             )
         }

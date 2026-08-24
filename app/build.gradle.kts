@@ -23,6 +23,7 @@ dependencies {
     implementation(project(":core:data"))
     implementation(project(":core:ui"))
     implementation(project(":feature:habits"))
+    implementation(project(":feature:insights"))
     implementation(project(":feature:settings"))
     implementation(project(":feature:today"))
     // The widget module. :app names nothing from it — the receiver is reached

@@ -98,6 +98,11 @@
          grid draws the same seven letters, and copy two features share lives
          there (AGENTS.md). -->
     <string name="habits_strip_title">Recent days</string>
+
+    <!-- The door to the month grid in :feature:insights. architecture §2 uses
+         this button as its own worked example: the label is "see full history"
+         there, and the screen it opens is in another module. -->
+    <string name="habits_detail_history">See full history</string>
     <!-- Spoken labels. The date is the subject, so it leads; the two initials
          M and T repeat across the week and cannot identify a cell on their own. -->
     <string name="habits_strip_done">Day %1$d, done</string>
