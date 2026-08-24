@@ -306,16 +306,24 @@ all either `exported="false"` or guarded by `DUMP` / `BIND_JOB_SERVICE`.
   reminder time moves, so a cutoff edit re-schedules the boundary refresh along
   with it — reminder.md §2. The gap that remains is the interval *between* the
   edit and the next wake, which is the same best-effort caveat as above.
-- **`glance-appwidget-testing` was considered and declined.** PR review
-  suggested it for pinning what the widget draws. Not taken: `Message` resolves
-  its copy through `LocalContext.current.getString(...)`, so the Glance unit
-  harness would need Robolectric or resource plumbing before it could assert a
-  string at all, and it brings ten transitive artifacts. The thing actually
-  worth pinning — *which* state draws *which* copy — is now a pure
-  `WidgetContent.body()` tested with plain JUnit, in the shape `TodayUiMapper`
-  and `TodayMessage(@StringRes val text: Int)` already set. Swapping the two
-  copies reddens two tests; a no-op control in the same run reddens nothing.
-  Revisit only if the *rendering* itself ever needs pinning.
+- **`glance-appwidget-testing` was declined, and then taken when its own
+  condition came true.** PR review first suggested it for pinning what the
+  widget draws, and it was not taken: `Message` resolves its copy through
+  `LocalContext.current.getString(...)`, so the Glance unit harness would need
+  Robolectric or resource plumbing before it could assert a string at all, and
+  it brings ten transitive artifacts. The thing worth pinning then — *which*
+  state draws *which* copy — became a pure `WidgetContent.body()` tested with
+  plain JUnit, in the shape `TodayUiMapper` and
+  `TodayMessage(@StringRes val text: Int)` already set. That bullet ended
+  "revisit only if the *rendering* itself ever needs pinning", and it did: the
+  widget drew black text on a dark background for a whole phase, because
+  Glance's default text colour is not theme-aware while the container's
+  background is. Nothing asserting on `body()` could see that. So the harness
+  and Robolectric are both in `widget/build.gradle.kts` now, and
+  `WidgetTextColourTest` renders with them — still the only test in the module
+  that renders rather than decides. **This bullet said "considered and declined"
+  for longer than it was true**; a condition a document sets for itself is worth
+  re-reading when it is met.
 - **"A write in the app moves the widget" has no automated test, and one was
   attempted.** The pieces are each covered — `ProjectionListenerTest` proves the
   repository makes the call (mutation-checked), and `WidgetHostTest` proves
