@@ -88,6 +88,24 @@ private fun trendMonths(today: LocalDate): List<YearMonth> {
     return (TREND_MONTHS - 1 downTo 0).map { back -> current.minusMonths(back.toLong()) }
 }
 
+/**
+ * The first day the trend needs completions from.
+ *
+ * **Here rather than in the ViewModel, and derived from [TREND_MONTHS], because
+ * the window read and the months drawn are one fact.** They were two constants
+ * in two files — a `TREND_SPAN` of 4 beside a `TREND_MONTHS` of 5 — agreeing
+ * only because 4 + 1 = 5, with nothing enforcing it.
+ *
+ * What that would have cost is worse than a mismatch. Widen the trend by editing
+ * the month count alone and the oldest month is one nothing fetched, so
+ * `Rates.completionRate` measures a *finished* month against an empty set:
+ * `opportunities` is a full month, `completed` is zero, and `fraction` is null
+ * only when `opportunities` is zero — so the screen draws **0%, not a dash**. A
+ * month the user is told they failed and never had read. Silent, and in the one
+ * direction this module keeps refusing to go.
+ */
+internal fun trendWindowStart(today: LocalDate): LocalDate = trendMonths(today).first().atDay(1)
+
 private fun HabitState.percentIn(month: YearMonth, today: LocalDate, weekStart: DayOfWeek, completedDates: Set<LocalDate>): Int? {
     val end = month.atEndOfMonth()
     val born = createdOn
