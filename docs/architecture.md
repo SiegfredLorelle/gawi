@@ -44,7 +44,7 @@ Now-in-Android convention: Gradle version catalog
 | `:core:ui` | Theme, shared composables, and presentation types shared by more than one feature |
 | `:feature:today` | Today view (app home screen, Momo's habitat) |
 | `:feature:habits` | Create/edit/archive habit, habit detail |
-| `:feature:insights` | Per-habit heatmap and completion-rate trends, tag effort distribution, and Phase 1.5's retrospectives — **planned, not built** |
+| `:feature:insights` | Per-habit heatmap and completion-rate trends, tag effort distribution, and Phase 1.5's retrospectives — **the heatmap is built; the other two are not** |
 | `:feature:settings` | Day boundary, week start, reminder time, export and import, the 30-day export nudge |
 | `:widget` | Glance home-screen widget |
 
@@ -79,8 +79,9 @@ graph TD
 ```
 
 The diagram is the permitted **direction**, not an exact edge list.
-`:feature:today` and `:feature:habits` also name `:core:domain` directly, while
-`:app` and `:feature:settings` receive it transitively — `:core:data` and
+`:feature:today`, `:feature:habits` and `:feature:insights` also name
+`:core:domain` directly, while `:app` and `:feature:settings` receive it
+transitively — `:core:data` and
 `:core:ui` both expose it with `api`, for the reasons their build files record.
 Drawing today's import list instead would make that difference look like a rule,
 and would be wrong the day a module adds an import.
@@ -115,22 +116,34 @@ activity that set the day cutoff and the reminder time over `adb` was deleted
 when `:feature:settings` landed, and there is no debug source set anywhere in
 the project now.
 
-**`:feature:insights` is the ninth row and the only one not built** (added
-2026-08-23, for PRD §5's Phase 1). It gets its own module rather than a corner of
+**`:feature:insights` is the ninth row**, added to this table on 2026-08-23 for
+PRD §5's Phase 1 and **built on 2026-08-24** — the per-habit heatmap, which is
+one of its three surfaces. It gets its own module rather than a corner of
 `:feature:habits`, which is worth recording because the heatmap is *per habit*
 and reached from habit detail, so the corner looks right. Two things say
 otherwise. The navigation rule below makes "reached from habit detail" free: a
 feature exposes Route composables taking plain lambdas, so habit detail's "see
 full history" is a lambda and `:app` decides it lands in another module — no
-cross-feature dependency, which feature modules could not have anyway. And the
-third surface settles it, because **tag effort distribution is not per-habit** —
-one number per tag across every habit — so it has no home in `:feature:habits`
-under any reading, and splitting the two would push their first shared piece into
-`:core:ui` for no reason. PRD §5's Phase 1.5 retrospectives are this module's
-second job, so the room is not speculative. The sketch is
-[docs/ux/insights.md](ux/insights.md); `insights` must be added to `scope-enum`
-in `.commitlintrc.yaml` before its first commit, as this table's own rule about
-module scopes requires.
+cross-feature dependency, which feature modules could not have anyway. **That is
+now built rather than argued**: `HabitDetailActions.onHistory` is the lambda,
+`Destination.HabitHistory` is where `:app` sends it, and neither feature module
+names the other. And the third surface settles it, because **tag effort
+distribution is not per-habit** — one number per tag across every habit — so it
+has no home in `:feature:habits` under any reading, and splitting the two would
+push their first shared piece into `:core:ui` for no reason. PRD §5's Phase 1.5
+retrospectives are this module's second job, so the room is not speculative.
+[docs/ux/insights.md](ux/insights.md) is the record — a sketch for the two
+unbuilt surfaces and, in its §8, what building the heatmap settled. `insights`
+was in `scope-enum` in `.commitlintrc.yaml` before its first commit, as this
+table's own rule about module scopes requires.
+
+Building it also moved two pieces of shared presentation into `:core:ui`, which
+is that module's rule working as intended rather than a detour: `GlyphButton`
+existed identically in `:feature:habits` and `:feature:settings`, and the seven
+weekday labels existed as letters in one and spelled-out names in the other. The
+history screen would have been the third copy of each. `:core:ui` gained its
+first `res/` directory in the process — the one docs/ux/visual-identity.md §5
+expects to hold the bundled variable font.
 
 `:feature:settings` holds the three preferences the data layer stores — day
 boundary, week start and reminder time — and, below them in a labelled section
