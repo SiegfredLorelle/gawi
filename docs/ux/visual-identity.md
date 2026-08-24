@@ -580,6 +580,15 @@ draws in it; `:widget` draws in the system sans and cannot do otherwise. Anyone
 reopening that should read §2 first, and `core/ui/theme/Type.kt`, which records
 the rest.
 
+One limit on "the app draws in Outfit", stated because it is visible and would
+otherwise read as a bug: the file's `cmap` covers 360 characters, and five of the
+glyph characters the screens draw as *text* are outside it — `☰`, `◔`, `⚙`, `✎`
+and `✕`. Those fall back to the platform face while `←`, `‹`, `›`, `✓` and `•`
+resolve, so an app bar can mix the two faces at one size. No tofu and no crash,
+but it is this document's own "looks like a design choice rather than a gap"
+failure, and the fix is icons rather than dingbats — which is §7's territory,
+not this section's.
+
 Three things the code decided that this section had not:
 
 - **The family is set on all *fifteen* Material roles, not the ten in the table
@@ -598,15 +607,29 @@ Three things the code decided that this section had not:
   unattributable to either. `letterSpacing` is the likeliest thing to want next —
   Material's is tuned for Roboto and Outfit is wider — and that is a change to
   make while looking at a screen.
-- **Two weight entries, both pointing at the same file.** Material's fifteen
-  roles ask for exactly W400 and W500 and nothing in the app sets a weight by
-  hand, so those are the only two registered. They need explicit
-  `variationSettings`: without the axis instance both entries resolve to the
-  font's default named instance, Compose treats the W500 entry as an exact match
-  and synthesises nothing, and every Medium role renders at Regular **looking
-  entirely deliberate**. Verified on a device by the converse — the W500 lines do
-  render heavier than W400 lines beside them, which they could not if the axis
-  were being dropped.
+- **Four weight entries, all pointing at the same file, and the `wght` axis
+  named explicitly on each.** Two of those decisions were corrected by review
+  and by measurement after the first version of this bullet, so both are stated
+  with what settles them.
+
+  *Explicit `variationSettings` is load-bearing, and looks redundant.* Decompile
+  Compose and `Font(resId, weight, …)`'s default plainly derives
+  `FontVariation.Settings(weight, style)` from the declared weight; a review made
+  exactly that argument and it is a reasonable one. It does not survive a device:
+  removing the argument renders the **whole app** at the file's `fvar` default,
+  which is 100 — "Outfit Thin" — measured and reproduced, 3,799 differing pixels
+  on one screen. The mechanism is not explained and is deliberately not guessed
+  at; the tidy theory that the derived settings also name an `ital` axis this
+  font lacks was refuted, since naming `italic` explicitly is pixel-identical.
+  A test asserts every entry names `wght`, so the tempting deletion goes red
+  instead of shipping a uniformly thin app.
+
+  *Four rather than two, because the app can request more than it writes.*
+  Material's fifteen roles ask for W400 and W500, and nothing sets a weight by
+  hand — but Compose adds `Configuration.fontWeightAdjustment` to every request,
+  so with the system *Bold text* setting on the same roles ask for W700 and W800.
+  Registered, they hit real instances already in the file; unregistered, they get
+  platform synthesis over a genuine bold the app already shipped.
 
 ## 6. The habit hues
 

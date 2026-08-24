@@ -1228,19 +1228,23 @@ Nothing A059 pass in §3 is still owed and is what would upgrade these.
       because anything composites against the wallpaper — nothing does — but
       because the eight are tuned to one lightness and the failure to look for is
       the set reading as muddy rather than as eight distinguishable colours.
-- [x] **The app draws in Outfit, and the Medium roles are actually Medium.** New
-      with the type scale (2026-08-24). Two different things to look at. The face
-      is the easy one: Outfit is geometric, so its `o`, `a` and `0` are visibly
-      circular against the system sans — the status bar clock stays Roboto and
-      makes a free side-by-side. The weight is the one that can fail silently:
-      `GawiTypography` registers W400 and W500 from **one** variable file, and if
-      `variationSettings` were ever dropped both entries would resolve to the
-      font's default instance, Compose would treat the W500 entry as an exact
-      match and synthesise nothing, and every Medium role would render at Regular
-      *looking entirely deliberate*. So compare a W500 line against a W400 line
-      beside it — Settings' teal value lines against their body copy is the
-      easiest pair — and check the value line is genuinely heavier. Seen on an
-      emulator on 2026-08-24: the face is Outfit and the value lines are heavier.
+- [x] **The app draws in Outfit, at the right weight, and knows which glyphs it
+      cannot draw.** New with the type scale (2026-08-24). Three things, and only
+      the first is easy. **The face**: Outfit is geometric, so its `o`, `a` and
+      `0` are visibly circular against the system sans, and the status bar clock
+      stays Roboto and gives a free side-by-side. **The weight**: the `wght` axis
+      is named explicitly on each entry, and if that were ever dropped as
+      redundant the whole app would render at the file's `fvar` default of 100 —
+      hairline, everywhere. That is loud rather than subtle, which is the good
+      news; a unit test pins it, so this check is a second line and not the only
+      one. Also worth a look with the system *Bold text* setting on, where the
+      roles ask for W700/W800 and should hit real instances rather than fake
+      bold. **The glyphs**: five characters the screens draw as text — `☰`, `◔`,
+      `⚙`, `✎`, `✕` — are not in this font and fall back to the platform face, so
+      an app bar mixes faces at one size. Look at habit detail's bar, where `←`
+      is Outfit and `✎` is not. Expected, documented, and an argument for icons
+      rather than a bug to file. Seen on an emulator on 2026-08-24: face correct,
+      weights correct, and the five glyphs do fall back as described.
 - [x] **200% font scale, a second time, because the face changed.** The pass
       below is ticked and was run on 2026-08-23 against Roboto. Outfit has its
       own metrics — wider, different x-height — so every clipping and overflow
