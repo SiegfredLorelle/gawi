@@ -12,6 +12,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.dp
 import com.gawi.core.domain.model.HabitId
+import com.gawi.core.ui.date.weekdayLetter
 import com.gawi.core.ui.streak.StreakUi
 import com.gawi.core.ui.theme.GawiTheme
 import com.gawi.feature.habits.testsupport.TODAY
@@ -23,6 +24,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
+import java.time.DayOfWeek
 import java.time.LocalDate
 
 /**
@@ -435,7 +437,7 @@ class HabitDetailScreenTest {
                 val date = TODAY.minusDays(back)
                 RetroCellUi(
                     date = date,
-                    dayLabel = R.string.habits_day_mon,
+                    dayLabel = weekdayLetter(DayOfWeek.MONDAY),
                     dayOfMonth = date.dayOfMonth,
                     completed = date in completed,
                     note = notes[date],

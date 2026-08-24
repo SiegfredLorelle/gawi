@@ -1,14 +1,13 @@
 package com.gawi.feature.habits
 
-import androidx.annotation.StringRes
 import com.gawi.core.data.model.HabitDetail
 import com.gawi.core.domain.command.Commands
 import com.gawi.core.domain.model.Schedule
 import com.gawi.core.domain.projection.HabitState
+import com.gawi.core.ui.date.weekdayLetter
 import com.gawi.core.ui.streak.toUi
 import com.gawi.core.ui.theme.HabitPalette
 import com.gawi.core.ui.theme.parseHabitColor
-import java.time.DayOfWeek
 
 /**
  * The read model as the habits screens draw it.
@@ -128,7 +127,7 @@ private fun HabitDetail.toStrip(): List<RetroCellUi> {
         .map { day ->
             RetroCellUi(
                 date = day,
-                dayLabel = labelFor(day.dayOfWeek),
+                dayLabel = weekdayLetter(day.dayOfWeek),
                 dayOfMonth = day.dayOfMonth,
                 completed = recent.containsKey(day),
                 note = recent[day],
@@ -137,23 +136,4 @@ private fun HabitDetail.toStrip(): List<RetroCellUi> {
             )
         }
         .toList()
-}
-
-/**
- * A weekday's short label, from resources rather than `DayOfWeek`.
- *
- * `getDisplayName` would read the JVM's locale rather than the app's resource
- * configuration, so a device set to one language could draw the strip in
- * another. `:feature:settings` resolves its day names the same way and for the
- * same reason.
- */
-@StringRes
-internal fun labelFor(day: DayOfWeek): Int = when (day) {
-    DayOfWeek.MONDAY -> R.string.habits_day_mon
-    DayOfWeek.TUESDAY -> R.string.habits_day_tue
-    DayOfWeek.WEDNESDAY -> R.string.habits_day_wed
-    DayOfWeek.THURSDAY -> R.string.habits_day_thu
-    DayOfWeek.FRIDAY -> R.string.habits_day_fri
-    DayOfWeek.SATURDAY -> R.string.habits_day_sat
-    DayOfWeek.SUNDAY -> R.string.habits_day_sun
 }

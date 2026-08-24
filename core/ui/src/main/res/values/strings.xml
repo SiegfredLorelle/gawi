@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The first resources in :core:ui. Resource merging is flat across the whole
+  app, so every name here carries a ui_ prefix rather than risking a collision
+  with a feature module's — the same rule each feature's own file states.
+
+  What belongs here is copy that more than one feature draws (AGENTS.md's
+  :core:ui rule). Copy specific to one screen stays with that screen.
+-->
+<resources>
+
+    <!-- Short weekday labels, from resources rather than
+         DayOfWeek.getDisplayName: that reads the JVM's locale rather than the
+         app's resource configuration, so a device set to one language could
+         draw a week in another. See WeekdayLabels.kt.
+
+         One letter each, which makes Tuesday/Thursday and Saturday/Sunday
+         collide on purpose — a seven-column grid has no room for more, and the
+         position in the row is what disambiguates them. Anything that needs to
+         *say* a weekday spells it out instead; :feature:settings' week-start
+         picker keeps its own full names for that reason. -->
+    <string name="ui_day_mon">M</string>
+    <string name="ui_day_tue">T</string>
+    <string name="ui_day_wed">W</string>
+    <string name="ui_day_thu">T</string>
+    <string name="ui_day_fri">F</string>
+    <string name="ui_day_sat">S</string>
+    <string name="ui_day_sun">S</string>
+
+    <!-- The same seven days spelled out, for anything that has to *say* a
+         weekday rather than fit one in a column: the week-start picker's
+         options, and the history grid's spoken cell labels, where the letters
+         above would be read aloud as "T" and mean either of two days.
+
+         Not DayOfWeek.getDisplayName, for the reason the letters give and one
+         more: getDisplayName varies with the JVM's locale *data*, so what the
+         picker reads would depend on which machine rendered it. -->
+    <string name="ui_weekday_monday">Monday</string>
+    <string name="ui_weekday_tuesday">Tuesday</string>
+    <string name="ui_weekday_wednesday">Wednesday</string>
+    <string name="ui_weekday_thursday">Thursday</string>
+    <string name="ui_weekday_friday">Friday</string>
+    <string name="ui_weekday_saturday">Saturday</string>
+    <string name="ui_weekday_sunday">Sunday</string>
+
+</resources>

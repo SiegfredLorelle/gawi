@@ -33,16 +33,10 @@
          merely odd — docs/ux/reminder.md 6. -->
     <string name="settings_error_reminder_equals_cutoff">The reminder can\'t be at the day boundary itself — pick another time.</string>
 
-    <!-- Day names as resources rather than DayOfWeek.getDisplayName, so the
-         tests read the same strings the screen renders and the copy is
-         translatable in the one place every other string here is. -->
-    <string name="settings_day_monday">Monday</string>
-    <string name="settings_day_tuesday">Tuesday</string>
-    <string name="settings_day_wednesday">Wednesday</string>
-    <string name="settings_day_thursday">Thursday</string>
-    <string name="settings_day_friday">Friday</string>
-    <string name="settings_day_saturday">Saturday</string>
-    <string name="settings_day_sunday">Sunday</string>
+    <!-- The week-start picker's seven day names are :core:ui's ui_weekday_* —
+         the history grid speaks the same seven, and copy two features draw
+         lives there. SettingsUiMapper.labelFor still names which form this
+         screen wants. -->
 
     <string name="settings_confirm">Set</string>
     <string name="settings_cancel">Cancel</string>

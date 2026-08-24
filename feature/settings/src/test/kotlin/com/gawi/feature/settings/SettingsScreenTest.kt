@@ -67,7 +67,7 @@ class SettingsScreenTest {
         render(STORED)
 
         compose.onNodeWithText("03:00").assertIsDisplayed()
-        compose.onNodeWithText(string(R.string.settings_day_sunday)).assertIsDisplayed()
+        compose.onNodeWithText(string(labelFor(DayOfWeek.SUNDAY))).assertIsDisplayed()
         compose.onNodeWithText("22:30").assertIsDisplayed()
     }
 
@@ -103,7 +103,7 @@ class SettingsScreenTest {
         render(STORED, actions = NO_ACTIONS.copy(onWeekStartChange = { picked += it }))
 
         compose.onNodeWithText(string(R.string.settings_week_start_label)).performClick()
-        compose.onNodeWithText(string(R.string.settings_day_friday)).performClick()
+        compose.onNodeWithText(string(labelFor(DayOfWeek.FRIDAY))).performClick()
         compose.onNodeWithText(string(R.string.settings_cancel)).performClick()
 
         assertEquals(emptyList<DayOfWeek>(), picked)
@@ -122,7 +122,7 @@ class SettingsScreenTest {
         render(STORED, actions = NO_ACTIONS.copy(onWeekStartChange = { picked += it }))
 
         compose.onNodeWithText(string(R.string.settings_week_start_label)).performClick()
-        compose.onNodeWithText(string(R.string.settings_day_friday)).performClick()
+        compose.onNodeWithText(string(labelFor(DayOfWeek.FRIDAY))).performClick()
         compose.onNodeWithText(string(R.string.settings_confirm)).performClick()
 
         assertEquals(listOf(DayOfWeek.FRIDAY), picked)
@@ -699,7 +699,7 @@ class SettingsScreenTest {
 
         compose.onNodeWithText(string(R.string.settings_week_start_label)).performClick()
 
-        compose.onNodeWithText(string(R.string.settings_day_friday))
+        compose.onNodeWithText(string(labelFor(DayOfWeek.FRIDAY)))
             .assertHeightIsAtLeast(MIN_TOUCH_TARGET)
     }
 
