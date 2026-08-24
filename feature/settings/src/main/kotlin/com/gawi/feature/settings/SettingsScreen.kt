@@ -1,6 +1,5 @@
 package com.gawi.feature.settings
 
-import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,7 +10,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -26,9 +24,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import com.gawi.core.ui.component.GlyphButton
 import com.gawi.core.ui.component.Notice
 import com.gawi.core.ui.theme.GawiSpacing
 
@@ -296,14 +294,5 @@ private fun ReminderBlocked(onEnable: () -> Unit) {
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.primary,
         )
-    }
-}
-
-/** An icon button with no icon font behind it, named for assistive technology. */
-@Composable
-private fun GlyphButton(glyph: String, @StringRes labelRes: Int, onClick: () -> Unit) {
-    val label = stringResource(labelRes)
-    IconButton(onClick = onClick, modifier = Modifier.semantics { contentDescription = label }) {
-        Text(text = glyph, style = MaterialTheme.typography.titleLarge)
     }
 }

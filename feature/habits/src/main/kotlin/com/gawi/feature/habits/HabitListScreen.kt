@@ -16,7 +16,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -32,6 +31,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.gawi.core.ui.component.GlyphButton
 import com.gawi.core.ui.component.HabitIcon
 import com.gawi.core.ui.component.Notice
 import com.gawi.core.ui.theme.GawiSpacing
@@ -173,22 +173,6 @@ private fun AddHabitButton(onAdd: () -> Unit) {
         // dependency here, and a whole icon pack for one plus sign is not worth
         // the download. The description above is what names it either way.
         Text(text = "+", style = MaterialTheme.typography.headlineSmall)
-    }
-}
-
-/**
- * An icon button with no icon font behind it, named for assistive technology.
- *
- * Internal rather than private since habit detail landed: both screens in this
- * module draw glyph buttons, and material-icons-extended is still not a
- * dependency. `:feature:settings` keeps its own copy — feature modules cannot
- * see each other, which is the same reason `commandOrNull` exists twice.
- */
-@Composable
-internal fun GlyphButton(glyph: String, labelRes: Int, onClick: () -> Unit) {
-    val label = stringResource(labelRes)
-    IconButton(onClick = onClick, modifier = Modifier.semantics { contentDescription = label }) {
-        Text(text = glyph, style = MaterialTheme.typography.titleLarge)
     }
 }
 
