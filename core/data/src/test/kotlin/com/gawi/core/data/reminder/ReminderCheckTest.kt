@@ -126,7 +126,7 @@ class ReminderCheckTest {
 
     /** An incomplete daily habit, archived or not — outstanding unless filtered. */
     private fun row(id: HabitId, archived: Boolean) = TodayHabit(
-        habit = HabitState(id, "read", "book", "#aabbcc", Schedule.Daily, tag = null, archived = archived),
+        habit = HabitState(id, "read", "book", "#aabbcc", Schedule.Daily, tag = null, archived = archived, createdOn = null),
         completedToday = false,
         note = null,
         weekCount = 0,

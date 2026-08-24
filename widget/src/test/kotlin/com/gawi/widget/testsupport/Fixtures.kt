@@ -29,7 +29,17 @@ fun todayHabit(
     weekCount: Int = 0,
     streak: StreakSnapshot = StreakSnapshot.NONE,
 ): TodayHabit = TodayHabit(
-    habit = HabitState(id = id, name = name, icon = "book", color = "#aabbcc", schedule = Schedule.Daily, tag = null, archived = archived),
+    habit = HabitState(
+        id = id,
+        name = name,
+        icon = "book",
+        color = "#aabbcc",
+        schedule = Schedule.Daily,
+        tag = null,
+        archived = archived,
+        // Unknown, because nothing the widget draws asks when a habit started.
+        createdOn = null,
+    ),
     completedToday = completedToday,
     note = null,
     weekCount = weekCount,

@@ -13,7 +13,7 @@ class AppSmokeTest {
     @Test
     fun `app sees both core modules`() {
         val id = "0190163d-8694-7abc-8def-0123456789ab"
-        val habit = HabitState(HabitId(id), "read", "book", "#aabbcc", Schedule.Weekly(3), tag = null, archived = false)
+        val habit = HabitState(HabitId(id), "read", "book", "#aabbcc", Schedule.Weekly(3), tag = null, archived = false, createdOn = null)
 
         val row = TodayHabit(habit, completedToday = true, note = null, weekCount = 2, streak = StreakSnapshot.NONE)
 

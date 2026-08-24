@@ -211,6 +211,7 @@ class TagEffortQueryTest {
                 timesPerWeek = null,
                 tag = "health",
                 archived = false,
+                createdOn = null,
             ),
         )
         completions.upsert(CompletionEntity(habitId = "known", logicalDate = "2026-08-17", note = null))
