@@ -1113,7 +1113,7 @@ New 2026-08-24 with the other two Insights surfaces (docs/ux/insights.md §§8.7
 is a colour distinction being *visible*, a glyph existing in the device's font,
 and an upgrade not losing anything.
 
-- [ ] **The upgrade, before anything else.** Install the *previous* build, make a
+- [x] **The upgrade, before anything else.** Install the *previous* build, make a
       habit or two and tick a few days, then install this one over it. Every
       habit and every completion must survive and the new start dates must appear
       — this is the first schema migration in the repo, `fallbackToDestructive`
@@ -1121,36 +1121,47 @@ and an upgrade not losing anything.
       **Run on an emulator 2026-08-24**: a v1 database with 57 events and two
       habits came through with both versions at 2 and `created_on` populated from
       the log.
-- [ ] **Every tag bar is the same colour, and Untagged is still obvious.** Reach
+- [x] **Every tag bar is the same colour, and Untagged is still obvious.** Reach
       Insights from Today's app bar, pick Tags. The bars are all `primary` — a
       grey one would measure 1.07 against it, which is why the distinction is the
       *label* instead. Check at arm's length in both themes that "Untagged" reads
       as quieter than a tag name without reading as disabled.
-- [ ] **The bar track is visible where a bar is short.** Needs two tags with
+- [x] **The bar track is visible where a bar is short.** Needs two tags with
       different totals; with one tag the bar is full width and the track is
-      covered, so this check is silently vacuous otherwise.
-- [ ] **A habit created today reads a dash, not a low number.** Make a habit,
+      covered, so this check is silently vacuous otherwise. **Run on an emulator
+      2026-08-24** with two: the track sampled `#D3E3E6` light / `#2C3A3D` dark.
+- [x] **A habit created today reads a dash, not a low number.** Make a habit,
       open Insights, and look at its row under Habits — and at its rate card on
       the history screen. Five dashes is correct: it has failed nothing. A
       percentage here means the creation date is not reaching the clip, which is
-      the whole point of projecting it.
+      the whole point of projecting it. **Run on an emulator 2026-08-24**: a
+      habit made that day read a dash in its row and across all five months.
 - [ ] **Each period chip changes the window.** With history in more than one
       month, Month and Quarter must differ. With everything inside one month they
       will agree, and that is correct rather than broken — worth knowing before
-      it looks like a bug.
+      it looks like a bug. **Not yet run against data spanning two months**; the
+      query window moving is pinned by `InsightsViewModelTest` instead, which is
+      not the same claim.
 - [ ] **The app-bar glyph is a glyph and not a box.** Three now — ☰, ◔, ⚙. A font
       without one draws tofu and no unit test can see it. **Renders on an
       emulator 2026-08-24; a real device font is still owed.**
-- [ ] **Each sparkline dot sits above its own month label.** The plot's x
+- [x] **Each sparkline dot sits above its own month label.** The plot's x
       positions are coupled to the label row's column centres and nothing in the
       suite can see that — an earlier edge-to-edge spacing put the outer two
       dots about 27dp off, which a screenshot shows at a glance and a test never
-      will. Look at a habit with two or more months of history.
+      will. Look at a habit with two or more months of history. **Run on an
+      emulator 2026-08-24**: the dot's centre and its label's centre both landed
+      on the same pixel column.
 - [ ] **200% font scale on both new surfaces.** The chips wrap rather than clip,
       the bar rows stay readable, and the rate card's five month labels do not
-      collide.
+      collide. **Not yet run** — 200% was checked on the month grid, which is a
+      different layout from either of these.
 - [ ] **An empty period says so.** Pick a period with nothing in it: copy, not an
       empty list, and the pickers stay reachable so there is a way out of it.
+      **Three different notices**, and which one appears is the check: no habits
+      at all, every habit archived, and a period with no completions each say
+      their own thing (docs/ux/insights.md §8.8). The first is a fresh install,
+      so it needs cleared app data.
 
 ---
 
