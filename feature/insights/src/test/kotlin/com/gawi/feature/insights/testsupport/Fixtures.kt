@@ -1,6 +1,5 @@
 package com.gawi.feature.insights.testsupport
 
-import com.gawi.core.data.model.HabitDetail
 import com.gawi.core.data.model.TodayHabit
 import com.gawi.core.domain.model.HabitId
 import com.gawi.core.domain.model.Schedule
@@ -88,16 +87,6 @@ fun todayHabit(habit: HabitState = habitState()): TodayHabit = TodayHabit(
     weekCount = 0,
     streak = StreakSnapshot.NONE,
 )
-
-/**
- * What `observeHabitDetail` returns.
- *
- * `recent` is left empty throughout. It is the strip's five cells and this
- * screen never reads it — the grid is drawn from `observeCompletedDates`, which
- * is a different query over a range the strip cannot express.
- */
-fun habitDetail(habit: TodayHabit = todayHabit(), today: LocalDate = TODAY): HabitDetail =
-    HabitDetail(habit = habit, today = today, recent = emptyMap())
 
 /** A day in [TODAY]'s month, by day of month. */
 fun thisMonth(dayOfMonth: Int): LocalDate = THIS_MONTH.atDay(dayOfMonth)
