@@ -45,6 +45,15 @@ internal data class HabitDetailActions(
     val onToggle: (HabitId, LocalDate, Boolean) -> Unit,
     /** Writes the note on one completed day. Empty text clears it, and that is a real write. */
     val onNote: (HabitId, LocalDate, String) -> Unit,
+    /**
+     * The user wants the whole history rather than the last few days.
+     *
+     * Reported rather than navigated to, like every other action here — and this
+     * one is the reason the rule is worth having: where it lands is another
+     * module's screen (`:feature:insights`), which a feature module could not
+     * reach even if it wanted to. `:app` decides (architecture §2).
+     */
+    val onHistory: (HabitId) -> Unit,
     val onBack: () -> Unit,
 )
 

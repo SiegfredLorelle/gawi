@@ -144,6 +144,13 @@ private fun HabitDetail(state: HabitDetailUiState.Detail, actions: HabitDetailAc
             },
             onCellNote = { cell -> noteDay = cell.date.toEpochDay() },
         )
+        // Under the strip, because it is the strip's answer to "and before
+        // that?". A TextButton rather than an app-bar action: the bar already
+        // holds edit, and this is a continuation of what is on screen rather
+        // than a thing to do to the habit.
+        TextButton(onClick = { actions.onHistory(state.id) }) {
+            Text(stringResource(R.string.habits_detail_history))
+        }
     }
 
     if (pending != null) {

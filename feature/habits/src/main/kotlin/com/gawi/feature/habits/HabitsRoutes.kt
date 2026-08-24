@@ -114,15 +114,17 @@ fun HabitEditorRoute(habitId: String?, onCreated: (String) -> Unit, onSaved: () 
  * not a canonical UUIDv7, and the ViewModel is where that is turned into a
  * state rather than a crash.
  *
- * [onEdit] hands the id back rather than closing over the one passed in, so
- * what is edited is the habit the screen is actually showing.
+ * [onEdit] and [onOpenHistory] hand the id back rather than closing over the one
+ * passed in, so what is opened is the habit the screen is actually showing. Both
+ * unwrap the `HabitId` at this boundary, which is what keeps `:app`'s route
+ * arguments plain `String`s and `HabitId` out of the navigation graph.
  *
  * The strip writes, so rejections are collected and shown here the same way the
  * list's are. `CompletionNotFound` and the rest are reachable from this screen
  * now, which is why `messageFor` gives them real copy.
  */
 @Composable
-fun HabitDetailRoute(habitId: String, onEdit: (String) -> Unit, onBack: () -> Unit) {
+fun HabitDetailRoute(habitId: String, onEdit: (String) -> Unit, onOpenHistory: (String) -> Unit, onBack: () -> Unit) {
     val viewModel: HabitDetailViewModel =
         hiltViewModel<HabitDetailViewModel, HabitDetailViewModel.Factory>(
             creationCallback = { factory -> factory.create(habitId) },
@@ -143,6 +145,7 @@ fun HabitDetailRoute(habitId: String, onEdit: (String) -> Unit, onBack: () -> Un
             onEdit = { id -> onEdit(id.value) },
             onToggle = viewModel::onToggle,
             onNote = viewModel::onNote,
+            onHistory = { id -> onOpenHistory(id.value) },
             onBack = onBack,
         ),
         snackbarHostState = snackbarHostState,
