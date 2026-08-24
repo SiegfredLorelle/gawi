@@ -1241,13 +1241,20 @@ Nothing A059 pass in §3 is still owed and is what would upgrade these.
       beside it — Settings' teal value lines against their body copy is the
       easiest pair — and check the value line is genuinely heavier. Seen on an
       emulator on 2026-08-24: the face is Outfit and the value lines are heavier.
-- [ ] **200% font scale, a second time, because the face changed.** The pass
+- [x] **200% font scale, a second time, because the face changed.** The pass
       below is ticked and was run on 2026-08-23 against Roboto. Outfit has its
       own metrics — wider, different x-height — so every clipping and overflow
       judgement in that pass was made about a face the app no longer draws. This
       is not a doubt about the old run; it is that the old run answered a
       different question. The `displaySmall` streak numeral and Settings' longest
-      body paragraph are where a wider face would show first.
+      body paragraph are where a wider face would show first. **Re-run on an
+      emulator on 2026-08-24 and clean.** Today's empty state wraps to two lines
+      and keeps its button; Settings' longest body paragraph wraps to six lines
+      and the notification notice wraps rather than clipping; habit detail wraps a
+      three-word habit name to two lines, still draws the `displaySmall` streak
+      numeral, and scrolls far enough that all five retro-strip cells and *See
+      full history* are reachable — checked by scrolling to the end rather than
+      by assuming the screen scrolls.
 
 ### Accessibility — *device only, and the layer no test reaches*
 
@@ -1327,9 +1334,10 @@ without sight, and whether it survives a reader who needs it larger.
       `displaySmall` has not pushed the strip off a short screen. Run on an
       emulator on 2026-08-23, including the `displaySmall` case, which needs a
       habit with a live streak to draw at all: nothing clipped and the whole
-      strip still on screen. **Owed again since 2026-08-24**: this ran against
-      Roboto, and the app now draws in Outfit, whose metrics differ. See the
-      restyle block's note.
+      strip still on screen. **Was owed again from 2026-08-24**, since this ran
+      against Roboto and the app now draws in Outfit, whose metrics differ — and
+      it was re-run the same day. The restyle block has what the second pass
+      measured.
 - [ ] **Accessibility Scanner**, as a pre-release sweep rather than routine.
       Install Google's Accessibility Scanner, run it over each screen, and read
       the report the way you would a Lighthouse audit: the touch-target and
