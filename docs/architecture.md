@@ -778,7 +778,7 @@ twenty-five files, which would be a sign the feature itself should split.
 | `build-logic/` | Convention plugins. Owns build configuration; module build files only apply `gawi.*` ids and declare dependencies |
 | `config/detekt/detekt.yml` | Overrides on top of detekt's bundled defaults |
 | `config/robolectric/robolectric.properties` | **The Robolectric SDK level, for every module.** Attached to each Android module's unit-test resources by `build-logic/src/main/kotlin/gawi/KotlinAndroid.kt` |
-| `scripts/` | Repo-local checks invoked from `make` (§9) |
+| `scripts/` | Repo-local tooling. `check-citations.sh` is a check and `make lint` runs it (§9); `convert-lucide.py` is a generator for :core:ui's icon drawables, run by hand and deliberately not wired into `make` — it needs the network and regenerates checked-in files, which is not what a lint target should do |
 | `docs/` | `prd.md` what and why, this file how, `running.md` on a device, `ux/` per-screen decisions, `stacks/kotlin-android.md` the template wiring |
 | `licenses/` | Third-party licence texts for bundled assets. Outside `res/`, which takes font files and XML families only — and a resource filename cannot carry uppercase letters, so `OFL.txt` there is a build error rather than good citizenship |
 
