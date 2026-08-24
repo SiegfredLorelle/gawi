@@ -44,7 +44,7 @@ Now-in-Android convention: Gradle version catalog
 | `:core:ui` | Theme, shared composables, and presentation types shared by more than one feature |
 | `:feature:today` | Today view (app home screen, Momo's habitat) |
 | `:feature:habits` | Create/edit/archive habit, habit detail |
-| `:feature:insights` | Per-habit heatmap and completion-rate trends, tag effort distribution, and Phase 1.5's retrospectives — **the heatmap is built; the other two are not** |
+| `:feature:insights` | Per-habit heatmap and completion-rate trends, tag effort distribution, and Phase 1.5's retrospectives — **all three Phase 1 surfaces are built; the retrospectives are not** |
 | `:feature:settings` | Day boundary, week start, reminder time, export and import, the 30-day export nudge |
 | `:widget` | Glance home-screen widget |
 
@@ -117,8 +117,13 @@ when `:feature:settings` landed, and there is no debug source set anywhere in
 the project now.
 
 **`:feature:insights` is the ninth row**, added to this table on 2026-08-23 for
-PRD §5's Phase 1 and **built on 2026-08-24** — the per-habit heatmap, which is
-one of its three surfaces. It gets its own module rather than a corner of
+PRD §5's Phase 1 and **built on 2026-08-24** — all three of its surfaces, across
+two screens. The per-habit history screen holds the month grid and the
+completion-rate trend and is reached from habit detail; `Destination.Insights` is
+a **top-level** destination holding the tag distribution and a per-habit
+adherence list over one period, reached from a third action in Today's app bar.
+That second screen is the app's only report on every habit at once, and it is
+where PRD §5's Phase 1.5 retrospectives will grow from. It gets its own module rather than a corner of
 `:feature:habits`, which is worth recording because the heatmap is *per habit*
 and reached from habit detail, so the corner looks right. Two things say
 otherwise. The navigation rule below makes "reached from habit detail" free: a
@@ -256,7 +261,13 @@ Strategy: **transactional projections.**
 - `rebuildProjections()` drops all derived state and replays the full log.
   It is:
   - the migration story — a Room schema change on derived tables is just
-    "bump version, rebuild";
+    "bump version, rebuild". **First exercised 2026-08-24**, adding
+    `habits.created_on`: `DATABASE_VERSION` 1→2 with a one-line migration,
+    `PROJECTION_VERSION` 1→2 so the next start refills the column, and the
+    `events` table untouched. Both versions are needed and neither substitutes
+    for the other — Room cannot see that the rule filling a column changed, and
+    a projection bump cannot add the column. Verified by upgrading a real v1
+    database on a device;
   - the sync story — Phase 2 inserts foreign events, then rebuilds;
   - the test oracle — a standing invariant test asserts that incremental
     updates and a full rebuild produce identical state.
