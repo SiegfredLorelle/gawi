@@ -85,15 +85,21 @@ private fun Overview(state: InsightsUiState.Overview, actions: InsightsActions, 
         Headline(state)
         BreakdownPicker(state.breakdown, actions.onBreakdown)
 
-        val empty = when (state.breakdown) {
-            Breakdown.HABITS -> state.habits.isEmpty()
-            Breakdown.TAGS -> state.tags.isEmpty()
-        }
         when {
-            // A period with nothing in it, or no habits at all. Copy rather than
-            // an empty list, so the screen says why it is blank instead of
-            // looking broken.
-            empty -> Notice(
+            // **Two empty states, because the two lists go empty for different
+            // reasons.** Tags is empty when the period holds no completions.
+            // Habits is empty when there is no *unarchived* habit to report on —
+            // and the headline above counts archived habits' completions, so
+            // sharing one "nothing logged" notice let the screen say "12 active
+            // days" and "no completions in this period" two rows apart. Caught
+            // in review; it needs a user who archived everything after logging.
+            state.breakdown == Breakdown.HABITS && state.habits.isEmpty() -> Notice(
+                title = stringResource(R.string.insights_no_habits_title),
+                body = stringResource(R.string.insights_no_habits_body),
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            state.breakdown == Breakdown.TAGS && state.tags.isEmpty() -> Notice(
                 title = stringResource(R.string.insights_empty_title),
                 body = stringResource(R.string.insights_empty_body),
                 modifier = Modifier.fillMaxWidth(),
