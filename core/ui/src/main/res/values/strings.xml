@@ -17,8 +17,10 @@
          One letter each, which makes Tuesday/Thursday and Saturday/Sunday
          collide on purpose — a seven-column grid has no room for more, and the
          position in the row is what disambiguates them. Anything that needs to
-         *say* a weekday spells it out instead; :feature:settings' week-start
-         picker keeps its own full names for that reason. -->
+         *say* a weekday spells it out instead: see ui_weekday_* below, which
+         the week-start picker and the history grid's spoken labels both draw.
+         (This used to point at :feature:settings keeping its own full names,
+         which the change that added this file made false in the same commit.) -->
     <string name="ui_day_mon">M</string>
     <string name="ui_day_tue">T</string>
     <string name="ui_day_wed">W</string>
