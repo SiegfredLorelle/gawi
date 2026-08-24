@@ -114,8 +114,14 @@ private fun RowScope.RetroCell(cell: RetroCellUi, onCell: (RetroCellUi) -> Unit,
         // A note is otherwise invisible: it reaches the cell but only the sheet
         // reads it, so an annotated day looked exactly like a bare one and the
         // long-press had nothing advertising it. A text glyph rather than a
-        // drawn dot, like the tick above and for the same reason — no icon pack
-        // is a dependency — and it is what lets a test see the marker at all.
+        // drawn dot, like the tick above — but **not** for the reason this
+        // comment used to give. "No icon pack is a dependency" stopped being
+        // true on 2026-08-24, when :core:ui gained a vendored set
+        // (docs/ux/visual-identity.md §7.5). The reasons that survive it: these
+        // three are state marks in a grid rather than pictures of an action,
+        // they are sized by the type scale rather than by a 24dp box, and a
+        // text node is what lets a test see the marker at all. Turning them
+        // into icons is a live question, not a settled no.
         // The spoken label carries the same fact; see cellAction.
         Text(
             text = if (cell.hasNote) NOTE_GLYPH else "",
