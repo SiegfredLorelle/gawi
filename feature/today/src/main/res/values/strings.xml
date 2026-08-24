@@ -50,6 +50,7 @@
          body copy has promised the first of these since the screen was built. -->
     <string name="today_add_habit">Add a habit</string>
     <string name="today_manage_habits">Manage habits</string>
+    <string name="today_insights">Insights</string>
     <string name="today_settings">Settings</string>
 
     <string name="today_complete">Mark done</string>
