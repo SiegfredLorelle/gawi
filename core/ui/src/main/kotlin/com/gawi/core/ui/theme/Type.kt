@@ -81,23 +81,32 @@ internal val OutfitWeights = listOf(
  * platform synthesis — fake bold drawn over a genuine bold the app already
  * shipped. Four entries and one asset is the cheaper half of that trade.
  *
- * **Five glyphs the app draws are not in this font**, which is worth knowing
- * before it reads as a bug: its `cmap` covers 360 characters, and `☰` (U+2630),
- * `◔` (U+25D4), `⚙` (U+2699), `✎` (U+270E) and `✕` (U+2715) are not among them,
- * so they fall back to the platform face. The visible consequence is an app bar
- * that mixes faces — habit detail draws `←` in Outfit directly beside `✎` in the
- * system font at the same size. No tofu, and not a crash; but it is the "looks
- * like a design choice rather than a gap" failure this project keeps naming, and
- * the honest fix is icons rather than dingbats. docs/running.md §4's glyph check
- * is where it lands.
+ * **This font's `cmap` covers 360 characters, and that is still a live
+ * constraint — but no longer a visible one.** Five of the glyphs the app drew as
+ * *text* were outside it: `☰` (U+2630), `◔` (U+25D4), `⚙` (U+2699), `✎` (U+270E)
+ * and `✕` (U+2715). They fell back to the platform face, so an app bar mixed two
+ * faces at one size — habit detail drew `←` in Outfit directly beside `✎` in the
+ * system font. No tofu and not a crash, but it was the "looks like a design
+ * choice rather than a gap" failure this project keeps naming, and the fix named
+ * here was icons rather than dingbats.
  *
- * **Checked and present**, so nobody re-runs the audit: `←`, `‹`, `›`, `✓`, `•`,
- * and — added after review pointed out the first list was short — `−` (U+2212)
- * and `·` (U+00B7). `−` was the one worth checking rather than assuming.
- * `WeeklyTargetStepper` draws it beside an ASCII `+`, both `titleLarge`, in one
- * `Row`: had it been absent that would have been a two-face pair at one size,
- * adjacent, and more visible than the app-bar case above. It is present, so the
- * pair renders wholly in Outfit.
+ * **That fix shipped on 2026-08-24** (`GawiIcons`, docs/ux/visual-identity.md
+ * §7.5): every character the app drew as a *control* is now a vendored vector,
+ * so nothing in the app depends on this `cmap` covering a dingbat. What the
+ * limit still governs is the next character someone reaches for as text —
+ * which is the reason the number stays written down here rather than leaving
+ * with the audit it came from.
+ *
+ * **What the audit found present**, so nobody re-runs it: `←`, `‹`, `›`, `✓`,
+ * `•`, and — added after review pointed out the first list was short — `−`
+ * (U+2212) and `·` (U+00B7). `−` was the one worth checking rather than
+ * assuming: `WeeklyTargetStepper` drew it beside an ASCII `+`, both
+ * `titleLarge`, in one `Row`, and had it been absent that would have been a
+ * two-face pair at one size, adjacent, and more visible than the app-bar case.
+ * It was present — and that pair is two icons now regardless, which is the
+ * difference between an audit that was wrong and one that has been superseded.
+ * `✓` and `·` are still drawn, as data rather than as controls: `RetroStrip`'s
+ * marks are cells in a grid, and they are still covered here.
  *
  * **The habit-icon emoji are a different question and not an omission here.**
  * `HabitPalette`'s twelve icons are outside this `cmap` too, and always will be:
