@@ -219,11 +219,21 @@ class InsightsScreenTest {
         assertEquals(1, back)
     }
 
+    /**
+     * And explains *this* screen, not the history one.
+     *
+     * The assertion moved from `insights_unavailable_title` to this screen's own
+     * id, which is the point: asserting whichever id the screen happens to
+     * render is exactly why this test could not see that it was rendering the
+     * history screen's copy. The history string is asserted absent so the two
+     * cannot quietly converge again.
+     */
     @Test
-    fun `an unavailable read explains itself`() {
+    fun `an unavailable read explains this screen, not a history`() {
         render(InsightsUiState.Unavailable)
 
-        compose.onNodeWithText(string(R.string.insights_unavailable_title)).assertIsDisplayed()
+        compose.onNodeWithText(string(R.string.insights_read_failed_title)).assertIsDisplayed()
+        compose.onAllNodesWithText(string(R.string.insights_unavailable_title)).assertCountEquals(0)
     }
 
     @Test

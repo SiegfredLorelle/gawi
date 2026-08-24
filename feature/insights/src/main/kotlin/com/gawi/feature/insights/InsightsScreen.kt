@@ -58,9 +58,12 @@ internal fun InsightsScreen(state: InsightsUiState, actions: InsightsActions, mo
             // Room queries.
             InsightsUiState.Loading -> Box(Modifier.fillMaxSize().padding(insets))
 
+            // This screen's own copy, not the history screen's. It borrowed that
+            // one until review caught it, and the borrowed title says "Can't
+            // show this history" — a thing the reader did not open.
             InsightsUiState.Unavailable -> Notice(
-                title = stringResource(R.string.insights_unavailable_title),
-                body = stringResource(R.string.insights_unavailable_body),
+                title = stringResource(R.string.insights_read_failed_title),
+                body = stringResource(R.string.insights_read_failed_body),
                 modifier = Modifier.fillMaxSize().padding(insets),
             )
 
