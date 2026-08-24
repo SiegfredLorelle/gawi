@@ -33,7 +33,7 @@ class InsightsUiMapperTest {
         habits: List<HabitState> = emptyList(),
         completions: Map<HabitId, Set<LocalDate>> = emptyMap(),
         tagEffort: List<TagEffort> = emptyList(),
-    ) = overviewOf(period, breakdown, context, PeriodReads(habits, completions, tagEffort))
+    ) = overviewOf(period, breakdown, context, PeriodReads(period.window(context.today), habits, completions, tagEffort))
 
     /**
      * Two habits done on one day is **one** active day. A sum here would count
