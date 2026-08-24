@@ -6,7 +6,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 /**
- * The one screen `:app` shows from this module, wired up.
+ * The two screens `:app` shows from this module, wired up.
  *
  * Takes a `String` and a plain lambda, and puts neither a compose nor a
  * `:core:data` type in its signature — the rule `:feature:habits`' and
@@ -38,6 +38,32 @@ fun HistoryRoute(habitId: String, onBack: () -> Unit) {
         actions = HistoryActions(
             onEarlier = viewModel::onEarlier,
             onLater = viewModel::onLater,
+            onBack = onBack,
+        ),
+    )
+}
+
+/**
+ * Every habit at once, over one period.
+ *
+ * Takes one plain lambda and nothing else — no id, because this screen is about
+ * no particular habit, which is the whole reason it is its own destination
+ * rather than a section of habit detail.
+ *
+ * Plain `hiltViewModel()` with no `creationCallback`: there is nothing to hand
+ * it. Still a back-stack destination, so the store owner is the entry and the
+ * period a user picked does not outlive the screen.
+ */
+@Composable
+fun InsightsRoute(onBack: () -> Unit) {
+    val viewModel: InsightsViewModel = hiltViewModel()
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    InsightsScreen(
+        state = state,
+        actions = InsightsActions(
+            onPeriod = viewModel::onPeriod,
+            onBreakdown = viewModel::onBreakdown,
             onBack = onBack,
         ),
     )

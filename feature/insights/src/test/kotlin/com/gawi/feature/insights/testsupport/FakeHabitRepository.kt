@@ -102,7 +102,16 @@ class FakeHabitRepository : HabitRepository {
     // made it. Every write is in here — the grid makes none (insights.md §3).
     override fun observeToday(): Flow<TodaySnapshot> = unused()
 
-    override fun observeAllHabits(): Flow<List<HabitState>> = unused()
+    /**
+     * Every habit, archived included — what the adherence list filters and the
+     * tag totals do not.
+     */
+    var allHabits: List<HabitState> = emptyList()
+
+    override fun observeAllHabits(): Flow<List<HabitState>> = listFailure?.let { flow<List<HabitState>> { throw it } } ?: flowOf(allHabits)
+
+    /** Set to fail the list read the way the real one can. */
+    var listFailure: Throwable? = null
 
     /**
      * Per-tag totals over the window, and the windows asked for.

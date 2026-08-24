@@ -7,6 +7,45 @@
 -->
 <resources>
 
+    <!-- The app-wide screen. "Insights" rather than "Analytics" or "Stats":
+         PRD §5 and every doc call this module insights, and a title that
+         disagreed with the vocabulary would be the drift AGENTS.md warns about. -->
+    <string name="insights_title">Insights</string>
+
+    <!-- The period picker, settled 2026-08-24 (docs/ux/insights.md §7). Calendar
+         periods, which is why the labels are bare nouns rather than "Last 30
+         days" — Phase 1.5's quarterly and yearly retrospectives share this
+         picker and a trailing window cannot serve them. -->
+    <string name="insights_period_month">Month</string>
+    <string name="insights_period_quarter">Quarter</string>
+    <string name="insights_period_year">Year</string>
+
+    <!-- Which breakdown of the period. One list with a toggle rather than two
+         lists, so the screen reads as one view of a period. -->
+    <string name="insights_breakdown_habits">Habits</string>
+    <string name="insights_breakdown_tags">Tags</string>
+
+    <!-- The headline. Two exact numbers that need no denominator: "every habit
+         done" is not answerable for a past day, because a weekly habit has no
+         due day at all (§4), so this says the user turned up rather than
+         claiming to know what turning up fully would have meant. -->
+    <plurals name="insights_active_days">
+        <item quantity="one">%d active day</item>
+        <item quantity="other">%d active days</item>
+    </plurals>
+    <plurals name="insights_completions">
+        <item quantity="one">%d completion</item>
+        <item quantity="other">%d completions</item>
+    </plurals>
+
+    <!-- Untagged effort is a row, never an omission: drop it and the rows
+         describe a whole that is not the whole (§5). Capitalised because it
+         stands where a tag name would, and tags are the user's own words. -->
+    <string name="insights_untagged">Untagged</string>
+
+    <string name="insights_empty_title">Nothing logged yet</string>
+    <string name="insights_empty_body">No completions in this period. Try a longer one, or tick something off on Today.</string>
+
     <string name="insights_history_title">History</string>
     <string name="insights_back">Back</string>
 
