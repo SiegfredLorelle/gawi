@@ -780,6 +780,7 @@ twenty-five files, which would be a sign the feature itself should split.
 | `config/robolectric/robolectric.properties` | **The Robolectric SDK level, for every module.** Attached to each Android module's unit-test resources by `build-logic/src/main/kotlin/gawi/KotlinAndroid.kt` |
 | `scripts/` | Repo-local checks invoked from `make` (§9) |
 | `docs/` | `prd.md` what and why, this file how, `running.md` on a device, `ux/` per-screen decisions, `stacks/kotlin-android.md` the template wiring |
+| `licenses/` | Third-party licence texts for bundled assets. Outside `res/`, which takes font files and XML families only — and a resource filename cannot carry uppercase letters, so `OFL.txt` there is a build error rather than good citizenship |
 
 The Robolectric line is the one most easily missed: a module inherits that SDK
 pin without declaring anything at all, which is exactly how a comment in
