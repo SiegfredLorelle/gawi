@@ -60,16 +60,17 @@ Full guide with examples: `.github/COMMIT_CONVENTION.md`
 
 - **Modules**: `:app` (wiring, navigation), `:core:domain` (pure Kotlin/JVM),
   `:core:data` (Room, DataStore, repositories), `:core:ui` (theme, shared
-  composables), `:feature:today`, `:feature:habits`, `:feature:settings` and
-  `:widget` (Glance). **All eight exist** and `:widget` is not a screen. A ninth,
-  `:feature:insights`, is in architecture.md §2's table as of 2026-08-23 and is
-  **planned, not built** — it is the only row there that does not exist. Its
-  scope *is* already in `.commitlintrc.yaml`, registered ahead of the module on
-  purpose, because the `commit-msg` hook rejects a module's first commit if its
-  scope is missing. **Do not create the module empty**: an Android library always
-  has test sources configured for its unit-test variant, so Gradle fails its test
-  task with "no tests discovered" until there is a real test in it. The module
-  arrives with its first real file. **`docs/architecture.md` §2
+  composables), `:feature:today`, `:feature:habits`, `:feature:insights`,
+  `:feature:settings` and `:widget` (Glance). **All nine exist** and `:widget` is
+  not a screen. `:feature:insights` is the newest — created 2026-08-24 with the
+  per-habit heatmap, which is one of the three surfaces
+  `docs/ux/insights.md` gives it. **A new module is created together with its
+  first real file, never empty**: an Android library always has test sources
+  configured for its unit-test variant, so Gradle fails its test task with "no
+  tests discovered" until there is a real test in it. That is a rule for the
+  *next* module rather than a note about this one, and so is the other half of
+  it: add the scope to `.commitlintrc.yaml` **before** the module's first commit,
+  or the `commit-msg` hook rejects it. **`docs/architecture.md` §2
   owns the contents of each and the full dependency rule** — read it rather than
   trusting this summary, which is the drift this file warns about everywhere
   else.
@@ -90,7 +91,10 @@ Full guide with examples: `.github/COMMIT_CONVENTION.md`
   written three times before it was shared, which meant three hand-copied
   contrast decisions, and fixing two of the three would have looked exactly like
   fixing it. The pointer is to the directory rather than to a list of what is in
-  it, because a list would be stale by Phase 1.
+  it, because a list would be stale by Phase 1. **Caught at two copies on
+  2026-08-24**, which is what following this rule looks like: `GlyphButton` and
+  the seven weekday labels moved to `:core:ui` when the history screen would
+  have been their third copy, rather than after it was.
 - **Versions live only in `gradle/libs.versions.toml`.** Convention plugins
   in `build-logic/` own build configuration; module build files only apply
   `gawi.*` plugin ids and declare dependencies.
