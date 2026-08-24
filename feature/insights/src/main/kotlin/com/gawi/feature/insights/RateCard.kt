@@ -53,16 +53,19 @@ internal fun RateCard(rate: RateTrendUi, modifier: Modifier = Modifier) {
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Sparkline(
-            points = rate.points,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(PLOT_HEIGHT)
-                // The line says nothing a reader cannot get from the labels
-                // below it, and "a line went up" is not a fact a screen reader
-                // can act on. Cleared rather than left to announce a Canvas.
-                .clearAndSetSemantics { },
-        )
+        if (rate.plottable) {
+            Sparkline(
+                points = rate.points,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(PLOT_HEIGHT)
+                    // The line says nothing a reader cannot get from the labels
+                    // below it, and "a line went up" is not a fact a screen
+                    // reader can act on. Cleared rather than left to announce a
+                    // Canvas.
+                    .clearAndSetSemantics { },
+            )
+        }
         Row(modifier = Modifier.fillMaxWidth()) {
             rate.points.forEach { point ->
                 Column(

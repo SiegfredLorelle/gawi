@@ -88,7 +88,23 @@ internal sealed interface HistoryUiState {
  * is completions over days and a weekly habit's is completions over
  * `timesPerWeek × weeks`, and only the label says which one these are.
  */
-internal data class RateTrendUi(val schedule: ScheduleLabelUi, val points: List<RatePointUi>)
+internal data class RateTrendUi(val schedule: ScheduleLabelUi, val points: List<RatePointUi>) {
+
+    /**
+     * Whether there is anything to plot at all.
+     *
+     * A habit created today has five dashes and no line, and an empty plot area
+     * above the labels reads as a chart that failed to draw rather than as a
+     * chart with nothing in it. So the plot is omitted and the labelled dashes
+     * carry the whole message — which they already did.
+     *
+     * Here rather than in the composable because it is a decision about the
+     * data, and one a screenshot is the only other way to catch. One point is
+     * enough: the sparkline draws it as a dot, and a single month's rate is
+     * worth seeing even with no line to put it on.
+     */
+    val plottable: Boolean get() = points.any { it.percent != null }
+}
 
 /**
  * One month of the trend. A null [percent] draws a dash.

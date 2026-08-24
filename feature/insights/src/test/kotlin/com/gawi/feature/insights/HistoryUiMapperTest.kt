@@ -239,6 +239,23 @@ class HistoryUiMapperTest {
         assertEquals(0, trend().points.first().percent)
     }
 
+    /**
+     * Nothing to plot is a state, not a blank chart.
+     *
+     * A habit created today has five dashes, and an empty plot area above them
+     * reads as a chart that failed to draw. Asserted here because the plot is
+     * cleared from the semantics tree, so a screen test cannot see whether it is
+     * there.
+     */
+    @Test
+    fun `a trend with no rate at all has nothing to plot`() {
+        val newborn = habitState(createdOn = TODAY)
+
+        assertFalse(trend(habit = newborn).plottable)
+        // One month with a number is enough — the sparkline draws it as a dot.
+        assertTrue(trend().plottable)
+    }
+
     @Test
     fun `a weekly habit's trend says what it is a rate of`() {
         val weekly = habitState(schedule = Schedule.Weekly(3))
