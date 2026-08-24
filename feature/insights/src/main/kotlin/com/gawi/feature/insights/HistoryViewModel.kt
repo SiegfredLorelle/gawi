@@ -136,7 +136,10 @@ internal class HistoryViewModel @AssistedInject constructor(
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun screenFor(habitId: HabitId, habit: HabitState?, context: ReadContext): Flow<HistoryUiState> {
         if (habit == null) return flowOf(HistoryUiState.Unavailable)
-        val trendFrom = YearMonth.from(context.today).minusMonths(TREND_SPAN).atDay(1)
+        // Asked of the mapper rather than computed here, so the window read and
+        // the months drawn cannot disagree — they were two constants until
+        // review pointed out that nothing held them in step.
+        val trendFrom = trendWindowStart(context.today)
         val grid = monthOffset.flatMapLatest { offset ->
             val month = YearMonth.from(context.today).plusMonths(offset)
             habits
@@ -157,8 +160,5 @@ internal class HistoryViewModel @AssistedInject constructor(
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L
         const val TAG = "HistoryViewModel"
-
-        /** Months back the trend's window opens, so it spans five including this one. */
-        const val TREND_SPAN = 4L
     }
 }

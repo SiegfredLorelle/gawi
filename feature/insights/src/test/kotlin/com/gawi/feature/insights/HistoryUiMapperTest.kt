@@ -240,6 +240,29 @@ class HistoryUiMapperTest {
     }
 
     /**
+     * The window read and the months drawn are one fact, asserted as an
+     * invariant rather than as a number.
+     *
+     * These were two constants in two files, agreeing only because 4 + 1 = 5.
+     * Widening the trend by editing the month count alone left the oldest month
+     * unfetched, and a finished month measured against an empty set draws 0%
+     * rather than a dash — a month the user is told they failed and never had
+     * read. This holds whatever `TREND_MONTHS` becomes, which a literal date
+     * would not.
+     */
+    @Test
+    fun `the trend's window starts at the oldest month it draws`() {
+        val points = trend().points
+
+        assertEquals(points.size, 5)
+        assertEquals(THIS_MONTH.minusMonths((points.size - 1).toLong()).atDay(1), trendWindowStart(TODAY))
+        // And it holds on a date in a different month, so this is not the
+        // fixture's calendar agreeing with itself.
+        val november = LocalDate.parse("2026-11-09")
+        assertEquals(YearMonth.from(november).minusMonths(4).atDay(1), trendWindowStart(november))
+    }
+
+    /**
      * Nothing to plot is a state, not a blank chart.
      *
      * A habit created today has five dashes, and an empty plot area above them
