@@ -583,11 +583,24 @@ the rest.
 One limit on "the app draws in Outfit", stated because it is visible and would
 otherwise read as a bug: the file's `cmap` covers 360 characters, and five of the
 glyph characters the screens draw as *text* are outside it — `☰`, `◔`, `⚙`, `✎`
-and `✕`. Those fall back to the platform face while `←`, `‹`, `›`, `✓` and `•`
-resolve, so an app bar can mix the two faces at one size. No tofu and no crash,
-but it is this document's own "looks like a design choice rather than a gap"
-failure, and the fix is icons rather than dingbats — which is §7's territory,
-not this section's.
+and `✕`. Those fall back to the platform face, so an app bar can mix the two at
+one size. No tofu and no crash, but it is this document's own "looks like a
+design choice rather than a gap" failure, and the fix is icons rather than
+dingbats — which is §7's territory, not this section's.
+
+**Checked and present**, recorded so the audit is not re-run: `←`, `‹`, `›`,
+`✓`, `•`, and — added after review noticed the first list was short — `−`
+(U+2212) and `·` (U+00B7). `−` is the one that mattered. `WeeklyTargetStepper`
+draws it beside an ASCII `+`, both `titleLarge`, in one `Row`; absent, that would
+have been a two-face pair *adjacent at one size*, worse than the app-bar case
+above. It is present, so the pair is wholly Outfit.
+
+**The habit-icon emoji are a separate matter, not a gap in that audit.**
+`HabitPalette`'s twelve are outside this `cmap` and always will be — Android
+draws colour emoji through its own font, which no text face substitutes for, and
+§4.2 already records that along with what it costs the tint. Sweeping every
+non-widget main source finds 36 distinct non-ASCII characters; what is left after
+the glyphs and the emoji sits in KDoc (`√`, `≡`, `≥`) and is never drawn.
 
 Three things the code decided that this section had not:
 
@@ -618,11 +631,22 @@ Three things the code decided that this section had not:
   exactly that argument and it is a reasonable one. It does not survive a device:
   removing the argument renders the **whole app** at the file's `fvar` default,
   which is 100 — "Outfit Thin" — measured and reproduced, 3,799 differing pixels
-  on one screen. The mechanism is not explained and is deliberately not guessed
-  at; the tidy theory that the derived settings also name an `ital` axis this
-  font lacks was refuted, since naming `italic` explicitly is pixel-identical.
-  A test asserts every entry names `wght`, so the tempting deletion goes red
-  instead of shipping a uniformly thin app.
+  on one screen.
+
+  *The mechanism is overload resolution*, found on 2026-08-24 after the review
+  offered a hypothesis worth chasing. `FontKt` declares three `Font()` overloads
+  for a resource id, and **only the widest takes variation settings**;
+  `Font(resId, weight)` binds to the narrowest, which builds its `ResourceFont`
+  without touching `FontVariation` at all. Loading then returns the variable face
+  at its `fvar` default with nothing instanced. So the decompiled default that
+  *does* derive `Settings(weight, style)` is real — it simply belongs to an
+  overload a two-argument call never reaches. That also disposes of the earlier
+  unresolved theory, that a derived `ital` axis this font lacks voided the
+  string: axes were never the variable, the overload was, which is why naming
+  `italic` explicitly is pixel-identical. **The hazard is therefore not a
+  redundant argument but an argument whose deletion silently changes which
+  function is called.** A test asserts every entry names `wght`, so the tempting
+  deletion goes red instead of shipping a uniformly thin app.
 
   *Four rather than two, because the app can request more than it writes.*
   Material's fifteen roles ask for W400 and W500, and nothing sets a weight by

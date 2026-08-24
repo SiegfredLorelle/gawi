@@ -1243,8 +1243,15 @@ Nothing A059 pass in §3 is still owed and is what would upgrade these.
       `⚙`, `✎`, `✕` — are not in this font and fall back to the platform face, so
       an app bar mixes faces at one size. Look at habit detail's bar, where `←`
       is Outfit and `✎` is not. Expected, documented, and an argument for icons
-      rather than a bug to file. Seen on an emulator on 2026-08-24: face correct,
-      weights correct, and the five glyphs do fall back as described.
+      rather than a bug to file. **Not** in that set, checked rather than assumed
+      after review asked: `−` (U+2212) and `·` (U+00B7) are both present, which
+      matters most for the weekly-target stepper — it draws `−` beside an ASCII
+      `+` at one size, so an absent `−` would have been the most visible
+      mismatch in the app. The habit-icon emoji are a different thing again and
+      not worth checking here: colour emoji always come from the system's emoji
+      font ([visual-identity.md](ux/visual-identity.md) §4.2). Seen on an
+      emulator on 2026-08-24: face correct, weights correct, the five do fall
+      back, and the stepper pair is wholly Outfit.
 - [x] **200% font scale, a second time, because the face changed.** The pass
       below is ticked and was run on 2026-08-23 against Roboto. Outfit has its
       own metrics — wider, different x-height — so every clipping and overflow
