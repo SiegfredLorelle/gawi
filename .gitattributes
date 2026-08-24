@@ -26,6 +26,8 @@ gradlew text eol=lf
 *.gz   binary
 *.woff  binary
 *.woff2 binary
+*.ttf   binary
+*.otf   binary
 
 # Collapse lockfiles in diffs and exclude them from language stats.
 *.lock            linguist-generated=true -diff
