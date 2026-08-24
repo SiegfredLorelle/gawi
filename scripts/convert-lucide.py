@@ -22,6 +22,13 @@ otherwise convert with that part of the drawing silently missing. <circle> is
 converted exactly (see below); anything else is a hard failure asking for a
 deliberate conversion rather than a quiet drop. This is not hypothetical:
 `settings` in 1.34.0 is one path plus one circle.
+
+**Nothing is written unless every icon converts.** The whole output is built
+in memory first. An earlier version wrote each file inside the conversion loop
+and reported failures afterwards, which defeated the guard above: a source that
+had grown a <rect> exited non-zero *and* left a valid, silently truncated
+drawable on disk, where it passed every assertion `GawiIconsTest` makes. Found
+in review. Partial output is worse than none, because none is obvious.
 """
 
 import argparse
@@ -34,6 +41,20 @@ VERSION = "1.34.0"
 BASE = "https://unpkg.com/lucide-static@" + VERSION
 NS = "{http://www.w3.org/2000/svg}"
 OUT = os.path.join("core", "ui", "src", "main", "res", "drawable")
+
+# The icons that must flip under an RTL layout direction. The manifest sets
+# `supportsRtl="true"`, and the characters these replaced — `←` (U+2190), `‹`
+# (U+2039), `›` (U+203A) — are all Bidi_Mirrored, so the text shaper flipped
+# them and a VectorDrawable without this attribute does not. Missing it was an
+# RTL regression rather than a gap: the Up arrow would point away from the edge
+# it sits on, and the month pager would read inverted. Found in review.
+#
+# `list-checks` is here for consistency rather than regression — `☰` is
+# symmetric, so nothing changed when it was replaced, but the icon leads with
+# marks and follows with rules, and Material auto-mirrors its own list icons.
+# The rest are non-directional: a gear, a pie, a pencil, a cross, and the
+# stepper's pair all mean the same thing mirrored.
+AUTO_MIRRORED = {"arrow-left", "chevron-left", "chevron-right", "list-checks"}
 
 # Lucide slug -> drawable name. `x` becomes ic_close because the drawable is
 # named for the job, not the glyph; every other name matches its source.
@@ -64,10 +85,12 @@ HEADER = """<?xml version="1.0" encoding="utf-8"?>
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
-    android:height="24dp"
+    android:height="24dp"{mirrored}
     android:viewportWidth="24"
     android:viewportHeight="24">
 """
+
+MIRRORED_ATTR = '\n    android:autoMirrored="true"'
 
 PATH = """    <path
         android:pathData="{d}"
@@ -79,11 +102,16 @@ PATH = """    <path
 
 CIRCLE_NOTE = """
 
-    The source's <circle cx="{cx}" cy="{cy}" r="{r}"> is the second path
-    below. VectorDrawable has no circle element, and the substitution is
-    exact rather than an approximation: an elliptical arc with rx = ry = r
-    and the large-arc flag set traces a true semicircle, so two of them
-    close the figure."""
+    VectorDrawable has no circle element, so the source's circles are emitted
+    as arc paths:
+
+{items}
+
+    Each substitution is exact rather than an approximation: an elliptical arc
+    with rx = ry = r and the large-arc flag set traces a true semicircle, so
+    two of them close the figure."""
+
+CIRCLE_ITEM = """    <circle cx="{cx}" cy="{cy}" r="{r}"> is path {position} of {total}."""
 
 
 def trim(value):
@@ -124,7 +152,7 @@ def convert(slug, drawable, svg_dir, problems):
         if actual != expected:
             problems.append("%s: %s is %r, expected %r" % (slug, attribute, actual, expected))
 
-    datas, note = [], ""
+    datas, circles = [], []
     for element in root:  # document order, so the drawing stacks as authored
         tag = element.tag.replace(NS, "")
         if tag == "path":
@@ -132,7 +160,12 @@ def convert(slug, drawable, svg_dir, problems):
         elif tag == "circle":
             cx, cy, r = (float(element.get(key)) for key in ("cx", "cy", "r"))
             datas.append(circle_to_path(cx, cy, r))
-            note = CIRCLE_NOTE.format(cx=trim(cx), cy=trim(cy), r=trim(r))
+            # Position recorded per circle rather than described once. These
+            # headers are the only record of what was substituted, and an
+            # earlier version documented the last circle only and hardcoded
+            # "the second path", which was true of `settings` and of nothing
+            # else. Found in review.
+            circles.append((len(datas), cx, cy, r))
         else:
             problems.append(
                 "%s: <%s> has no conversion here. Add one deliberately — "
@@ -142,15 +175,29 @@ def convert(slug, drawable, svg_dir, problems):
     if not datas:
         problems.append("%s: nothing to draw" % slug)
 
+    note = ""
+    if circles:
+        items = "\n".join(
+            CIRCLE_ITEM.format(cx=trim(cx), cy=trim(cy), r=trim(r), position=position, total=len(datas))
+            for position, cx, cy, r in circles
+        )
+        note = CIRCLE_NOTE.format(items=items)
+
     licence = "ISC; notice in licenses/Lucide-ISC.txt."
     if slug in FEATHER:
         licence = ("ISC, and MIT as well — this one derives from Feather.\n"
                    "    Both notices are in licenses/Lucide-ISC.txt.")
 
-    body = HEADER.format(slug=slug, version=VERSION, licence=licence, note=note)
+    body = HEADER.format(
+        slug=slug,
+        version=VERSION,
+        licence=licence,
+        note=note,
+        mirrored=MIRRORED_ATTR if slug in AUTO_MIRRORED else "",
+    )
     for d in datas:
         body += PATH.format(d=d)
-    return body + "</vector>\n", len(datas), bool(note)
+    return body + "</vector>\n", len(datas), bool(circles)
 
 
 def main():
@@ -162,19 +209,28 @@ def main():
     if not os.path.isdir(args.out):
         sys.exit("no drawable directory at %s — run this from the repo root" % args.out)
 
-    problems = []
+    problems, pending, report = [], [], []
     for slug, drawable in sorted(ICONS.items()):
         body, count, circled = convert(slug, drawable, args.svg_dir, problems)
-        with open(os.path.join(args.out, drawable + ".xml"), "w") as handle:
-            handle.write(body)
-        print("%-14s -> %-22s %d path(s)%s" % (
-            slug, drawable + ".xml", count, "  [circle converted]" if circled else ""))
+        pending.append((os.path.join(args.out, drawable + ".xml"), body))
+        report.append("%-14s -> %-22s %d path(s)%s%s" % (
+            slug, drawable + ".xml", count,
+            "  [circle converted]" if circled else "",
+            "  [autoMirrored]" if slug in AUTO_MIRRORED else ""))
 
+    # Nothing has touched the working tree yet, and nothing will unless the
+    # whole set converted. See the module docstring: writing as it went is what
+    # let a truncated drawable survive a non-zero exit.
     if problems:
-        print("\nFAILED:", file=sys.stderr)
+        print("FAILED, and nothing was written:", file=sys.stderr)
         for problem in problems:
             print("  " + problem, file=sys.stderr)
         sys.exit(1)
+
+    for path, body in pending:
+        with open(path, "w") as handle:
+            handle.write(body)
+    print("\n".join(report))
     print("\n%d drawables from lucide-static %s" % (len(ICONS), VERSION))
 
 
