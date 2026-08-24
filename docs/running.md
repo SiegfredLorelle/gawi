@@ -1106,6 +1106,49 @@ Reach it from habit detail: **See full history**, under the five-cell strip.
 
 ---
 
+### The Insights screen, and the rate trend
+
+New 2026-08-24 with the other two Insights surfaces (docs/ux/insights.md §§8.7,
+8.8). `make test` covers what each draws from given numbers; what it cannot cover
+is a colour distinction being *visible*, a glyph existing in the device's font,
+and an upgrade not losing anything.
+
+- [ ] **The upgrade, before anything else.** Install the *previous* build, make a
+      habit or two and tick a few days, then install this one over it. Every
+      habit and every completion must survive and the new start dates must appear
+      — this is the first schema migration in the repo, `fallbackToDestructive`
+      is deliberately absent, and a failure here is the one that costs real data.
+      **Run on an emulator 2026-08-24**: a v1 database with 57 events and two
+      habits came through with both versions at 2 and `created_on` populated from
+      the log.
+- [ ] **Every tag bar is the same colour, and Untagged is still obvious.** Reach
+      Insights from Today's app bar, pick Tags. The bars are all `primary` — a
+      grey one would measure 1.07 against it, which is why the distinction is the
+      *label* instead. Check at arm's length in both themes that "Untagged" reads
+      as quieter than a tag name without reading as disabled.
+- [ ] **The bar track is visible where a bar is short.** Needs two tags with
+      different totals; with one tag the bar is full width and the track is
+      covered, so this check is silently vacuous otherwise.
+- [ ] **A habit created today reads a dash, not a low number.** Make a habit,
+      open Insights, and look at its row under Habits — and at its rate card on
+      the history screen. Five dashes is correct: it has failed nothing. A
+      percentage here means the creation date is not reaching the clip, which is
+      the whole point of projecting it.
+- [ ] **Each period chip changes the window.** With history in more than one
+      month, Month and Quarter must differ. With everything inside one month they
+      will agree, and that is correct rather than broken — worth knowing before
+      it looks like a bug.
+- [ ] **The app-bar glyph is a glyph and not a box.** Three now — ☰, ◔, ⚙. A font
+      without one draws tofu and no unit test can see it. **Renders on an
+      emulator 2026-08-24; a real device font is still owed.**
+- [ ] **200% font scale on both new surfaces.** The chips wrap rather than clip,
+      the bar rows stay readable, and the rate card's five month labels do not
+      collide.
+- [ ] **An empty period says so.** Pick a period with nothing in it: copy, not an
+      empty list, and the pickers stay reachable so there is a way out of it.
+
+---
+
 ### The restyle — both themes, once
 
 New with the designed scheme (2026-08-23). Everything here is a thing the tests
@@ -1174,6 +1217,11 @@ without sight, and whether it survives a reader who needs it larger.
       forced through the tree in order. Watch for a control that is reachable but
       unnamed, two targets that say the same thing, and a state change that
       happens silently (WCAG 2.4.3 and 4.1.3).
+- [ ] **A TalkBack pass over the Insights screen.** Two pickers and a list, and
+      the thing to listen for is whether a bar row makes sense read aloud: the
+      label, the total, and nothing announcing the bar itself. The bars carry no
+      text, so a row is its label and its number — if that is not enough to know
+      which tag is which, the row needs a spoken description of its own.
 - [ ] **A TalkBack pass over the history grid, swipe-only.** Its own item because
       it is the one screen in this app that **hides content from a screen
       reader** — the seven column letters carry `clearAndSetSemantics`, since `T`
