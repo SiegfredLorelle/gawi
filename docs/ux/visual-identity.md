@@ -418,8 +418,27 @@ nothing to count and no intensity to encode —
 [insights.md](insights.md) §7 settled this as a two-state grid. Whatever the
 palette gives it must come from `MaterialTheme` roles rather than literals, so the
 grid inherits the palette the same way every other screen does. Practically: a
-"done" role and a "not done" role, both legible against `surface`, and the "not
-done" state must not read as disabled-because-broken.
+"done" role and a "not done" role, and the "not done" state must not read as
+disabled-because-broken.
+
+**Built 2026-08-24: `primary` and `surfaceContainerHighest`**, measured at 4.41
+in light and 6.94 in dark against each other, with the day number on each in
+`onPrimary` and `onSurfaceVariant`. [insights.md](insights.md) §8 has the working.
+
+One clause of the paragraph above was wrong and is corrected rather than quietly
+dropped: it asked for both roles to be **legible against `surface`**, and the
+"not done" ground is not — `surfaceContainerHighest` on `surface` is 1.26 in
+light and 1.50 in dark. That is the right answer for a month of thirty-one cells.
+Holding a quiet fill to 3:1 against the page is the mistake
+`GawiColorSchemeTest`'s own KDoc already refused for every other container role,
+and a grid that obeyed it would read as a keypad. What owes a floor is the
+**pair** — done against not-done, which is the information — and the number drawn
+on each, which is text. Both are held; the fill against the page is not.
+
+The other correction is about today. `RetroStrip` marks today with a filled
+`secondaryContainer` cell, and reusing that here fails at 1.04 light / 1.05 dark
+against the not-done ground — indistinguishable, the same way §3's published
+`tertiary` failed at 1.02. The grid uses a ring instead.
 
 ## 5. Typography
 
@@ -632,8 +651,9 @@ reading.
 
 This is what unblocked `Theme.kt`, the retuned hues, the widget's duplicate hexes
 and the Insights heatmap — the whole reason PRD §5's Phase 1 order was inverted.
-`Theme.kt` and the hues landed the same day; the widget's own palette and the
-heatmap are the two still to come, and both now have values to draw from.
+`Theme.kt` and the hues landed the same day; **the heatmap followed on
+2026-08-24** and is what §4.4 now records. The widget's own palette is the one
+still to come, and it has values to draw from.
 
 **Still a leaning: Momo's style is flat.** All three treatments stay on the
 canvas so it can move; the launcher mark derives from the character, so a change

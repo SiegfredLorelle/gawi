@@ -7,35 +7,46 @@ Companion to [the PRD](../prd.md) §5 Phase 1 and §8's OQ-1, and to
 period"* — and leaves every visual and definitional choice open. This document
 is where those get decided.
 
-**Status: a sketch, written 2026-08-23, before anything is built.** That is the
-opposite of [habits.md](habits.md), [widget.md](widget.md),
-[settings.md](settings.md) and [reminder.md](reminder.md), which were all
-written *after* their screens and record what was decided by building. Read
-everything here as provisional in a way those are not, and expect this file to
-be rewritten rather than appended to once the screen exists. What it is for
-right now is to stop three questions being answered by accident: which module
-this lives in, what a cell in a heatmap is allowed to mean, and what happens to
-the tag metric when OQ-1 lands.
+**Status: written as a sketch on 2026-08-23; the first of its three surfaces was
+built on 2026-08-24.** So this file is now half of each kind — the parts about
+the heatmap record what was decided by building, like [habits.md](habits.md),
+[widget.md](widget.md), [settings.md](settings.md) and
+[reminder.md](reminder.md); the parts about trends and tag effort are still the
+sketch and are still provisional in a way those are not. Each section below says
+which it is. What the sketch was for was stopping three questions being answered
+by accident: which module this lives in, what a cell in a heatmap is allowed to
+mean, and what happens to the tag metric when OQ-1 lands. The first two are now
+settled by code.
 
-`:feature:insights` still does not exist. `insights` **is** now in `scope-enum`
-in `.commitlintrc.yaml`, added 2026-08-23 ahead of the module rather than with
-it, because the `commit-msg` hook rejects a module's *first* commit if its scope
-is missing — so the entry has to exist before the module does.
+`:feature:insights` **exists as of 2026-08-24**, and it arrived the way this
+file said it had to: with its first real file. `insights` was already in
+`scope-enum` in `.commitlintrc.yaml`, added 2026-08-23 ahead of the module rather
+than with it, because the `commit-msg` hook rejects a module's *first* commit if
+its scope is missing — so the entry had to exist before the module did.
 
-The module itself was deliberately **not** created empty, and that is worth
-recording because it was tried. An Android library always has test sources
+The module was deliberately **not** created empty, and that is worth keeping
+because it was tried and reverted. An Android library always has test sources
 configured for its unit-test variant, so Gradle 9 fails
 `:feature:insights:testDebugUnitTest` with "there are test sources present …
 but the test task did not discover any tests" the moment the module is included
-with nothing in it. The available workarounds are setting
+with nothing in it. The available workarounds were setting
 `failOnNoDiscoveredTests = false`, which would mask a real misconfiguration
-later, or inventing a placeholder test, which asserts nothing. Neither is worth
-it: **the module gets created together with its first real file.**
+later, or inventing a placeholder test, which asserts nothing. Neither was worth
+it, and neither was needed: **the module was created together with its first
+real file**, `HistoryScreen.kt` and the three test classes that cover it.
 
-What *is* built, as of 2026-08-23, is the two layers underneath — §6's owed tag
-aggregate query, and §4's completion-rate denominator. Both were unblocked while
-the screens were not, for the reason PRD §5 now records: they have no colour in
-them.
+Two pieces of shared presentation moved to `:core:ui` on the way, both because
+this screen would otherwise have been the third copy — AGENTS.md's rule, and the
+habit icon badge's scar. `GlyphButton` was written identically in
+`:feature:habits` and `:feature:settings`; the seven weekday labels existed as
+letters in `:feature:habits` and as spelled-out names in `:feature:settings`.
+Both now live in `:core:ui`, which also gained its first `res/` directory in the
+process — the one [visual-identity.md](visual-identity.md) §5 expects to hold the
+bundled font.
+
+The two layers underneath were built on 2026-08-23 — §6's owed tag aggregate
+query, and §4's completion-rate denominator. Both were unblocked while the
+screens were not, for the reason PRD §5 records: they have no colour in them.
 
 ---
 
@@ -66,6 +77,9 @@ module's second job, not a new one.
 
 1. **Per-habit heatmap / calendar history.** The cheapest and the one with no
    open question in front of it. PRD §5's readiness order puts it first.
+   **Built 2026-08-24** — one calendar month at a time, stepped by two arrows,
+   reached from habit detail's "see full history". §8 below is what building it
+   settled and what it cost.
 2. **Completion-rate trends.** Needs §4's definition settled before it can be a
    number at all.
 3. **Tag effort distribution.** Needs a new aggregate query and carries §5's
@@ -84,6 +98,12 @@ screen would be lying.
 
 This is also what [habits.md](habits.md) §8 already decided by refusing to grow
 the strip into a month view. Same decision, recorded from the other side.
+
+**Shipped that way**, and pinned rather than merely intended: `HistoryScreenTest`
+asserts that a cell carries no click handler at all. A read-only screen is easy
+to make writable by accident — a `clickable` added for a ripple would do it —
+and the test is what makes that a red build instead of a cell that answers a tap
+and then refuses.
 
 ## 4. A weekly habit has no scheduled days. This shapes everything
 
@@ -213,28 +233,129 @@ already live, never in the feature module.
 - **The period picker.** "Over a selected period" (PRD §5) does not say which
   periods. Whether this is a fixed set (month / quarter / year) or a range, and
   whether it is shared with Phase 1.5's retrospectives, is undecided — sharing it
-  is the reason to decide once rather than twice.
-- **The colour scale**, and specifically whether intensity encodes anything at
-  all. A binary done/not-done grid needs two colours; a count-per-day scale needs
-  more and has nothing to count, because completions are idempotent per logical
-  date (architecture §4). Two colours, then, which makes this easier than a
-  heatmap usually is — and **no longer blocked, as of 2026-08-23**. It was: the
-  app had no palette, `GawiTheme` was stock Material 3 by an explicit deferral to
-  PRD §8's OQ-4, and choosing two colours before that landed would have meant
-  choosing them twice — which is what inverted PRD §5's Phase 1 order. The
-  designed scheme has now landed
-  ([visual-identity.md](visual-identity.md) §7.2), so this is a live decision
-  rather than a deferred one. What has not changed is the constraint on it:
-  whatever is chosen must come from `MaterialTheme` colour roles rather than
-  literals, so the palette reaches this grid the same way it reaches every other
-  screen. `primary` is the obvious "done" — it is already what marks a completed
-  cell in habit detail's `RetroStrip`, and reusing it means the two history
-  surfaces agree — with the "not done" role picked so it does not read as
-  disabled-because-broken. That is a decision for the screen, not for this
-  paragraph.
-- **Where it is reached from.** Habit detail for the per-habit grid is the
-  obvious door; the tag distribution has no obvious one, and inventing a
-  top-level destination is a navigation decision that belongs to `:app`.
+  is the reason to decide once rather than twice. **The heatmap deliberately did
+  not answer this.** Its two month arrows are not a picker and are not a
+  down-payment on one: a month grid can only show a month, so "which month" is
+  the whole of its range and needs no vocabulary for quarters or years. Trends
+  and the retrospectives are where the real question lands, and it is better
+  answered by the two of them together than by whatever this screen happened to
+  find convenient.
+- ~~**The colour scale**, and specifically whether intensity encodes anything at
+  all.~~ **Settled 2026-08-24**, and §8 has the values and the measurements. The
+  question was never hard once the palette existed — completions are idempotent
+  per logical date (architecture §4), so there is nothing to count and a
+  count-per-day scale has no input. Two colours, `primary` for done as this
+  paragraph predicted, and the constraint it named held: every colour comes from
+  a `MaterialTheme` role rather than a literal, so the palette reaches this grid
+  the way it reaches every other screen. What the paragraph did not anticipate is
+  that the *pair* would need measuring rather than the roles individually, and
+  that the obvious way to mark today would fail that measurement.
+- **Where it is reached from.** ~~Habit detail for the per-habit grid is the
+  obvious door~~ — **taken, 2026-08-24**: a "See full history" text button under
+  habit detail's retro strip, reported as a lambda, routed by `:app` to
+  `Destination.HabitHistory`. Architecture §2 used this door as its own worked
+  example of why the heatmap can live outside `:feature:habits`, and building it
+  cost the cross-module dependency that section predicted: none. **The tag
+  distribution still has no door**, and inventing a top-level destination is a
+  navigation decision that belongs to `:app`.
 - **Whether Momo appears here.** PRD §5 puts him in the Today view, the widget
   and the reminder. This screen is not on that list and should probably stay off
   it until OQ-4 is settled.
+
+## 8. What building the heatmap settled
+
+Written 2026-08-24, after the screen. Everything above §7 was reasoning; this is
+what the code decided, including the two things the reasoning got wrong.
+
+### 8.1 The two grounds, and why the *pair* is what gets measured
+
+**`primary` for a completed day, `surfaceContainerHighest` for a finished day
+that was not**, with the day number on top in `onPrimary` and `onSurfaceVariant`
+respectively. So a cell carries its state twice — in the fill and in the colour
+of the number — and it is a calendar rather than a bare heatmap, which is what
+PRD §5's "heatmap/**calendar** history" asks for anyway.
+
+`GawiColorSchemeTest` gained one pairing for this, and it is a new *kind* of
+pairing: two fills against each other rather than content against a fill.
+
+| Pair | Light | Dark | Floor |
+|---|---|---|---|
+| `primary` vs `surfaceContainerHighest` | 4.41 | 6.94 | 3.0 — WCAG 1.4.11 |
+| `onPrimary` on `primary` | *already held* | | 4.5 |
+| `onSurfaceVariant` on `surfaceContainerHighest` | *already held* | | 4.5 |
+
+That file's KDoc had declined to hold a fill against the page, and still does:
+`surfaceContainerHighest` against `surface` is **1.26 light / 1.50 dark** and is
+meant to be. A month of quiet cells is a calendar; a month of 3:1 cells is a
+keypad. What makes an unfilled cell readable against the page is the number in
+it, not the fill.
+
+### 8.2 Today is a ring, because the obvious answer measured 1.04
+
+`RetroStrip` marks today by filling its cell with `secondaryContainer`. Copying
+that here does not work, and the number says how badly: **`secondaryContainer`
+against `surfaceContainerHighest` is 1.04 in light and 1.05 in dark.** A not-done
+today would have been indistinguishable from every other not-done day — the same
+failure [visual-identity.md](visual-identity.md) §3's published `tertiary` had at
+1.02, and the same reason it was replaced.
+
+So today keeps its state's own ground and takes a 1dp ring instead: `primary`
+when the day is not done, `onPrimary` when it is. Both are pairs already proven
+against the ground they land on, which is the point — the marker reuses a
+measurement rather than adding one.
+
+Worth stating because the two screens now mark today *differently* and that is
+not drift. The strip has five wide cells and today is the one you can tap; the
+grid has thirty-one small ones and none of them are tappable.
+
+### 8.3 A day that has not happened draws nothing
+
+Not a quiet cell — nothing at all. `Rates` refuses to count an unfinished unit
+(§4), and this is the same rule in pixels: a grid that drew the rest of the month
+as not-done would read as a month already half lost, every month, from the 1st.
+
+A consequence worth knowing before it looks like a bug: the last week row of the
+current month can be entirely future, and it then collapses to no height. That is
+what should happen to a week that has not started.
+
+### 8.4 The columns are hidden from a screen reader, and the cells pay for it
+
+The seven column letters are `M T W T F S S`, and read aloud that is noise: `T`
+and `S` each name two days, so a header cannot identify a column spoken. The row
+carries `clearAndSetSemantics` — the only place in this app that hides content
+from assistive technology.
+
+**What replaces it is more than it removes.** Every cell announces its own
+weekday spelled out: *"Friday 14, done"*. A sighted reader gets the weekday from
+the column position; a screen-reader user now gets it from the cell, which is
+strictly better than seven ambiguous stops ahead of the grid. "I keep missing
+Sundays" is a thing this grid should be able to tell someone who cannot see it,
+and now can.
+
+This is what moved the spelled-out weekday names into `:core:ui`. They were
+`:feature:settings`' — the week-start picker's options — and this screen needed
+the same seven.
+
+### 8.5 The month is an offset, not a date
+
+The ViewModel holds "months from the month containing today", clamped at zero,
+rather than a `YearMonth`. `observeHabitDetail` re-emits when the day rolls over,
+so zero keeps meaning "this month" across a month boundary with nothing on the
+screen's side holding a clock, a zone or the day cutoff — architecture §5's rule,
+which a stored absolute month would have quietly broken on the one night it
+matters.
+
+Stepping forward past this month is disabled rather than merely hidden: the
+stepper is not drawn at zero *and* the clamp is in the state holder, because a
+screen holding a rule that is not the screen's is how the rule gets lost.
+
+### 8.6 What it cost in `:core:ui`, and what that unblocks
+
+`:core:ui` now has a `res/` directory. It had none, which
+[visual-identity.md](visual-identity.md) §5 noted while committing to bundle a
+variable font there — so the directory the font needs already exists, and
+whichever typeface wins the experiment lands in a module that already ships
+resources.
+
+`GlyphButton` moved there too, from two identical copies. Nothing about the
+heatmap needed that beyond not being the third one.
