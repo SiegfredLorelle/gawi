@@ -1,6 +1,7 @@
 package com.gawi.core.data.repository
 
 import com.gawi.core.data.model.HabitDetail
+import com.gawi.core.data.model.ReadContext
 import com.gawi.core.data.model.TagEffort
 import com.gawi.core.data.model.TodayHabit
 import com.gawi.core.data.model.TodaySnapshot
@@ -111,6 +112,41 @@ interface HabitRepository {
 
     /** Completed logical dates in a range, mapped to the note showing on each. */
     fun observeCompletedDates(habitId: HabitId, from: LocalDate, to: LocalDate): Flow<Map<LocalDate, String?>>
+
+    /**
+     * Completed logical dates in a range, for **every** habit at once.
+     *
+     * The app-wide counterpart of [observeCompletedDates], and one grouped query
+     * rather than one per habit: an adherence list over a year would otherwise
+     * open a flow per habit and combine them, which is more subscriptions and
+     * more invalidation for the same rows.
+     *
+     * A habit with nothing completed in the range is **absent** rather than
+     * present with an empty set. The caller knows which habits exist — that is
+     * [observeAllHabits]' job — and inventing empty entries here would make this
+     * read answer a question about habits when it only knows about completions.
+     *
+     * Notes are dropped. Nothing app-wide draws one, and carrying them would
+     * make the payload proportional to the notes rather than to the dates.
+     */
+    fun observeCompletionDatesByHabit(from: LocalDate, to: LocalDate): Flow<Map<HabitId, Set<LocalDate>>>
+
+    /**
+     * The logical date and the week start, re-emitted when either changes.
+     *
+     * For a screen that needs to know what day it is and cannot work it out —
+     * architecture §5 puts the day cutoff in the data layer, and a screen that
+     * resolved its own date would hold a clock and a zone.
+     *
+     * **Deliberately not [observeToday].** That one sweeps every habit's streak
+     * when it is subscribed, which is right for the screen it was built for and
+     * wrong as a way of asking the date: a read should not write. This is the
+     * same underlying flow with none of that hanging off it.
+     *
+     * Both values together rather than two flows, for the reason
+     * [com.gawi.core.data.model.ReadContext] gives.
+     */
+    fun observeReadContext(): Flow<ReadContext>
 
     /**
      * Completions per tag over an inclusive date range, across every habit —

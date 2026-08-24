@@ -1,6 +1,7 @@
 package com.gawi.feature.habits.testsupport
 
 import com.gawi.core.data.model.HabitDetail
+import com.gawi.core.data.model.ReadContext
 import com.gawi.core.data.model.TagEffort
 import com.gawi.core.data.model.TodayHabit
 import com.gawi.core.data.model.TodaySnapshot
@@ -186,6 +187,10 @@ class FakeHabitRepository : HabitRepository {
     override fun observeCompletedDates(habitId: HabitId, from: LocalDate, to: LocalDate): Flow<Map<LocalDate, String?>> = unused()
 
     override fun observeTagEffort(from: LocalDate, to: LocalDate): Flow<List<TagEffort>> = unused()
+
+    override fun observeCompletionDatesByHabit(from: LocalDate, to: LocalDate): Flow<Map<HabitId, Set<LocalDate>>> = unused()
+
+    override fun observeReadContext(): Flow<ReadContext> = unused()
 
     override suspend fun refreshStreaks() = unused()
 

@@ -126,6 +126,23 @@ internal interface ReadModelDao {
     fun observeCompletedDates(habitId: String, from: String, to: String): Flow<List<CompletedDateRow>>
 
     /**
+     * Every habit's completed cells in a date range.
+     *
+     * [observeCompletedDates] without the habit filter, returning the same row
+     * shape — `CompletedDateRow` already carries `habit_id`, so one projection
+     * serves both. Ordered so a grouped result is stable between emissions
+     * rather than following whatever order the index happened to yield.
+     */
+    @Query(
+        """
+        SELECT * FROM completions
+         WHERE logical_date BETWEEN :from AND :to
+         ORDER BY habit_id, logical_date
+        """,
+    )
+    fun observeCompletionsInRange(from: String, to: String): Flow<List<CompletedDateRow>>
+
+    /**
      * Completions in a date range, totalled per tag — the tag effort
      * distribution's whole read (docs/ux/insights.md §5).
      *
