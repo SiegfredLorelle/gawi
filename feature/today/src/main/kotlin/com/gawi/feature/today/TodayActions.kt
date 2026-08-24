@@ -20,6 +20,15 @@ internal data class TodayActions(
     val onAddHabit: () -> Unit,
     /** To the habit list, where editing and archiving live. */
     val onManageHabits: () -> Unit,
+    /**
+     * To the app-wide report — every habit over one period.
+     *
+     * Here rather than on habit detail because that screen is about one habit,
+     * and the tag distribution is not per-habit at all (docs/ux/insights.md §5).
+     * Today's app bar is the app's only top-level surface, so a top-level
+     * destination is reached from it or from nowhere.
+     */
+    val onOpenInsights: () -> Unit,
     /** To the three preferences that decide how a day and a week are counted. */
     val onOpenSettings: () -> Unit,
 )

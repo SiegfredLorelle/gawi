@@ -23,6 +23,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import com.gawi.core.domain.model.HabitId
+import com.gawi.core.ui.component.GlyphButton
 import com.gawi.core.ui.component.Notice
 import java.time.LocalDate
 
@@ -43,13 +44,17 @@ internal fun TodayScreen(state: TodayUiState, actions: TodayActions, snackbarHos
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.today_title)) },
-                // The two ways off this screen. Deliberately no FAB as well:
-                // Today is for ticking habits off, and a third affordance
-                // competing with the rows would crowd the one thing PRD §6.1
-                // wants to take a single tap.
+                // The three ways off this screen. Deliberately no FAB as well:
+                // Today is for ticking habits off, and an affordance competing
+                // with the rows would crowd the one thing PRD §6.1 wants to
+                // take a single tap.
                 actions = {
-                    ManageHabitsButton(actions.onManageHabits)
-                    SettingsButton(actions.onOpenSettings)
+                    // Three glyph buttons, all :core:ui's GlyphButton. The two
+                    // that were here were that composable written out by hand,
+                    // and a third copy beside them was the moment to stop.
+                    GlyphButton("\u2630", R.string.today_manage_habits, actions.onManageHabits)
+                    GlyphButton("\u25D4", R.string.today_insights, actions.onOpenInsights)
+                    GlyphButton("\u2699", R.string.today_settings, actions.onOpenSettings)
                 },
             )
         },
@@ -137,27 +142,21 @@ private fun EmptyToday(onAddHabit: () -> Unit, modifier: Modifier = Modifier) {
     }
 }
 
-/**
- * Named for assistive technology; the glyph carries no meaning on its own.
+/*
+ * The three app-bar glyphs, and why each is what it is.
  *
- * A list glyph rather than the gear this used to carry. The gear was fine while
- * it was the only way off this screen, but it is the one symbol a reader will
- * take to mean settings — and now that settings is a real destination beside
- * it, leaving it here would point at the wrong one.
+ * U+2630, a list: manage habits. It was a gear once, and the gear moved to
+ * settings when settings became a destination — the one symbol a reader will
+ * take to mean settings should point at it.
+ *
+ * U+25D4, a quarter-filled circle: insights. Distinct in silhouette from both
+ * the list and the gear, which is the whole requirement of a glyph in a row of
+ * three. It has no accessible name of its own, so GlyphButton takes one.
+ *
+ * U+2699, the gear: settings, which now means what it looks like.
+ *
+ * Each is a character rather than a vector because material-icons-extended is
+ * not a dependency, and a whole icon pack for three glyphs is the wrong trade.
+ * The cost is that a font without one draws a tofu box, which no unit test can
+ * see — docs/running.md §4 carries the by-hand check.
  */
-@Composable
-private fun ManageHabitsButton(onManageHabits: () -> Unit) {
-    val label = stringResource(R.string.today_manage_habits)
-    IconButton(onClick = onManageHabits, modifier = Modifier.semantics { contentDescription = label }) {
-        Text(text = "\u2630", style = MaterialTheme.typography.titleLarge)
-    }
-}
-
-/** The gear, which now means what it looks like. */
-@Composable
-private fun SettingsButton(onOpenSettings: () -> Unit) {
-    val label = stringResource(R.string.today_settings)
-    IconButton(onClick = onOpenSettings, modifier = Modifier.semantics { contentDescription = label }) {
-        Text(text = "\u2699", style = MaterialTheme.typography.titleLarge)
-    }
-}

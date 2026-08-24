@@ -25,7 +25,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
  * what stops it outliving the screen it belongs to.
  */
 @Composable
-fun TodayRoute(onAddHabit: () -> Unit, onManageHabits: () -> Unit, onOpenSettings: () -> Unit) {
+fun TodayRoute(onAddHabit: () -> Unit, onManageHabits: () -> Unit, onOpenInsights: () -> Unit, onOpenSettings: () -> Unit) {
     val viewModel: TodayViewModel = hiltViewModel()
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -45,6 +45,7 @@ fun TodayRoute(onAddHabit: () -> Unit, onManageHabits: () -> Unit, onOpenSetting
             onToggle = viewModel::onToggle,
             onAddHabit = onAddHabit,
             onManageHabits = onManageHabits,
+            onOpenInsights = onOpenInsights,
             onOpenSettings = onOpenSettings,
         ),
         snackbarHostState = snackbarHostState,

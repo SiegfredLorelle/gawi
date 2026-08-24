@@ -105,6 +105,7 @@ private val PREVIEW_ACTIONS = TodayActions(
     onToggle = { _, _, _ -> },
     onAddHabit = {},
     onManageHabits = {},
+    onOpenInsights = {},
     onOpenSettings = {},
 )
 

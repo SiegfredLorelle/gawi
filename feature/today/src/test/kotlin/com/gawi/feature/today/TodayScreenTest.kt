@@ -239,7 +239,41 @@ class TodayScreenTest {
     }
 
     /**
-     * The other way off, and the reason the two are told apart by name.
+     * The third way off, and the reason all three are told apart by name.
+     *
+     * Every app bar action is a glyph, so nothing but the content description
+     * distinguishes them to a test or to a screen reader. This asserts that
+     * tapping the one named "Insights" reports insights and neither of the
+     * others — the mistake three buttons one glyph apart are placed to make.
+     */
+    @Test
+    fun insightsButton_isNamedAndLeadsToInsights() {
+        var insights = 0
+        var settings = 0
+        var managed = 0
+        compose.setContent {
+            GawiTheme {
+                TodayScreen(
+                    state = HABITS,
+                    actions = NO_ACTIONS.copy(
+                        onOpenInsights = { insights++ },
+                        onOpenSettings = { settings++ },
+                        onManageHabits = { managed++ },
+                    ),
+                    snackbarHostState = SnackbarHostState(),
+                )
+            }
+        }
+
+        compose.onNodeWithContentDescription(string(R.string.today_insights)).performClick()
+
+        assertEquals(1, insights)
+        assertEquals(0, settings)
+        assertEquals(0, managed)
+    }
+
+    /**
+     * The other way off, and the reason the three are told apart by name.
      *
      * Both app bar actions are glyphs, so nothing but the content description
      * distinguishes them to a test or to a screen reader. This asserts that
@@ -284,6 +318,7 @@ class TodayScreenTest {
             onToggle = { _, _, _ -> },
             onAddHabit = {},
             onManageHabits = {},
+            onOpenInsights = {},
             onOpenSettings = {},
         )
 

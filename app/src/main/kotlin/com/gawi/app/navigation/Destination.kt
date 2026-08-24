@@ -10,11 +10,11 @@ import kotlinx.serialization.Serializable
  * of a null at runtime. kotlinx-serialization was already a project dependency
  * for the event log's wire format, which is what makes this the cheap option.
  *
- * Namespaced inside one interface rather than declared as six top-level types,
+ * Namespaced inside one interface rather than declared as seven top-level types,
  * because the feature modules already own the names — `TodayRoute`,
- * `HabitListRoute`, `HabitEditorRoute`, `HabitDetailRoute`, `HistoryRoute` — and
- * a route called `Today` beside a composable called `TodayRoute` reads as though
- * one were the other.
+ * `HabitListRoute`, `HabitEditorRoute`, `HabitDetailRoute`, `HistoryRoute`,
+ * `InsightsRoute` — and a route called `Today` beside a composable called
+ * `TodayRoute` reads as though one were the other.
  *
  * This file is the whole vocabulary. Architecture §2 gives `:app` the navigation
  * graph, and no feature module has navigation on its classpath, so a screen
@@ -30,6 +30,18 @@ internal sealed interface Destination {
     /** Managing habits: the list, with archived ones reachable. */
     @Serializable
     data object Habits : Destination
+
+    /**
+     * Every habit at once, over one period (docs/ux/insights.md §7).
+     *
+     * The app's only app-wide report, and a top-level destination because it is
+     * about no particular habit — which is also why it takes no argument. The
+     * period and the breakdown are the screen's own state, so changing either
+     * must not push an entry: Back leaves the screen rather than unwinding a
+     * sequence of filter changes.
+     */
+    @Serializable
+    data object Insights : Destination
 
     /** The three device-local preferences (PRD §5, architecture §2). */
     @Serializable

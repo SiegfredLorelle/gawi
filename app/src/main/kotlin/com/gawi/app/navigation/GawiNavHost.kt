@@ -10,11 +10,12 @@ import com.gawi.feature.habits.HabitDetailRoute
 import com.gawi.feature.habits.HabitEditorRoute
 import com.gawi.feature.habits.HabitListRoute
 import com.gawi.feature.insights.HistoryRoute
+import com.gawi.feature.insights.InsightsRoute
 import com.gawi.feature.settings.SettingsRoute
 import com.gawi.feature.today.TodayRoute
 
 /**
- * The graph. Six destinations, and every navigation decision the app makes.
+ * The graph. Seven destinations, and every navigation decision the app makes.
  *
  * Each feature module exposes Route composables that take plain lambdas, so
  * what a screen reports is what happened to it — "the user wants to add a
@@ -71,8 +72,13 @@ internal fun GawiNavHost(navController: NavHostController = rememberNavControlle
             TodayRoute(
                 onAddHabit = { go(Destination.HabitEditor()) },
                 onManageHabits = { go(Destination.Habits) },
+                onOpenInsights = { go(Destination.Insights) },
                 onOpenSettings = { go(Destination.Settings) },
             )
+        }
+
+        composable<Destination.Insights> {
+            InsightsRoute(onBack = ::back)
         }
 
         composable<Destination.Habits> {
