@@ -10,17 +10,19 @@ package com.gawi.core.ui.component
 
 import android.provider.Settings
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import com.gawi.core.domain.mascot.Mood
@@ -53,12 +55,23 @@ import kotlin.math.sin
  * the same state would be the "anonymous checkbox beside a named picture"
  * mistake the widget made in reverse. The caller owns the semantics; this
  * exposes a test tag only.
+ *
+ * **A Robolectric test that composes this must set
+ * `Settings.Global.ANIMATOR_DURATION_SCALE` to 0 before the activity launches**
+ * — `AnimationsOffRule` in `:feature:today`'s and `:app`'s test sets does it —
+ * or `waitForIdle` never returns: the frame loop below is a permanent awaiter
+ * on the frame clock, and the timeout it produces names nothing here. The
+ * setting is read once per composition, in a side effect, and not observed
+ * afterwards; a developer-option toggle is not worth a `ContentObserver`, so
+ * changing it takes effect at the next composition (docs/running.md §4).
  */
 @Composable
 fun Momo(mood: Mood, modifier: Modifier = Modifier, animated: Boolean = true) {
     val context = LocalContext.current
-    val animationsOn = remember(animated) {
-        animated && Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) > 0f
+    // A binder call, so a side effect rather than composition-phase work.
+    // false until it has been read: one resting frame, never a stray moving one.
+    val animationsOn by produceState(initialValue = false, animated) {
+        value = animated && Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) > 0f
     }
     val seconds = remember { mutableFloatStateOf(0f) }
     LaunchedEffect(animationsOn) {
@@ -73,8 +86,9 @@ fun Momo(mood: Mood, modifier: Modifier = Modifier, animated: Boolean = true) {
     }
     // Opacity only, the canvas's .55s. Both moods draw during the fade, which
     // is what makes a gill that changes length read as a change rather than a
-    // cut.
-    Crossfade(targetState = mood, animationSpec = tween(MomoMotion.CROSSFADE_MILLIS), modifier = modifier) { shown ->
+    // cut. With animations off the change is a cut: a fade is an animation too.
+    val crossfade = if (animationsOn) tween<Float>(MomoMotion.CROSSFADE_MILLIS) else snap()
+    Crossfade(targetState = mood, animationSpec = crossfade, modifier = modifier) { shown ->
         // fillMaxSize is load-bearing: Crossfade hands its content the box the
         // caller sized, and a Canvas with no size of its own measures 0 x 0 —
         // which is a tank with nothing in it, while every test that only
@@ -144,8 +158,15 @@ data class MomoFrame(
     val gillDrop: Float,
     /** Eye height, 1 open to 0.12 mid-blink. */
     val eyeOpen: Float,
-    /** Thriving's two sparkles: 0 dim and small, 1 bright and large. */
+    /** Thriving's first sparkle: 0 dim and small, 1 bright and large. */
     val sparkle: Float,
+    /**
+     * The second sparkle, a third of a cycle behind the first. Its own field
+     * because the lag has to be applied to the clock, not to [sparkle]'s value:
+     * a wave is not injective, so no arithmetic on the value recovers the phase,
+     * and the first cut's `(sparkle + 0.667) % 1` snapped twice a cycle.
+     */
+    val sparkleLag: Float,
     /** Worried's sweat bead, 0..1 through its fall; null when there is none. */
     val bead: Float?,
     /** Regenerating's halo and regrowing gill, 0..1 through their pulse. */
@@ -174,6 +195,7 @@ data class MomoFrame(
                 gillDrop = m.gillDrop,
                 eyeOpen = m.blinkPeriod?.let { blink(seconds, it) } ?: 1f,
                 sparkle = wave(seconds, 2.1f),
+                sparkleLag = wave(seconds + 0.7f, 2.1f),
                 bead = if (fidget) (seconds / 2.6f) % 1f else null,
                 regrow = wave(seconds, 2.7f),
                 saturation = m.saturation,
@@ -218,10 +240,19 @@ object MomoPalette {
     val Highlight = Color(0xFFFFFFFF)
 }
 
-/** Fade toward the colour's own grey; 1 is the colour, 0 is greyscale. */
+/**
+ * Fade toward the colour's grey; 1 is the colour, 0 is greyscale.
+ *
+ * The grey is the CSS `saturate()` filter's — Rec. 709 weights on the
+ * *encoded* channels — because that filter is what the approved canvas applied
+ * (docs/ux/momo.md §3), and it keeps the encoded lightness. `luminance()`
+ * would not: it linearises first, so mixing it into sRGB components lands on a
+ * grey about a fifth darker, and the first cut dimmed Momo by that much without
+ * anyone choosing to. The tank's own drain is what carries the dimming.
+ */
 internal fun Color.saturated(amount: Float): Color {
     if (amount >= 1f) return this
-    val grey = luminance()
+    val grey = 0.2126f * red + 0.7152f * green + 0.0722f * blue
     return Color(
         red = grey + (red - grey) * amount,
         green = grey + (green - grey) * amount,
