@@ -121,8 +121,16 @@ internal object BitmapText {
      * caught that in the first cut; the height comes from the layout for the same
      * kind of reason — a fallback glyph (an emoji, a script outside Outfit) can
      * be taller than Outfit's own metrics and would be clipped by them.
+     *
+     * [densityDpi] is the density [paint] and [maxWidthPx] were computed at, and
+     * the bitmap is tagged with it. An untagged bitmap carries
+     * `DENSITY_DEVICE`, read once from `ro.sf.lcd_density`, while the host's
+     * `BitmapDrawable` scales by `targetDensity / bitmap.density` — so under a
+     * non-default Display size the text would be rasterised at the current
+     * density and then scaled a second time, blurry and past the room it was
+     * clamped to. Review caught it; docs/running.md's widget block checks it.
      */
-    internal fun render(text: String, paint: TextPaint, maxWidthPx: Int, maxLines: Int = 1): Bitmap? {
+    internal fun render(text: String, paint: TextPaint, maxWidthPx: Int, densityDpi: Int, maxLines: Int = 1): Bitmap? {
         if (text.isBlank() || maxWidthPx <= 0) return null
         val width = ceil(Layout.getDesiredWidth(text, paint)).toInt().coerceIn(1, maxWidthPx)
         val layout = StaticLayout.Builder.obtain(text, 0, text.length, paint, width)
@@ -134,6 +142,7 @@ internal object BitmapText {
             .setIncludePad(false)
             .build()
         val bitmap = createBitmap(width, layout.height.coerceAtLeast(1))
+        bitmap.density = densityDpi
         layout.draw(Canvas(bitmap))
         return bitmap
     }
@@ -154,7 +163,9 @@ internal fun rememberOutfitPaint(): TextPaint {
  * [text] drawn in Outfit, in `onSurface`, no wider than [maxWidth].
  *
  * The bitmap is remembered against everything that would change its pixels:
- * the text, the room it has, and the density and font scale in force. Colour
+ * the text, the room it has, the paint, and the density and font scale in
+ * force — the paint is a key in its own right rather than a proxy through the
+ * other two, so a caller with a different paint cannot get a stale bitmap. Colour
  * is not among them, because the bitmap has none — see [BitmapText].
  *
  * [maxWidth] is floored at [MIN_WIDTH_DP]: Glance's `Exact` size falls back to
@@ -175,10 +186,11 @@ internal fun OutfitText(
 ) {
     val context = LocalContext.current
     val configuration = context.resources.configuration
-    val bitmap = remember(text, maxWidth, maxLines, configuration.fontScale, configuration.densityDpi) {
+    val metrics = context.resources.displayMetrics
+    val bitmap = remember(text, maxWidth, maxLines, paint, configuration.fontScale, configuration.densityDpi) {
         val widthDp = maxWidth.value.coerceAtLeast(MIN_WIDTH_DP)
-        val maxWidthPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, widthDp, context.resources.displayMetrics)
-        BitmapText.render(text, paint, maxWidthPx.toInt(), maxLines)
+        val maxWidthPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, widthDp, metrics)
+        BitmapText.render(text, paint, maxWidthPx.toInt(), metrics.densityDpi, maxLines)
     } ?: return
     Image(
         provider = ImageProvider(bitmap),
