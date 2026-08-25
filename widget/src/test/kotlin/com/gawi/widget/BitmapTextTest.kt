@@ -7,6 +7,8 @@ import android.graphics.Paint
 import android.text.TextPaint
 import android.util.DisplayMetrics
 import com.gawi.core.ui.R
+import com.gawi.widget.testsupport.ink
+import com.gawi.widget.testsupport.inkedPixels
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
@@ -189,11 +191,3 @@ class BitmapTextTest {
         const val REPEATS = 40
     }
 }
-
-/** Pixels with any alpha at all. */
-private fun Bitmap.inkedPixels(): Int = pixels().count { Color.alpha(it) > 0 }
-
-/** Alpha-weighted ink, so a heavier weight measures heavier even where both cover the same pixels. */
-private fun Bitmap.ink(): Long = pixels().sumOf { Color.alpha(it).toLong() }
-
-private fun Bitmap.pixels(): IntArray = IntArray(width * height).also { getPixels(it, 0, width, 0, 0, width, height) }

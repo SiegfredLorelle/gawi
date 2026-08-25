@@ -1,9 +1,13 @@
 package com.gawi.widget
 
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
+import com.gawi.core.domain.mascot.Mood
 import com.gawi.widget.testsupport.habitId
 import com.gawi.widget.testsupport.todayHabit
 import com.gawi.widget.testsupport.todaySnapshot
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 /**
@@ -17,17 +21,27 @@ import org.junit.Test
  *
  * Res ids are compared rather than resolved strings, so these assert the same
  * `R.string` constant the composable reads and no Android context is needed.
+ *
+ * Since Momo, the body also decides whether her face is drawn, from the size
+ * the host reported — a value here rather than a branch in the composable, for
+ * the same reason as the copy: so a one-character edit to the gate has a test to
+ * fail. [SMALL] is the provider's minimum; [TALL] is two cells.
  */
 class WidgetBodyTest {
 
+    private companion object {
+        val SMALL = DpSize(250.dp, 110.dp)
+        val TALL = DpSize(250.dp, 220.dp)
+    }
+
     @Test
     fun `a failed read draws the unavailable copy, not an empty list`() {
-        assertEquals(WidgetBodyContent.Copy(R.string.widget_unavailable), WidgetContent.Unavailable.body())
+        assertEquals(WidgetBodyContent.Copy(R.string.widget_unavailable), WidgetContent.Unavailable.body(SMALL))
     }
 
     @Test
     fun `no habits draws the empty copy, which is not the failure copy`() {
-        val body = WidgetContent.Ready(todaySnapshot().toWidgetState()).body()
+        val body = WidgetContent.Ready(todaySnapshot().toWidgetState()).body(SMALL)
 
         assertEquals(WidgetBodyContent.Copy(R.string.widget_no_habits), body)
     }
@@ -39,8 +53,8 @@ class WidgetBodyTest {
      */
     @Test
     fun `the empty copy and the failure copy are different strings`() {
-        val empty = WidgetContent.Ready(todaySnapshot().toWidgetState()).body()
-        val failed = WidgetContent.Unavailable.body()
+        val empty = WidgetContent.Ready(todaySnapshot().toWidgetState()).body(SMALL)
+        val failed = WidgetContent.Unavailable.body(SMALL)
 
         assertEquals(false, empty == failed)
     }
@@ -51,9 +65,47 @@ class WidgetBodyTest {
             habits = listOf(todayHabit(id = habitId(1), name = "read"), todayHabit(id = habitId(2), name = "walk")),
         )
 
-        val body = WidgetContent.Ready(snapshot.toWidgetState()).body()
+        val body = WidgetContent.Ready(snapshot.toWidgetState()).body(SMALL)
 
         assertEquals(listOf("read", "walk"), (body as WidgetBodyContent.Rows).rows.map { it.name })
+    }
+
+    /** The one-cell widget is the one docs/ux/widget.md §2 settled, and Momo does not change it. */
+    @Test
+    fun `at the provider's minimum height the rows have no face above them`() {
+        val body = WidgetContent.Ready(todaySnapshot(habits = listOf(todayHabit())).toWidgetState()).body(SMALL)
+
+        assertNull((body as WidgetBodyContent.Rows).mood)
+    }
+
+    @Test
+    fun `two cells tall the rows carry the mood the Today screen would show`() {
+        val body = WidgetContent.Ready(todaySnapshot(habits = listOf(todayHabit(completedToday = true))).toWidgetState()).body(TALL)
+
+        assertEquals(Mood.THRIVING, (body as WidgetBodyContent.Rows).mood)
+    }
+
+    /** Pinned at the edge, both sides, so the constant cannot drift by an off-by-one. */
+    @Test
+    fun `the gate is the constant, inclusive`() {
+        val ready = WidgetContent.Ready(todaySnapshot(habits = listOf(todayHabit())).toWidgetState())
+
+        assertNull(ready.body(DpSize(250.dp, (MOMO_MIN_HEIGHT - 1).dp)).mood)
+        assertEquals(Mood.CONTENT, ready.body(DpSize(250.dp, MOMO_MIN_HEIGHT.dp)).mood)
+    }
+
+    /** Beside the no-habits copy the face is the empty state's, decorative; Mascot says CONTENT with no habits. */
+    @Test
+    fun `no habits, tall, draws the empty copy with a face above it`() {
+        val body = WidgetContent.Ready(todaySnapshot().toWidgetState()).body(TALL)
+
+        assertEquals(WidgetBodyContent.Copy(R.string.widget_no_habits, Mood.CONTENT), body)
+    }
+
+    /** Nothing was read, so there is no mood to draw — at any size. */
+    @Test
+    fun `a failed read never gets a face`() {
+        assertNull(WidgetContent.Unavailable.body(TALL).mood)
     }
 
     /**
@@ -63,6 +115,6 @@ class WidgetBodyTest {
      */
     @Test
     fun `loading draws nothing at all`() {
-        assertEquals(WidgetBodyContent.Blank, WidgetContent.Loading.body())
+        assertEquals(WidgetBodyContent.Blank, WidgetContent.Loading.body(SMALL))
     }
 }
