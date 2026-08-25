@@ -186,11 +186,13 @@ private fun TextStyle.inOutfit(): TextStyle = copy(fontFamily = Outfit)
  * that fails. So this is not "probably fine" — it is **owed before a public
  * release**, and it is a release gate rather than a merge gate.
  *
- * **The widget does not get this and cannot.** A `RemoteViews` tree resolves
- * only the platform's generic family names, measured on 2026-08-24
- * (docs/ux/visual-identity.md §2), so `:widget` renders in the system sans by
- * necessity. That divergence is the cost §5 accepted in choosing a geometric
- * face; docs/ux/visual-identity.md §5 is where to argue about it.
+ * **The widget does not get this `Typography`, and draws in the face anyway.**
+ * A `RemoteViews` tree resolves only the platform's generic family names,
+ * measured on 2026-08-24 (docs/ux/visual-identity.md §2), so `:widget` cannot
+ * be handed the font; since 2026-08-25 it rasterises its text in Outfit itself
+ * — `widget/…/BitmapText.kt`, which takes `R.font.outfit` from this module and
+ * sets `wght` 400 through `Paint.setFontVariationSettings`, because the Thin
+ * default described above is a trap on that side too.
  */
 val GawiTypography: Typography = Typography(
     displayLarge = Default.displayLarge.inOutfit(),
