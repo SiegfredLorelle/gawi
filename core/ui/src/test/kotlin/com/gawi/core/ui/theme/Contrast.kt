@@ -18,9 +18,9 @@ import androidx.compose.ui.graphics.luminance
  * times before it was shared, which meant three copies of the same judgement
  * and a fix that could land in one of them and look complete.
  *
- * `:widget` keeps its own copy, unavoidably — that module cannot depend on
- * `:core:ui` because a Glance tree is `RemoteViews` and cannot consume a
- * Compose theme.
+ * `:widget` keeps its own copy, still unavoidably: this is a test-source
+ * function, unreachable from another module's tests, and the one edge `:widget`
+ * has to `:core:ui` (since 2026-08-25) carries a font resource and nothing else.
  */
 internal fun contrastRatio(a: Color, b: Color): Float {
     val high = maxOf(a.luminance(), b.luminance())
