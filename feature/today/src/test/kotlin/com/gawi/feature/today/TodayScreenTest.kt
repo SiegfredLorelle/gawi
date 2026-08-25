@@ -361,7 +361,11 @@ class TodayScreenTest {
             compose.waitForIdle()
             // Unmerged, because the panel merges its descendants so TalkBack
             // reads the line once; the tag lives on the drawing inside it.
-            compose.onNodeWithTag("momo:$next", useUnmergedTree = true).assertExists()
+            // Displayed, not merely present: a Canvas that measures 0 x 0 still
+            // exists in the tree, and one did — the first build shipped an
+            // empty tank with this assertion green. assertIsDisplayed needs
+            // non-empty bounds, which is the property that was missing.
+            compose.onNodeWithTag("momo:$next", useUnmergedTree = true).assertIsDisplayed()
             compose.onNodeWithText(string(line)).assertIsDisplayed()
         }
     }
