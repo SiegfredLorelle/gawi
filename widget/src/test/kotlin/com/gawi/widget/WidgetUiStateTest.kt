@@ -1,5 +1,6 @@
 package com.gawi.widget
 
+import com.gawi.core.domain.mascot.Mood
 import com.gawi.widget.testsupport.habitId
 import com.gawi.widget.testsupport.todayHabit
 import com.gawi.widget.testsupport.todaySnapshot
@@ -58,5 +59,16 @@ class WidgetUiStateTest {
         val state = todaySnapshot(habits = listOf(todayHabit(id = habitId(9)))).toWidgetState()
 
         assertEquals(habitId(9).value, state.rows.single().habitId)
+    }
+
+    /**
+     * The mood is Mascot's, not a rule of this module's: one habit outstanding
+     * is CONTENT, none outstanding is THRIVING, and the widget only carries the
+     * answer. Two cases so a mapper that hardcoded one face would fail.
+     */
+    @Test
+    fun `the state carries the mood the Today screen would show`() {
+        assertEquals(Mood.CONTENT, todaySnapshot(habits = listOf(todayHabit())).toWidgetState().mood)
+        assertEquals(Mood.THRIVING, todaySnapshot(habits = listOf(todayHabit(completedToday = true))).toWidgetState().mood)
     }
 }

@@ -1,8 +1,12 @@
 package com.gawi.widget
 
 import androidx.annotation.StringRes
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
 import com.gawi.core.data.model.TodaySnapshot
 import com.gawi.core.data.repository.HabitRepository
+import com.gawi.core.domain.mascot.Mascot
+import com.gawi.core.domain.mascot.Mood
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -26,8 +30,15 @@ import kotlinx.coroutines.flow.retryWhen
  */
 internal data class WidgetRow(val habitId: String, val name: String, val completed: Boolean)
 
-/** Everything the widget draws, and nothing else. */
-internal data class WidgetUiState(val rows: List<WidgetRow>)
+/**
+ * Everything the widget draws, and nothing else.
+ *
+ * The mood is the Today screen's — [Mascot.mood] over the same snapshot — so the
+ * widget's still frame and the app's animated one never disagree about which
+ * face today gets (docs/ux/momo.md §4). Whether it is *drawn* is decided by
+ * [body], from the size the host gave this instance.
+ */
+internal data class WidgetUiState(val rows: List<WidgetRow>, val mood: Mood)
 
 /**
  * What the widget has to draw right now.
@@ -62,31 +73,80 @@ internal sealed interface WidgetContent {
  */
 internal sealed interface WidgetBodyContent {
 
-    data class Rows(val rows: List<WidgetRow>) : WidgetBodyContent
+    /** Momo's face to draw above the body, or null for none. A value, so the size gate is tested without Glance. */
+    val mood: Mood?
 
-    data class Copy(@StringRes val text: Int) : WidgetBodyContent
+    data class Rows(val rows: List<WidgetRow>, override val mood: Mood?) : WidgetBodyContent
+
+    data class Copy(@StringRes val text: Int, override val mood: Mood? = null) : WidgetBodyContent
 
     /**
      * Nothing at all. The first frame of a cold render, replaced as soon as the
      * flow emits; a "loading" line would be the only text most renders showed.
      */
-    data object Blank : WidgetBodyContent
+    data object Blank : WidgetBodyContent {
+        override val mood: Mood? get() = null
+    }
 }
 
 /**
- * Which of the three the user sees. Pure, so it is tested without Glance.
+ * Which of the three the user sees, and whether Momo sits above it. Pure, so it
+ * is tested without Glance.
  *
  * A res id rather than a resolved string, so a test asserts the same
  * `R.string` constant the composable reads — the convention
  * `TodayMessage(@StringRes val text: Int)` already sets in `:feature:today`.
+ *
+ * **Momo appears only when the host gave the widget room**: [size] is what
+ * `SizeMode.Exact` reports, and a height under [MOMO_MIN_HEIGHT] keeps the
+ * minimal one-cell widget docs/ux/widget.md §2 settled — a name and a
+ * checkbox, nothing else. It is a rule about *room*, not about cells or
+ * orientation: a two-cell widget that clears 170dp in portrait and not in
+ * landscape shows the face in one and not the other, because `Exact`
+ * composes once per size the host reports. Accepted — the rows keep their
+ * room either way, which is the property the gate exists for. Unavailable
+ * never gets a face: nothing was read, and a
+ * guessed mood would be the wrong answer [widgetContent] refuses to trade a
+ * blank one for.
  */
-internal fun WidgetContent.body(): WidgetBodyContent = when (this) {
+internal fun WidgetContent.body(size: DpSize): WidgetBodyContent = when (this) {
     WidgetContent.Unavailable -> WidgetBodyContent.Copy(R.string.widget_unavailable)
 
     WidgetContent.Loading -> WidgetBodyContent.Blank
 
-    is WidgetContent.Ready ->
-        if (state.rows.isEmpty()) WidgetBodyContent.Copy(R.string.widget_no_habits) else WidgetBodyContent.Rows(state.rows)
+    is WidgetContent.Ready -> {
+        val mood = state.mood.takeIf { size.height >= MOMO_MIN_HEIGHT.dp }
+        if (state.rows.isEmpty()) WidgetBodyContent.Copy(R.string.widget_no_habits, mood) else WidgetBodyContent.Rows(state.rows, mood)
+    }
+}
+
+/**
+ * The least height, in dp, at which Momo is drawn.
+ *
+ * The provider's `minHeight` is 110dp — one grid cell on every launcher
+ * measured — and two cells land at 220 or more, so 170 separates the two
+ * without depending on any one launcher's cell size. Above it, [MomoBitmap]'s
+ * 72dp face still leaves at least 82dp for rows after the padding, so Momo
+ * never displaces every habit. Rather than a resize breakpoint from the
+ * provider xml, because the API 31 attributes that would express one are a
+ * `res/xml-v31` variant this widget does not carry (visual-identity §7.4).
+ */
+internal const val MOMO_MIN_HEIGHT = 170
+
+/**
+ * What TalkBack reads for the face, one line per mood, in the Today panel's
+ * words (`today_mood_*` in `:feature:today`, copied: a feature module is not
+ * on the widget's classpath, and sharing them would mean a third thing on the
+ * `:core:ui` edge for four sentences). Only the rows body describes its Momo; beside the
+ * no-habits copy the face is decorative, so the copy is read once
+ * (docs/ux/momo.md §4).
+ */
+@StringRes
+internal fun Mood.description(): Int = when (this) {
+    Mood.THRIVING -> R.string.widget_mood_thriving
+    Mood.CONTENT -> R.string.widget_mood_content
+    Mood.WORRIED -> R.string.widget_mood_worried
+    Mood.REGENERATING -> R.string.widget_mood_regenerating
 }
 
 /**
@@ -150,5 +210,8 @@ private const val RETRY_BACKOFF_MILLIS = 150L
  * it shows what the Today screen shows. `observeToday()` has already dropped
  * archived habits, so nothing here filters.
  */
-internal fun TodaySnapshot.toWidgetState(): WidgetUiState =
-    WidgetUiState(rows = habits.map { WidgetRow(habitId = it.habit.id.value, name = it.habit.name, completed = it.completedToday) })
+internal fun TodaySnapshot.toWidgetState(): WidgetUiState = WidgetUiState(
+    rows = habits.map { WidgetRow(habitId = it.habit.id.value, name = it.habit.name, completed = it.completedToday) },
+    // The same call TodayUiMapper makes, on the same snapshot.
+    mood = Mascot.mood(moodInputs()),
+)

@@ -6,4 +6,12 @@
          was two empty states wearing each other's copy. -->
     <string name="widget_no_habits">No habits yet</string>
     <string name="widget_unavailable">Can\'t read your habits</string>
+    <!-- Momo's still frame, read once by TalkBack above the rows. The Today
+         panel's `today_mood_*` lines, copied rather than shared: a feature
+         module is not on the widget's classpath, and the empty line is absent because the face
+         beside "No habits yet" is decorative. -->
+    <string name="widget_mood_thriving">All done. Momo is thriving.</string>
+    <string name="widget_mood_content">Momo is pottering about.</string>
+    <string name="widget_mood_worried">Momo is getting worried.</string>
+    <string name="widget_mood_regenerating">Momo is regrowing a gill. Pick the thread back up.</string>
 </resources>

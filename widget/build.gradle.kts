@@ -22,15 +22,18 @@ dependencies {
     // plugin that Glance's @Composable tree needs; the compose BOM it also
     // brings governs nothing here, because Glance is not in it.
     //
-    // :core:ui for ONE resource: R.font.outfit, which BitmapText rasterises
-    // because RemoteViews cannot load a font resource (visual-identity §2).
+    // :core:ui for TWO things, both rasterised here because RemoteViews can
+    // carry neither: R.font.outfit, which BitmapText draws because a host drops
+    // a bundled font resource (visual-identity §2), and Momo's geometry —
+    // drawMomo, MomoFrame and MomoDesignSize — which MomoBitmap draws at the
+    // resting frame because a host cannot run the animation (momo.md §4).
     // Nothing else may cross this edge. The theme, GawiSpacing and the shared
     // composables are androidx.compose.ui types, and a Glance tree cannot
     // consume one — a widget is RemoteViews under the composition, so it has
     // its own Column, its own GlanceModifier and its own GlanceTheme. "Reuse
     // the theme" is the first thing a reviewer asks here and the answer is that
     // it does not compile. :core:ui exposes compose and material3 as `api`, so
-    // the compiler will not stop a second import; treat any other
+    // the compiler will not stop a third import; treat any other
     // com.gawi.core.ui.* import in this module as a defect. A minimal widget
     // (PRD OQ-5, docs/ux/widget.md §2) draws no habit colour, so HabitPalette
     // and parseHabitColor are not wanted either.

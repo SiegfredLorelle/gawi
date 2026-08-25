@@ -94,7 +94,9 @@ internal fun repositoryFrom(context: Context): HabitRepository =
     EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java).habitRepository()
 
 /**
- * Draws whatever [body] decided. The choice is tested; this is only the drawing.
+ * Draws whatever [body] decided — including whether Momo's still frame sits
+ * above it, which is a value on the body and not a branch here. The choice is
+ * tested; this is only the drawing.
  *
  * Every string here is an [OutfitText] — a bitmap in the app's face, tinted
  * `onSurface` — rather than a Glance `Text`, since 2026-08-25. [BitmapText] has
@@ -110,13 +112,18 @@ internal fun WidgetBody(content: WidgetContent) {
         Column(
             modifier = GlanceModifier.fillMaxSize().background(GlanceTheme.colors.widgetBackground).padding(WIDGET_PADDING.dp),
         ) {
-            when (val body = content.body()) {
+            val context = LocalContext.current
+            when (val body = content.body(LocalSize.current)) {
                 is WidgetBodyContent.Copy -> {
-                    val copy = LocalContext.current.getString(body.text)
+                    body.mood?.let { MomoImage(it, contentDescription = null) }
+                    val copy = context.getString(body.text)
                     OutfitText(text = copy, maxWidth = contentWidth(), maxLines = MAX_COPY_LINES, contentDescription = copy)
                 }
 
-                is WidgetBodyContent.Rows -> HabitRows(body.rows)
+                is WidgetBodyContent.Rows -> {
+                    body.mood?.let { MomoImage(it, contentDescription = context.getString(it.description())) }
+                    HabitRows(body.rows)
+                }
 
                 WidgetBodyContent.Blank -> Unit
             }
@@ -196,8 +203,8 @@ private fun contentWidth() = LocalSize.current.width - (2 * WIDGET_PADDING).dp
  * restating rather than leaving as a stale deferral:
  *
  *  - `ColorProvider(Color)` literals are now available, and picking two is no
- *    longer inventing a palette. But `:widget` sees `:core:ui` for one font
- *    resource and nothing else (build.gradle.kts), so it still means *copying*
+ *    longer inventing a palette. But `:widget` sees `:core:ui` for the font and
+ *    Momo's geometry and nothing else (build.gradle.kts), so it still means *copying*
  *    two hexes into this module, and the widget's own palette is
  *    a separate piece of work with three more surfaces in it
  *    (docs/ux/visual-identity.md §7.4). Doing a third of it here would leave the

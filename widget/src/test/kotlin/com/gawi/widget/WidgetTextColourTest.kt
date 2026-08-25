@@ -183,7 +183,11 @@ private fun anyText() = GlanceNodeMatcher<MappedNode>("draws text") { node ->
     node.value.emittable.tint() != null
 }
 
-/** The tint an [OutfitText] carries, or null for anything that is not one. */
+/**
+ * The tint an [OutfitText] carries, or null for anything that is not one — which
+ * includes Momo's still frame, untinted by design because she carries her own
+ * palette ([MomoBitmap]). `WidgetMomoTest` counts her the other way round.
+ */
 private fun Any.tint() = (this as? EmittableImage)?.colorFilterParams as? TintColorFilterParams
 
 /** WCAG AA for normal text. Float, to match what [contrastRatio] returns. */
