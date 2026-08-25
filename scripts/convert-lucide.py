@@ -8,9 +8,21 @@ build, so CI never runs it and `make` does not know about it.
     scripts/convert-lucide.py                 # fetch the pinned version
     scripts/convert-lucide.py --svg-dir DIR   # convert an already-fetched copy
 
-**The version is pinned on purpose.** Lucide v1 renamed icons (`pie-chart` ->
-`chart-pie`, still aliased), so `@latest` would make the checked-in files
-irreproducible and a re-run could silently redraw the app.
+**The version is pinned, and the bytes are checked.** Lucide v1 renamed icons
+(`pie-chart` -> `chart-pie`, still aliased), so `@latest` would make the
+checked-in files irreproducible and a re-run could silently redraw the app. A
+pin alone does not prove a re-run got the same bytes, though, so DIGESTS carries
+a SHA-256 per icon and a mismatch aborts before anything is written. Review
+pointed out that the transport was the one thing here taken on trust while five
+SVG attributes were asserted.
+
+**`--svg-dir` is exempt from that check, deliberately.** It is the flag for
+converting something local, which includes the deliberately malformed SVGs used
+to test this script — the two-circle file that proved the circle positions and
+the `<rect>` file that proved nothing is written on failure. Digesting that path
+would reject exactly the inputs the checks depend on. The network path is the
+one that needs to be reproducible; the local path is the one that needs to be
+freely editable.
 
 **Why a conversion step at all.** Lucide publishes no Android artifact, so the
 choice is vendoring or nothing. Ten files of about 300 bytes, converted once
@@ -32,6 +44,7 @@ in review. Partial output is worse than none, because none is obvious.
 """
 
 import argparse
+import hashlib
 import os
 import sys
 import urllib.request
@@ -55,6 +68,26 @@ OUT = os.path.join("core", "ui", "src", "main", "res", "drawable")
 # The rest are non-directional: a gear, a pie, a pencil, a cross, and the
 # stepper's pair all mean the same thing mirrored.
 AUTO_MIRRORED = {"arrow-left", "chevron-left", "chevron-right", "list-checks"}
+
+# SHA-256 of each pinned source, so a fetch that returns something else fails
+# loudly instead of redrawing the app. Regenerate with:
+#
+#     sha256sum *.svg
+#
+# and note that a mismatch prints the digest it actually got, so moving the pin
+# is a copy-paste rather than an arithmetic exercise.
+DIGESTS = {
+    "arrow-left": "e8704135ca5c590e638898fc29ff57eba13e664bf9bc0fee641b2aedb44e86c7",
+    "chart-pie": "81bb79ff8218e8effd5a690cb330cff4f00191b00140e266e760c106ed1b10e2",
+    "chevron-left": "a8cd01ec4ad145afd6009f4f0e251d5d1e7b24371ddfda0b0e2a7b64926e9fee",
+    "chevron-right": "0502b201dcef6e134d30caa2d9ee142d4d4ea687f870ebe2e23b690e5745a4fd",
+    "list-checks": "b28b7c88944dbeca67d03d4de3df5a57f97e4c058d7998f7c31d95ff8afb78a3",
+    "minus": "eac2eab4c444ebb343ac7244956cbf8369223f06e72142d5376aeaab62f30cd7",
+    "pencil": "e00fc1f07701978eeed6980f8cf2e84f5aff3794dbafa4d1a092898352008d2b",
+    "plus": "9604e8eb752dca9b045084f28ba963cfce16bb0d035aa023152361ec6ef54507",
+    "settings": "2f2fc973e5f104e94e44f845de8e2af4cf61f0d0298055b956f7057227700f3d",
+    "x": "cac7f746fa2596dd081dfce44e061dcddb79bdb98a488f08cd8d5874fcb52332",
+}
 
 # Lucide slug -> drawable name. `x` becomes ic_close because the drawable is
 # named for the job, not the glyph; every other name matches its source.
@@ -127,16 +160,28 @@ def circle_to_path(cx, cy, r):
     )
 
 
-def load(slug, svg_dir):
+def load(slug, svg_dir, problems):
     if svg_dir:
+        # Unverified on purpose — see the module docstring.
         with open(os.path.join(svg_dir, slug + ".svg"), "rb") as handle:
             return handle.read()
+
     with urllib.request.urlopen("%s/icons/%s.svg" % (BASE, slug), timeout=30) as response:
-        return response.read()
+        body = response.read()
+
+    actual = hashlib.sha256(body).hexdigest()
+    expected = DIGESTS.get(slug)
+    if expected is None:
+        problems.append("%s: no digest recorded; add one to DIGESTS" % slug)
+    elif actual != expected:
+        # Reported rather than raised, so one run names every mismatch and the
+        # write loop is skipped wholesale.
+        problems.append("%s: digest is %s, expected %s" % (slug, actual, expected))
+    return body
 
 
 def convert(slug, drawable, svg_dir, problems):
-    root = ET.fromstring(load(slug, svg_dir))
+    root = ET.fromstring(load(slug, svg_dir, problems))
 
     # Asserted rather than assumed: every one of these is a property the
     # generated <path> attributes below hard-code, so a source that stopped
@@ -227,9 +272,10 @@ def main():
     # docstring already records — silently stops mirroring that icon and exits 0.
     # GawiIconsTest does catch it, but in another module and with a message about
     # XML rather than about the typo.
-    unknown = sorted(AUTO_MIRRORED - set(ICONS))
-    if unknown:
-        problems.append("AUTO_MIRRORED names %s, which ICONS does not" % ", ".join(unknown))
+    for name, table in (("AUTO_MIRRORED", AUTO_MIRRORED), ("DIGESTS", DIGESTS)):
+        unknown = sorted(set(table) - set(ICONS))
+        if unknown:
+            problems.append("%s names %s, which ICONS does not" % (name, ", ".join(unknown)))
 
     for slug, drawable in sorted(ICONS.items()):
         body, count, circled = convert(slug, drawable, args.svg_dir, problems)
