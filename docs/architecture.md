@@ -72,6 +72,7 @@ graph TD
     insights --> data
     settings --> data
     widget --> data
+    widget --> ui
 
     ui --> domain[":core:domain"]
     data --> domain
@@ -87,7 +88,8 @@ Drawing today's import list instead would make that difference look like a rule,
 and would be wrong the day a module adds an import.
 
 Two things the picture carries better than the line above it. **`widget →
-core:ui` is absent**, which is deliberate and explained below. And
+core:ui` is the narrowest edge in it**: added 2026-08-25, it carries exactly one
+resource — `R.font.outfit` — and no type, for the reasons below. And
 `:core:domain` is the only sink, which is the whole point.
 
 `core:ui → core:domain` was added 2026-08-21 with habit detail, which made the
@@ -108,10 +110,15 @@ Built so far: `:app`, `:core:domain`, `:core:data`, `:core:ui`,
 `:feature:today`, `:feature:habits`, `:feature:settings` and — as of 2026-08-21
 — **`:widget`**, which is the first module here that is not a screen. Its
 decisions are in [docs/ux/widget.md](ux/widget.md). It takes `:core:data` and
-`:core:domain` and deliberately **not** `:core:ui`: a Glance tree is
-`RemoteViews` under the composition, so it cannot consume a Compose UI theme or
-a shared composable, and the module rule (`widget → core`) is satisfied without
-the one dependency that looks obvious. `app/src/debug/` is gone: the debug-only
+`:core:domain`, and since 2026-08-25 `:core:ui` **for one resource only**: the
+bundled Outfit font, which the widget rasterises to bitmaps because
+`RemoteViews` cannot load a font resource (docs/ux/visual-identity.md §2). No
+type crosses that edge — a Glance tree is `RemoteViews` under the composition,
+so it cannot consume a Compose UI theme or a shared composable, and
+`GawiTheme`, `GawiSpacing` and every `androidx.compose.ui` type would fail to
+compile against it. `:core:ui` exposes those as `api`, so nothing mechanical
+enforces "font only"; any other `com.gawi.core.ui.*` import in `:widget` is a
+defect for review to catch. `app/src/debug/` is gone: the debug-only
 activity that set the day cutoff and the reminder time over `adb` was deleted
 when `:feature:settings` landed, and there is no debug source set anywhere in
 the project now.
@@ -541,9 +548,13 @@ this app's was added — both versions declare the same four.
   the instrumented source set below**, which is where Room's invalidation does
   deliver — so the answer to this gap turned out not to be the `:core:data`
   test seam.
-- `:widget`: JVM unit tests, and no Robolectric. The read is a pure
-  `TodaySnapshot` → rows mapper and the tap is a function of the repository, so
-  both are testable without Glance, a device or a shadow. The rules worth
+- `:widget`: JVM unit tests, most of them without Robolectric. The read is a
+  pure `TodaySnapshot` → rows mapper and the tap is a function of the
+  repository, so both are testable without Glance, a device or a shadow. The
+  exceptions render: `WidgetTextColourTest` composes the tree under Glance's
+  unit-test harness to measure contrast, and `BitmapTextTest` runs Robolectric
+  in `GraphicsMode.NATIVE` so the Outfit bitmaps have pixels to count (the
+  default `LEGACY` mode draws nothing). The rules worth
   deleting by accident are pinned and mutation-checked: that a tap re-reads
   rather than trusting the date it drew, and that a malformed action parameter
   is a no-op rather than a thrown `HabitId`. `ProjectionListenerTest` in
