@@ -346,9 +346,10 @@ drawable. It started as `android.R.drawable.ic_popup_reminder` and that was wron
 since API 21 a small icon is drawn from its *alpha channel only* and tinted by the
 system, so a legacy full-colour bitmap renders as a silhouette at best and a filled
 blob at worst — and a platform `android.R.drawable` is not a stable appearance
-contract across API levels or OEM skins. Raised in PR review. The **launcher** icon
-is still `@android:drawable/sym_def_app_icon` and deliberately untouched; that one
-is waiting for a real design pass and this was a defect fix.
+contract across API levels or OEM skins. Raised in PR review. Since 2026-08-25 the
+vector is **Momo's silhouette** — the launcher mark's, which is what holds at 24
+dp, with the eyes cut out so the face survives one colour ([momo.md](momo.md)
+§4) — and the launcher icon it once deferred to is built the same way.
 
 `IMPORTANCE_DEFAULT`, which makes a sound. A habit nudge that arrives silently is
 one the user finds the next morning, which is the whole point missed;

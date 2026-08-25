@@ -906,8 +906,8 @@ still to come, and it has values to draw from.
 ~~**Still a leaning: Momo's style is flat.**~~ **Decided 2026-08-25: flat, and
 the character is the canvas's own, built for Today** — [momo.md](momo.md) is the
 record. The other two treatments stay on the canvas as the record of the choice.
-The launcher mark derives from the character, so it can be drawn now; nothing
-has drawn it yet (§8).
+The launcher mark derives from the character, and was drawn the same day:
+`ic_launcher_foreground.xml` is the canvas's artboard transcribed (§8).
 
 **Parked, with an experiment rather than a question: the typeface.** §5 has the
 condition and §2 has the experiment.
@@ -993,7 +993,12 @@ widget. Before any of it is built, the price:
   absent today on purpose: minSdk is 29 and `warningsAsErrors` is on, so lint's
   `UnusedAttribute` is a failed build.
 - **Momo on a widget does not move.** `RemoteViews` cannot run the animation, so
-  it is a static vector drawable per mood: four assets.
+  ~~it is a static vector drawable per mood: four assets~~ — priced before the
+  character was code. Built 2026-08-25 as **zero assets**: the widget
+  rasterises `drawMomo` at the resting frame the way it rasterises Outfit
+  ([momo.md](momo.md) §4), in the existing Today widget, only when the host
+  gives it two cells. The large-widget question this bullet list prices is
+  thereby answered without a second provider.
 - **The checkbox glyph reopens**, as `TodayWidget`'s comment predicted. It is
   unpinned only because there was no palette and because `CheckBoxColors` rejects
   the resource-backed providers every `GlanceTheme` colour is. With hexes decided,
@@ -1123,15 +1128,14 @@ does not fit a FAB, so that one call site drops an `Icon` in by hand.
   which is why it is here and not only in the generator: the first cut omitted it
   precisely because no design note asked for it.
 
-**Still not decided here: the launcher icon.** §7.1 designed it and §8 records
-why it cannot be drawn yet — the mark derives from Momo, so it waits on the
-character, not on an icon set. `android:icon` is still
-`@android:drawable/sym_def_app_icon`. What this section does give it is the
-visual language it has to agree with, which was the argument for doing icons
-first. `app/src/main/res/drawable/ic_reminder.xml` is a related loose end and a
-deliberate one: a notification small icon is drawn from its alpha channel only
-and must be solid, so it is a different medium rather than a set member that got
-missed.
+**The launcher icon is not a set member, and is now built.** §7.1 designed it
+and it waited on the character, not on an icon set; it landed 2026-08-25, the
+same day as Momo (§8). What this section gave it is the visual language it has
+to agree with, which was the argument for doing icons first.
+`app/src/main/res/drawable/ic_reminder.xml` is the other non-member, and
+deliberately so: a notification small icon is drawn from its alpha channel only
+and must be solid, so it is a different medium — it is now Momo's silhouette
+([momo.md](momo.md) §4).
 
 ## 8. What this does not decide
 
@@ -1141,17 +1145,21 @@ missed.
   the record, including why PRD §5's Rive recommendation was dropped (its export
   is behind a paid plan) and what that cost. Still open there: the widget and
   reminder treatments, and milestones.
-- **The launcher icon — its drawing and its wiring, not its design.** §7.1 does
-  decide the icon: Momo as a mark, the composition, and the woven thread as the
-  monochrome layer. What is open is everything downstream of that. The reason
-  it could not be drawn — the mark derives from the character — expired on
-  2026-08-25 when the character was decided; it is now simply not yet done. Nor
-  is any of it implemented: there is no
-  `mipmap/ic_launcher` at all today and the manifest points `android:icon` at
-  `@android:drawable/sym_def_app_icon`, which is Android's generic default and
-  *not* public API. Replacing it is the fix; depending on it further is not.
-  Listed here rather than under §7.1 because a decision nothing has drawn is
-  still a thing this document has not delivered.
+- ~~**The launcher icon — its drawing and its wiring, not its design.**~~
+  **Built 2026-08-25.** §7.1's decision — Momo as a mark, the woven thread as
+  the monochrome layer — is `ic_launcher_foreground.xml` and
+  `ic_launcher_monochrome.xml`, transcribed from the canvas's "Launcher icon"
+  artboard on its 108 grid — inside a group that scales the mark by 0.85 and
+  the thread by 0.9 about the centre, because the artboard mocked its masks
+  over the whole 108 canvas while a launcher shows the central 72 and
+  guarantees only a 66 dp circle; review measured the fronds at 38.6 from
+  centre against a safe radius of 33 — under `mipmap-anydpi/ic_launcher.xml` — one file with
+  all three layers, because lint's `MonochromeLauncherIcon` *fails* an adaptive
+  icon without `<monochrome>` and does not count the API 33 element as unused;
+  a `-v33` split was tried first and measured against. The ground is light `primaryContainer` at
+  the value `Color.kt` ships, not the canvas's pre-retune hex — §3's rule that
+  the table wins — and `LauncherIconTest` pins the two against each other. The
+  manifest no longer names `sym_def_app_icon` anywhere.
 - **Spacing.** `GawiSpacing` parks itself on OQ-4 along with the rest, but
   dimensions were genuinely not part of this brief. Its KDoc gets narrowed rather
   than rewritten.
