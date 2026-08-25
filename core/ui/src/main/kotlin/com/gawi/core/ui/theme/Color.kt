@@ -41,8 +41,9 @@ import androidx.compose.ui.graphics.Color
  * with a 1.32 lightness step. The cost, recorded rather than hidden: gold at
  * this lightness reads as bronze.
  *
- * Momo's `#E0708F` is deliberately absent. §3 reserves it to the mascot, so it
- * is not a role — the UI is the tank and Momo is the only warm thing in it.
+ * Momo's pinks are deliberately absent. §3 reserves them to the mascot, so
+ * none is a role — the UI is the tank and Momo is the only warm thing in it.
+ * The values are the character's own, in [com.gawi.core.ui.component.MomoPalette].
  */
 @Suppress("MagicNumber")
 internal val GawiLightColors: ColorScheme = lightColorScheme(
