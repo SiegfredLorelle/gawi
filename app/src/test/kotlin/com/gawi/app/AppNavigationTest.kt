@@ -1,6 +1,5 @@
 package com.gawi.app
 
-import android.provider.Settings
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -18,7 +17,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import com.gawi.core.ui.R as UiR
 import com.gawi.feature.habits.R as HabitsR
@@ -88,12 +86,17 @@ import com.gawi.feature.today.R as TodayR
 @Config(application = HiltTestApplication::class)
 class AppNavigationTest {
 
+    // Before Hilt and before the activity: the compose rule launches
+    // MainActivity, and Momo reads the animator scale as it composes.
     @get:Rule(order = 0)
+    val animationsOff = AnimationsOffRule()
+
+    @get:Rule(order = 1)
     val hilt = HiltAndroidRule(this)
 
     // Order matters: Hilt's rule has to have run before the activity it injects
     // is launched, and the compose rule launches it on start.
-    @get:Rule(order = 1)
+    @get:Rule(order = 2)
     val compose = createAndroidComposeRule<MainActivity>()
 
     private val resources get() = compose.activity.resources
@@ -101,14 +104,7 @@ class AppNavigationTest {
     private fun string(id: Int): String = resources.getString(id)
 
     @Before
-    fun setUp() {
-        hilt.inject()
-        // Animations off, as a user would: Momo's frame loop keeps a composition
-        // from ever being idle, and this journey walks through Today. With the
-        // scale at zero the still frame draws (docs/ux/momo.md §5) — see
-        // TodayScreenTest for the longer note.
-        Settings.Global.putFloat(RuntimeEnvironment.getApplication().contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 0f)
-    }
+    fun setUp() = hilt.inject()
 
     /**
      * Waits for text, then returns it.
