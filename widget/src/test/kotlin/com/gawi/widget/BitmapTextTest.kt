@@ -5,8 +5,10 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Paint
 import android.text.TextPaint
+import android.util.DisplayMetrics
 import com.gawi.core.ui.R
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -14,6 +16,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
+import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
@@ -25,7 +28,10 @@ import org.robolectric.annotation.GraphicsMode
  * this module's colour test already guards against, in another costume. Native
  * graphics run the real Skia, at the cost of a slower first test; the shared
  * `config/robolectric/robolectric.properties` is left alone so no other module
- * pays that for tests that never draw.
+ * pays that for tests that never draw. One consequence to recognise if it ever
+ * bites: native graphics pull Robolectric's native-runtime artifact at test
+ * time, outside the version catalogue, so this is the first test here that an
+ * offline or air-gapped build would fail to run.
  *
  * **The weight test is the one that matters.** `outfit.ttf` opens at `wght`
  * 100, Thin, and the Compose side once shipped a whole screen at that weight
@@ -64,8 +70,8 @@ class BitmapTextTest {
         }
 
         assertTrue("wght did not apply to the resource font", outfit.weightAxisApplied)
-        val regular = BitmapText.render(SAMPLE, outfit.paint, WIDE)!!.ink()
-        val light = BitmapText.render(SAMPLE, thin, WIDE)!!.ink()
+        val regular = BitmapText.render(SAMPLE, outfit.paint, WIDE, density)!!.ink()
+        val light = BitmapText.render(SAMPLE, thin, WIDE, density)!!.ink()
         assertTrue("wght 400 ($regular) should carry more ink than the default ($light)", regular > light)
     }
 
@@ -75,8 +81,8 @@ class BitmapTextTest {
         val metrics = paint.fontMetricsInt
 
         assertEquals(metrics.descent - metrics.ascent, BitmapText.lineHeightPx(paint))
-        assertEquals(BitmapText.lineHeightPx(paint), BitmapText.render("read", paint, WIDE)!!.height)
-        assertEquals(BitmapText.lineHeightPx(paint), BitmapText.render("y", paint, WIDE)!!.height)
+        assertEquals(BitmapText.lineHeightPx(paint), BitmapText.render("read", paint, WIDE, density)!!.height)
+        assertEquals(BitmapText.lineHeightPx(paint), BitmapText.render("y", paint, WIDE, density)!!.height)
     }
 
     /**
@@ -99,7 +105,7 @@ class BitmapTextTest {
     fun `a name with an emoji is not clipped to Outfit's metrics`() {
         val paint = BitmapText.outfitPaint(context).paint
 
-        val bitmap = BitmapText.render("Gym 💪", paint, WIDE)!!
+        val bitmap = BitmapText.render("Gym 💪", paint, WIDE, density)!!
 
         assertTrue(bitmap.height >= BitmapText.lineHeightPx(paint))
         assertTrue(bitmap.inkedPixels() > 0)
@@ -110,8 +116,8 @@ class BitmapTextTest {
         val paint = BitmapText.outfitPaint(context).paint
         val long = "read ".repeat(REPEATS).trim()
 
-        val one = BitmapText.render(long, paint, NARROW, maxLines = 1)!!
-        val three = BitmapText.render(long, paint, NARROW, maxLines = 3)!!
+        val one = BitmapText.render(long, paint, NARROW, density, maxLines = 1)!!
+        val three = BitmapText.render(long, paint, NARROW, density, maxLines = 3)!!
 
         assertTrue(three.height > one.height)
         assertTrue(three.inkedPixels() > one.inkedPixels())
@@ -121,16 +127,16 @@ class BitmapTextTest {
     fun `blank text draws nothing`() {
         val paint = BitmapText.outfitPaint(context).paint
 
-        assertNull(BitmapText.render("", paint, WIDE))
-        assertNull(BitmapText.render("   ", paint, WIDE))
+        assertNull(BitmapText.render("", paint, WIDE, density))
+        assertNull(BitmapText.render("   ", paint, WIDE, density))
     }
 
     @Test
     fun `no room draws nothing`() {
         val paint = BitmapText.outfitPaint(context).paint
 
-        assertNull(BitmapText.render("read", paint, 0))
-        assertNull(BitmapText.render("read", paint, -1))
+        assertNull(BitmapText.render("read", paint, 0, density))
+        assertNull(BitmapText.render("read", paint, -1, density))
     }
 
     @Test
@@ -138,14 +144,30 @@ class BitmapTextTest {
         val paint = BitmapText.outfitPaint(context).paint
         val long = "read ".repeat(REPEATS).trim()
 
-        val bitmap = BitmapText.render(long, paint, NARROW)
+        val bitmap = BitmapText.render(long, paint, NARROW, density)
 
         assertNotNull(bitmap)
         // Ellipsised, so the line is whatever fits plus "…": at most the room,
         // and well short of the unclipped width.
         assertTrue(bitmap!!.width <= NARROW)
-        assertTrue(bitmap.width < BitmapText.render(long, paint, WIDE)!!.width)
+        assertTrue(bitmap.width < BitmapText.render(long, paint, WIDE, density)!!.width)
         assertTrue(bitmap.inkedPixels() > 0)
+    }
+
+    /**
+     * Tagged with the density it was drawn at, not the device default: the host
+     * scales a bitmap by `target / bitmap.density`, so an untagged one is
+     * re-scaled whenever Display size is off default. `xhdpi` here so the two
+     * differ under Robolectric, whose device default is mdpi.
+     */
+    @Test
+    @Config(qualifiers = "xhdpi")
+    fun `the bitmap carries the density it was rendered at`() {
+        val bitmap = render("read")
+
+        assertEquals(DisplayMetrics.DENSITY_XHIGH, context.resources.displayMetrics.densityDpi)
+        assertEquals(context.resources.displayMetrics.densityDpi, bitmap.density)
+        assertNotEquals(DisplayMetrics.DENSITY_DEFAULT, bitmap.density)
     }
 
     @Test
@@ -156,7 +178,9 @@ class BitmapTextTest {
         assertEquals(Color.WHITE, paint.color)
     }
 
-    private fun render(text: String): Bitmap = BitmapText.render(text, BitmapText.outfitPaint(context).paint, WIDE)!!
+    private val density: Int get() = context.resources.displayMetrics.densityDpi
+
+    private fun render(text: String): Bitmap = BitmapText.render(text, BitmapText.outfitPaint(context).paint, WIDE, density)!!
 
     private companion object {
         const val SAMPLE = "read the paper"
