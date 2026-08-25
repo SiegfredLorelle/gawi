@@ -45,6 +45,21 @@ class GawiIconsTest {
          */
         val DRAWABLES = File("src/main/res/drawable")
 
+        /**
+         * The marker every generated file carries in its header, and the reason
+         * this suite sweeps a directory rather than a list of ten names.
+         *
+         * Without it the shape assertions below apply to *anything* ending
+         * `.xml` in `res/drawable`, so `:core:ui` could never hold a drawable
+         * that is not a Lucide icon — a background, a shape, or the sort of
+         * alpha-only notification icon §7.5 describes — without three tests
+         * going red about the wrong file. Filtering on the generator's own
+         * header keeps the set self-maintaining instead of writing the ten names
+         * down a fourth time, after `GawiIcons`, the generator's `ICONS` and
+         * [MIRRORED] below.
+         */
+        const val GENERATED_BY = "scripts/convert-lucide.py"
+
         const val VIEWPORT = "24"
         const val SIZE = "24dp"
         const val STROKE_WIDTH = "2"
@@ -87,8 +102,14 @@ class GawiIconsTest {
             "expected the drawables at ${DRAWABLES.absolutePath} — if this path is wrong the tests prove nothing",
             DRAWABLES.isDirectory,
         )
-        val files = DRAWABLES.listFiles { file -> file.name.endsWith(".xml") }.orEmpty().sortedBy { it.name }
-        assertTrue("no drawables found in ${DRAWABLES.absolutePath}", files.isNotEmpty())
+        val files = DRAWABLES.listFiles { file -> file.name.endsWith(".xml") }.orEmpty()
+            .filter { GENERATED_BY in it.readText() }
+            .sortedBy { it.name }
+        // Still guarded, and now for two failures rather than one: a wrong
+        // directory, and a generator header that stopped saying what this
+        // filter looks for — which would otherwise narrow the sweep to nothing
+        // and pass.
+        assertTrue("no generated drawables found in ${DRAWABLES.absolutePath}", files.isNotEmpty())
         return files
     }
 
@@ -96,7 +117,16 @@ class GawiIconsTest {
      * Namespace-unaware on purpose, so attributes read as the file spells
      * them: "android:strokeWidth" rather than a resolved URI.
      */
-    private fun document(file: File): Document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(file)
+    private fun document(file: File): Document =
+        DocumentBuilderFactory.newInstance()
+            // Hardening rather than a fix: these ten files are generated from a
+            // fixed template that copies only `d`, so nothing from a source
+            // SVG's prolog can reach them and there is no live entity to
+            // resolve. It is one line, it is the default static analysis flags,
+            // and it leaves the namespace-unaware behaviour above intact.
+            .apply { setFeature("http://apache.org/xml/features/disallow-doctype-decl", true) }
+            .newDocumentBuilder()
+            .parse(file)
 
     private fun paths(file: File): List<Element> {
         val nodes = document(file).getElementsByTagName("path")
