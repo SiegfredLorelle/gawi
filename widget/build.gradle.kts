@@ -22,13 +22,19 @@ dependencies {
     // plugin that Glance's @Composable tree needs; the compose BOM it also
     // brings governs nothing here, because Glance is not in it.
     //
-    // Deliberately NO :core:ui. Its theme, GawiSpacing and shared composables
-    // are androidx.compose.ui types, and a Glance tree cannot consume one — a
-    // widget is RemoteViews under the composition, so it has its own Column,
-    // its own GlanceModifier and its own GlanceTheme. "Reuse the theme" is the
-    // first thing a reviewer asks here and the answer is that it does not
-    // compile. A minimal widget (PRD OQ-5, docs/ux/widget.md §2) draws no habit
-    // colour, so HabitPalette and parseHabitColor are not wanted either.
+    // :core:ui for ONE resource: R.font.outfit, which BitmapText rasterises
+    // because RemoteViews cannot load a font resource (visual-identity §2).
+    // Nothing else may cross this edge. The theme, GawiSpacing and the shared
+    // composables are androidx.compose.ui types, and a Glance tree cannot
+    // consume one — a widget is RemoteViews under the composition, so it has
+    // its own Column, its own GlanceModifier and its own GlanceTheme. "Reuse
+    // the theme" is the first thing a reviewer asks here and the answer is that
+    // it does not compile. :core:ui exposes compose and material3 as `api`, so
+    // the compiler will not stop a second import; treat any other
+    // com.gawi.core.ui.* import in this module as a defect. A minimal widget
+    // (PRD OQ-5, docs/ux/widget.md §2) draws no habit colour, so HabitPalette
+    // and parseHabitColor are not wanted either.
+    implementation(project(":core:ui"))
     // Glance brings WorkManager with it, and it is NOT optional: androidx.glance
     // runs its composition session in SessionWorker, a CoroutineWorker, which
     // GlanceAppWidget's constructor reaches through SessionManagerImpl. Excluding
