@@ -9,7 +9,7 @@ how it moves, and where it appears. It closes the second half of OQ-4 — the ar
 
 **Status: decided and built for the Today screen, 2026-08-25.** The character
 is the one on the Gawi Redesign canvas, the motion is the one approved on its
-companion Momo Motion page, and the code is `core/ui/component/Momo.kt` and
+"Momo motion" page, and the code is `core/ui/component/Momo.kt` and
 `MomoDrawing.kt`, drawn into the Today panel by `feature/today/MascotPanel.kt`.
 The widget, the reminder and the launcher icon are designed here and **not yet
 built** (§4).
@@ -27,11 +27,11 @@ arguing, and every part is a rigid shape, which is what makes it cheap to move.
 (`https://claude.ai/code/artifact/f2c92c47-58a4-4547-bff5-695fa3705c17`, Momo &
 icon page) drew Momo in all four moods with a CSS motion spec, and the user's
 answer to "design the character" was that this *is* the character. §2 and §3
-transcribe it; nothing here was redrawn. The Momo Motion page
-(`https://claude.ai/code/artifact/2578b4dc-ce63-457e-b018-b4f6d57b587c`) put the
-four moods on the Today tank in both themes with the timings exposed as sliders
-and a still-frame board; the user approved it with the defaults, so the numbers
-in §3 are the canvas's own.
+transcribe it; nothing here was redrawn. The same canvas's "Momo motion" page
+(a standalone Momo Motion canvas until 2026-08-25, when it was folded in) put
+the four moods on the Today tank in both themes with the timings exposed as
+sliders and a still-frame board; the user approved it with the defaults, so the
+numbers in §3 are the canvas's own.
 
 **It is drawn in code, and Rive was dropped.** PRD §5 recommended Rive, and it
 was researched to the point of an integration brief on 2026-08-25 before being
