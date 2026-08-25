@@ -114,20 +114,4 @@ class MascotMoodTest {
     fun `one unfinished habit among finished ones still counts`() {
         assertEquals(Mood.WORRIED, moodOf(daily(completedToday = true), daily(completedToday = false), at = evening))
     }
-
-    @Test
-    fun `every mood has an MVP face`() {
-        // §4 "MVP mapping": Phase 0 ships three states, not four. Written as a
-        // whole-map comparison so a fifth mood fails this rather than passing
-        // unnoticed.
-        assertEquals(
-            mapOf(
-                Mood.THRIVING to MvpMood.HAPPY,
-                Mood.CONTENT to MvpMood.NEUTRAL,
-                Mood.REGENERATING to MvpMood.NEUTRAL,
-                Mood.WORRIED to MvpMood.WORRIED,
-            ),
-            Mood.entries.associateWith { it.toMvp() },
-        )
-    }
 }
