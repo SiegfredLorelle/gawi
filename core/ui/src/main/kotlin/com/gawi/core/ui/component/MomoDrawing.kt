@@ -27,6 +27,12 @@ val MomoDesignSize: Size = Size(260f, 200f)
  *
  * Draw order is the canvas's: gills behind, then body, then face, then the
  * mood's extras — so a gill swinging forward never crosses an eye.
+ *
+ * Public, with [MomoFrame] and [MomoMotion], for `:widget`'s still frame
+ * (docs/ux/momo.md §4), which is another module; `:feature:today` calls [Momo]
+ * and none of these. Their tests live in `:core:ui` for the same reason —
+ * `MomoFrameTest` for the maths; the pixels need Robolectric, which this module
+ * does not take, so `MomoRenderTest` in `:feature:today` draws them.
  */
 fun DrawScope.drawMomo(mood: Mood, frame: MomoFrame) {
     val scale = minOf(size.width / MomoDesignSize.width, size.height / MomoDesignSize.height)
@@ -127,9 +133,8 @@ private inline fun DrawScope.eye(centre: Offset, open: Float, draw: DrawScope.()
 }
 
 private fun DrawScope.drawSparkles(frame: MomoFrame) {
-    // The second sparkle runs a third of a cycle behind the first.
     sparkle(Offset(46f, 47f), SparkleLarge, frame.sparkle)
-    sparkle(Offset(214f, 37.3f), SparkleSmall, ((frame.sparkle + 0.667f) % 1f))
+    sparkle(Offset(214f, 37.3f), SparkleSmall, frame.sparkleLag)
 }
 
 private fun DrawScope.sparkle(centre: Offset, path: Path, phase: Float) {
