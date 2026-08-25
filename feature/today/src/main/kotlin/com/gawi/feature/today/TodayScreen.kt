@@ -4,9 +4,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
@@ -73,29 +76,23 @@ internal fun TodayScreen(state: TodayUiState, actions: TodayActions, snackbarHos
                 modifier = Modifier.fillMaxSize().padding(insets),
             )
 
-            is TodayUiState.Empty -> Column(Modifier.fillMaxSize().padding(insets)) {
+            // The panel scrolls with what is under it, in both states. It used to
+            // sit above the list as a fixed header; a 250dp tank (docs/ux/momo.md
+            // §4) above an unscrollable column leaves a small screen, or a large
+            // font scale, with the button or the second row below the fold. §1
+            // already accepted Momo leaving the screen on a long list; the
+            // collapse into an app-bar chip is what is still deferred.
+            is TodayUiState.Empty -> Column(
+                Modifier
+                    .fillMaxSize()
+                    .padding(insets)
+                    .verticalScroll(rememberScrollState()),
+            ) {
                 MascotPanel(mood = state.mood, remaining = 0, total = 0)
-                EmptyToday(onAddHabit = actions.onAddHabit, modifier = Modifier.fillMaxSize())
+                EmptyToday(onAddHabit = actions.onAddHabit, modifier = Modifier.fillMaxWidth())
             }
 
-            is TodayUiState.Habits -> Column(Modifier.fillMaxSize().padding(insets)) {
-                // Above the list rather than over it. §1 keeps habit rows on
-                // plain surface, so row contrast is never a function of the
-                // mood; the collapse into an app-bar chip is what is deferred.
-                MascotPanel(mood = state.mood, remaining = state.remaining, total = state.rows.size)
-                // weight(1f) states the intent rather than fixing a bug: Column
-                // already measures a non-weighted child against the space its
-                // siblings left, so the list scrolls correctly either way. What
-                // it does buy is a guarantee that stays true if anything is ever
-                // placed below the list.
-                //
-                // The panel above is the unbounded one — non-weighted, measured
-                // first, floored but not capped — so at a large font scale it
-                // takes what it needs and the list gets the rest. Capping it
-                // would bring back the clipping heightIn(min) was added to fix;
-                // §1's collapse into the app bar is where this gets revisited.
-                HabitList(state, actions.onToggle, Modifier.weight(1f))
-            }
+            is TodayUiState.Habits -> HabitList(state, actions.onToggle, Modifier.fillMaxSize().padding(insets))
         }
     }
 }
@@ -103,6 +100,12 @@ internal fun TodayScreen(state: TodayUiState, actions: TodayActions, snackbarHos
 @Composable
 private fun HabitList(state: TodayUiState.Habits, onToggle: (HabitId, Boolean, LocalDate) -> Unit, modifier: Modifier = Modifier) {
     LazyColumn(modifier) {
+        // The habitat is the first item, not a header outside the list: §1 keeps
+        // habit rows on plain surface, so row contrast is never a function of the
+        // mood, and scrolling Momo away is §1's accepted cost.
+        item(key = "mascot") {
+            MascotPanel(mood = state.mood, remaining = state.remaining, total = state.rows.size)
+        }
         items(state.rows, key = { it.id.value }) { row ->
             HabitRow(
                 row = row,
