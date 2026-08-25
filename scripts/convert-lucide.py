@@ -156,7 +156,17 @@ def convert(slug, drawable, svg_dir, problems):
     for element in root:  # document order, so the drawing stacks as authored
         tag = element.tag.replace(NS, "")
         if tag == "path":
-            datas.append(element.get("d"))
+            # `d` is optional in the SVG grammar and `get` returns None for it,
+            # which used to reach the template and emit the literal string
+            # `android:pathData="None"` — a file that inflates, passes every
+            # assertion, and draws one path fewer than its source. The failure
+            # this script exists to prevent, arriving through the one element it
+            # supports rather than the ones it rejects. Found in review.
+            d = element.get("d")
+            if d:
+                datas.append(d)
+            else:
+                problems.append("%s: a <path> carries no d attribute" % slug)
         elif tag == "circle":
             cx, cy, r = (float(element.get(key)) for key in ("cx", "cy", "r"))
             datas.append(circle_to_path(cx, cy, r))

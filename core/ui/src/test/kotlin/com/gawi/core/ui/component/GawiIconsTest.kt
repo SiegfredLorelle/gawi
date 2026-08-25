@@ -136,7 +136,15 @@ class GawiIconsTest {
             assertTrue("${file.name} draws nothing", paths.isNotEmpty())
             paths.forEachIndexed { index, path ->
                 val where = "${file.name} path $index"
-                assertTrue("$where has no pathData", path.getAttribute("android:pathData").isNotBlank())
+                // A moveto rather than merely non-blank. `isNotBlank` accepted
+                // the literal "None", which is what an SVG `<path>` with no `d`
+                // used to generate — non-blank, and not a path. Every SVG path
+                // opens with a moveto, and all twenty here do.
+                val data = path.getAttribute("android:pathData")
+                assertTrue(
+                    "$where pathData does not open with a moveto: '$data'",
+                    data.startsWith("M") || data.startsWith("m"),
+                )
 
                 // The invisible-icon failure. A missing strokeColor is not a
                 // parse error and Compose's tint cannot rescue it: ColorFilter
