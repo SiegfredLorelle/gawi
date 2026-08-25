@@ -74,8 +74,12 @@ object GawiIcons {
      * from somewhere other than the directory it is checking, or it would pass
      * on an empty one. It also means a drawable added to `res/` without being
      * exposed here fails a test instead of sitting unused.
+     *
+     * `internal` because that is the whole of its audience. Kotlin makes it
+     * visible to this module's unit tests, and a feature module has no use for
+     * a list of every icon — it reaches for the one it draws by name.
      */
-    val all = listOf(
+    internal val all = listOf(
         ArrowLeft, ChartPie, ChevronLeft, ChevronRight, Close,
         ListChecks, Minus, Pencil, Plus, Settings,
     )

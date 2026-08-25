@@ -180,7 +180,7 @@ def load(slug, svg_dir, problems):
     return body
 
 
-def convert(slug, drawable, svg_dir, problems):
+def convert(slug, svg_dir, problems):
     root = ET.fromstring(load(slug, svg_dir, problems))
 
     # Asserted rather than assumed: every one of these is a property the
@@ -278,7 +278,7 @@ def main():
             problems.append("%s names %s, which ICONS does not" % (name, ", ".join(unknown)))
 
     for slug, drawable in sorted(ICONS.items()):
-        body, count, circled = convert(slug, drawable, args.svg_dir, problems)
+        body, count, circled = convert(slug, args.svg_dir, problems)
         pending.append((os.path.join(args.out, drawable + ".xml"), body))
         report.append("%-14s -> %-22s %d path(s)%s%s" % (
             slug, drawable + ".xml", count,
