@@ -1,5 +1,6 @@
 package com.gawi.app
 
+import android.provider.Settings
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -17,6 +18,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import com.gawi.core.ui.R as UiR
 import com.gawi.feature.habits.R as HabitsR
@@ -99,7 +101,14 @@ class AppNavigationTest {
     private fun string(id: Int): String = resources.getString(id)
 
     @Before
-    fun setUp() = hilt.inject()
+    fun setUp() {
+        hilt.inject()
+        // Animations off, as a user would: Momo's frame loop keeps a composition
+        // from ever being idle, and this journey walks through Today. With the
+        // scale at zero the still frame draws (docs/ux/momo.md §5) — see
+        // TodayScreenTest for the longer note.
+        Settings.Global.putFloat(RuntimeEnvironment.getApplication().contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 0f)
+    }
 
     /**
      * Waits for text, then returns it.
@@ -138,7 +147,7 @@ class AppNavigationTest {
     /** The empty state's button reaches the editor, in create mode. */
     @Test
     fun theEmptyStateLeadsToACreateForm() {
-        awaitText(string(TodayR.string.today_add_habit)).performClick()
+        awaitText(string(TodayR.string.today_add_habit)).performScrollTo().performClick()
 
         awaitText(string(HabitsR.string.habits_new_title)).assertIsDisplayed()
         // Create, not edit: a route that passed a habit id where it meant none
@@ -149,7 +158,7 @@ class AppNavigationTest {
     /** And cancelling comes back, rather than leaving the app. */
     @Test
     fun cancellingTheEditorReturnsToToday() {
-        awaitText(string(TodayR.string.today_add_habit)).performClick()
+        awaitText(string(TodayR.string.today_add_habit)).performScrollTo().performClick()
         awaitText(string(HabitsR.string.habits_new_title))
 
         awaitDescribed(string(HabitsR.string.habits_cancel)).performClick()
