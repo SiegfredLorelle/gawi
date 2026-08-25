@@ -12,6 +12,7 @@ import android.provider.Settings
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableFloatStateOf
@@ -74,7 +75,11 @@ fun Momo(mood: Mood, modifier: Modifier = Modifier, animated: Boolean = true) {
     // is what makes a gill that changes length read as a change rather than a
     // cut.
     Crossfade(targetState = mood, animationSpec = tween(MomoMotion.CROSSFADE_MILLIS), modifier = modifier) { shown ->
-        Canvas(Modifier.testTag("momo:$shown")) {
+        // fillMaxSize is load-bearing: Crossfade hands its content the box the
+        // caller sized, and a Canvas with no size of its own measures 0 x 0 —
+        // which is a tank with nothing in it, while every test that only
+        // asked whether the node existed stayed green. Caught on the emulator.
+        Canvas(Modifier.fillMaxSize().testTag("momo:$shown")) {
             drawMomo(shown, MomoFrame.at(shown, seconds.floatValue))
         }
     }
