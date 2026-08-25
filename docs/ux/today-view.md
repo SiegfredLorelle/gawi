@@ -17,8 +17,10 @@ one composable. The list came first deliberately: the data path beneath
 it had never run on a device, and a scroll animation and a mood state
 machine on the same unproven screen is the wrong thing to debug first.
 
-Sketch canvas (private artifact, 11 low-fi artboards):
-<https://claude.ai/code/artifact/83307fe6-0ec3-43c1-bcc4-f2e8a3453f95>
+Sketch boards (11 low-fi artboards, 2026-08-19): the "Today sketch (archive)"
+page of the Gawi Redesign canvas, where they were folded in on 2026-08-25 when
+the standalone sketch link was retired —
+<https://claude.ai/code/artifact/f2c92c47-58a4-4547-bff5-695fa3705c17>
 
 ---
 

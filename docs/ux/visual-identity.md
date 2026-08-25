@@ -861,7 +861,10 @@ dock". They stay on the canvas so the tradeoff that was accepted stays legible,
 which is worth having and is also a trap: the built app does not look like the
 tank artboard, and it is not meant to. When the app and the canvas disagree,
 check which artboard before treating it as a defect — and check this document,
-because a decision only counts once it is written here.
+because a decision only counts once it is written here. Since 2026-08-25 the
+canvas is also the only design link: the 2026-08-19 low-fi Today sketch with
+the same A/C rejects sits on its "Today sketch (archive)" page, and Momo's
+approved timings on its "Momo motion" page ([momo.md](momo.md) §3).
 
 Recorded 2026-08-23, after the redesign canvas gained dark mode, an icon
 comparison, four widget surfaces and the launcher mark.
