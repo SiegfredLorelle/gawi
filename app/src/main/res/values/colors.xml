@@ -13,4 +13,24 @@
          both themes. Change the scheme without changing this and that test
          fails rather than a cold start flashing. -->
     <color name="gawi_window_background">#F4FBFA</color>
+
+    <!-- The launcher icon's ground: GawiLightColors.primaryContainer, the
+         teal habitat the canvas's "Launcher icon" artboard drew Momo on
+         (docs/ux/visual-identity.md §7.1). Duplicated for the same reason as
+         the colour above — an adaptive icon is XML — and fixed rather than
+         night-varied on purpose: launchers cache icons, and on Android 13+ a
+         dark home screen gets the themed (monochrome) icon instead. The
+         second scheme colour to exist twice, and LauncherIconTest pins it
+         against the Kotlin value so it cannot drift.
+
+         Momo's body measures about 1.16:1 against this ground, the fronds
+         1.5:1 — deliberately. It is the same pairing as the Today tank
+         (pastel body on primaryContainer water), approved on the canvas's
+         "Launcher icon" artboard, and docs/ux/momo.md §2 states the rule:
+         Momo is an illustration, so contrast against the ground is not a
+         floor; what carries the silhouette is the ink of the eyes and the
+         mouth's deeper coral, which read on any teal. No test measures a
+         ratio here because no ratio is the claim; docs/running.md §4 looks
+         at the drawer instead. -->
+    <color name="ic_launcher_background">#B4E9F0</color>
 </resources>

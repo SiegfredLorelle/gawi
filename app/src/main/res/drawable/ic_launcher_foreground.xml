@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The launcher icon's foreground: Momo as a mark, not Momo scaled down.
+
+    Transcribed from the Gawi Redesign canvas's "Launcher icon" artboard
+    (docs/ux/visual-identity.md §7.1) on its own 108-grid: two fronds a side
+    instead of three, no blush, eyes and mouth oversized past their in-app
+    proportions. The full character measured as mush at 40px; this holds at 24.
+    VectorDrawable has no circle or ellipse element, so each is two arcs.
+
+    Colours are the character's own (docs/ux/momo.md §2, MomoPalette), not
+    theme roles — Momo is the same in both themes, the way a plush toy is.
+
+    A launcher shows only the central 72dp of the 108 canvas and guarantees
+    only the 66dp circle inside that (radius 33 about the centre). The
+    canvas's artboard mocked its masks over the whole 108, so its geometry
+    reaches 38.6 from the centre at the lower fronds — every real mask would
+    clip them flat, which review measured. The group below scales the mark
+    by 0.85 about the centre (38.6 × 0.85 = 32.8), so the whole mark sits
+    inside the safe zone and the paths stay the canvas's, untouched. Held
+    loosely: the mark derives from the character, so a change of Momo's
+    style redraws it.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+  <group
+      android:pivotX="54"
+      android:pivotY="54"
+      android:scaleX="0.85"
+      android:scaleY="0.85">
+    <!-- Fronds: upper pair r9.5, lower pair r8. -->
+    <path
+        android:fillColor="#FFF2A0B8"
+        android:pathData="M17.5,44 a9.5,9.5 0 1,1 19,0 a9.5,9.5 0 1,1 -19,0 Z M16,60 a8,8 0 1,1 16,0 a8,8 0 1,1 -16,0 Z M71.5,44 a9.5,9.5 0 1,1 19,0 a9.5,9.5 0 1,1 -19,0 Z M76,60 a8,8 0 1,1 16,0 a8,8 0 1,1 -16,0 Z" />
+    <!-- Body: ellipse at (54,54), radii 26 x 22. -->
+    <path
+        android:fillColor="#FFF7C3D1"
+        android:pathData="M28,54 a26,22 0 1,1 52,0 a26,22 0 1,1 -52,0 Z" />
+    <!-- Eyes: r4.4 at (45,51) and (63,51). -->
+    <path
+        android:fillColor="#FF3A2530"
+        android:pathData="M40.6,51 a4.4,4.4 0 1,1 8.8,0 a4.4,4.4 0 1,1 -8.8,0 Z M58.6,51 a4.4,4.4 0 1,1 8.8,0 a4.4,4.4 0 1,1 -8.8,0 Z" />
+    <!-- Mouth: a stroked arc. No fillColor — a fill would close it into a wedge. -->
+    <path
+        android:pathData="M47,62 Q54,69 61,62"
+        android:strokeColor="#FFC2607A"
+        android:strokeLineCap="round"
+        android:strokeWidth="3.4" />
+  </group>
+</vector>

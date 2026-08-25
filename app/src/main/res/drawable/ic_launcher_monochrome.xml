@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The launcher icon's monochrome layer, for Android 13+ themed icons.
+
+    The woven thread, not the face (docs/ux/visual-identity.md §7.1). A themed
+    icon is a single flat silhouette tinted by the system, and a face with
+    eyes, a mouth and four fronds becomes an inkblot the moment it loses its
+    colours. The thread is the PRD's core metaphor, so the two marks say the
+    same thing in different registers.
+
+    Only the alpha channel matters here; the strokes are white so the file
+    reads as what it is. Transcribed from the canvas's "Launcher icon"
+    artboard. Its endpoints span x 26..82, y 28..80, but the round caps reach
+    36.1 from the centre and the safe zone a launcher guarantees is the 66dp
+    circle (radius 33) — so the group scales the thread by 0.9 (36.1 × 0.9 =
+    32.5), the same correction the foreground makes and for the same reason.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+  <group
+      android:pivotX="54"
+      android:pivotY="54"
+      android:scaleX="0.9"
+      android:scaleY="0.9">
+    <!-- Three warp threads and the short weft under the centre one. -->
+    <path
+        android:pathData="M36,28 V80 M54,28 V80 M72,28 V80 M54,45 V63"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeLineCap="round"
+        android:strokeWidth="9" />
+    <!-- The long weft, a shade heavier. -->
+    <path
+        android:pathData="M26,54 H82"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeLineCap="round"
+        android:strokeWidth="10" />
+  </group>
+</vector>
