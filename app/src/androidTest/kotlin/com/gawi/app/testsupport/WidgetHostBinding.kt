@@ -64,11 +64,20 @@ class WidgetHostBinding private constructor(
         host.deleteHost()
     }
 
+    /**
+     * What the widget says, whichever view says it. Since 2026-08-25 every string
+     * is an Outfit bitmap in an `ImageView` carrying the text as its
+     * `contentDescription` (or a described checkbox), and no `TextView` holds
+     * text any more — a `TextView`-only walk would poll for 20s and fail on a
+     * widget Glance drew perfectly.
+     */
     private fun textIn(view: View): List<String> = when (view) {
         is TextView -> listOfNotNull(view.text?.toString()?.takeIf { it.isNotBlank() })
-        is ViewGroup -> (0 until view.childCount).flatMap { textIn(view.getChildAt(it)) }
-        else -> emptyList()
+        is ViewGroup -> textOf(view) + (0 until view.childCount).flatMap { textIn(view.getChildAt(it)) }
+        else -> textOf(view)
     }
+
+    private fun textOf(view: View): List<String> = listOfNotNull(view.contentDescription?.toString()?.takeIf { it.isNotBlank() })
 
     companion object {
         const val RECEIVER = "com.gawi.widget.TodayWidgetReceiver"
