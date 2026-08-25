@@ -1382,9 +1382,10 @@ two things that are Settings reads.
 - [ ] **Animator duration scale off** (Developer options → *Animator duration
       scale* → *Animation off*), then reopen Today. Momo must be still, at the
       resting frame, and the mood change on a tick must cut rather than fade.
-      Turn it back on and the float should resume without a restart. Nothing on
-      the JVM can see this: the tests set the same switch to get a still frame,
-      so they prove the still frame, not the switch.
+      Turn it back on and restart the app; the float resumes. (Read once per
+      composition, by design — `Momo.kt` says why it is not observed.) Nothing
+      on the JVM can see this: the tests set the same switch to get a still
+      frame, so they prove the still frame, not the switch.
 - [ ] **200 % font scale.** The tank stays 250 dp; the copy under it grows and
       wraps and pushes the list down rather than clipping. The character must
       not shrink.
