@@ -1,6 +1,5 @@
 package com.gawi.feature.today
 
-import android.provider.Settings
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.assertIsDisplayed
@@ -18,7 +17,6 @@ import com.gawi.core.domain.model.HabitId
 import com.gawi.core.ui.streak.StreakUi
 import com.gawi.core.ui.theme.GawiTheme
 import org.junit.Assert.assertEquals
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -55,7 +53,7 @@ import java.time.LocalDate
 @RunWith(RobolectricTestRunner::class)
 class TodayScreenTest {
 
-    @get:Rule
+    @get:Rule(order = 1)
     val compose = createComposeRule()
 
     // Robolectric's own accessor rather than ApplicationProvider, which would be
@@ -63,18 +61,9 @@ class TodayScreenTest {
     // through ui-test-junit4 and carrying no catalog entry to bump.
     private val resources = RuntimeEnvironment.getApplication().resources
 
-    /**
-     * Animations off, the way a user turns them off. Momo runs a frame loop
-     * while it animates, and a composition with a frame awaiter is never idle,
-     * so every `waitForIdle` here would time out. Rather than fake the clock,
-     * take the path the system offers: with the animator scale at zero `Momo`
-     * draws its resting frame (docs/ux/momo.md §5), which is the frame these
-     * assertions are about anyway. MomoRenderTest is where motion is tested.
-     */
-    @Before
-    fun animationsOff() {
-        Settings.Global.putFloat(RuntimeEnvironment.getApplication().contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 0f)
-    }
+    /** See the rule: without it, nothing that composes Today ever goes idle. */
+    @get:Rule(order = 0)
+    val animationsOff = AnimationsOffRule()
 
     /**
      * §4's rule 0, as a test: a habitless first run is not thriving.
@@ -368,6 +357,36 @@ class TodayScreenTest {
             compose.onNodeWithTag("momo:$next", useUnmergedTree = true).assertIsDisplayed()
             compose.onNodeWithText(string(line)).assertIsDisplayed()
         }
+    }
+
+    /**
+     * With animations off a mood change is a cut, not a fade. A tween keeps the
+     * old face composed for its whole duration; a snap does not — so one frame
+     * after the change, the old tag must be gone. The clock is held so the frame
+     * can be observed rather than raced.
+     */
+    @Test
+    fun `with animations off a mood change cuts instead of fading`() {
+        val mood = mutableStateOf(Mood.CONTENT)
+        compose.mainClock.autoAdvance = false
+        compose.setContent {
+            GawiTheme { TodayScreen(HABITS.copy(mood = mood.value), NO_ACTIONS, SnackbarHostState()) }
+        }
+        compose.mainClock.advanceTimeByFrame()
+        compose.onNodeWithTag("momo:${Mood.CONTENT}", useUnmergedTree = true).assertIsDisplayed()
+
+        mood.value = Mood.WORRIED
+        // A handful of frames — 80 ms, a fraction of the 550 ms fade: Crossfade
+        // drops the old content the frame after its transition completes. With
+        // the clock held, advancing it does not recompose; waitForIdle does,
+        // without moving time, so the two alternate.
+        repeat(5) {
+            compose.mainClock.advanceTimeByFrame()
+            compose.waitForIdle()
+        }
+
+        compose.onNodeWithTag("momo:${Mood.CONTENT}", useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithTag("momo:${Mood.WORRIED}", useUnmergedTree = true).assertIsDisplayed()
     }
 
     private companion object {

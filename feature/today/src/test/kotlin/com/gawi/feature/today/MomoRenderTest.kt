@@ -9,10 +9,8 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import com.gawi.core.domain.mascot.Mood
 import com.gawi.core.ui.component.MomoFrame
-import com.gawi.core.ui.component.MomoMotion
 import com.gawi.core.ui.component.drawMomo
 import org.junit.Assert.assertArrayEquals
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -21,7 +19,9 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * Momo draws what docs/ux/momo.md §3 says, measured in pixels.
+ * Momo draws what docs/ux/momo.md §3 says, measured in pixels. The frame
+ * maths — what moves when — is `MomoFrameTest` in `:core:ui`, plain JVM; this
+ * class is only what needs a bitmap.
  *
  * Here and not in `:core:ui`, which is deliberately Robolectric-free (its
  * `GawiIconsTest` reads XML off disk for the same reason). `GraphicsMode.NATIVE`
@@ -60,7 +60,6 @@ class MomoRenderTest {
     @Test
     fun `the resting frame is deterministic`() {
         assertArrayEquals(render(Mood.CONTENT), render(Mood.CONTENT))
-        assertEquals(MomoFrame.rest(Mood.WORRIED), MomoFrame.at(Mood.WORRIED, 0f))
     }
 
     @Test
@@ -74,41 +73,23 @@ class MomoRenderTest {
     }
 
     @Test
-    fun `regenerating drains the colour`() {
-        assertTrue(MomoMotion.REGENERATING.saturation < 1f)
+    fun `regenerating drains the colour and keeps its lightness`() {
         val body = { mood: Mood -> pixel(render(mood), 130, 100) }
         val full = body(Mood.CONTENT)
         val drained = body(Mood.REGENERATING)
         // Less spread between channels is less colour.
         assertTrue(spread(drained) < spread(full))
+        // Drained, not darkened: the canvas's saturate() keeps the encoded
+        // lightness, and a grey taken from linear luminance would sit about a
+        // fifth lower. Rec. 709 weights on the encoded channels, as saturated()
+        // uses, so the check is the definition and not a looser proxy.
+        val delta = kotlin.math.abs(lightness(drained) - lightness(full))
+        assertTrue("regenerating changed lightness by $delta", delta < 3f)
     }
 
     @Test
-    fun `the clock moves the picture and the loop returns to rest`() {
-        val rest = render(Mood.CONTENT, 0f)
-        assertNotEquals(rest.toList(), render(Mood.CONTENT, 1.3f).toList())
-        // A float period (4.2), a breathe (3.4) and a gill sway (2.9) have no
-        // common cycle inside a minute, so this is the one instant the whole
-        // frame is known: the frame maths, not the pixels, is what is pinned.
-        assertEquals(MomoFrame.rest(Mood.CONTENT), MomoFrame.at(Mood.CONTENT, 0f))
-    }
-
-    @Test
-    fun `worried fidgets in place and content floats`() {
-        val worried = MomoFrame.at(Mood.WORRIED, 0.425f)
-        val content = MomoFrame.at(Mood.CONTENT, 2.1f)
-        assertTrue(worried.dx != 0f)
-        assertEquals(0f, content.dx)
-        assertTrue(content.dy < 0f)
-        assertEquals(MomoMotion.WORRIED.gillDrop, worried.gillDrop)
-        assertEquals(0f, content.gillDrop)
-    }
-
-    @Test
-    fun `only content-like moods blink`() {
-        val mid = 0.97f * MomoMotion.CONTENT.blinkPeriod!!
-        assertTrue(MomoFrame.at(Mood.CONTENT, mid).eyeOpen < 1f)
-        assertEquals(1f, MomoFrame.at(Mood.THRIVING, mid).eyeOpen)
+    fun `the clock moves the picture`() {
+        assertNotEquals(render(Mood.CONTENT, 0f).toList(), render(Mood.CONTENT, 1.3f).toList())
     }
 
     private fun render(mood: Mood, seconds: Float = 0f): IntArray {
@@ -127,6 +108,14 @@ class MomoRenderTest {
     }
 
     private fun pixel(pixels: IntArray, x: Int, y: Int) = pixels[y * WIDTH + x]
+
+    /** Rec. 709 weights on the encoded channels, 0..255 — the grey `saturated()` fades toward. */
+    private fun lightness(argb: Int): Float {
+        val r = (argb shr 16) and 0xFF
+        val g = (argb shr 8) and 0xFF
+        val b = argb and 0xFF
+        return 0.2126f * r + 0.7152f * g + 0.0722f * b
+    }
 
     private fun spread(argb: Int): Int {
         val r = (argb shr 16) and 0xFF
