@@ -869,10 +869,15 @@ the bitmaps are drawn and tinted:
       rather than under the widget's edge; nothing clips vertically. The change
       lands at the next render, not on the spot — complete a habit in the app
       to force one. (Glance recomposes on locale, not on configuration.)
-- [ ] **An RTL locale.** `cmd locale set-app-locales` — `debug.force_rtl` does
-      nothing on an emulator. The glyph sits on the right, and a Hebrew or Arabic
-      name is shaped and read right-to-left; Robolectric's font bundle cannot
-      draw either script, so this is the only place those glyphs are checked.
+- [ ] **An RTL *system* locale** — Settings → System → Languages, Hebrew or
+      Arabic first. Not a per-app locale, and not the developer toggle: measured
+      on 2026-08-25 on the API 37 emulator, `cmd locale set-app-locales` flips
+      our app and leaves the widget as it was, because the launcher inflates the
+      `RemoteViews` in *its* configuration, and `settings put global
+      development_force_rtl 1` changed nothing at all, not even the status bar.
+      What to see: the glyph sits on the right, and a Hebrew or Arabic name is
+      shaped and read right-to-left; Robolectric's font bundle cannot draw either
+      script, so this is the only place those glyphs are checked.
 
 Known and expected, not a bug — but **much narrower since 2026-08-21**: a widget
 left on the launcher across the day cutoff is now refreshed by a scheduled wake
