@@ -848,17 +848,31 @@ Decisions and reasoning are in [docs/ux/widget.md](ux/widget.md).
 - [ ] **Resizing keeps it usable.** Drag the handles: rows reflow and the list
       scrolls rather than clipping.
 
-**The widget's text is in the platform sans, and that is not a bug to file.**
-Recorded here because it is the block most likely to notice it first, and it
-will look like an oversight once the app has a face of its own. It is not: a
-bundled font cannot reach a widget at all. Measured on 2026-08-24 —
-`RemoteViews` inflation honours `android:fontFamily` only for the platform's
-generic family names and drops a font resource of ours silently, so neither
-Glance's typed API nor a hand-written `AndroidRemoteViews` layout can carry one
-(docs/ux/visual-identity.md §2). No check is owed for it. If the app ever does
-ship a bundled face, what this block gains is not a font check but the
-*divergence* being deliberate — which docs/ux/visual-identity.md §5 is where to
-argue about, not here.
+**The widget's text is in Outfit since 2026-08-25, as bitmaps** — a font
+resource cannot reach a widget (measured 2026-08-24, docs/ux/visual-identity.md
+§2), so each name is rasterised in our process and tinted by the host. Until
+then this paragraph said the platform sans was "not a bug to file" and that no
+check was owed; the reversal owes four, all on a launcher because that is where
+the bitmaps are drawn and tinted:
+
+- [ ] **It is Outfit.** Against the launcher's own clock and labels, the
+      names' `a` and `o` are geometric and the `t` has no tail — the same test
+      the typography block further down uses for the app. Both themes, and the
+      text follows the theme on API 31+: force-stop after `cmd uimode night yes`
+      or the running widget will not re-theme.
+- [ ] **API 29 or 30 emulator: the tint is resolved in our process.** Toggle
+      dark mode with the widget placed; the text, the checkbox glyph and the
+      background are expected to stay stale *together* until the next render,
+      then flip together when a habit is completed in the app. Text that changes
+      alone, or fails to change when the rest does, is the defect this is for.
+- [ ] **200 % font scale.** Rows grow; a long name ellipsises inside the row
+      rather than under the widget's edge; nothing clips vertically. The change
+      lands at the next render, not on the spot — complete a habit in the app
+      to force one. (Glance recomposes on locale, not on configuration.)
+- [ ] **An RTL locale.** `cmd locale set-app-locales` — `debug.force_rtl` does
+      nothing on an emulator. The glyph sits on the right, and a Hebrew or Arabic
+      name is shaped and read right-to-left; Robolectric's font bundle cannot
+      draw either script, so this is the only place those glyphs are checked.
 
 Known and expected, not a bug — but **much narrower since 2026-08-21**: a widget
 left on the launcher across the day cutoff is now refreshed by a scheduled wake
