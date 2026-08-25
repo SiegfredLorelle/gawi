@@ -24,7 +24,9 @@ import androidx.compose.runtime.Composable
  * the face it was being chosen for. **That experiment ran and the answer was
  * no**: `RemoteViews` inflation resolves only the platform's generic family
  * names and drops a bundled font resource silently
- * (docs/ux/visual-identity.md §2).
+ * (docs/ux/visual-identity.md §2). The widget got the face anyway a day later,
+ * as bitmaps — `widget/…/BitmapText.kt`, which reaches into this module for
+ * `R.font.outfit` and for nothing else.
  *
  * Not *everything* drawn is Outfit, and the gap is narrower than "the app is
  * restyled" suggests — narrower again since 2026-08-24. Five of the glyph
@@ -37,11 +39,12 @@ import androidx.compose.runtime.Composable
  * fallback in the present tense for one commit too long, which is what a claim
  * repeated in four files costs.
  *
- * So the divergence it warned about is real and was accepted rather than
- * avoided: the app renders in Outfit and `:widget` renders in the system sans,
- * permanently, one home screen apart. A quieter face would have hidden that and
- * given up the identity this whole brief exists to buy. Type.kt has the rest,
- * and docs/ux/visual-identity.md §5 is where to reopen the trade.
+ * The divergence it warned about was accepted on 2026-08-24 — the app in
+ * Outfit, `:widget` in the system sans, one home screen apart — and closed on
+ * 2026-08-25 by rasterising the widget's text instead. A quieter face would
+ * have hidden the seam for that one day and given up the identity this whole
+ * brief exists to buy. Type.kt has the rest, and docs/ux/visual-identity.md §5
+ * is where the trade and its reversal are recorded.
  *
  * A habit's own colour is per-row and comes from the event log, not from here;
  * [HabitPalette] is what the editor offers and [glyphColorOn] decides what is
