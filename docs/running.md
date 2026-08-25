@@ -882,6 +882,14 @@ the bitmaps are drawn and tinted:
       What to see: the glyph sits on the right, and a Hebrew or Arabic name is
       shaped and read right-to-left. `BitmapTextTest` proves the glyphs land on
       the canvas; only a launcher shows whether the row mirrors around them.
+- [ ] **A non-default Display size** — Settings → Display → Display size, Large
+      then Small (or `wm density 400` on the emulator, `wm density reset` after),
+      then complete a habit so the widget re-renders. The name must be as crisp
+      as the checkbox glyph and keep its proportion to it. A blurry, oversized
+      or clipped name means the bitmap is carrying the device's default density
+      rather than the one it was drawn at, and the host has scaled it twice —
+      review caught exactly that in the first cut, and none of the checks above
+      would have, because they all run at the default size.
 
 Known and expected, not a bug — but **much narrower since 2026-08-21**: a widget
 left on the launcher across the day cutoff is now refreshed by a scheduled wake
