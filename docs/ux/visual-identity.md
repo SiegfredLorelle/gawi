@@ -18,7 +18,8 @@ the document to read the sketchy way.
 (§2 has the result: a widget cannot be handed a bundled font), the trade that
 left was taken in favour of identity, and the app now draws in Outfit —
 `core/ui/theme/Type.kt`, `GawiTypography`, pinned by `GawiTypographyTest`.
-Nothing in the app is stock type any more. The widget followed on 2026-08-25,
+Every text style in the app is Outfit; only glyphs outside its `cmap` — emoji,
+other scripts — fall back to the platform face (§5). The widget followed on 2026-08-25,
 by a different mechanism: its text is rasterised in Outfit and shipped as
 bitmaps, because a font resource still cannot reach a `RemoteViews` tree (§2).
 
