@@ -1,0 +1,159 @@
+package com.gawi.widget
+
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.text.Layout
+import android.text.StaticLayout
+import android.text.TextDirectionHeuristics
+import android.text.TextPaint
+import android.text.TextUtils
+import android.util.TypedValue
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.unit.Dp
+import androidx.core.graphics.createBitmap
+import androidx.glance.ColorFilter
+import androidx.glance.GlanceModifier
+import androidx.glance.GlanceTheme
+import androidx.glance.Image
+import androidx.glance.ImageProvider
+import androidx.glance.LocalContext
+import androidx.glance.layout.ContentScale
+import com.gawi.core.ui.R
+import kotlin.math.ceil
+
+/**
+ * One line of text in Outfit, rasterised for a widget.
+ *
+ * **Why a bitmap.** A Glance tree is `RemoteViews`, and `RemoteViews` inflation
+ * resolves `fontFamily` only to the platform's four generic family names — a
+ * bundled font resource is dropped silently, in every spelling it can take.
+ * Measured on 2026-08-24 (docs/ux/visual-identity.md §2), and the measurement
+ * still stands. What a host *will* draw faithfully is a bitmap, so the text is
+ * drawn here, in this process, with the typeface the app uses, and shipped as
+ * pixels. Decided on 2026-08-25, reversing §2's earlier "not worth it for a
+ * checkbox list"; §5 has the trade.
+ *
+ * **Why white ink and a tint.** The bitmap carries shape only. Colour arrives
+ * through `ColorFilter.tint(GlanceTheme.colors.onSurface)` on the `Image`, and
+ * what that does depends on the host's API level: on 31+ Glance hands the
+ * launcher a colour *resource* and the launcher resolves it in its own theme,
+ * so the text follows dark mode exactly as the background does; on 29–30 Glance
+ * resolves the provider in this process at translation time. That second case
+ * is not new — Glance already translates the checkbox glyph and plain text
+ * colour the same way below 31 — so a night-mode change on those levels leaves
+ * the whole widget stale together until its next render, not the text alone.
+ *
+ * **Why `setFontVariationSettings` and not `Typeface.create`.** `outfit.ttf` is
+ * one variable file whose `fvar` default is `wght` 100, Thin — `Type.kt`
+ * records the same trap on the Compose side. `Typeface.create(base, 400, false)`
+ * picks a style from the family's font *list* and never instances an axis, so
+ * it returns Thin with a bold bit at best. `Paint.setFontVariationSettings`
+ * goes through `Typeface.createFromTypefaceWithVariation` and instances the
+ * axis for real; it also returns whether any axis applied, which [OutfitPaint]
+ * surfaces so a test can pin it.
+ *
+ * **Why `StaticLayout` and not `Canvas.drawText`.** A bitmap has no bidi of its
+ * own, so shaping and direction have to be settled before the pixels exist.
+ * `StaticLayout` runs the same bidi and shaping a `TextView` would, with
+ * `FIRSTSTRONG_LTR` so a Hebrew or Arabic name reads correctly and a Latin one
+ * is unaffected; the `Row` around it is mirrored by the host under an RTL
+ * locale, so placement needs nothing from here.
+ *
+ * **What it costs.** `RemoteViews` bitmaps are capped at 1.5 × the screen's
+ * pixels × 4 bytes (`AppWidgetManager`'s documented limit). One row at 16sp on
+ * a 440dpi phone is roughly 720 × 56 px in ARGB_8888, about 160 KB, against a
+ * budget near 14 MB — dozens of rows before it matters, and width is clamped to
+ * what the row can show, never a fixed canvas. Font scale is honoured, because
+ * the size is resolved in sp at render time, but only at *render* time: Glance
+ * recomposes on a locale change and not on a configuration change, so a scale
+ * change shows at the next update (a write, a rollover, or the 30-minute
+ * period), which is the latency the widget already accepts for a day rollover.
+ */
+internal object BitmapText {
+
+    /** The size Glance's `CheckBox` and `Text` drew at, and `bodyLarge` in the app. */
+    internal const val TEXT_SIZE_SP = 16f
+
+    /** Outfit's `wght` for body text; the file's own default is 100, Thin. */
+    private const val OUTFIT_WEIGHT_NORMAL = 400
+
+    /** White, so a tint of any colour reproduces it exactly. */
+    private const val INK = Color.WHITE
+
+    /** A paint carrying Outfit, and whether the weight axis actually took. */
+    internal class OutfitPaint(val paint: TextPaint, val weightAxisApplied: Boolean)
+
+    /**
+     * Outfit at [OUTFIT_WEIGHT_NORMAL] and [textSizeSp], scaled by the device's
+     * density and font scale as they are *now*. `Resources.getFont` is API 26;
+     * minSdk is 29, so no compat shim is needed.
+     */
+    internal fun outfitPaint(context: Context, textSizeSp: Float = TEXT_SIZE_SP): OutfitPaint {
+        val paint = TextPaint(Paint.ANTI_ALIAS_FLAG or Paint.SUBPIXEL_TEXT_FLAG)
+        paint.typeface = context.resources.getFont(R.font.outfit)
+        val applied = paint.setFontVariationSettings("'wght' $OUTFIT_WEIGHT_NORMAL")
+        paint.textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, textSizeSp, context.resources.displayMetrics)
+        paint.color = INK
+        return OutfitPaint(paint, applied)
+    }
+
+    /** Ascent to descent for [paint], with no line-spacing padding: every row bitmap is this tall. */
+    internal fun lineHeightPx(paint: TextPaint): Int {
+        val metrics = paint.fontMetricsInt
+        return metrics.descent - metrics.ascent
+    }
+
+    /**
+     * [text] on one line, ellipsised at [maxWidthPx], as wide as the text needs
+     * and no wider. `null` when there is nothing to draw — blank text or no
+     * room — so the caller emits nothing rather than an empty image.
+     */
+    internal fun render(text: String, paint: TextPaint, maxWidthPx: Int): Bitmap? {
+        if (text.isBlank() || maxWidthPx <= 0) return null
+        val layout = StaticLayout.Builder.obtain(text, 0, text.length, paint, maxWidthPx)
+            .setTextDirection(TextDirectionHeuristics.FIRSTSTRONG_LTR)
+            .setAlignment(Layout.Alignment.ALIGN_NORMAL)
+            .setMaxLines(1)
+            .setEllipsize(TextUtils.TruncateAt.END)
+            .setEllipsizedWidth(maxWidthPx)
+            .setIncludePad(false)
+            .build()
+        val width = ceil(layout.getLineWidth(0)).toInt().coerceIn(1, maxWidthPx)
+        val bitmap = createBitmap(width, lineHeightPx(paint))
+        layout.draw(Canvas(bitmap))
+        return bitmap
+    }
+}
+
+/**
+ * [text] drawn in Outfit, in `onSurface`, no wider than [maxWidth].
+ *
+ * The bitmap is remembered against everything that would change its pixels:
+ * the text, the room it has, and the density and font scale in force. Colour
+ * is not among them, because the bitmap has none — see [BitmapText].
+ *
+ * [contentDescription] defaults to the text so TalkBack reads a row's name
+ * off the image, now that the checkbox beside it carries no text of its own.
+ * Blank text emits nothing at all.
+ */
+@Composable
+internal fun OutfitText(text: String, maxWidth: Dp, modifier: GlanceModifier = GlanceModifier, contentDescription: String? = text) {
+    val context = LocalContext.current
+    val configuration = context.resources.configuration
+    val bitmap = remember(text, maxWidth, configuration.fontScale, configuration.densityDpi) {
+        val paint = BitmapText.outfitPaint(context).paint
+        val maxWidthPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, maxWidth.value, context.resources.displayMetrics)
+        BitmapText.render(text, paint, maxWidthPx.toInt())
+    } ?: return
+    Image(
+        provider = ImageProvider(bitmap),
+        contentDescription = contentDescription,
+        modifier = modifier,
+        contentScale = ContentScale.Fit,
+        colorFilter = ColorFilter.tint(GlanceTheme.colors.onSurface),
+    )
+}
