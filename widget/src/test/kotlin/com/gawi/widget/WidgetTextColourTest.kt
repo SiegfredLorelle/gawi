@@ -3,8 +3,11 @@ package com.gawi.widget
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
-import androidx.glance.EmittableWithText
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
+import androidx.glance.EmittableImage
 import androidx.glance.GlanceTheme
+import androidx.glance.TintColorFilterParams
 import androidx.glance.appwidget.testing.unit.GlanceAppWidgetUnitTest
 import androidx.glance.appwidget.testing.unit.runGlanceAppWidgetUnitTest
 import androidx.glance.testing.GlanceNodeMatcher
@@ -46,9 +49,13 @@ import kotlin.time.Duration.Companion.seconds
  * entirely, a dark default on a light background being perfectly legible. The
  * subclasses below are the whole difference.
  *
- * [EmittableWithText] is the supertype of both `EmittableText` and
- * `EmittableCheckBox`, so one matcher covers the copy and the habit rows. That
- * matters: the rows are the case a `Text`-only matcher skips.
+ * **Since 2026-08-25 the text is pixels, and the colour is a tint.** Every string
+ * is an [OutfitText] — an `EmittableImage` carrying `ColorFilter.tint(onSurface)`
+ * — so the matcher reads the tint's `ColorProvider` where it read the style's
+ * before. It deliberately does **not** match `EmittableWithText` any more: the
+ * `CheckBox` beside each name is still one, with `text == ""`, and a matcher that
+ * counted it would report two texts per row and measure a colour nothing draws.
+ * The count guards below are what make an empty tree fail, so they count images.
  *
  * **Known limit, stated rather than hidden.** [Probe] resolves the background
  * from a second `GlanceTheme { }`, not from the one inside [WidgetBody], because
@@ -158,6 +165,9 @@ private fun GlanceAppWidgetUnitTest.renderWithProbe(content: WidgetContent): Pro
     val probe = Probe()
     probe.context = RuntimeEnvironment.getApplication()
     setContext(probe.context)
+    // SizeMode.Exact reads LocalSize; the harness has to supply one or the
+    // composition has no width to give a name.
+    setAppWidgetSize(DpSize(250.dp, 110.dp))
     provideComposable {
         GlanceTheme {
             val background = GlanceTheme.colors.widgetBackground.getColor(probe.context)
@@ -170,20 +180,23 @@ private fun GlanceAppWidgetUnitTest.renderWithProbe(content: WidgetContent): Pro
 }
 
 private fun anyText() = GlanceNodeMatcher<MappedNode>("draws text") { node ->
-    node.value.emittable is EmittableWithText
+    node.value.emittable.tint() != null
 }
+
+/** The tint an [OutfitText] carries, or null for anything that is not one. */
+private fun Any.tint() = (this as? EmittableImage)?.colorFilterParams as? TintColorFilterParams
 
 /** WCAG AA for normal text. Float, to match what [contrastRatio] returns. */
 private const val MIN_CONTRAST = 4.5f
 
 private fun illegibleText(probe: Probe) =
     GlanceNodeMatcher<MappedNode>("draws text below $MIN_CONTRAST:1 against the widget background") { node ->
-        val emittable = node.value.emittable
-        if (emittable !is EmittableWithText) {
+        val tint = node.value.emittable.tint()
+        if (tint == null) {
             false
         } else {
-            val colour = emittable.style?.color?.getColor(probe.context)
-            colour == null || contrastRatio(colour, probe.background) < MIN_CONTRAST
+            val colour = tint.colorProvider.getColor(probe.context)
+            contrastRatio(colour, probe.background) < MIN_CONTRAST
         }
     }
 

@@ -9,19 +9,23 @@ import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
 import androidx.glance.LocalContext
+import androidx.glance.LocalSize
 import androidx.glance.action.actionParametersOf
+import androidx.glance.action.clickable
 import androidx.glance.appwidget.CheckBox
 import androidx.glance.appwidget.GlanceAppWidget
+import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.lazy.LazyColumn
 import androidx.glance.appwidget.lazy.items
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
+import androidx.glance.layout.Alignment
 import androidx.glance.layout.Column
+import androidx.glance.layout.Row
 import androidx.glance.layout.fillMaxSize
+import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.padding
-import androidx.glance.text.Text
-import androidx.glance.text.TextStyle
 import com.gawi.core.data.repository.HabitRepository
 import dagger.hilt.android.EntryPointAccessors
 
@@ -58,6 +62,14 @@ import dagger.hilt.android.EntryPointAccessors
  */
 internal class TodayWidget : GlanceAppWidget() {
 
+    /**
+     * The real size, so [OutfitText] knows how much room a name has. The default,
+     * `Single`, reports the provider's minimum — 180dp — and would ellipsise every
+     * name at the width of the smallest widget however wide the host drew it.
+     * `Exact` also recomposes on a resize, which is when the room changes.
+     */
+    override val sizeMode: SizeMode = SizeMode.Exact
+
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val content = repositoryFrom(context).widgetContent()
         provideContent {
@@ -79,7 +91,17 @@ internal class TodayWidget : GlanceAppWidget() {
 internal fun repositoryFrom(context: Context): HabitRepository =
     EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java).habitRepository()
 
-/** Draws whatever [body] decided. The choice is tested; this is only the drawing. */
+/**
+ * Draws whatever [body] decided. The choice is tested; this is only the drawing.
+ *
+ * Every string here is an [OutfitText] — a bitmap in the app's face, tinted
+ * `onSurface` — rather than a Glance `Text`, since 2026-08-25. [BitmapText] has
+ * why a bitmap and what it costs; the colour history is the same as it was for
+ * `Text`: the default is not theme-aware while the background is, which drew
+ * near-black on `#303030` at 1.59:1 on a Nothing A059 on 2026-08-22, and
+ * `WidgetTextColourDarkTest` and its light twin still measure the ratio in both
+ * themes — reading the tint now, where they read the style before.
+ */
 @Composable
 internal fun WidgetBody(content: WidgetContent) {
     GlanceTheme {
@@ -87,7 +109,7 @@ internal fun WidgetBody(content: WidgetContent) {
             modifier = GlanceModifier.fillMaxSize().background(GlanceTheme.colors.widgetBackground).padding(WIDGET_PADDING.dp),
         ) {
             when (val body = content.body()) {
-                is WidgetBodyContent.Copy -> Text(text = LocalContext.current.getString(body.text), style = widgetTextStyle())
+                is WidgetBodyContent.Copy -> OutfitText(text = LocalContext.current.getString(body.text), maxWidth = contentWidth())
                 is WidgetBodyContent.Rows -> HabitRows(body.rows)
                 WidgetBodyContent.Blank -> Unit
             }
@@ -95,41 +117,41 @@ internal fun WidgetBody(content: WidgetContent) {
     }
 }
 
+/**
+ * One row per habit: the glyph, then the name.
+ *
+ * The `CheckBox` carries no text of its own any more — the name is the
+ * [OutfitText] beside it — so the two are one clickable `Row`. The action stays
+ * on the checkbox as well, and that is not redundancy: on API 31+ a
+ * `CompoundButton` toggles *visually* on a tap with or without an action behind
+ * it, so a glyph without its own callback would flip on screen and write
+ * nothing. The name is what TalkBack reads, as the image's description.
+ */
 @Composable
 private fun HabitRows(rows: List<WidgetRow>) {
+    val nameWidth = contentWidth() - CHECKBOX_SLOT.dp
     LazyColumn {
         items(rows) { row ->
-            CheckBox(
-                checked = row.completed,
-                onCheckedChange = actionRunCallback<ToggleHabitAction>(actionParametersOf(HABIT_ID to row.habitId)),
-                text = row.name,
-                style = widgetTextStyle(),
-                // No `colors`: see the note below on why the glyph cannot take
-                // the theme's, and what that leaves to check by hand.
-            )
+            val toggle = actionRunCallback<ToggleHabitAction>(actionParametersOf(HABIT_ID to row.habitId))
+            Row(
+                modifier = GlanceModifier.fillMaxWidth().clickable(toggle),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                CheckBox(
+                    checked = row.completed,
+                    onCheckedChange = toggle,
+                    // No `colors`: see the note below on why the glyph cannot take
+                    // the theme's, and what that leaves to check by hand.
+                )
+                OutfitText(text = row.name, maxWidth = nameWidth)
+            }
         }
     }
 }
 
-/**
- * The one text style the widget draws with, and the reason it is not the default.
- *
- * Every `Text` and `CheckBox` here **must** name a colour. Glance's default text
- * colour is not theme-aware, while the container above sets its background from
- * `GlanceTheme.colors.widgetBackground`, which is — so leaving the style off gives
- * a widget whose background follows dark mode and whose text does not. Measured on
- * a Nothing A059 (Android 16) on 2026-08-22: near-black text on `#303030`, a
- * contrast ratio of **1.59:1** against WCAG's 4.5:1 floor. It rendered, so
- * `WidgetHostTest` was green throughout; it was only ever visible on a device in
- * dark mode. `WidgetTextColourDarkTest` and its light-mode twin now measure the
- * ratio in both themes, and docs/running.md §4's widget block gained the
- * by-hand check that block was missing when this shipped.
- *
- * `onSurface` rather than `onBackground` because `widgetBackground` is the surface
- * this text sits on. Both resolve correctly in either mode; this one is the pair.
- */
+/** The width inside the padding, off the size the host actually gave this instance. */
 @Composable
-private fun widgetTextStyle() = TextStyle(color = GlanceTheme.colors.onSurface)
+private fun contentWidth() = LocalSize.current.width - (2 * WIDGET_PADDING).dp
 
 /*
  * The checkbox glyph is deliberately NOT pinned, and this is the measurement
@@ -162,8 +184,9 @@ private fun widgetTextStyle() = TextStyle(color = GlanceTheme.colors.onSurface)
  * restating rather than leaving as a stale deferral:
  *
  *  - `ColorProvider(Color)` literals are now available, and picking two is no
- *    longer inventing a palette. But `:widget` cannot see `:core:ui`, so it
- *    means *copying* two hexes into this module, and the widget's own palette is
+ *    longer inventing a palette. But `:widget` sees `:core:ui` for one font
+ *    resource and nothing else (build.gradle.kts), so it still means *copying*
+ *    two hexes into this module, and the widget's own palette is
  *    a separate piece of work with three more surfaces in it
  *    (docs/ux/visual-identity.md §7.4). Doing a third of it here would leave the
  *    widget half-styled and the duplication undocumented.
@@ -178,3 +201,10 @@ private fun widgetTextStyle() = TextStyle(color = GlanceTheme.colors.onSurface)
  */
 
 private const val WIDGET_PADDING = 8
+
+/**
+ * Room reserved for the checkbox glyph beside a name, in dp. Glance's glyph is
+ * narrower; the difference is the margin the ellipsis needs to land inside the
+ * row rather than under the edge of the widget.
+ */
+private const val CHECKBOX_SLOT = 48
