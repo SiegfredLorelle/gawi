@@ -197,3 +197,12 @@ internal val GawiDarkColors: ColorScheme = darkColorScheme(
  * only one another module has to reproduce rather than consume.
  */
 fun gawiWindowBackground(darkTheme: Boolean): Color = if (darkTheme) GawiDarkColors.surface else GawiLightColors.surface
+
+/**
+ * The launcher icon's ground, for `:app`'s `LauncherIconTest` to pin
+ * `@color/ic_launcher_background` against — the second scheme colour that has
+ * to exist in XML too (an adaptive icon is XML). Light only, and not a theme
+ * choice: launchers cache icons, and on Android 13+ a dark home screen shows
+ * the themed monochrome layer instead (docs/ux/visual-identity.md §7.1).
+ */
+fun gawiLauncherBackground(): Color = GawiLightColors.primaryContainer
