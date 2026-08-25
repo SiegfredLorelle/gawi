@@ -588,9 +588,22 @@ cases where a count is zero get their own string rather than reading "0 added".
   `:core:data` change and a wider one than it looks.
 - **No timezone setting**, per §1. Recorded here so it reads as a decision
   rather than an omission.
-- **`GlyphButton` wants a home in `:core:ui`, and this screen made that worse.**
-  Five composables now wrap an `IconButton` around a `Text` glyph named by a
-  `contentDescription`, and two of them —
+- **`GlyphButton` wanted a home in `:core:ui`. It has one — resolved
+  2026-08-24.** The whole of this bullet below is history now, kept because the
+  count it tracks is how the rule in `AGENTS.md` earned its wording. What
+  happened in the end: `GlyphButton` moved to `:core:ui` when the history screen
+  would have been its third copy, and the icon set then renamed it
+  **`GawiIconButton`** and gave it a `@DrawableRes` instead of a character
+  (docs/ux/visual-identity.md §7.5). `StepperButton` — named below as "the same
+  shape plus an `enabled`" — was absorbed by adding exactly that parameter, so
+  it is deleted rather than moved. Five call sites became fifteen across four
+  features, all through one composable.
+
+  **`SectionHeader` is still outstanding**, so the pressure this bullet
+  describes has not gone entirely; see the paragraph on it below.
+
+  The record as it stood: five composables wrapped an `IconButton` around a
+  `Text` glyph named by a `contentDescription`, and two of them —
   `feature/settings/.../SettingsScreen.kt` and
   `feature/habits/.../HabitListScreen.kt` — are byte-for-byte identical
   including the KDoc. The other three are `ManageHabitsButton` and
@@ -618,7 +631,8 @@ cases where a count is zero get their own string rather than reading "0 added".
   than a copy, which is exactly the threshold this bullet exists to track.
   Whenever the glyph button moves to `:core:ui`, this should move with it.
 
-  **The row duplication is gone**, which is the one thing on this backlog the
-  nudge actually removed: `ActionRow` and `SettingRow` were the same `Column`
-  differing in a middle line and a pair of booleans, and there is now one of
-  them with five call sites (§6). The glyph button is untouched and still five.
+  **The row duplication is gone**, which was the first thing on this backlog the
+  nudge removed: `ActionRow` and `SettingRow` were the same `Column` differing in
+  a middle line and a pair of booleans, and there is now one of them with five
+  call sites (§6). The glyph button was untouched and still five when that was
+  written; it is `:core:ui`'s `GawiIconButton` now, per the top of this bullet.
