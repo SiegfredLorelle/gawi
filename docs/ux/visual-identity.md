@@ -11,8 +11,9 @@ before anything existed, and revised once the scheme landed in `Theme.kt` — so
 §§3, 4 and 6 now record what building decided rather than what was proposed, in
 the way [habits.md](habits.md), [widget.md](widget.md),
 [settings.md](settings.md) and [reminder.md](reminder.md) do. §7's second half
-(Momo's art, the icon) is still sketch, and [insights.md](insights.md) is still
-the document to read the sketchy way.
+(Momo's art, the icon) was sketch until 2026-08-25; [momo.md](momo.md) now
+records the character as built, and only the icon's drawing is still owed.
+[insights.md](insights.md) is still the document to read the sketchy way.
 
 **§5 (typography) is BUILT as of 2026-08-24.** The experiment it waited on ran
 (§2 has the result: a widget cannot be handed a bundled font), the trade that
@@ -241,10 +242,16 @@ one idea. The question they disagree about is **where Momo's coral goes**.
 | `tertiary` | `#C9A227` †  | `#E8C55E` † |
 | `surface` | `#F4FBFA` | `#0E1A1C` |
 | `onSurface` | `#101C1E` | `#DCEEF0` |
-| Momo only | `#E0708F` | `#FFB1C4` |
+| Momo only | `#E0708F` ‡ | `#FFB1C4` ‡ |
 
 † Neither `tertiary` survived measurement. Kept here as the record of what was
 chosen from the drawings; "What shipped" below has the replacements and why.
+
+‡ Wrong value, right reservation — corrected 2026-08-25. The canvas never drew
+Momo in this coral: the character is a pastel, `#F7C3D1` with `#E8879F` as its
+accent, the same in both themes, and [momo.md](momo.md) §2 is its palette.
+What this row still means is what mattered: the pink family belongs to the
+mascot and no theme role is drawn from it.
 
 The UI is the tank; Momo is the only warm thing in it. The mascot cannot be lost
 against chrome in its own colours, and teal is the natural ramp for the heatmap.
@@ -893,9 +900,11 @@ and the Insights heatmap — the whole reason PRD §5's Phase 1 order was invert
 2026-08-24** and is what §4.4 now records. The widget's own palette is the one
 still to come, and it has values to draw from.
 
-**Still a leaning: Momo's style is flat.** All three treatments stay on the
-canvas so it can move; the launcher mark derives from the character, so a change
-there redraws the mark rather than reopening §7.1.
+~~**Still a leaning: Momo's style is flat.**~~ **Decided 2026-08-25: flat, and
+the character is the canvas's own, built for Today** — [momo.md](momo.md) is the
+record. The other two treatments stay on the canvas as the record of the choice.
+The launcher mark derives from the character, so it can be drawn now; nothing
+has drawn it yet (§8).
 
 **Parked, with an experiment rather than a question: the typeface.** §5 has the
 condition and §2 has the experiment.
@@ -1123,14 +1132,18 @@ missed.
 
 ## 8. What this does not decide
 
-- **Momo's art style, expressions, and whether it is static or animated.** OQ-4's
-  second half, still open. PRD §5 has the tooling plan (Rive recommended, Lottie
-  and static-first as fallbacks).
+- ~~**Momo's art style, expressions, and whether it is static or animated.**~~
+  **Decided and built 2026-08-25** — flat, the canvas's character, all four
+  expressions, animated in Compose on the Today screen. [momo.md](momo.md) is
+  the record, including why PRD §5's Rive recommendation was dropped (its export
+  is behind a paid plan) and what that cost. Still open there: the widget and
+  reminder treatments, and milestones.
 - **The launcher icon — its drawing and its wiring, not its design.** §7.1 does
   decide the icon: Momo as a mark, the composition, and the woven thread as the
-  monochrome layer. What is open is everything downstream of that, and for the
-  reason §7.1 gives itself — the mark derives from the character, so it cannot be
-  drawn until Momo's style is. Nor is any of it implemented: there is no
+  monochrome layer. What is open is everything downstream of that. The reason
+  it could not be drawn — the mark derives from the character — expired on
+  2026-08-25 when the character was decided; it is now simply not yet done. Nor
+  is any of it implemented: there is no
   `mipmap/ic_launcher` at all today and the manifest points `android:icon` at
   `@android:drawable/sym_def_app_icon`, which is Android's generic default and
   *not* public API. Replacing it is the fix; depending on it further is not.
