@@ -1,16 +1,24 @@
 package com.gawi.feature.today
 
+import android.provider.Settings
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasScrollAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToNode
 import com.gawi.core.domain.mascot.Mood
 import com.gawi.core.domain.model.HabitId
 import com.gawi.core.ui.streak.StreakUi
 import com.gawi.core.ui.theme.GawiTheme
 import org.junit.Assert.assertEquals
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -54,6 +62,19 @@ class TodayScreenTest {
     // androidx.test:core — a different library, reached only transitively
     // through ui-test-junit4 and carrying no catalog entry to bump.
     private val resources = RuntimeEnvironment.getApplication().resources
+
+    /**
+     * Animations off, the way a user turns them off. Momo runs a frame loop
+     * while it animates, and a composition with a frame awaiter is never idle,
+     * so every `waitForIdle` here would time out. Rather than fake the clock,
+     * take the path the system offers: with the animator scale at zero `Momo`
+     * draws its resting frame (docs/ux/momo.md §5), which is the frame these
+     * assertions are about anyway. MomoRenderTest is where motion is tested.
+     */
+    @Before
+    fun animationsOff() {
+        Settings.Global.putFloat(RuntimeEnvironment.getApplication().contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 0f)
+    }
 
     /**
      * §4's rule 0, as a test: a habitless first run is not thriving.
@@ -104,6 +125,9 @@ class TodayScreenTest {
             }
         }
 
+        // The second row is below the tank on Robolectric's 470dp screen and a
+        // LazyColumn has not composed it yet; scroll the list to it first.
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText(WALK.name))
         compose.onNodeWithText(WALK.name).performClick()
 
         assertEquals(Triple(WALK.id, false, LOGICAL_DATE), reported)
@@ -208,7 +232,9 @@ class TodayScreenTest {
             }
         }
 
-        compose.onNodeWithText(string(R.string.today_add_habit)).performClick()
+        // Below the tank on Robolectric's 470dp screen, as it would be on a small
+        // phone: scroll to it first, the way a thumb would.
+        compose.onNodeWithText(string(R.string.today_add_habit)).performScrollTo().performClick()
 
         assertEquals(1, added)
     }
@@ -311,6 +337,34 @@ class TodayScreenTest {
     }
 
     private fun string(id: Int): String = resources.getString(id)
+
+    /**
+     * All four faces, each with its own line — the §4 mapping is no longer
+     * three-to-four. The tag proves the mood reached the drawing and the copy
+     * proves the line beside it agrees; a screen test cannot see pixels
+     * (MomoRenderTest does), so this is the seam it can hold.
+     */
+    @Test
+    fun `each mood draws its own face with its own line`() {
+        val lines = mapOf(
+            Mood.THRIVING to R.string.today_mood_happy,
+            Mood.CONTENT to R.string.today_mood_neutral,
+            Mood.WORRIED to R.string.today_mood_worried,
+            Mood.REGENERATING to R.string.today_mood_regenerating,
+        )
+        val mood = mutableStateOf(Mood.THRIVING)
+        compose.setContent {
+            GawiTheme { TodayScreen(HABITS.copy(mood = mood.value), NO_ACTIONS, SnackbarHostState()) }
+        }
+        lines.forEach { (next, line) ->
+            mood.value = next
+            compose.waitForIdle()
+            // Unmerged, because the panel merges its descendants so TalkBack
+            // reads the line once; the tag lives on the drawing inside it.
+            compose.onNodeWithTag("momo:$next", useUnmergedTree = true).assertExists()
+            compose.onNodeWithText(string(line)).assertIsDisplayed()
+        }
+    }
 
     private companion object {
         val LOGICAL_DATE: LocalDate = LocalDate.parse("2026-08-17")
