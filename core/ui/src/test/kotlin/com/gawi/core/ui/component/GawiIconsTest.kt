@@ -117,16 +117,15 @@ class GawiIconsTest {
      * Namespace-unaware on purpose, so attributes read as the file spells
      * them: "android:strokeWidth" rather than a resolved URI.
      */
-    private fun document(file: File): Document =
-        DocumentBuilderFactory.newInstance()
-            // Hardening rather than a fix: these ten files are generated from a
-            // fixed template that copies only `d`, so nothing from a source
-            // SVG's prolog can reach them and there is no live entity to
-            // resolve. It is one line, it is the default static analysis flags,
-            // and it leaves the namespace-unaware behaviour above intact.
-            .apply { setFeature("http://apache.org/xml/features/disallow-doctype-decl", true) }
-            .newDocumentBuilder()
-            .parse(file)
+    private fun document(file: File): Document = DocumentBuilderFactory.newInstance()
+        // Hardening rather than a fix: these ten files are generated from a
+        // fixed template that copies only `d`, so nothing from a source
+        // SVG's prolog can reach them and there is no live entity to
+        // resolve. It is one line, it is the default static analysis flags,
+        // and it leaves the namespace-unaware behaviour above intact.
+        .apply { setFeature("http://apache.org/xml/features/disallow-doctype-decl", true) }
+        .newDocumentBuilder()
+        .parse(file)
 
     private fun paths(file: File): List<Element> {
         val nodes = document(file).getElementsByTagName("path")
