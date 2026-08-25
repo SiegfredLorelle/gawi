@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    The reminder's notification small icon.
+    The reminder's notification small icon: Momo's silhouette.
 
     A vector rather than android.R.drawable.ic_popup_reminder, which is what this
     started as. Since API 21 a small icon is drawn from its **alpha channel only**
@@ -10,15 +10,39 @@
     OEM skins either. Flagged in PR review; docs/ux/reminder.md §4 records it.
 
     Solid white on transparent, which is the only thing a small icon may be. The
-    launcher icon is still @android:drawable/sym_def_app_icon and is deliberately
-    untouched: this is a defect fix, not the design pass both are waiting for.
+    shape is the launcher mark's (ic_launcher_foreground.xml, visual-identity
+    §7.1) scaled from its 108-grid onto 24 — the mark is what holds at 24px; the
+    full character did not (docs/ux/momo.md §4). Body and two fronds a side; the
+    eyes are cut out of the body with evenOdd, so the face survives a one-colour
+    rendering. No mouth: a stroke cannot cut alpha, and a filled slot at 24dp is
+    noise.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
+  <!-- A faithful 24/108 scale of the mark inherits the 108 artboard's
+       margins and fills only 17 × 10 of the canvas. The group scales it 1.2
+       about the centre to 20.3 × 11.7 — the platform's own 2dp inset for a
+       24dp small icon on the wide axis. Height stays near half the canvas
+       because the mark is 1.7:1 wide; whether that reads beside the system's
+       icons is the docs/running.md §4 status-bar check, not a number here. -->
+  <group
+      android:pivotX="12"
+      android:pivotY="12"
+      android:scaleX="1.2"
+      android:scaleY="1.2">
+    <!-- Fronds: upper pair r2.111 at (6, 9.778) and (18, 9.778); lower pair
+         r1.778 at (5.333, 13.333) and (18.667, 13.333). -->
     <path
         android:fillColor="#FFFFFFFF"
-        android:pathData="M12,22c1.1,0 2,-0.9 2,-2h-4c0,1.1 0.89,2 2,2zM18,16v-5c0,-3.07 -1.64,-5.64 -4.5,-6.32V4c0,-0.83 -0.67,-1.5 -1.5,-1.5s-1.5,0.67 -1.5,1.5v0.68C7.63,5.36 6,7.92 6,11v5l-2,2v1h16v-1l-2,-2z" />
+        android:pathData="M3.889,9.778 a2.111,2.111 0 1,1 4.222,0 a2.111,2.111 0 1,1 -4.222,0 Z M3.556,13.333 a1.778,1.778 0 1,1 3.556,0 a1.778,1.778 0 1,1 -3.556,0 Z M15.889,9.778 a2.111,2.111 0 1,1 4.222,0 a2.111,2.111 0 1,1 -4.222,0 Z M16.889,13.333 a1.778,1.778 0 1,1 3.556,0 a1.778,1.778 0 1,1 -3.556,0 Z" />
+    <!-- Body: ellipse at (12,12), radii 5.778 x 4.889, with the eyes — r0.978
+         at (10, 11.333) and (14, 11.333) — as evenOdd holes. -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M6.222,12 a5.778,4.889 0 1,1 11.556,0 a5.778,4.889 0 1,1 -11.556,0 Z M9.022,11.333 a0.978,0.978 0 1,1 1.956,0 a0.978,0.978 0 1,1 -1.956,0 Z M13.022,11.333 a0.978,0.978 0 1,1 1.956,0 a0.978,0.978 0 1,1 -1.956,0 Z" />
+  </group>
 </vector>
