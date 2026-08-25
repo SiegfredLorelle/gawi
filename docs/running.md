@@ -832,7 +832,11 @@ Decisions and reasoning are in [docs/ux/widget.md](ux/widget.md).
       every theme colour is resource-backed and `CheckBoxColors` refuses those,
       so pinning would mean inventing hardcoded literals while PRD OQ-4 is open.
       No test sees this colour either way.
-- [ ] **A tap completes.** Tap an unticked row: it ticks. Open the app — Today
+- [ ] **A tap completes.** Tap an unticked row's *glyph*: it ticks at once. Tap
+      its *name* instead: nothing moves until the write round-trips (a second
+      or so), then the glyph ticks — only the checkbox half flips instantly, so
+      do not tap twice while waiting or the second tap undoes the first. Open
+      the app — Today
       agrees, and the mascot has reacted if that was the last one.
 - [ ] **A tap again undoes.** Tap the ticked row: it unticks, and Today agrees.
       This is the half that separates the widget from a complete-only one.
@@ -876,8 +880,8 @@ the bitmaps are drawn and tinted:
       `RemoteViews` in *its* configuration, and `settings put global
       development_force_rtl 1` changed nothing at all, not even the status bar.
       What to see: the glyph sits on the right, and a Hebrew or Arabic name is
-      shaped and read right-to-left; Robolectric's font bundle cannot draw either
-      script, so this is the only place those glyphs are checked.
+      shaped and read right-to-left. `BitmapTextTest` proves the glyphs land on
+      the canvas; only a launcher shows whether the row mirrors around them.
 
 Known and expected, not a bug — but **much narrower since 2026-08-21**: a widget
 left on the launcher across the day cutoff is now refreshed by a scheduled wake

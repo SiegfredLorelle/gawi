@@ -43,7 +43,7 @@ parked themselves on OQ-4 and nothing recorded that they had.**
 | `GawiTheme` KDoc | Stock Material 3, no `ColorScheme`, no typography, "because Momo's palette is PRD OQ-4 and undesigned" | The designed schemes, and why dynamic colour stays off. Type is the one stock thing left, and says what it waits on |
 | `HabitPalette` KDoc | "Not a design system" — mid-tone Material hues, same deferral | Designed, and to the rule in §6, with the two rules that failed |
 | `GawiSpacing` KDoc | "Not a design system and not trying to be one — Momo's visual language is PRD OQ-4" | Narrowed, not rewritten: §8 records that dimensions were genuinely not in this brief, so it still defers — but only about spacing |
-| `TodayWidget`'s glyph comment | Checkbox glyph left unpinned because pinning needs two literals and "this project does not have a palette yet". Ends: "Revisit with OQ-4." | Still unpinned, for the two reasons that outlived the palette: `:widget` cannot see `:core:ui`, and pinning would still not make the glyph assertable. Now points at §7.4 |
+| `TodayWidget`'s glyph comment | Checkbox glyph left unpinned because pinning needs two literals and "this project does not have a palette yet". Ends: "Revisit with OQ-4." | Still unpinned, for the two reasons that outlived the palette: `:widget` sees `:core:ui` for one font resource only (2026-08-25), so pinning still means copying hexes, and it would still not make the glyph assertable. Now points at §7.4 |
 
 All four were rewritten when the scheme landed. Recorded this way rather than
 edited away, because "four places had quietly parked on one open question"
@@ -158,11 +158,29 @@ background is; on API 29–30 Glance resolves it in our process at translation,
 which is how it already translates the checkbox glyph and plain text colour
 below 31, so a night-mode change there leaves the whole widget stale together
 until the next render rather than the text alone. And the glyphs of a script
-outside Outfit's `cmap` come from the device's fallback fonts — the same as the
-app — which Robolectric's font bundle lacks for Hebrew and Arabic, so
-`BitmapTextTest` pins the layout and docs/running.md's RTL check owns the shapes.
-The edge this needed, `widget → core:ui`, carries `R.font.outfit` and nothing
-else; architecture §2 says so.
+outside Outfit's `cmap` come from the device's fallback fonts, the same as the
+app, and take the *layout's* height rather than Outfit's so an emoji is not
+clipped. The edge this needed, `widget → core:ui`, carries `R.font.outfit` and
+nothing else; architecture §2 says so.
+
+Three things the first cut got wrong, caught by review the same day and worth
+keeping because each looked like something else. **A right-to-left name drew
+nothing** — not, as the first test claimed, because Robolectric lacks Hebrew
+fonts, but because `ALIGN_NORMAL` puts an RTL line at the right edge of the
+layout, and a layout as wide as the room drawn into a bitmap as wide as the
+text painted every glyph off the canvas; the layout is now built at the text's
+own width and the test asserts ink. **The name was described on the image**,
+which read to TalkBack as an anonymous checkbox beside a named picture; it is
+on the checkbox now, paired with the checked state as `CheckBox(text = …)` was.
+**The budget above is per size.** `SizeMode.Exact` composes once per size the
+host reports and ships them in one `RemoteViews`, and a bitmap grows with the
+square of the font scale, so at 200 % on a launcher reporting two sizes the cap
+is nearer twenty rows than dozens. Still far from a real habit list; if it ever
+binds, `ALPHA_8` (the ink is coverage only) is a 4× saving that was not needed
+yet. One thing it does not do: a name with no strong character — `10,000`,
+`3 × 💧` — lays out left-to-right whatever the host's direction, because the
+bitmap is drawn with the app's configuration and a per-app locale can differ
+from the launcher's.
 
 **Why this negative is trustworthy, given how often a check here has measured
 nothing.** The `serif` row is a positive control, and it is the whole reason the
