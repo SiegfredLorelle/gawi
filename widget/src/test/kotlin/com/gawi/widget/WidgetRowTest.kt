@@ -51,10 +51,12 @@ class WidgetRowTest {
         onAllNodes(image()).assertCountEquals(2)
     }
 
+    /** On the checkbox, so TalkBack pairs the name with the checked state; the image is decorative. */
     @Test
-    fun `the name is what the image is described as`() = render {
+    fun `the name is what the checkbox is described as`() = render {
         onAllNodes(hasContentDescription("read")).assertCountEquals(1)
         onAllNodes(hasContentDescription("walk")).assertCountEquals(1)
+        onAllNodes(describedCheckBox("read")).assertCountEquals(1)
     }
 
     /**
@@ -107,6 +109,10 @@ private fun checkBoxToggling(parameters: ActionParameters) = GlanceNodeMatcher<M
     val wrapped = checkBox.modifier.findModifier<ActionModifier>()?.action ?: return@GlanceNodeMatcher false
     val inner = wrapped.javaClass.getMethod("getInnerAction").invoke(wrapped) as? RunCallbackAction
     inner?.callbackClass == ToggleHabitAction::class.java && inner.parameters == parameters
+}
+
+private fun describedCheckBox(name: String) = GlanceNodeMatcher<MappedNode>("is a checkbox described as $name") {
+    it.value.emittable is EmittableCheckBox && hasContentDescription(name).matches(it)
 }
 
 private fun image() = GlanceNodeMatcher<MappedNode>("is an image") { it.value.emittable is EmittableImage }

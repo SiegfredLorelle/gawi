@@ -26,6 +26,8 @@ import androidx.glance.layout.Row
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.padding
+import androidx.glance.semantics.contentDescription
+import androidx.glance.semantics.semantics
 import com.gawi.core.data.repository.HabitRepository
 import dagger.hilt.android.EntryPointAccessors
 
@@ -109,8 +111,13 @@ internal fun WidgetBody(content: WidgetContent) {
             modifier = GlanceModifier.fillMaxSize().background(GlanceTheme.colors.widgetBackground).padding(WIDGET_PADDING.dp),
         ) {
             when (val body = content.body()) {
-                is WidgetBodyContent.Copy -> OutfitText(text = LocalContext.current.getString(body.text), maxWidth = contentWidth())
+                is WidgetBodyContent.Copy -> {
+                    val copy = LocalContext.current.getString(body.text)
+                    OutfitText(text = copy, maxWidth = contentWidth(), maxLines = MAX_COPY_LINES, contentDescription = copy)
+                }
+
                 is WidgetBodyContent.Rows -> HabitRows(body.rows)
+
                 WidgetBodyContent.Blank -> Unit
             }
         }
@@ -125,11 +132,15 @@ internal fun WidgetBody(content: WidgetContent) {
  * on the checkbox as well, and that is not redundancy: on API 31+ a
  * `CompoundButton` toggles *visually* on a tap with or without an action behind
  * it, so a glyph without its own callback would flip on screen and write
- * nothing. The name is what TalkBack reads, as the image's description.
+ * nothing. The name goes on the checkbox as its `contentDescription`, so
+ * TalkBack still pairs it with the checked state the way `CheckBox(text = …)`
+ * did; the image is decorative. Review caught the first cut describing the
+ * image instead, which read as an anonymous checkbox beside a named picture.
  */
 @Composable
 private fun HabitRows(rows: List<WidgetRow>) {
     val nameWidth = contentWidth() - CHECKBOX_SLOT.dp
+    val paint = rememberOutfitPaint()
     LazyColumn {
         items(rows) { row ->
             val toggle = actionRunCallback<ToggleHabitAction>(actionParametersOf(HABIT_ID to row.habitId))
@@ -140,10 +151,11 @@ private fun HabitRows(rows: List<WidgetRow>) {
                 CheckBox(
                     checked = row.completed,
                     onCheckedChange = toggle,
+                    modifier = GlanceModifier.semantics { contentDescription = row.name },
                     // No `colors`: see the note below on why the glyph cannot take
                     // the theme's, and what that leaves to check by hand.
                 )
-                OutfitText(text = row.name, maxWidth = nameWidth)
+                OutfitText(text = row.name, maxWidth = nameWidth, paint = paint)
             }
         }
     }
@@ -208,3 +220,6 @@ private const val WIDGET_PADDING = 8
  * row rather than under the edge of the widget.
  */
 private const val CHECKBOX_SLOT = 48
+
+/** The copy states may wrap: "Can't read your habits" is 159dp at 16sp, wider than the smallest widget. */
+private const val MAX_COPY_LINES = 3

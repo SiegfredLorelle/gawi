@@ -70,7 +70,7 @@ class BitmapTextTest {
     }
 
     @Test
-    fun `every bitmap is ascent-to-descent tall`() {
+    fun `a Latin line is ascent-to-descent tall`() {
         val paint = BitmapText.outfitPaint(context).paint
         val metrics = paint.fontMetricsInt
 
@@ -80,18 +80,41 @@ class BitmapTextTest {
     }
 
     /**
-     * Shapes for scripts outside Outfit's `cmap` come from the device's fallback
-     * fonts, and Robolectric's native bundle has none for Hebrew or Arabic: the
-     * run advances the pen and paints nothing. So this pins what the harness can
-     * see — the layout runs, the bitmap has the width the text measured, and the
-     * Latin in a mixed name still lands — and docs/running.md's RTL check owns
-     * the glyphs.
+     * The first cut of this test asserted only width, and blamed zero ink on
+     * Robolectric's font bundle. Review found the real cause: `ALIGN_NORMAL`
+     * puts a right-to-left line at the right edge of the layout, and a layout
+     * as wide as the room drawn into a bitmap as wide as the text painted every
+     * glyph off the canvas — on a device too. The layout is now built at the
+     * text's own width, and this asserts the ink.
      */
     @Test
-    fun `right-to-left and mixed-direction names lay out`() {
-        assertTrue(render("לקרוא").width > 1)
-        assertTrue(render("اقرأ").width > 1)
+    fun `right-to-left and mixed-direction names render`() {
+        assertTrue(render("לקרוא").inkedPixels() > 0)
+        assertTrue(render("اقرأ").inkedPixels() > 0)
         assertTrue(render("read לקרוא 10").inkedPixels() > 0)
+    }
+
+    /** A fallback glyph can be taller than Outfit; the bitmap takes the layout's height, not the paint's. */
+    @Test
+    fun `a name with an emoji is not clipped to Outfit's metrics`() {
+        val paint = BitmapText.outfitPaint(context).paint
+
+        val bitmap = BitmapText.render("Gym 💪", paint, WIDE)!!
+
+        assertTrue(bitmap.height >= BitmapText.lineHeightPx(paint))
+        assertTrue(bitmap.inkedPixels() > 0)
+    }
+
+    @Test
+    fun `copy may wrap onto more lines when allowed`() {
+        val paint = BitmapText.outfitPaint(context).paint
+        val long = "read ".repeat(REPEATS).trim()
+
+        val one = BitmapText.render(long, paint, NARROW, maxLines = 1)!!
+        val three = BitmapText.render(long, paint, NARROW, maxLines = 3)!!
+
+        assertTrue(three.height > one.height)
+        assertTrue(three.inkedPixels() > one.inkedPixels())
     }
 
     @Test

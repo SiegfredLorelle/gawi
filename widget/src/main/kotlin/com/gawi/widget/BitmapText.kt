@@ -16,7 +16,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.Dp
 import androidx.core.graphics.createBitmap
 import androidx.glance.ColorFilter
-import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
 import androidx.glance.Image
 import androidx.glance.ImageProvider
@@ -66,8 +65,11 @@ import kotlin.math.ceil
  * **What it costs.** `RemoteViews` bitmaps are capped at 1.5 × the screen's
  * pixels × 4 bytes (`AppWidgetManager`'s documented limit). One row at 16sp on
  * a 440dpi phone is roughly 720 × 56 px in ARGB_8888, about 160 KB, against a
- * budget near 14 MB — dozens of rows before it matters, and width is clamped to
- * what the row can show, never a fixed canvas. Font scale is honoured, because
+ * budget near 14 MB. Two multipliers eat into that: `SizeMode.Exact` composes
+ * once per size the host reports and ships them together, and a bitmap grows
+ * with the square of the font scale — at 200 % on a two-size launcher the cap is
+ * nearer twenty rows than dozens, still far beyond a real list. Width is clamped
+ * to what the row can show, never a fixed canvas. Font scale is honoured, because
  * the size is resolved in sp at render time, but only at *render* time: Glance
  * recomposes on a locale change and not on a configuration change, so a scale
  * change shows at the next update (a write, a rollover, or the 30-minute
@@ -101,32 +103,51 @@ internal object BitmapText {
         return OutfitPaint(paint, applied)
     }
 
-    /** Ascent to descent for [paint], with no line-spacing padding: every row bitmap is this tall. */
+    /** Ascent to descent for [paint], with no line-spacing padding: what one line of Outfit is tall. */
     internal fun lineHeightPx(paint: TextPaint): Int {
         val metrics = paint.fontMetricsInt
         return metrics.descent - metrics.ascent
     }
 
     /**
-     * [text] on one line, ellipsised at [maxWidthPx], as wide as the text needs
-     * and no wider. `null` when there is nothing to draw — blank text or no
-     * room — so the caller emits nothing rather than an empty image.
+     * [text] in at most [maxLines] lines, ellipsised at [maxWidthPx], as wide as
+     * the text needs and no wider. `null` when there is nothing to draw — blank
+     * text or no room — so the caller emits nothing rather than an empty image.
+     *
+     * The layout is built at the text's own width, not at [maxWidthPx], and that
+     * is load-bearing for RTL: `ALIGN_NORMAL` puts a right-to-left line at the
+     * *right* edge of the layout, so a layout as wide as the room drawn into a
+     * bitmap as wide as the text would paint every glyph off the canvas. Review
+     * caught that in the first cut; the height comes from the layout for the same
+     * kind of reason — a fallback glyph (an emoji, a script outside Outfit) can
+     * be taller than Outfit's own metrics and would be clipped by them.
      */
-    internal fun render(text: String, paint: TextPaint, maxWidthPx: Int): Bitmap? {
+    internal fun render(text: String, paint: TextPaint, maxWidthPx: Int, maxLines: Int = 1): Bitmap? {
         if (text.isBlank() || maxWidthPx <= 0) return null
-        val layout = StaticLayout.Builder.obtain(text, 0, text.length, paint, maxWidthPx)
+        val width = ceil(Layout.getDesiredWidth(text, paint)).toInt().coerceIn(1, maxWidthPx)
+        val layout = StaticLayout.Builder.obtain(text, 0, text.length, paint, width)
             .setTextDirection(TextDirectionHeuristics.FIRSTSTRONG_LTR)
             .setAlignment(Layout.Alignment.ALIGN_NORMAL)
-            .setMaxLines(1)
+            .setMaxLines(maxLines)
             .setEllipsize(TextUtils.TruncateAt.END)
-            .setEllipsizedWidth(maxWidthPx)
+            .setEllipsizedWidth(width)
             .setIncludePad(false)
             .build()
-        val width = ceil(layout.getLineWidth(0)).toInt().coerceIn(1, maxWidthPx)
-        val bitmap = createBitmap(width, lineHeightPx(paint))
+        val bitmap = createBitmap(width, layout.height.coerceAtLeast(1))
         layout.draw(Canvas(bitmap))
         return bitmap
     }
+}
+
+/**
+ * One Outfit paint for a composition, built once rather than once per row:
+ * `setFontVariationSettings` creates a native `Typeface` instance each call.
+ */
+@Composable
+internal fun rememberOutfitPaint(): TextPaint {
+    val context = LocalContext.current
+    val configuration = context.resources.configuration
+    return remember(configuration.fontScale, configuration.densityDpi) { BitmapText.outfitPaint(context).paint }
 }
 
 /**
@@ -136,24 +157,36 @@ internal object BitmapText {
  * the text, the room it has, and the density and font scale in force. Colour
  * is not among them, because the bitmap has none — see [BitmapText].
  *
- * [contentDescription] defaults to the text so TalkBack reads a row's name
- * off the image, now that the checkbox beside it carries no text of its own.
- * Blank text emits nothing at all.
+ * [maxWidth] is floored at [MIN_WIDTH_DP]: Glance's `Exact` size falls back to
+ * zero when the host has no info for the id yet, and a widget that draws
+ * nothing in that window is worse than one that ellipsises hard.
+ *
+ * [contentDescription] is `null` by default — decorative — because the row's
+ * name belongs on the checkbox, where TalkBack pairs it with the checked state;
+ * the copy states pass their text. Blank text emits nothing at all.
  */
 @Composable
-internal fun OutfitText(text: String, maxWidth: Dp, modifier: GlanceModifier = GlanceModifier, contentDescription: String? = text) {
+internal fun OutfitText(
+    text: String,
+    maxWidth: Dp,
+    paint: TextPaint = rememberOutfitPaint(),
+    maxLines: Int = 1,
+    contentDescription: String? = null,
+) {
     val context = LocalContext.current
     val configuration = context.resources.configuration
-    val bitmap = remember(text, maxWidth, configuration.fontScale, configuration.densityDpi) {
-        val paint = BitmapText.outfitPaint(context).paint
-        val maxWidthPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, maxWidth.value, context.resources.displayMetrics)
-        BitmapText.render(text, paint, maxWidthPx.toInt())
+    val bitmap = remember(text, maxWidth, maxLines, configuration.fontScale, configuration.densityDpi) {
+        val widthDp = maxWidth.value.coerceAtLeast(MIN_WIDTH_DP)
+        val maxWidthPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, widthDp, context.resources.displayMetrics)
+        BitmapText.render(text, paint, maxWidthPx.toInt(), maxLines)
     } ?: return
     Image(
         provider = ImageProvider(bitmap),
         contentDescription = contentDescription,
-        modifier = modifier,
         contentScale = ContentScale.Fit,
         colorFilter = ColorFilter.tint(GlanceTheme.colors.onSurface),
     )
 }
+
+/** The least room a string is ever given, so a size the host has not reported yet still draws something. */
+private const val MIN_WIDTH_DP = 48f
