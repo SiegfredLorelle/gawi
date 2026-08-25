@@ -18,8 +18,9 @@ the document to read the sketchy way.
 (§2 has the result: a widget cannot be handed a bundled font), the trade that
 left was taken in favour of identity, and the app now draws in Outfit —
 `core/ui/theme/Type.kt`, `GawiTypography`, pinned by `GawiTypographyTest`.
-Nothing in the app is stock type any more. What §5 does **not** deliver is the
-widget, which renders in the platform sans by necessity rather than by choice.
+Nothing in the app is stock type any more. The widget followed on 2026-08-25,
+by a different mechanism: its text is rasterised in Outfit and shipped as
+bitmaps, because a font resource still cannot reach a `RemoteViews` tree (§2).
 
 **Building it changed two of the published values, and that is recorded rather
 than quietly fixed.** §3's `tertiary` failed the requirement §4.1 sets for it,
@@ -94,8 +95,10 @@ Two routes that do **not** work, so they are not tried twice: `TypefaceSpan` is 
 `ParcelableSpan` but its `writeToParcel` writes only the family *name*, so a
 custom `Typeface` does not survive the trip to the launcher; and there is no
 downloadable-font path for `RemoteViews`. Bitmap text does work and is the
-fallback, at the cost of not responding to the system font scale, needing a
-`contentDescription`, and `RemoteViews`' hard size limit.
+fallback. Its price, as first written here, was "not responding to the system
+font scale, needing a `contentDescription`, and `RemoteViews`' hard size limit";
+building it on 2026-08-25 corrected all three, and the corrections are below the
+measurement.
 
 **Measured on 2026-08-24, and the route is dead.** The paragraph above was
 right about the API and wrong about the outcome, which is why it is kept rather
@@ -122,6 +125,44 @@ four names it *will* resolve are exactly the four Glance's typed API already
 offers, so `AndroidRemoteViews` buys nothing at all for typography. It remains
 the correction to that earlier draft as an API fact; as a route it is a third
 dead one, recorded beside the other two so it is not tried a fourth time.
+
+**Built on 2026-08-25: the widget draws in Outfit after all, as bitmaps.** The
+measurement above is untouched and still true — no font *resource* reaches a
+`RemoteViews` tree. What changed is the conclusion §5 drew from it, that bitmap
+text was "not worth it for a checkbox list"; that was reversed, and
+`widget/…/BitmapText.kt` is the result. Each row's name and the two copy
+strings are laid out with `StaticLayout` (so bidi and shaping happen before the
+pixels exist), in Outfit at `wght` 400 through `Paint.setFontVariationSettings`
+— `Typeface.create(base, 400, false)` picks from a font *list* and never
+instances a variable axis, so it would have shipped Thin, the same trap Type.kt
+records — drawn white and handed to a Glance `Image` with
+`ColorFilter.tint(GlanceTheme.colors.onSurface)`. The three costs, corrected:
+
+- **Font scale is honoured, at the next render.** The size is resolved in sp
+  against the configuration in force when the bitmap is drawn, so a scale change
+  shows at the next update — a write, a rollover, or the 30-minute period.
+  Glance recomposes on a locale change and not on a configuration change, so it
+  cannot be immediate; that is the latency the widget already accepts for a day
+  rollover (docs/ux/widget.md §4), not a new one.
+- **`contentDescription` is nullable, and the name is passed.** An `Image` with
+  none is decorative; each name is its own description, so TalkBack reads the
+  row now that the checkbox beside it carries no text.
+- **The size limit is arithmetic, not a wall.** `RemoteViews` bitmaps are capped
+  at 1.5 × the screen's pixels × 4 bytes. A row at 16sp on a 440dpi phone is
+  about 720 × 56 px in ARGB_8888, ~160 KB, against a budget near 14 MB; width
+  is the text's own, clamped to the row, never a fixed canvas.
+
+Two things it does not do. Colour is not baked in: on API 31+ the tint is a
+colour *resource* the launcher resolves in its own theme, exactly as the
+background is; on API 29–30 Glance resolves it in our process at translation,
+which is how it already translates the checkbox glyph and plain text colour
+below 31, so a night-mode change there leaves the whole widget stale together
+until the next render rather than the text alone. And the glyphs of a script
+outside Outfit's `cmap` come from the device's fallback fonts — the same as the
+app — which Robolectric's font bundle lacks for Hebrew and Arabic, so
+`BitmapTextTest` pins the layout and docs/running.md's RTL check owns the shapes.
+The edge this needed, `widget → core:ui`, carries `R.font.outfit` and nothing
+else; architecture §2 says so.
 
 **Why this negative is trustworthy, given how often a check here has measured
 nothing.** The `serif` row is a positive control, and it is the whole reason the
@@ -559,7 +600,8 @@ is judged together. Constraints on the choice:
   from *possibly* into the live tension in this choice.** §2 has the
   measurement: a widget cannot be handed a bundled font, and the only faces it
   can name are the platform's four generics. The app will render in ours and the
-  widget in the system sans, permanently, one home screen apart.
+  widget in the system sans, one home screen apart — *permanently*, this said
+  until 2026-08-25, and the next paragraph but one records why that word went.
 
   What that does **not** mean is "pick a humanist face and move on", and it is
   worth saying so before the next session reads it as an instruction. It makes
@@ -567,18 +609,25 @@ is judged together. Constraints on the choice:
   it and gives up the identity this whole brief exists to buy, and a geometric
   one — Outfit, still the canvas's face — buys the identity and pays the cost in
   full on one surface, which is the smallest surface the app has. Bitmap text is
-  the only way to have both, at the price §2 lists, and it is not worth paying
-  for a checkbox list. **So the typeface no longer waits on the experiment. It
-  waits on that trade, which is taste, and it is now the only thing between this
-  section and a real `Typography`.**
+  the only way to have both, at the price §2 lists, and on 2026-08-24 this said
+  it was not worth paying for a checkbox list. **So the typeface no longer waits
+  on the experiment. It waits on that trade, which is taste, and it is now the
+  only thing between this section and a real `Typography`.**
+
+  **That last judgement was reversed on 2026-08-25, and the price was paid.**
+  The widget now draws in Outfit as bitmaps; §2 has what it cost once built,
+  which was less than the list above priced it at — font scale is honoured at
+  the next render, the description is the name, and the size budget is dozens
+  of rows deep. The divergence §5 accepted as permanent lasted one day.
 
 **Decided and BUILT on 2026-08-24: the face is Outfit, and the divergence is
 accepted.** The trade above was taken in the direction of identity rather than
 of hiding the seam — the canvas's own face, geometric, bundled as one variable
 font at 110,884 bytes, which is under half what this section budgeted. The app
-draws in it; `:widget` draws in the system sans and cannot do otherwise. Anyone
-reopening that should read §2 first, and `core/ui/theme/Type.kt`, which records
-the rest.
+draws in it; `:widget` drew in the system sans for a day and, **since
+2026-08-25, draws in Outfit as bitmaps** — §2's closing paragraph is the
+mechanism and its costs, `widget/…/BitmapText.kt` the code, and
+`core/ui/theme/Type.kt` records the rest.
 
 One limit on "the app draws in Outfit", kept because it is what drove the icon
 set: the file's `cmap` covers 360 characters, and five of the glyph characters

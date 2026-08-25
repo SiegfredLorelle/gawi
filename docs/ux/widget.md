@@ -378,16 +378,28 @@ all either `exported="false"` or guarded by `DUMP` / `BIND_JOB_SERVICE`.
   user, or `requestPinAppWidget` from the app. There is no in-app "add the
   widget" affordance and PRD §4 does not ask for one.
 - ~~**Whether this widget can ever draw the app's own typeface.**~~ **Answered
-  on 2026-08-24: no, and permanently.** The route was not Glance's typed API,
-  which has never offered anything but four generic family names, but a
-  hand-written layout inside `AndroidRemoteViews` — `RemoteViews` are inflated
-  against our package's resources, so `android:fontFamily="@font/…"` looked like
-  it should resolve. Measured on a launcher, it does not: the attribute is
-  honoured for a built-in family name and a bundled font resource is dropped
-  **silently**, in both spellings a font resource can take. So this module's
-  divergence from the app is not only colour and not only structural — the
-  widget will render in the platform sans however the app is styled, and that is
-  now a fact to design around rather than a thing to try. Bitmap text is the
-  only escape and is not worth it for a checkbox list.
-  docs/ux/visual-identity.md §2 has the numbers and the controls;
-  docs/ux/visual-identity.md §5 has what it costs the typeface choice.
+  on 2026-08-24: not as a font — and on 2026-08-25: yes, as pixels.** The route
+  that failed was not Glance's typed API, which has never offered anything but
+  four generic family names, but a hand-written layout inside
+  `AndroidRemoteViews` — `RemoteViews` are inflated against our package's
+  resources, so `android:fontFamily="@font/…"` looked like it should resolve.
+  Measured on a launcher, it does not: the attribute is honoured for a built-in
+  family name and a bundled font resource is dropped **silently**, in both
+  spellings a font resource can take. That measurement stands. What did not
+  stand was the sentence that followed it here — "bitmap text is the only escape
+  and is not worth it for a checkbox list" — which was reversed the next day:
+  `BitmapText.kt` lays each name out in Outfit with `StaticLayout`, draws it
+  white, and a Glance `Image` carries it with `ColorFilter.tint(onSurface)`, so
+  colour still resolves where it did. docs/ux/visual-identity.md §2 has the
+  numbers, the controls, and what the bitmap route costs once built. Two of
+  those costs belong to this module's design and are recorded here as well:
+  - **Font scale follows at the next render, not immediately.** Glance
+    recomposes on a locale change and not on a configuration change, so a scale
+    change lands with the next write, rollover or 30-minute update — the same
+    latency §4 accepts for a day rollover.
+  - **On API 29–30 the text colour is resolved in our process**, at translation
+    time, because Glance hands a launcher below 31 a literal rather than a
+    colour resource. That is how it already handled the checkbox glyph and the
+    plain-text colour on those levels, so a night-mode change there leaves the
+    whole widget stale together until the next render — no new failure shape,
+    but a check docs/running.md now owes on a 29 or 30 emulator.
