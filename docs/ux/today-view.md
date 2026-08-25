@@ -156,9 +156,12 @@ settled this either; PRD §8's OQ-3 is parked on Phase 1's fourth face instead,
 which is the build where this window first has a visible effect.) Grace mechanics, if they ever land, change `recentlyBroken` and therefore
 this whole section.
 
-### MVP mapping
+### MVP mapping — history since 2026-08-25
 
-Phase 0 ships three states, not four (PRD §5, "happy/neutral/worried"):
+All four moods are drawn now ([momo.md](momo.md) §3), each with its own line,
+and `Mood.toMvp` is gone. Kept because it records what shipping three faces
+meant while it lasted. Phase 0 shipped three states, not four (PRD §5,
+"happy/neutral/worried"):
 
 | Phase 1 | MVP placeholder |
 |---|---|
@@ -215,8 +218,9 @@ Small decisions that were easier to make once drawn:
 
 ## 6. Still open
 
-- **PRD OQ-4** — Momo's art style. The canvas art is placeholder line
-  work; species and name are the only settled parts.
+- ~~**PRD OQ-4** — Momo's art style.~~ Decided and built 2026-08-25:
+  [momo.md](momo.md). The slot is now the redesign's 250 dp tank rather than a
+  96 dp floor for copy — momo.md §4 records why that keeps §3's promise.
 - ~~**PRD OQ-5** — whether the widget shows streaks.~~ **Settled 2026-08-21:
   minimal, no streak.** Reasoning in [widget.md](widget.md) §2.
 - The Phase 1 mascot treatment **in the widget and the reminder** (PRD §5).
@@ -235,10 +239,6 @@ Small decisions that were easier to make once drawn:
   rounds have now rediscovered it.
 - Momo's own copy. Every line the panel shows is placeholder, chosen to
   make the three Phase 0 states distinguishable rather than to be read.
-- **`regenerating` is currently invisible.** The MVP mapping above folds it
-  onto `neutral`, which shows one line of copy, so nothing on screen
-  separates a user recovering from a broken streak from one merely
-  pottering. That is what shipping three faces instead of four means, and
-  it is fine at Phase 0 — but it does mean `Mood.REGENERATING` is decided,
-  tested, and unobservable, so the mood rules cannot be checked by looking
-  at the app. Resolved by the same work as the copy gap above.
+- ~~**`regenerating` is currently invisible.**~~ Visible since 2026-08-25: its
+  own face, its own line ([momo.md](momo.md) §3). The half of this that was
+  the copy gap above is still open — the line does not name the habit.

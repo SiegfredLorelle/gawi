@@ -1360,6 +1360,39 @@ Nothing A059 pass in §3 is still owed and is what would upgrade these.
       full history* are reachable — checked by scrolling to the end rather than
       by assuming the screen scrolls.
 
+### Momo — the four faces, both themes
+
+New with the character (2026-08-25, [momo.md](ux/momo.md)). `MomoRenderTest`
+proves each mood draws, differs from the others, and moves; what it cannot see
+is whether the motion reads as a character rather than a screensaver, and the
+two things that are Settings reads.
+
+- [ ] **All four moods on the tank, in both themes.** Content is the default
+      with habits added and nothing done late in the day; tick everything for
+      thriving; let the reminder hour pass with one habit open for worried;
+      break a streak (a habit completed yesterday, skipped the day before) and
+      open the app inside the three-day window for regenerating — the tank
+      drains and one right-hand gill is short and pulsing. If any two are hard
+      to tell apart with the app held at arm's length, that is a finding for
+      momo.md §3, not for the tests.
+- [ ] **The pastel body on the light tank.** momo.md §2 calls this the softest
+      edge on purpose. Look at whether the silhouette reads from the gills and
+      eyes alone; if the body vanishes into the water, the fix is the tank's
+      gradient, not Momo's colour.
+- [ ] **Animator duration scale off** (Developer options → *Animator duration
+      scale* → *Animation off*), then reopen Today. Momo must be still, at the
+      resting frame, and the mood change on a tick must cut rather than fade.
+      Turn it back on and the float should resume without a restart. Nothing on
+      the JVM can see this: the tests set the same switch to get a still frame,
+      so they prove the still frame, not the switch.
+- [ ] **200 % font scale.** The tank stays 250 dp; the copy under it grows and
+      wraps and pushes the list down rather than clipping. The character must
+      not shrink.
+- [ ] **TalkBack, once.** Swipe onto the panel: it is one node and should
+      announce the mood's line once — "Momo is pottering about." followed by
+      the remaining count — and never "image" or "unlabelled". If the tank and
+      the caption land as two stops, the merge has been lost.
+
 ### Accessibility — *device only, and the layer no test reaches*
 
 The automated half of this is already in `make test`: WCAG contrast ratios in
