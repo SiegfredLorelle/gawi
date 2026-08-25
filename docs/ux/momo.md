@@ -11,8 +11,8 @@ how it moves, and where it appears. It closes the second half of OQ-4 — the ar
 is the one on the Gawi Redesign canvas, the motion is the one approved on its
 "Momo motion" page, and the code is `core/ui/component/Momo.kt` and
 `MomoDrawing.kt`, drawn into the Today panel by `feature/today/MascotPanel.kt`.
-The widget, the reminder and the launcher icon are designed here and **not yet
-built** (§4).
+The widget, the reminder and the launcher icon followed later the same day —
+the still frame on each of their own grounds (§4).
 
 ---
 
@@ -121,16 +121,33 @@ the habit, and nothing tells the panel which habit yet.
 | Surface | Ground | Motion | Status |
 |---|---|---|---|
 | Today | the tank: a 250 dp panel, water in `primaryContainer → primaryFixedDim`, drained to `surfaceContainerHighest → surfaceContainerHigh` while regenerating | animated | **built** — `MascotPanel.kt` |
-| Widget | Glance cannot animate (visual-identity §7.4) | the resting frame, `MomoFrame.rest` | designed, not built |
-| Reminder | the notification's small icon is alpha-only, so a silhouette | still | designed, not built |
-| Launcher | visual-identity §7.1's mark, derived from this character | still | can be drawn now; not built |
+| Widget | the Today widget's own background, above the rows, only when the host gives it two cells (≥ 170 dp) | the resting frame, `MomoFrame.rest`, rasterised by `drawMomo` at 72 dp | **built** — `widget/MomoBitmap.kt` |
+| Reminder | the notification's small icon is alpha-only, so a silhouette — of the launcher mark, which is what holds at 24 dp | still | **built** — `app/res/drawable/ic_reminder.xml` |
+| Launcher | visual-identity §7.1's mark, derived from this character, on light `primaryContainer`; the woven thread as the monochrome layer | still | **built** — `app/res/mipmap-anydpi/ic_launcher.xml` |
 
 **The tank is Today's alone.** It is drawn in `:feature:today`, not `:core:ui`,
 because only Today is a habitat: the widget and the reminder get the character
 on their own grounds. The character itself is in `:core:ui` for the reason
-architecture §2 gives — the widget's still frame will draw it too — and the
-widget → `core:ui` edge that carries one font today will carry Momo's geometry
-when that lands.
+architecture §2 gives — the widget's still frame draws it too — and the
+widget → `core:ui` edge that carried one font now carries Momo's geometry as
+well, and nothing else.
+
+**The widget draws `drawMomo`, not four drawables.** visual-identity §7.4
+priced Momo-on-a-widget as "a static vector drawable per mood: four assets"
+before the character was code. With `drawMomo` public, the widget rasterises
+the resting frame the way it already rasterises Outfit (`MomoBitmap.kt` beside
+`BitmapText.kt`): zero assets, no fifth copy of the geometry, and the same
+pixels a viewer with animations off sees on Today. It is gated on the size the
+host reports — one cell tall stays the name-and-checkbox widget
+[widget.md](widget.md) §2 settled; from 170 dp the face sits above the rows, 72
+dp tall, described once by TalkBack in the Today panel's words. Beside the
+no-habits copy the face is decorative, so the copy is still read once.
+
+**The reminder and the launcher use the mark, not the character.** The
+canvas's "Launcher icon" artboard measured the full character as mush at 40 px
+and the mark — two fronds a side, no blush, oversized eyes and mouth — as
+holding at 24. A notification small icon *is* 24 dp, so its silhouette is the
+mark's, eyes cut out with `evenOdd` so the face survives one colour.
 
 **The panel is 250 dp, not 96.** today-view §3 promised a box that does not
 move when the character replaces the placeholder, and the placeholder's box
@@ -152,7 +169,9 @@ desaturation, done arithmetically in `drawMomo` so a test can measure it.
   carries no description of its own, and the copy line is the description of
   the face — so TalkBack reads "Momo is getting worried." once, not a nameless
   image and then a sentence naming it, and not the same sentence twice. That
-  is the widget's lesson ([widget.md](widget.md) §5) from both sides.
+  is the widget's lesson from both sides — the one `TodayWidget.kt`'s
+  `HabitRows` note records, where review caught a row describing its image
+  and its checkbox separately.
 - **Animations off means still.** `Momo` reads the system *Animator duration
   scale* once per composition and draws the resting frame when it is off; the
   same frame the widget will show. `docs/running.md` §4 checks it, because it
@@ -166,9 +185,10 @@ desaturation, done arithmetically in `drawMomo` so a test can measure it.
 - **Milestone celebrations** (PRD §5: 7 / 30 / 100 days; 4 / 12 / 52 weeks).
   No treatment. If one is ever a hand-keyed sequence rather than a loop, that
   is where §1's Lottie fallback becomes relevant.
-- **The widget and reminder treatments** beyond "the still frame on their own
-  ground" — placement, size, whether the large widget is worth its provider
-  (visual-identity §7.4).
+- ~~**The widget and reminder treatments** beyond "the still frame on their own
+  ground"~~ — placement and size were decided with the build (§4): in the
+  Today widget, above the rows, size-gated. Still open from visual-identity
+  §7.4: whether a Momo-only widget or a streak widget is worth its provider.
 - **Momo's real copy**, and the `recentlyBrokenHabits` function the
   regenerating line needs to name a habit (today-view §6).
 - **Whether Momo appears on Insights** ([insights.md](insights.md) §7).

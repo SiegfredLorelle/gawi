@@ -809,6 +809,13 @@ Decisions and reasoning are in [docs/ux/widget.md](ux/widget.md).
       `app/build/intermediates/packaged_manifests/debug/.../AndroidManifest.xml`
       for `com.gawi.widget.TodayWidgetReceiver` (needs `--rerun-tasks`; a stale
       merged manifest reports the old answer).
+- [ ] **Momo appears only when there is room.** Place the widget at its
+      smallest (one row tall): name and checkbox, no face. Resize it to two
+      rows: Momo's resting frame appears above the rows, in today's mood, and
+      the rows still have room beneath her. `WidgetMomoTest` proves the tree;
+      it cannot see whether a launcher's two-row cell clears 170 dp, which is
+      the constant this check is really measuring. Then, with no habits, two
+      rows tall: the face above "No habits yet".
 - [ ] **It draws today's habits** — each active habit's name with a checkbox,
       ticked to match the Today screen. **No streak**, deliberately (PRD OQ-5).
 - [ ] **You can read it, in the theme the device is actually in.** Added
@@ -950,6 +957,11 @@ leaving it moved is how a later run passes vacuously.
 Built 2026-08-21 (docs/ux/reminder.md). PRD §7 makes a **physical device** the
 primary target for this as well as for the widget — OEM battery policies are the
 whole risk and an emulator has none.
+
+- [ ] **The status-bar icon is Momo.** When a reminder posts, the small icon
+      is her silhouette — body, two fronds a side, eyes punched out — tinted by
+      the system, not a bell and not a blob. `LauncherIconTest` proves the
+      vector has fills; only the shade shows whether the eyes survive at 24 dp.
 
 Every check here needs the reminder time moved to a couple of minutes ahead,
 in Settings. **Put it back to 21:00 afterwards**, for the reason §4's rollover
@@ -1393,6 +1405,24 @@ two things that are Settings reads.
       announce the mood's line once — "Momo is pottering about." followed by
       the remaining count — and never "image" or "unlabelled". If the tank and
       the caption land as two stops, the merge has been lost.
+
+### The launcher icon
+
+Built 2026-08-25 ([visual-identity.md](ux/visual-identity.md) §7.1, §8).
+`LauncherIconTest` proves the three layers exist, draw and are wired; every
+launcher masks and scales them differently, which is what is left.
+
+- [ ] **In the app drawer and on the home screen.** Momo's mark — face and two
+      fronds a side on teal — under whatever mask the launcher uses (circle,
+      squircle, rounded square). Nothing that carries meaning is clipped; a
+      sliver of the lower fronds may be, by design.
+- [ ] **Small.** Drop it in a folder and look at it at the drawer's smallest
+      size: the eyes and mouth still read as a face. That was the canvas's
+      test for two fronds over three.
+- [ ] **Themed, API 33+.** Wallpaper & style → *Themed icons* on. The icon
+      becomes the woven thread — three warps and a weft — in the system tint,
+      not a tinted face. Below API 33 the coloured icon stays; there is nothing
+      to check there.
 
 ### Accessibility — *device only, and the layer no test reaches*
 

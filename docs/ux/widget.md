@@ -56,9 +56,13 @@ So §6.6 is **narrowed** rather than contradicted: streaks live in the Today vie
 and habit detail, built 2026-08-21. `WidgetRow` has no streak field, which is
 what stops this decision being undone by an accident of what was in scope.
 
-Revisit when Momo has real art (PRD OQ-4) — a mascot on the widget is a
-different proposition from a number, and it is the thing most likely to make a
-larger widget size worth designing.
+~~Revisit when Momo has real art (PRD OQ-4)~~ — revisited 2026-08-25, when
+she had it. **The minimal widget stands, and Momo joins it only when the host
+gives it room**: at two cells tall (170 dp and up, `WidgetUiState.kt`) her
+resting frame sits above the rows, 72 dp; one cell tall is exactly the widget
+this section describes. A mascot on the widget turned out to be the thing that
+made a larger *size* worth drawing without making a second *provider* worth
+building ([momo.md](momo.md) §4, visual-identity §7.4). No streak either way.
 
 ## 3. A tap toggles, exactly as the screen does
 
