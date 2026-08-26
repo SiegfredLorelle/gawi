@@ -52,6 +52,7 @@ class DataStoreSettingsSourceTest {
         assertEquals(LocalTime.MIDNIGHT, settings.dayCutoff)
         assertEquals(DayOfWeek.MONDAY, settings.weekStart)
         assertEquals(LocalTime.of(21, 0), settings.reminderTime)
+        assertEquals(ThemeMode.SYSTEM, settings.theme)
     }
 
     @Test
@@ -61,6 +62,7 @@ class DataStoreSettingsSourceTest {
             dayCutoff = LocalTime.of(3, 0),
             weekStart = DayOfWeek.SUNDAY,
             reminderTime = LocalTime.of(19, 45),
+            theme = ThemeMode.DARK,
         )
 
         source.update { edited }
@@ -74,8 +76,12 @@ class DataStoreSettingsSourceTest {
 
         source.update { it.copy(weekStart = DayOfWeek.THURSDAY) }
         source.update { it.copy(reminderTime = LocalTime.of(6, 30)) }
+        source.update { it.copy(theme = ThemeMode.LIGHT) }
 
-        assertEquals(UserSettings(weekStart = DayOfWeek.THURSDAY, reminderTime = LocalTime.of(6, 30)), source.current())
+        assertEquals(
+            UserSettings(weekStart = DayOfWeek.THURSDAY, reminderTime = LocalTime.of(6, 30), theme = ThemeMode.LIGHT),
+            source.current(),
+        )
     }
 
     @Test
@@ -87,6 +93,8 @@ class DataStoreSettingsSourceTest {
             preferences[intPreferencesKey("week_start_iso")] = 9
             preferences[intPreferencesKey("day_cutoff_second_of_day")] = 999_999
             preferences[intPreferencesKey("reminder_second_of_day")] = -1
+            // A code from a build that knows a fourth mode, read by this one.
+            preferences[intPreferencesKey("theme_mode")] = 99
         }
 
         assertEquals(UserSettings(), DataStoreSettingsSource(dataStore).current())
@@ -95,7 +103,10 @@ class DataStoreSettingsSourceTest {
     @Test
     fun `a value stored under one of these names with another type reads as absent`() = runTest {
         val dataStore = store()
-        dataStore.edit { preferences -> preferences[stringPreferencesKey("week_start_iso")] = "monday" }
+        dataStore.edit { preferences ->
+            preferences[stringPreferencesKey("week_start_iso")] = "monday"
+            preferences[stringPreferencesKey("theme_mode")] = "dark"
+        }
 
         assertEquals(UserSettings(), DataStoreSettingsSource(dataStore).current())
     }
