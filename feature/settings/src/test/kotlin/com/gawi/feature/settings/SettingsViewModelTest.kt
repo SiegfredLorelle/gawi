@@ -1,6 +1,7 @@
 package com.gawi.feature.settings
 
 import app.cash.turbine.test
+import com.gawi.core.data.settings.ThemeMode
 import com.gawi.core.data.settings.UserSettings
 import com.gawi.feature.settings.testsupport.FakeCompletionCsvArchive
 import com.gawi.feature.settings.testsupport.FakeEventArchive
@@ -56,7 +57,7 @@ class SettingsViewModelTest {
             )
 
             assertEquals(
-                SettingsUiState.Settings(LocalTime.of(3, 0), DayOfWeek.SUNDAY, LocalTime.of(22, 30)),
+                SettingsUiState.Settings(LocalTime.of(3, 0), DayOfWeek.SUNDAY, LocalTime.of(22, 30), ThemeMode.SYSTEM),
                 awaitItem(),
             )
             cancelAndIgnoreRemainingEvents()
@@ -135,10 +136,11 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `each of the three settings is written, and only that one changes`() = runTest {
+    fun `each of the four settings is written, and only that one changes`() = runTest {
         viewModel.onDayCutoffChange(LocalTime.of(4, 15))
         viewModel.onWeekStartChange(DayOfWeek.SATURDAY)
         viewModel.onReminderTimeChange(LocalTime.of(20, 45))
+        viewModel.onThemeChange(ThemeMode.DARK)
 
         assertEquals(
             listOf(
@@ -149,9 +151,29 @@ class SettingsViewModelTest {
                     weekStart = DayOfWeek.SATURDAY,
                     reminderTime = LocalTime.of(20, 45),
                 ),
+                UserSettings(
+                    dayCutoff = LocalTime.of(4, 15),
+                    weekStart = DayOfWeek.SATURDAY,
+                    reminderTime = LocalTime.of(20, 45),
+                    theme = ThemeMode.DARK,
+                ),
             ),
             settings.writes,
         )
+    }
+
+    /**
+     * Every mode is legal, including the one already stored.
+     *
+     * The theme is the second unrefusable write on this screen, and the only
+     * one whose value cannot collide with another setting — so the test that
+     * matters is that nothing narrows it.
+     */
+    @Test
+    fun `every theme mode is written as chosen`() = runTest {
+        ThemeMode.entries.forEach { mode -> viewModel.onThemeChange(mode) }
+
+        assertEquals(ThemeMode.entries, settings.writes.map { it.theme })
     }
 
     /**

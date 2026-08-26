@@ -1,5 +1,6 @@
 package com.gawi.feature.settings
 
+import com.gawi.core.data.settings.ThemeMode
 import java.time.DayOfWeek
 import java.time.LocalTime
 
@@ -35,6 +36,13 @@ internal data class SettingsActions(
     val onWeekStartChange: (DayOfWeek) -> Unit,
     val onReminderTimeChange: (LocalTime) -> Unit,
     /**
+     * The colour scheme to draw in, or to stop forcing.
+     *
+     * Unrefusable, like the week start and unlike the two times: every mode is
+     * a legal answer and no pair of settings can collide over it.
+     */
+    val onThemeChange: (ThemeMode) -> Unit,
+    /**
      * The user asked to export; the Route turns that into a save dialog.
      *
      * Nullary, and that is what keeps the screen free of a `Uri`, an `Intent`
@@ -62,7 +70,7 @@ internal data class SettingsActions(
      * settings for this app. Neither an `Intent` nor a launcher reaches the
      * screen, which is what keeps `SettingsScreenTest` able to render both states.
      *
-     * The eighth property, and safe: this declaration's `data` keyword is what
+     * The ninth property, and safe: this declaration's `data` keyword is what
      * exempts it from `LongParameterList` entirely, per the measurement above.
      */
     val onEnableNotifications: () -> Unit,

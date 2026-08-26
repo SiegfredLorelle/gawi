@@ -1,5 +1,6 @@
 package com.gawi.feature.settings
 
+import com.gawi.core.data.settings.ThemeMode
 import com.gawi.core.data.settings.UserSettings
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -32,7 +33,7 @@ class SettingsUiMapperTest {
         val state = settings.toUiState()
 
         assertEquals(
-            SettingsUiState.Settings(LocalTime.of(3, 30), DayOfWeek.SUNDAY, LocalTime.of(22, 15)),
+            SettingsUiState.Settings(LocalTime.of(3, 30), DayOfWeek.SUNDAY, LocalTime.of(22, 15), ThemeMode.SYSTEM),
             state,
         )
     }
@@ -58,6 +59,7 @@ class SettingsUiMapperTest {
         assertEquals(LocalTime.MIDNIGHT, state.dayCutoff)
         assertEquals(DayOfWeek.MONDAY, state.weekStart)
         assertEquals(LocalTime.of(21, 0), state.reminderTime)
+        assertEquals(ThemeMode.SYSTEM, state.theme)
     }
 
     /**
@@ -75,6 +77,22 @@ class SettingsUiMapperTest {
         val labels = WEEK_START_OPTIONS.map { labelFor(it) }
 
         assertEquals(7, labels.toSet().size)
+        assertTrue(labels.all { it != 0 })
+    }
+
+    /**
+     * The same check as the days above, for the same reason: the `when` is
+     * exhaustive, so what can still go wrong is a branch pointing at a resource
+     * that was never written, or two modes sharing one name.
+     */
+    @Test
+    fun `every theme mode is offered and named distinctly`() {
+        assertEquals(3, THEME_OPTIONS.size)
+        assertEquals(ThemeMode.SYSTEM, THEME_OPTIONS.first())
+
+        val labels = THEME_OPTIONS.map { labelFor(it) }
+
+        assertEquals(3, labels.toSet().size)
         assertTrue(labels.all { it != 0 })
     }
 

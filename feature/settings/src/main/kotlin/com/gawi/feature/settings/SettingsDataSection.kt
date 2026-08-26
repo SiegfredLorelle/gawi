@@ -99,7 +99,7 @@ private fun exportValue(recency: ExportRecency): String? = when (recency) {
 }
 
 @Composable
-private fun SectionHeader(text: String) {
+internal fun SectionHeader(text: String) {
     Text(
         text = text,
         style = MaterialTheme.typography.titleSmall,

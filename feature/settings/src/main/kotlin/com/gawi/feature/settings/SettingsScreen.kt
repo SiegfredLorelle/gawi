@@ -26,6 +26,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import com.gawi.core.data.settings.ThemeMode
 import com.gawi.core.ui.component.GawiIconButton
 import com.gawi.core.ui.component.GawiIcons
 import com.gawi.core.ui.component.Notice
@@ -120,6 +121,7 @@ private fun SettingsList(state: SettingsUiState.Settings, actions: SettingsActio
             onClick = { openDialog = SettingsDialog.Reminder },
         )
         if (!device.notificationsAllowed) ReminderBlocked(actions.onEnableNotifications)
+        AppearanceSection(state.theme) { openDialog = SettingsDialog.Theme }
         DataSection(state.dataTask, state.exportRecency, actions)
     }
 
@@ -186,7 +188,42 @@ private fun SettingsDialogs(
             },
             onDismiss = onClose,
         )
+
+        SettingsDialog.Theme -> ThemeDialog(
+            selected = state.theme,
+            onConfirm = { picked ->
+                onClose()
+                actions.onThemeChange(picked)
+            },
+            onDismiss = onClose,
+        )
     }
+}
+
+/**
+ * The theme row, under a header of its own.
+ *
+ * Its own section rather than a fourth row above, because the three rows above
+ * it are one kind of thing and this is not: all three change how the app counts
+ * a day or a week, which is the whole argument of docs/ux/settings.md §2, and a
+ * setting that changes only paint sitting among them would blunt it. The header
+ * is what says so, in the same shape the Data section already uses for rows
+ * that are not settings at all.
+ *
+ * The help line names the widget. It is the one thing about this setting a user
+ * can be wrong about — the widget is drawn by the launcher and cannot follow an
+ * in-app choice (architecture §2) — and a home screen showing the other scheme
+ * would otherwise read as a bug.
+ */
+@Composable
+private fun AppearanceSection(theme: ThemeMode, onOpen: () -> Unit) {
+    SectionHeader(stringResource(R.string.settings_appearance_header))
+    SettingRow(
+        label = stringResource(R.string.settings_theme_label),
+        value = stringResource(labelFor(theme)),
+        help = stringResource(R.string.settings_theme_help),
+        onClick = onOpen,
+    )
 }
 
 /**

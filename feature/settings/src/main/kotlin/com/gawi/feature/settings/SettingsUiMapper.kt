@@ -1,6 +1,7 @@
 package com.gawi.feature.settings
 
 import androidx.annotation.StringRes
+import com.gawi.core.data.settings.ThemeMode
 import com.gawi.core.data.settings.UserSettings
 import com.gawi.core.ui.date.weekdayName
 import java.time.DayOfWeek
@@ -8,8 +9,7 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-// Read model to UI state, plus the two formatting decisions the three settings
-// rows make. The Data section's decisions live in SettingsDataMapper.kt.
+// Read model to UI state, plus the formatting decisions the settings rows make. The Data section's decisions live in SettingsDataMapper.kt.
 //
 // Here rather than in the composables, for the reason HabitsUiMapper gives:
 // these are decisions, and a decision made in a composable can only be got
@@ -30,6 +30,7 @@ internal fun UserSettings.toUiState(
     dayCutoff = dayCutoff,
     weekStart = weekStart,
     reminderTime = reminderTime,
+    theme = theme,
     dataTask = dataTask,
     exportRecency = exportRecency,
 )
@@ -65,8 +66,25 @@ internal fun labelFor(day: DayOfWeek): Int = weekdayName(day)
  */
 internal fun formatTime(time: LocalTime, is24Hour: Boolean): String = (if (is24Hour) TIME_24_HOUR else TIME_12_HOUR).format(time)
 
+/**
+ * The name of a theme mode, as a string resource.
+ *
+ * This module's own strings rather than `:core:ui`'s, unlike [labelFor] above:
+ * nothing else draws these three words, and the mode itself is a `:core:data`
+ * type that `:core:ui` has no reason to know about.
+ */
+@StringRes
+internal fun labelFor(theme: ThemeMode): Int = when (theme) {
+    ThemeMode.SYSTEM -> R.string.settings_theme_system
+    ThemeMode.LIGHT -> R.string.settings_theme_light
+    ThemeMode.DARK -> R.string.settings_theme_dark
+}
+
 /** Every day, in the order the picker offers them — the ISO week, Monday first. */
 internal val WEEK_START_OPTIONS: List<DayOfWeek> = DayOfWeek.entries
+
+/** The three modes, in the order the picker offers them — the default first. */
+internal val THEME_OPTIONS: List<ThemeMode> = ThemeMode.entries
 
 private val TIME_24_HOUR: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.ROOT)
 

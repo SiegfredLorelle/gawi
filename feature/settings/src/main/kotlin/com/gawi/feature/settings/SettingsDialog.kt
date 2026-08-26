@@ -7,4 +7,4 @@ package com.gawi.feature.settings
  * and `rememberSaveable` stores it with no custom saver, which three nullable
  * value holders would each have needed.
  */
-internal enum class SettingsDialog { None, DayCutoff, WeekStart, Reminder }
+internal enum class SettingsDialog { None, DayCutoff, WeekStart, Reminder, Theme }
