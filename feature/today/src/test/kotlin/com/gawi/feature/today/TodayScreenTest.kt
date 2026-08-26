@@ -66,7 +66,7 @@ class TodayScreenTest {
     val animationsOff = AnimationsOffRule()
 
     /**
-     * §4's rule 0, as a test: a habitless first run is not thriving.
+     * today-view §4's rule 0, as a test: a habitless first run is not thriving.
      *
      * The mood line is asserted alongside the absence, because "Nothing left
      * today" was never wrong on its own — it was wrong *under* Momo waiting for
@@ -328,7 +328,7 @@ class TodayScreenTest {
     private fun string(id: Int): String = resources.getString(id)
 
     /**
-     * All four faces, each with its own line — the §4 mapping is no longer
+     * All four faces, each with its own line — the today-view §4 mapping is no longer
      * three-to-four. The tag proves the mood reached the drawing and the copy
      * proves the line beside it agrees; a screen test cannot see pixels
      * (MomoRenderTest does), so this is the seam it can hold.
@@ -375,6 +375,26 @@ class TodayScreenTest {
             compose.waitForIdle()
             compose.onNodeWithTag("habitat", useUnmergedTree = true).assertIsDisplayed()
         }
+    }
+
+    /**
+     * Finishing the day with animations off is not celebrated — a celebration
+     * is motion, and the resting thriving frame already says thriving (momo.md
+     * §6). The on path is a frame loop no Robolectric composition can wait out,
+     * so it is the emulator's to check (running.md §4); the trigger itself is
+     * `CelebrationFrameTest`'s.
+     */
+    @Test
+    fun `with animations off finishing the day draws no celebration`() {
+        val mood = mutableStateOf(Mood.CONTENT)
+        compose.setContent {
+            GawiTheme { TodayScreen(HABITS.copy(mood = mood.value), NO_ACTIONS, SnackbarHostState()) }
+        }
+        compose.onNodeWithTag("celebration", useUnmergedTree = true).assertDoesNotExist()
+        mood.value = Mood.THRIVING
+        compose.waitForIdle()
+        compose.onNodeWithTag("momo:${Mood.THRIVING}", useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithTag("celebration", useUnmergedTree = true).assertDoesNotExist()
     }
 
     /**
