@@ -33,6 +33,11 @@ dependencies {
     implementation(project(":widget"))
 
     implementation(libs.androidx.activity.compose)
+    // collectAsStateWithLifecycle, for the one flow :app itself collects: the
+    // theme (docs/ux/settings.md §7). Every feature module already takes this
+    // artifact for the same function; the app did not, because until the theme
+    // it composed no state of its own.
+    implementation(libs.androidx.lifecycle.runtime.compose)
     // WorkManager, for the reminder and rollover workers (docs/ux/reminder.md).
     //
     // NOT a new dependency in the app — Glance has required it since the widget
