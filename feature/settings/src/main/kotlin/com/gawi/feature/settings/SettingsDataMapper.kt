@@ -150,7 +150,7 @@ internal fun exportFileName(today: LocalDate): String = "gawi-export-${DateTimeF
  * 30-day nudge asks whether a copy of the *log* exists, and a CSV is not one —
  * it holds no events, so nothing can be rebuilt from it. A row that offered to
  * settle that warning with a spreadsheet would be telling the user something
- * false about their own data, which is what docs/ux/settings.md §7 means when it
+ * false about their own data, which is what docs/ux/settings.md §8 means when it
  * says the CSV must never be described as a recovery path. Nothing here reads
  * [ExportRecency] at all, so it cannot acquire one by accident.
  */

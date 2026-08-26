@@ -19,8 +19,8 @@ import kotlinx.coroutines.flow.first
  * [DataStoreSettingsSource] could implement this read side as it stood.
  *
  * [update] takes a transform rather than a setter per field: a preferences file
- * is read-modify-write, and three setters would be three chances to lose a
- * concurrent edit to a different field.
+ * is read-modify-write, and a setter per field would be a chance each to lose a
+ * concurrent edit to a different one.
  */
 interface SettingsSource {
 

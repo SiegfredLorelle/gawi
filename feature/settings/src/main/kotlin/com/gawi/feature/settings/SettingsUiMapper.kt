@@ -9,11 +9,12 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-// Read model to UI state, plus the formatting decisions the settings rows make. The Data section's decisions live in SettingsDataMapper.kt.
+// Read model to UI state, plus the formatting and naming decisions the settings
+// rows make. The Data section's decisions live in SettingsDataMapper.kt.
 //
 // Here rather than in the composables, for the reason HabitsUiMapper gives:
 // these are decisions, and a decision made in a composable can only be got
-// wrong in a screenshot. Both are covered by SettingsUiMapperTest.
+// wrong in a screenshot. All of them are covered by SettingsUiMapperTest.
 
 /**
  * The stored settings, as the screen draws them.

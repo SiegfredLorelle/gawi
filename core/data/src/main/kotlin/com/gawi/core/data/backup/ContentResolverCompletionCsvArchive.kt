@@ -36,7 +36,7 @@ import javax.inject.Inject
  * What still holds is the second reason below, plus the sequencing: the JSON
  * path should get its own behavioural test **first**, and only then is
  * extracting a shared writer a change with a safety net under it. Recorded in
- * docs/ux/settings.md §7.
+ * docs/ux/settings.md §8.
  *
  * And its reasoning is **about the backup**, at length and for good cause: a
  * truncated JSON is a file the user will later trust with their whole history.
@@ -53,7 +53,7 @@ import javax.inject.Inject
  * because a partial file is still a worse answer than a complete one, and
  * because the same caveat applies: this cannot protect work that never starts,
  * so leaving the screen fast enough still leaves a zero-length file (see
- * docs/ux/settings.md §7).
+ * docs/ux/settings.md §8).
  *
  * **`"wt"` and never `"w"`.** Plain `"w"` is not required to truncate and some
  * providers do not, so overwriting a longer file leaves the old tail behind —

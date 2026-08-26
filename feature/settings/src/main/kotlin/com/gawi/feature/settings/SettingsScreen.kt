@@ -35,7 +35,7 @@ import com.gawi.core.ui.theme.GawiSpacing
 /**
  * The settings screen, stateless as to what is stored.
  *
- * The three values come in and the four callbacks go out; the only thing this
+ * The stored values come in and the callbacks go out; the only thing this
  * composable remembers is which dialog is open, which is view state and not a
  * setting. That is deliberate: a half-picked time must not survive a dismiss,
  * and a committed one must come back from the store rather than from here, so
@@ -88,9 +88,9 @@ internal fun SettingsScreen(
 }
 
 /**
- * The three rows, and whichever dialog one of them has opened.
+ * The rows, in their two sections, and whichever dialog one of them has opened.
  *
- * Scrollable because three rows with their explanations already outrun a short
+ * Scrollable because the rows with their explanations already outrun a short
  * screen at a large font scale, and there is nothing here to virtualise.
  */
 @Composable
@@ -232,13 +232,15 @@ private fun AppearanceSection(theme: ThemeMode, onOpen: () -> Unit) {
  *
  * The whole row is the target rather than the value alone, so a setting is not
  * harder to reach for being set to a short string. The explanation is part of
- * the row rather than a help icon, because all three settings change how the app
- * counts days and a reader who has to go looking for that will not.
+ * the row rather than a help icon, because the settings above change how the app
+ * counts days and a reader who has to go looking for that will not. The theme
+ * row uses the same shape to say the opposite — what it does *not* reach — for
+ * the reason [AppearanceSection] gives.
  *
  * **[value] is nullable, and that replaced a second near-identical composable.**
  * docs/ux/settings.md §6 argued the Data section's rows must not be this one
  * with an empty value, because the middle line is `titleMedium` in the primary
- * colour and means "this is what it is set to" — three rows teach that before a
+ * colour and means "this is what it is set to" — the rows above teach that before a
  * reader reaches the fourth. The argument holds and is why null draws no middle
  * line at all rather than an empty one: the import row has nothing to put there
  * and never will. What changed is that the export row now *does* have a stored

@@ -1333,8 +1333,12 @@ Nothing A059 pass in §3 is still owed and is what would upgrade these.
       above this one, run with Dark chosen and the *system* in light mode.
       Force-stop, launch, watch the first frame. On API 31+ there must be no
       flash at all — `setApplicationNightMode` is what makes the window resolve
-      from `values-night/` — and on an API 29 or 30 image there will be one, for
-      one frame, which is the documented cost rather than a defect. **Run
+      from `values-night/` — and on an API 29 or 30 image there will be one.
+      **What to look for there is longer than a flash**: the app itself draws
+      the system's scheme until the first preferences read lands, and the
+      Recents snapshot stays in the system's scheme for the whole session, so
+      background the app and open Recents as part of this check
+      ([ux/settings.md](ux/settings.md) §8). **Run
       2026-08-26 on API 37**: the launch window came up `#0E1A1C` with the
       system in light mode, measured frame by frame off a `screenrecord`, so
       the light `#F4FBFA` never appeared. The 29/30 half is still owed and

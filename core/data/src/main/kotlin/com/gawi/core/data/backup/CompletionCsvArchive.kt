@@ -10,7 +10,7 @@ import android.net.Uri
  * path there is", which is true and load-bearing — architecture §6 rests on it,
  * and so does every piece of copy on the settings screen. A CSV method sitting
  * beside `exportTo` and `importFrom` would make the sentence false by
- * association, and the distinction is exactly the one docs/ux/settings.md §7
+ * association, and the distinction is exactly the one docs/ux/settings.md §8
  * says must never be blurred.
  *
  * What this writes is **a view of history for a spreadsheet**. It carries no

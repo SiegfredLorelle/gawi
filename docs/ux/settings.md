@@ -415,15 +415,17 @@ configuration, which also fixes the system bars for free. Two consequences
 worth stating rather than discovering:
 
 - **Applying it recreates the Activity**, since `uiMode` is a configuration
-  change. Harmless — the dialog has already closed on confirm and everything
-  else on the screen is `rememberSaveable` or read from the store — and it is
-  why the theme is held in a `ViewModel` that survives the recreation rather
-  than in the Activity.
+  change. Nearly harmless: the dialog has already closed on confirm and
+  everything else on the screen is `rememberSaveable` or read from the store,
+  which is also why the theme is held in a `ViewModel` that survives the
+  recreation rather than in the Activity. The exception is a snackbar in flight
+  — §8 has it. This is the only setting on this screen that restarts anything,
+  which is worth knowing before a fifth one is added the same way.
 - **On API 29 and 30 there is no such call**, and no equivalent that does not
   drag in AppCompat, which this app has no activity for. Those two versions get
-  the Compose half only: every frame the app draws is correct, and the window
-  behind the first one is not. One frame, on a minority of supported devices,
-  against a dependency the app does not otherwise need.
+  the Compose half only, and §8 has what that costs — more than the single
+  frame this bullet claimed when it was written, which is recorded there rather
+  than quietly corrected here.
 
 **The preference is the source of truth, not the platform's copy.** The system
 persists what it is told, so the two can disagree — a preferences file imported
@@ -656,6 +658,28 @@ rather than off the write.
   they are looking at is a guess. Fixing it means `observe()` distinguishing
   "defaulted because absent" from "defaulted because unreadable", which is a
   `:core:data` change and a wider one than it looks.
+- **On API 29 and 30 a forced theme is wider than the "one frame" §7 first
+  claimed**, and the correction is worth more than the bullet. Two parts. The
+  drawn app is wrong for as long as the first DataStore read takes, because
+  `ThemeViewModel.theme` starts at "not read yet" and that resolves to the
+  device's own scheme by design — on 31 and up the configuration already
+  carries the override so this costs nothing, and below it there is nothing to
+  correct it. And the window background, the starting window and the Recents
+  snapshot come from the `values-night` qualifier for the whole session, so the
+  launcher shows the app in the other scheme the entire time it is backgrounded
+  rather than for an instant. Neither is fixable without either AppCompat or a
+  blocking disk read on the launch path, and both are worse. **Unmeasured**:
+  the standing API 29/30 emulator pass is what would put numbers on the first
+  part.
+- **A snackbar in flight does not survive a theme change**, on API 31 and up.
+  The recreation rebuilds `SnackbarHostState`, and `events` is a
+  single-consumer `Channel` whose element has already been taken, so the
+  message is gone rather than re-shown. The one that matters is the export
+  confirmation — this screen's whole argument for staying silent on success is
+  that the row redrawing is the feedback, and the export row is the exception
+  that does speak. Narrow (it needs a theme change during the seconds a
+  snackbar is up) and real. The fix is a `rememberSaveable` host or replaying
+  the channel, both wider than this setting.
 - **The widget cannot follow the theme setting**, per §7. Not a gap that can be
   closed from this side: a Glance tree is `RemoteViews` in the launcher's
   process (architecture §2). The help line under the row says so, which is the
