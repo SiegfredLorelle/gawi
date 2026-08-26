@@ -34,7 +34,7 @@ internal const val SETTINGS_NAME = "settings"
  * good: [DataStoreSettingsSource] would answer defaults forever via its own
  * `catch`, but `update` reads before it writes, so the user could never even
  * set the settings back. Discarding preferences that cannot be parsed costs
- * three values they can set again.
+ * four values they can set again.
  *
  * [scope] defaults to what DataStore would have used, and exists so a test can
  * bind the store's lifetime to the test's.
@@ -51,13 +51,15 @@ internal fun settingsDataStore(
 /**
  * [UserSettings] in DataStore, which is where architecture §3 always put them.
  *
- * Times are stored as a second-of-day and the week start as its ISO number,
- * because both survive a locale change and neither needs a parser.
+ * Times are stored as a second-of-day, the week start as its ISO number and
+ * the theme as [ThemeMode.code], because all three survive a locale change and
+ * a reordered enum, and none needs a parser.
  *
  * Reading is forgiving about the *contents*, at both levels they can fail. A
  * value stored under one of these names with another type reads as absent rather
  * than raising `ClassCastException`; a value out of range reads as absent rather
- * than letting `LocalTime.ofSecondOfDay` or `DayOfWeek.of` throw. Either would
+ * than letting `LocalTime.ofSecondOfDay` or `DayOfWeek.of` throw, and a theme
+ * code this build does not know reads as the default. Any of them would
  * otherwise propagate through the repository's read path into `observeToday()`
  * and take the Today screen down over a stray byte.
  *
@@ -108,6 +110,7 @@ class DataStoreSettingsSource @Inject constructor(private val dataStore: DataSto
             preferences[DAY_CUTOFF] = updated.dayCutoff.toSecondOfDay()
             preferences[WEEK_START] = updated.weekStart.value
             preferences[REMINDER_TIME] = updated.reminderTime.toSecondOfDay()
+            preferences[THEME] = updated.theme.code
         }
     }
 
@@ -117,6 +120,7 @@ class DataStoreSettingsSource @Inject constructor(private val dataStore: DataSto
             dayCutoff = preferences.int(DAY_CUTOFF).asLocalTime(defaults.dayCutoff),
             weekStart = preferences.int(WEEK_START).asDayOfWeek(defaults.weekStart),
             reminderTime = preferences.int(REMINDER_TIME).asLocalTime(defaults.reminderTime),
+            theme = ThemeMode.fromCode(preferences.int(THEME)) ?: defaults.theme,
         )
     }
 
@@ -133,6 +137,7 @@ class DataStoreSettingsSource @Inject constructor(private val dataStore: DataSto
         val DAY_CUTOFF = intPreferencesKey("day_cutoff_second_of_day")
         val WEEK_START = intPreferencesKey("week_start_iso")
         val REMINDER_TIME = intPreferencesKey("reminder_second_of_day")
+        val THEME = intPreferencesKey("theme_mode")
 
         const val SECONDS_PER_DAY = 24 * 60 * 60
     }
