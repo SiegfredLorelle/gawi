@@ -775,7 +775,7 @@ is `timesPerWeek × weeks` for a weekly habit and days for a daily one, and a
 feature module counting rows would get that wrong quietly.
 
 **Feature modules are flat, and that is deliberate.** Screen, ViewModel,
-UiState, Actions and mapper all sit in the one package: ten files in
+UiState, Actions and mapper all sit in the one package: twelve files in
 `:feature:today`, seventeen in `:feature:habits`, twelve in `:feature:settings`.
 Do not add `ui/`, `viewmodel/` and `state/` subdirectories. That splits a feature
 by *type* rather than by concept, so every change touches three directories and
