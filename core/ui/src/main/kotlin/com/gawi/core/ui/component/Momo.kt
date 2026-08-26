@@ -8,9 +8,7 @@
 
 package com.gawi.core.ui.component
 
-import android.provider.Settings
-import androidx.compose.animation.Crossfade
-import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,12 +16,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.produceState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import com.gawi.core.domain.mascot.Mood
 import kotlin.math.PI
@@ -47,32 +45,33 @@ import kotlin.math.sin
  * so a test can ask for the frame at any instant without a composition, and
  * the widget and notification can ask for the resting one ([MomoFrame.rest]).
  * `animated = false` draws that resting frame; so does the system's *Animator
- * duration scale* set to off, read once per composition, because a viewer who
- * turned animations off should not have to find a second switch.
+ * duration scale* set to off, read by [rememberAnimationsEnabled], because a
+ * viewer who turned animations off should not have to find a second switch.
+ *
+ * **A mood change is one Momo, not two** (docs/ux/momo.md §3). The first cut
+ * crossfaded two whole drawings, and because each mood floats at its own
+ * tempo the two bodies sat at different heights while both were visible. Now
+ * the body, tail and gills are drawn once from [MomoFrame.between] — the two
+ * moods' frames at the same instant, interpolated by a progress that runs
+ * over [MomoMotion.TRANSITION_MILLIS] — and only the face, its extras and the
+ * regrowing gill crossfade. With animations off the change is a cut, because a
+ * fade is an animation too.
  *
  * The composable carries no description of its own. The copy line beside it
  * is the mood's description (docs/ux/momo.md §5), and a second announcement of
  * the same state would be the "anonymous checkbox beside a named picture"
  * mistake the widget made in reverse. The caller owns the semantics; this
- * exposes a test tag only.
+ * exposes a test tag only, `momo:<mood>` for the mood being shown or arrived at.
  *
  * **A Robolectric test that composes this must set
  * `Settings.Global.ANIMATOR_DURATION_SCALE` to 0 before the activity launches**
  * — `AnimationsOffRule` in `:feature:today`'s and `:app`'s test sets does it —
  * or `waitForIdle` never returns: the frame loop below is a permanent awaiter
- * on the frame clock, and the timeout it produces names nothing here. The
- * setting is read once per composition, in a side effect, and not observed
- * afterwards; a developer-option toggle is not worth a `ContentObserver`, so
- * changing it takes effect at the next composition (docs/running.md §4).
+ * on the frame clock, and the timeout it produces names nothing here.
  */
 @Composable
 fun Momo(mood: Mood, modifier: Modifier = Modifier, animated: Boolean = true) {
-    val context = LocalContext.current
-    // A binder call, so a side effect rather than composition-phase work.
-    // false until it has been read: one resting frame, never a stray moving one.
-    val animationsOn by produceState(initialValue = false, animated) {
-        value = animated && Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) > 0f
-    }
+    val animationsOn by rememberAnimationsEnabled(animated)
     val seconds = remember { mutableFloatStateOf(0f) }
     LaunchedEffect(animationsOn) {
         if (!animationsOn) {
@@ -84,18 +83,31 @@ fun Momo(mood: Mood, modifier: Modifier = Modifier, animated: Boolean = true) {
             withFrameNanos { now -> seconds.floatValue = (now - start) / 1_000_000_000f }
         }
     }
-    // Opacity only, the canvas's .55s. Both moods draw during the fade, which
-    // is what makes a gill that changes length read as a change rather than a
-    // cut. With animations off the change is a cut: a fade is an animation too.
-    val crossfade = if (animationsOn) tween<Float>(MomoMotion.CROSSFADE_MILLIS) else snap()
-    Crossfade(targetState = mood, animationSpec = crossfade, modifier = modifier) { shown ->
-        // fillMaxSize is load-bearing: Crossfade hands its content the box the
-        // caller sized, and a Canvas with no size of its own measures 0 x 0 —
-        // which is a tank with nothing in it, while every test that only
-        // asked whether the node existed stayed green. Caught on the emulator.
-        Canvas(Modifier.fillMaxSize().testTag("momo:$shown")) {
-            drawMomo(shown, MomoFrame.at(shown, seconds.floatValue))
+    // The mood being left, and how far the change toward `mood` has run. Both
+    // start settled so the first composition draws one face, not a fade-in.
+    var from by remember { mutableStateOf(mood) }
+    var target by remember { mutableStateOf(mood) }
+    val progress = remember { Animatable(1f) }
+    LaunchedEffect(mood, animationsOn) {
+        if (target == mood) return@LaunchedEffect
+        from = target
+        target = mood
+        progress.snapTo(0f)
+        if (animationsOn) {
+            progress.animateTo(1f, tween(MomoMotion.TRANSITION_MILLIS))
+        } else {
+            progress.snapTo(1f)
         }
+        from = mood
+    }
+    // fillMaxSize is load-bearing: the caller sizes the box, and a Canvas with
+    // no size of its own measures 0 x 0 — which is a tank with nothing in it,
+    // while every test that only asked whether the node existed stayed green.
+    // Caught on the emulator.
+    Canvas(modifier.fillMaxSize().testTag("momo:$target")) {
+        val t = progress.value
+        val frame = MomoFrame.between(MomoFrame.at(from, seconds.floatValue), MomoFrame.at(target, seconds.floatValue), t)
+        drawMomo(from, target, t, frame)
     }
 }
 
@@ -120,7 +132,8 @@ data class MomoMotion(
     val saturation: Float,
 ) {
     companion object {
-        const val CROSSFADE_MILLIS = 550
+        /** How long a mood change takes, the Habitat & motion page's default (docs/ux/momo.md §3). */
+        const val TRANSITION_MILLIS = 550
 
         val THRIVING = MomoMotion(2.5f, 7f, 1.5f, 1.5f, 4.5f, 0f, null, 1f)
         val CONTENT = MomoMotion(4.2f, 7f, 3.4f, 2.9f, 4.5f, 0f, 5.4f, 1f)
@@ -199,6 +212,38 @@ data class MomoFrame(
                 bead = if (fidget) (seconds / 2.6f) % 1f else null,
                 regrow = wave(seconds, 2.7f),
                 saturation = m.saturation,
+            )
+        }
+
+        /**
+         * The frame [t] of the way from [from] to [to], both taken at the same
+         * instant: everything that moves the body is interpolated, so the
+         * character stays one animal through a mood change, while the face
+         * fields are the destination's — a face is not a thing to average, it
+         * crossfades in [drawMomo]. The bead is the exception: a worried face
+         * fading out keeps its bead until it is gone.
+         *
+         * Continuous at both ends by construction, whatever the two moods'
+         * periods: at 0 the body is [from]'s frame, at 1 it is [to]'s.
+         */
+        fun between(from: MomoFrame, to: MomoFrame, t: Float): MomoFrame {
+            // Exact at both ends: `a + (b - a) * 1f` can miss b by an ulp, and a
+            // frame that has arrived should equal the frame it arrived at.
+            fun lerp(a: Float, b: Float) = when {
+                t <= 0f -> a
+                t >= 1f -> b
+                else -> a + (b - a) * t
+            }
+            return to.copy(
+                dx = lerp(from.dx, to.dx),
+                dy = lerp(from.dy, to.dy),
+                tilt = lerp(from.tilt, to.tilt),
+                breatheX = lerp(from.breatheX, to.breatheX),
+                breatheY = lerp(from.breatheY, to.breatheY),
+                gills = from.gills.zip(to.gills) { a, b -> lerp(a, b) },
+                gillDrop = lerp(from.gillDrop, to.gillDrop),
+                saturation = lerp(from.saturation, to.saturation),
+                bead = to.bead ?: from.bead,
             )
         }
 
