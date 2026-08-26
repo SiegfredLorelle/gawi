@@ -11,6 +11,7 @@ import com.gawi.core.domain.mascot.Mood
 import com.gawi.core.ui.component.MomoFrame
 import com.gawi.core.ui.component.drawMomo
 import org.junit.Assert.assertArrayEquals
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -90,6 +91,63 @@ class MomoRenderTest {
     @Test
     fun `the clock moves the picture`() {
         assertNotEquals(render(Mood.CONTENT, 0f).toList(), render(Mood.CONTENT, 1.3f).toList())
+    }
+
+    /**
+     * A mood change is one Momo: at either end the two-mood draw is pixel for
+     * pixel the single-mood one, and half way it is neither — one body with
+     * both faces on it, not two bodies (docs/ux/momo.md §3).
+     */
+    @Test
+    fun `a mood change meets both ends exactly`() {
+        assertArrayEquals(render(Mood.CONTENT), renderBetween(Mood.CONTENT, Mood.WORRIED, 0f))
+        assertArrayEquals(render(Mood.WORRIED), renderBetween(Mood.CONTENT, Mood.WORRIED, 1f))
+        assertArrayEquals(render(Mood.REGENERATING), renderBetween(Mood.THRIVING, Mood.REGENERATING, 1f))
+    }
+
+    @Test
+    fun `half way through a mood change the body is drawn once and both faces show`() {
+        val mid = renderBetween(Mood.CONTENT, Mood.WORRIED, 0.5f)
+        // One body: the belly pixel is the same opaque colour as in a settled
+        // frame. Two translucent bodies over each other would read darker or
+        // lighter, and the first cut's crossfade drew exactly that.
+        assertEquals(pixel(render(Mood.CONTENT), 130, 100), pixel(mid, 130, 100))
+        // Both faces: the worried eye's round ink is present but fainter than
+        // when settled, and the picture is neither end's.
+        val worriedEye = { p: IntArray -> pixel(p, 104, 96) }
+        assertNotEquals(render(Mood.CONTENT).toList(), mid.toList())
+        assertNotEquals(render(Mood.WORRIED).toList(), mid.toList())
+        val settled = inkDistance(worriedEye(render(Mood.WORRIED)))
+        val bare = inkDistance(worriedEye(render(Mood.CONTENT)))
+        val half = inkDistance(worriedEye(mid))
+        assertTrue("settled=$settled half=$half bare=$bare", half in (settled + 1) until bare)
+    }
+
+    @Test
+    fun `the regrowing gill blends in rather than cutting`() {
+        fun outerBeadInk(p: IntArray) = pinkIn(p, left = 196, top = 44, right = 216, bottom = 66)
+        val full = outerBeadInk(render(Mood.CONTENT))
+        val mid = outerBeadInk(renderBetween(Mood.CONTENT, Mood.REGENERATING, 0.5f))
+        // Half faded, the full gill's outer beads are paler and so fewer clear
+        // the pink threshold than at rest, but they have not vanished.
+        assertTrue("mid=$mid full=$full", mid in 1 until full)
+    }
+
+    private fun renderBetween(from: Mood, to: Mood, t: Float, seconds: Float = 0f): IntArray {
+        val bitmap = ImageBitmap(WIDTH, HEIGHT)
+        CanvasDrawScope().draw(Density(1f), LayoutDirection.Ltr, Canvas(bitmap), Size(WIDTH.toFloat(), HEIGHT.toFloat())) {
+            drawMomo(from, to, t, MomoFrame.between(MomoFrame.at(from, seconds), MomoFrame.at(to, seconds), t))
+        }
+        val map = bitmap.toPixelMap()
+        return IntArray(WIDTH * HEIGHT) { i -> argb(map[i % WIDTH, i / WIDTH].value) }
+    }
+
+    /** How far a pixel is from the eye ink, summed over channels; smaller is more ink. */
+    private fun inkDistance(argb: Int): Int {
+        val r = (argb shr 16) and 0xFF
+        val g = (argb shr 8) and 0xFF
+        val b = argb and 0xFF
+        return kotlin.math.abs(r - 0x3A) + kotlin.math.abs(g - 0x25) + kotlin.math.abs(b - 0x30)
     }
 
     private fun render(mood: Mood, seconds: Float = 0f): IntArray {

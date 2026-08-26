@@ -360,10 +360,13 @@ class TodayScreenTest {
     }
 
     /**
-     * With animations off a mood change is a cut, not a fade. A tween keeps the
-     * old face composed for its whole duration; a snap does not — so one frame
-     * after the change, the old tag must be gone. The clock is held so the frame
-     * can be observed rather than raced.
+     * With animations off a mood change is a cut, not a fade: one frame after
+     * the change the drawing is tagged with the new mood and nothing carries the
+     * old one. Since the transition became one Canvas interpolating between two
+     * frames (momo.md §3) the tag names the destination from the first frame in
+     * either case, so what this holds is that the old name never lingers; how
+     * far the body has travelled is `MomoFrameTest`'s and `MomoRenderTest`'s to
+     * measure. The clock is held so the frame can be observed rather than raced.
      */
     @Test
     fun `with animations off a mood change cuts instead of fading`() {
@@ -376,10 +379,9 @@ class TodayScreenTest {
         compose.onNodeWithTag("momo:${Mood.CONTENT}", useUnmergedTree = true).assertIsDisplayed()
 
         mood.value = Mood.WORRIED
-        // A handful of frames — 80 ms, a fraction of the 550 ms fade: Crossfade
-        // drops the old content the frame after its transition completes. With
-        // the clock held, advancing it does not recompose; waitForIdle does,
-        // without moving time, so the two alternate.
+        // A handful of frames — 80 ms, a fraction of the 550 ms transition.
+        // With the clock held, advancing it does not recompose; waitForIdle
+        // does, without moving time, so the two alternate.
         repeat(5) {
             compose.mainClock.advanceTimeByFrame()
             compose.waitForIdle()

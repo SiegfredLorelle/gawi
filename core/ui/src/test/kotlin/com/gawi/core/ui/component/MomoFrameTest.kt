@@ -75,6 +75,44 @@ class MomoFrameTest {
         assertNotEquals(rest.sparkle, rest.sparkleLag)
     }
 
+    /**
+     * A mood change is one animal: the body's fields run from one mood's frame
+     * to the other's, meeting each end exactly, while the face is the
+     * destination's from the start (docs/ux/momo.md §3).
+     */
+    @Test
+    fun `between meets both ends and averages the body in the middle`() {
+        val from = MomoFrame.at(Mood.CONTENT, 1.1f)
+        val to = MomoFrame.at(Mood.THRIVING, 1.1f)
+        val start = MomoFrame.between(from, to, 0f)
+        assertEquals(from.dy, start.dy)
+        assertEquals(from.tilt, start.tilt)
+        assertEquals(from.gills, start.gills)
+        assertEquals(from.breatheY, start.breatheY)
+        assertEquals(to.eyeOpen, start.eyeOpen)
+        assertEquals(to, MomoFrame.between(from, to, 1f))
+        val mid = MomoFrame.between(from, to, 0.5f)
+        assertEquals((from.dy + to.dy) / 2f, mid.dy, 1e-6f)
+        mid.gills.forEachIndexed { i, g -> assertEquals((from.gills[i] + to.gills[i]) / 2f, g, 1e-6f) }
+    }
+
+    @Test
+    fun `between drains and undrains the colour gradually`() {
+        val full = MomoFrame.at(Mood.CONTENT, 0f)
+        val drained = MomoFrame.at(Mood.REGENERATING, 0f)
+        val half = MomoFrame.between(full, drained, 0.5f).saturation
+        assertTrue(half < full.saturation && half > drained.saturation)
+        assertEquals(MomoMotion.WORRIED.gillDrop / 2f, MomoFrame.between(full, MomoFrame.at(Mood.WORRIED, 0f), 0.5f).gillDrop, 1e-6f)
+    }
+
+    @Test
+    fun `a worried face keeps its bead while it fades out`() {
+        val worried = MomoFrame.at(Mood.WORRIED, 1f)
+        val content = MomoFrame.at(Mood.CONTENT, 1f)
+        assertEquals(worried.bead, MomoFrame.between(worried, content, 0.3f).bead)
+        assertEquals(worried.bead, MomoFrame.between(content, worried, 0.3f).bead)
+    }
+
     @Test
     fun `saturated keeps the encoded lightness`() {
         val body = MomoPalette.Body

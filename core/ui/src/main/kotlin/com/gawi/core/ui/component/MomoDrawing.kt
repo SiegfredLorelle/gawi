@@ -34,10 +34,24 @@ val MomoDesignSize: Size = Size(260f, 200f)
  * `MomoFrameTest` for the maths; the pixels need Robolectric, which this module
  * does not take, so `MomoRenderTest` in `:feature:today` draws them.
  */
-fun DrawScope.drawMomo(mood: Mood, frame: MomoFrame) {
+fun DrawScope.drawMomo(mood: Mood, frame: MomoFrame) = drawMomo(mood, mood, 1f, frame)
+
+/**
+ * Draws Momo part-way through a mood change: [progress] of the way from [from]
+ * to [to], with [frame] already interpolated by [MomoFrame.between].
+ *
+ * The body, tail and five ordinary gills are drawn once, from [frame]. What
+ * crossfades is what differs between two moods' drawings — the eyes and mouth,
+ * the sparkles, the sweat bead, and the right upper gill, which is short while
+ * it regrows — so [from]'s face fades out as [to]'s fades in over one body.
+ * At 0 and 1, and whenever the two moods are the same, this is exactly
+ * [drawMomo] of one mood: the single-mood overload is this call.
+ */
+fun DrawScope.drawMomo(from: Mood, to: Mood, progress: Float, frame: MomoFrame) {
     val scale = minOf(size.width / MomoDesignSize.width, size.height / MomoDesignSize.height)
     val dx = (size.width - MomoDesignSize.width * scale) / 2f
     val dy = (size.height - MomoDesignSize.height * scale) / 2f
+    val t = progress.coerceIn(0f, 1f)
     withTransform({
         translate(dx, dy)
         scale(scale, scale, pivot = Offset.Zero)
@@ -47,37 +61,51 @@ fun DrawScope.drawMomo(mood: Mood, frame: MomoFrame) {
             rotate(frame.tilt, pivot = Offset(130f, 110f))
         }) {
             val tint = { c: Color -> c.saturated(frame.saturation) }
-            drawGills(mood, frame, tint)
+            val wasRegrowing = if (from == Mood.REGENERATING) 1f else 0f
+            val willRegrow = if (to == Mood.REGENERATING) 1f else 0f
+            drawGills(frame, regrowing = wasRegrowing + (willRegrow - wasRegrowing) * t, tint)
             drawBody(frame, tint)
-            drawFace(mood, frame, tint)
+            // The blush is every mood's, so it is drawn once and never fades.
+            drawEllipse(Offset(92f, 114f), 11f, 7f, tint(MomoPalette.Blush), alpha = 0.40f)
+            drawEllipse(Offset(168f, 114f), 11f, 7f, tint(MomoPalette.Blush), alpha = 0.40f)
+            if (from == to) {
+                drawFace(to, frame, tint, alpha = 1f)
+            } else {
+                drawFace(from, frame, tint, alpha = 1f - t)
+                drawFace(to, frame, tint, alpha = t)
+            }
         }
     }
 }
 
-private fun DrawScope.drawGills(mood: Mood, frame: MomoFrame, tint: (Color) -> Color) {
+/**
+ * The six gills, the right upper one blended between its full length and its
+ * regrowing stub by [regrowing] — 1 while regenerating, 0 otherwise, and in
+ * between during a change to or from that mood. The halo comes and goes with
+ * the stub.
+ */
+private fun DrawScope.drawGills(frame: MomoFrame, regrowing: Float, tint: (Color) -> Color) {
     translate(top = frame.gillDrop) {
         Gills.forEachIndexed { index, gill ->
-            val regrowing = mood == Mood.REGENERATING && index == REGROWING_GILL
-            if (regrowing) {
+            val blend = if (index == REGROWING_GILL) regrowing else 0f
+            if (blend > 0f) {
                 // The halo sits behind the short gill, breathing with it.
                 drawCircle(
                     tint(MomoPalette.Bead),
                     radius = 20f * (0.8f + 0.32f * frame.regrow),
                     center = Offset(190f, 68f),
-                    alpha =
-                    0.10f + 0.20f * frame.regrow,
+                    alpha = (0.10f + 0.20f * frame.regrow) * blend,
                 )
             }
             rotate(frame.gills[index], pivot = gill.root) {
-                if (regrowing) {
+                if (blend < 1f) gill.draw(this, tint, alpha = 1f - blend)
+                if (blend > 0f) {
                     withTransform({
                         scale(0.82f + 0.24f * frame.regrow, pivot = gill.root)
                         rotate(-3f + 6f * frame.regrow, pivot = gill.root)
                     }) {
-                        RegrowingGill.draw(this, tint, alpha = 0.72f + 0.28f * frame.regrow)
+                        RegrowingGill.draw(this, tint, alpha = (0.72f + 0.28f * frame.regrow) * blend)
                     }
-                } else {
-                    gill.draw(this, tint, alpha = 1f)
                 }
             }
         }
@@ -94,37 +122,41 @@ private fun DrawScope.drawBody(frame: MomoFrame, tint: (Color) -> Color) {
     }
 }
 
-private fun DrawScope.drawFace(mood: Mood, frame: MomoFrame, tint: (Color) -> Color) {
-    drawEllipse(Offset(92f, 114f), 11f, 7f, tint(MomoPalette.Blush), alpha = 0.40f)
-    drawEllipse(Offset(168f, 114f), 11f, 7f, tint(MomoPalette.Blush), alpha = 0.40f)
+/** One mood's eyes, mouth and extras, at [alpha] — the part of the drawing that crossfades. */
+private fun DrawScope.drawFace(mood: Mood, frame: MomoFrame, tint: (Color) -> Color, alpha: Float) {
+    if (alpha <= 0f) return
     val ink = tint(MomoPalette.Ink)
+    val mouth = tint(MomoPalette.Mouth)
     when (mood) {
         Mood.THRIVING, Mood.CONTENT -> {
-            eye(Offset(104f, 93f), frame.eyeOpen) { drawPath(HappyEyeLeft, ink, style = EyeStroke) }
-            eye(Offset(156f, 93f), frame.eyeOpen) { drawPath(HappyEyeRight, ink, style = EyeStroke) }
-            drawPath(Smile, tint(MomoPalette.Mouth))
+            eye(Offset(104f, 93f), frame.eyeOpen) { drawPath(HappyEyeLeft, ink, alpha, style = EyeStroke) }
+            eye(Offset(156f, 93f), frame.eyeOpen) { drawPath(HappyEyeRight, ink, alpha, style = EyeStroke) }
+            drawPath(Smile, mouth, alpha)
         }
 
         Mood.WORRIED -> {
             eye(Offset(104f, 96f), frame.eyeOpen) {
-                drawEllipse(Offset(104f, 96f), 9.7f, 12f, ink)
-                drawCircle(MomoPalette.Highlight, 3.4f, Offset(106.6f, 92.6f))
+                drawEllipse(Offset(104f, 96f), 9.7f, 12f, ink, alpha)
+                drawCircle(MomoPalette.Highlight, 3.4f, Offset(106.6f, 92.6f), alpha)
             }
             eye(Offset(156f, 96f), frame.eyeOpen) {
-                drawEllipse(Offset(156f, 96f), 9.7f, 12f, ink)
-                drawCircle(MomoPalette.Highlight, 3.4f, Offset(158.6f, 92.6f))
+                drawEllipse(Offset(156f, 96f), 9.7f, 12f, ink, alpha)
+                drawCircle(MomoPalette.Highlight, 3.4f, Offset(158.6f, 92.6f), alpha)
             }
-            drawPath(WavyMouth, tint(MomoPalette.Mouth), style = Stroke(3.6f, cap = StrokeCap.Round))
+            drawPath(WavyMouth, mouth, alpha, style = Stroke(3.6f, cap = StrokeCap.Round))
         }
 
         Mood.REGENERATING -> {
-            eye(Offset(104f, 99f), frame.eyeOpen) { drawPath(SadEyeLeft, ink, style = EyeStroke) }
-            eye(Offset(156f, 99f), frame.eyeOpen) { drawPath(SadEyeRight, ink, style = EyeStroke) }
-            drawPath(SmallMouth, tint(MomoPalette.Mouth), style = Stroke(3.6f, cap = StrokeCap.Round))
+            eye(Offset(104f, 99f), frame.eyeOpen) { drawPath(SadEyeLeft, ink, alpha, style = EyeStroke) }
+            eye(Offset(156f, 99f), frame.eyeOpen) { drawPath(SadEyeRight, ink, alpha, style = EyeStroke) }
+            drawPath(SmallMouth, mouth, alpha, style = Stroke(3.6f, cap = StrokeCap.Round))
         }
     }
-    if (mood == Mood.THRIVING) drawSparkles(frame)
-    frame.bead?.let { drawBead(it) }
+    if (mood == Mood.THRIVING) {
+        sparkle(Offset(46f, 47f), SparkleLarge, frame.sparkle, alpha)
+        sparkle(Offset(214f, 37.3f), SparkleSmall, frame.sparkleLag, alpha)
+    }
+    if (mood == Mood.WORRIED) frame.bead?.let { drawBead(it, alpha) }
 }
 
 /** A blink scales the eye vertically about its own centre, as the canvas does. */
@@ -132,17 +164,12 @@ private inline fun DrawScope.eye(centre: Offset, open: Float, draw: DrawScope.()
     scale(1f, open, pivot = centre) { draw() }
 }
 
-private fun DrawScope.drawSparkles(frame: MomoFrame) {
-    sparkle(Offset(46f, 47f), SparkleLarge, frame.sparkle)
-    sparkle(Offset(214f, 37.3f), SparkleSmall, frame.sparkleLag)
-}
-
-private fun DrawScope.sparkle(centre: Offset, path: Path, phase: Float) {
+private fun DrawScope.sparkle(centre: Offset, path: Path, phase: Float, alpha: Float) {
     withTransform({
         scale(0.72f + 0.40f * phase, pivot = centre)
         rotate(70f * phase, pivot = centre)
     }) {
-        drawPath(path, MomoPalette.Sparkle, alpha = 0.35f + 0.65f * phase)
+        drawPath(path, MomoPalette.Sparkle, alpha = (0.35f + 0.65f * phase) * alpha)
     }
 }
 
@@ -150,7 +177,7 @@ private fun DrawScope.sparkle(centre: Offset, path: Path, phase: Float) {
  * The sweat bead's fall: appears above its resting spot, holds, drops away.
  * Piecewise linear through the canvas's 0 / 45 / 70 / 100 percent stops.
  */
-private fun DrawScope.drawBead(progress: Float) {
+private fun DrawScope.drawBead(progress: Float, fade: Float) {
     val (alpha, dy, scale) = when {
         progress < 0.45f -> {
             val t = progress / 0.45f
@@ -169,7 +196,7 @@ private fun DrawScope.drawBead(progress: Float) {
         translate(top = dy)
         scale(scale, pivot = Offset(186f, 66f))
     }) {
-        drawPath(SweatBead, MomoPalette.Sweat, alpha = alpha)
+        drawPath(SweatBead, MomoPalette.Sweat, alpha = alpha * fade)
     }
 }
 
