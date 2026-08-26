@@ -88,7 +88,7 @@ internal class SettingsViewModel @Inject constructor(
      * correctly, since settings you cannot read cannot be drawn. This one is a
      * caption on a row, and one shared catch cannot tell them apart — so without
      * this, a broken caption takes the only disaster-recovery path on the device
-     * off the screen with it (docs/ux/settings.md §7).
+     * off the screen with it (docs/ux/settings.md §8).
      *
      * **`hasEvents = true`, so even the bug resolves towards nudging.** A wrong
      * warning costs an export nobody needed; a wrong silence costs the warning

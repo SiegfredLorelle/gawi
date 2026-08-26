@@ -22,7 +22,7 @@ import javax.inject.Inject
  * preference the user set, so it is not a fourth
  * [UserSettings][com.gawi.core.data.settings.UserSettings] field. It shares the
  * preferences *file* with them, which is safe in the direction that is easy to
- * get wrong: `DataStoreSettingsSource.update` assigns only its own three keys
+ * get wrong: `DataStoreSettingsSource.update` assigns only the preference keys
  * inside `edit`, so this key survives a settings write.
  *
  * **Its failures resolve the opposite way round from `ExportJournal`'s, and that

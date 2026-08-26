@@ -58,7 +58,7 @@ internal class ContentResolverEventArchive @Inject constructor(
      * than a backup button earns. Ordering costs nothing and needs neither.
      *
      * What this does not survive is the process dying mid-write. See
-     * docs/ux/settings.md §7.
+     * docs/ux/settings.md §8.
      *
      * **The export is recorded after the stream closes, and the ordering is the
      * whole meaning of the stamp**: it has to say "a file landed", not "a write

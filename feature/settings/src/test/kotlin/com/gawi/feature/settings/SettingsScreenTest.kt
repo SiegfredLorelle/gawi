@@ -363,7 +363,7 @@ class SettingsScreenTest {
      * Recorded as a decision rather than left as a fact: the Data section is
      * inside the `Settings` branch, so a non-IO read failure takes the recovery
      * path off the screen with it. `Unavailable` is a bug-shaped state that IO
-     * cannot produce, so this is tolerable — see docs/ux/settings.md §7.
+     * cannot produce, so this is tolerable — see docs/ux/settings.md §8.
      */
     @Test
     fun unavailable_takesTheDataSectionWithIt() {

@@ -47,7 +47,7 @@ import java.util.concurrent.atomic.AtomicInteger
  *
  * The same shadow would now work for [ContentResolverEventArchive], which still
  * has no behavioural test of its own — recorded as follow-up in
- * docs/ux/settings.md §7, because that class is the recovery path and deserves
+ * docs/ux/settings.md §8, because that class is the recovery path and deserves
  * its own change rather than a rider on this one.
  */
 @RunWith(RobolectricTestRunner::class)

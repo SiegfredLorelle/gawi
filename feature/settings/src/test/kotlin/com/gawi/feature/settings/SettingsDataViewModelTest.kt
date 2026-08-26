@@ -335,7 +335,7 @@ class SettingsDataViewModelTest {
      * cannot be drawn — while this flow is one line of text under a button and
      * shares the `catch` with them, so without its own guard a failure here hides
      * the export and import rows entirely: the only disaster-recovery path on the
-     * device, lost over its own caption (docs/ux/settings.md §7).
+     * device, lost over its own caption (docs/ux/settings.md §8).
      *
      * Asserting `Never` rather than `NothingYet` is what distinguishes "the
      * caption failed safely" from "the caption failed quietly". The old

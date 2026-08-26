@@ -21,19 +21,22 @@ import javax.inject.Inject
  * When the log was last written to a file, and whether there is a log worth
  * writing — the two things the 30-day nudge is made of (PRD §5, architecture §6).
  *
- * **Deliberately not a fourth `UserSettings` field**, which is where
- * docs/ux/settings.md §7 expected it. Two reasons, and the first is the one that
+ * **Deliberately not a `UserSettings` field**, which is where
+ * docs/ux/settings.md §8 expected it. Two reasons, and the first is the one that
  * decided it. `OfflineFirstHabitRepository` dedupes the Today query on the
  * `(settings, logical date)` pair, so a `UserSettings` field that changes on
  * every export would make that dedupe miss and restart the streak sweep under an
  * open screen — the churn `DataStoreSettingsSource`'s `distinctUntilChanged`
  * exists to prevent. And the nudge needs a second signal `UserSettings` cannot
  * carry at all, "is there anything here to lose", so a flow of its own was
- * needed either way. The three preferences are what the user set; this is a
- * record of something the app did.
+ * needed either way. The preferences there are what the user set; this is a
+ * record of something the app did. A fourth field did eventually arrive — the
+ * theme, on 2026-08-26 — and it is not a counter-example: it changes when the
+ * user changes it, and no reader binds it. `UserSettings`' own KDoc has the
+ * comparison.
  *
  * It shares the *file* with them, which is safe in the direction that is easy to
- * get wrong: `DataStoreSettingsSource.update` assigns only its own three keys
+ * get wrong: `DataStoreSettingsSource.update` assigns only the preference keys
  * inside `edit`, so this one survives a settings write even though that block
  * reads as though it rewrites everything. A test pins it in both directions.
  *
