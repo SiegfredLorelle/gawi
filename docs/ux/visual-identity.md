@@ -1143,8 +1143,12 @@ and must be solid, so it is a different medium — it is now Momo's silhouette
   **Decided and built 2026-08-25** — flat, the canvas's character, all four
   expressions, animated in Compose on the Today screen. [momo.md](momo.md) is
   the record, including why PRD §5's Rive recommendation was dropped (its export
-  is behind a paid plan) and what that cost. Still open there: the widget and
-  reminder treatments, and milestones.
+  is behind a paid plan) and what that cost. The widget and reminder
+  treatments followed the same day, and on 2026-08-26 the tank gained its life
+  (the canvas's own weeds and bubbles, at a per-mood tempo), the mood change
+  became one interpolated body rather than two crossfaded ones, and finishing
+  the day is celebrated — all designed on the canvas's "Habitat & motion" page
+  (momo.md §3, §4, §6). Still open there: streak milestones.
 - ~~**The launcher icon — its drawing and its wiring, not its design.**~~
   **Built 2026-08-25.** §7.1's decision — Momo as a mark, the woven thread as
   the monochrome layer — is `ic_launcher_foreground.xml` and
