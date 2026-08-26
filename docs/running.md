@@ -1321,7 +1321,7 @@ Nothing A059 pass in §3 is still owed and is what would upgrade these.
       Compose runs, and its `windowBackground` was pointed at the scheme's dark
       surface for this reason. Any visible flip from a lighter grey to the app's
       background means the two have drifted apart.
-- [ ] **The theme setting, on a phone whose system theme is the opposite.**
+- [x] **The theme setting, on a phone whose system theme is the opposite.**
       New 2026-08-26 ([ux/settings.md](ux/settings.md) §7). Settings →
       Appearance → Theme → Dark on a light phone: every screen flips
       immediately, and the app does not leave Settings while doing it — the
@@ -1329,17 +1329,21 @@ Nothing A059 pass in §3 is still owed and is what would upgrade these.
       a reopened dialog is what a failure looks like. Then Light on a dark
       phone, then back to *Follow the system* and toggle dark from quick
       settings, which must move the app again.
-- [ ] **Cold start with a forced theme, watching for the same flash.** The check
+- [x] **Cold start with a forced theme, watching for the same flash.** The check
       above this one, run with Dark chosen and the *system* in light mode.
       Force-stop, launch, watch the first frame. On API 31+ there must be no
       flash at all — `setApplicationNightMode` is what makes the window resolve
       from `values-night/` — and on an API 29 or 30 image there will be one, for
-      one frame, which is the documented cost rather than a defect.
-- [ ] **The status bar's icons in both forced modes.** The bars follow the
+      one frame, which is the documented cost rather than a defect. **Run
+      2026-08-26 on API 37**: the launch window came up `#0E1A1C` with the
+      system in light mode, measured frame by frame off a `screenrecord`, so
+      the light `#F4FBFA` never appeared. The 29/30 half is still owed and
+      belongs with the standing API 29/30 pass.
+- [x] **The status bar's icons in both forced modes.** The bars follow the
       resolved theme rather than the device's, so this is where that either
       holds or produces white-on-white — the exact failure `enableEdgeToEdge`
       was added for.
-- [ ] **The widget after switching**, on the home screen. It must stay in the
+- [x] **The widget after switching**, on the home screen. It must stay in the
       launcher's theme and change nothing. That is correct behaviour and the row
       says so; the check is that the *row* said so, not that the widget moved.
 - [ ] **The habit hues against a real photo wallpaper**, on the Today list. Not
