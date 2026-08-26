@@ -82,14 +82,17 @@ internal fun TodayScreen(state: TodayUiState, actions: TodayActions, snackbarHos
             // font scale, with the button or the second row below the fold. §1
             // already accepted Momo leaving the screen on a long list; the
             // collapse into an app-bar chip is what is still deferred.
-            is TodayUiState.Empty -> Column(
-                Modifier
-                    .fillMaxSize()
-                    .padding(insets)
-                    .verticalScroll(rememberScrollState()),
-            ) {
-                MascotPanel(mood = state.mood, remaining = 0, total = 0)
-                EmptyToday(onAddHabit = actions.onAddHabit, modifier = Modifier.fillMaxWidth())
+            is TodayUiState.Empty -> {
+                val motion = rememberTodayMotion(state.mood)
+                Column(
+                    Modifier
+                        .fillMaxSize()
+                        .padding(insets)
+                        .verticalScroll(rememberScrollState()),
+                ) {
+                    MascotPanel(mood = state.mood, remaining = 0, total = 0, motion = motion)
+                    EmptyToday(onAddHabit = actions.onAddHabit, modifier = Modifier.fillMaxWidth())
+                }
             }
 
             is TodayUiState.Habits -> HabitList(state, actions.onToggle, Modifier.fillMaxSize().padding(insets))
@@ -99,12 +102,16 @@ internal fun TodayScreen(state: TodayUiState, actions: TodayActions, snackbarHos
 
 @Composable
 private fun HabitList(state: TodayUiState.Habits, onToggle: (HabitId, Boolean, LocalDate) -> Unit, modifier: Modifier = Modifier) {
+    // The gate and the celebration live here, above the list, because the
+    // mascot item below is disposed when it scrolls off and the celebration's
+    // memory of the last mood has to outlive that (rememberCelebration).
+    val motion = rememberTodayMotion(state.mood)
     LazyColumn(modifier) {
         // The habitat is the first item, not a header outside the list: §1 keeps
         // habit rows on plain surface, so row contrast is never a function of the
         // mood, and scrolling Momo away is §1's accepted cost.
         item(key = "mascot") {
-            MascotPanel(mood = state.mood, remaining = state.remaining, total = state.rows.size)
+            MascotPanel(mood = state.mood, remaining = state.remaining, total = state.rows.size, motion = motion)
         }
         items(state.rows, key = { it.id.value }) { row ->
             HabitRow(

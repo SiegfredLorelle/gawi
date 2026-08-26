@@ -1,24 +1,20 @@
 package com.gawi.feature.today
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,11 +24,12 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.gawi.core.domain.mascot.Mood
 import com.gawi.core.ui.component.Momo
 import com.gawi.core.ui.component.MomoPalette
-import com.gawi.core.ui.component.rememberAnimationsEnabled
+import com.gawi.core.ui.component.rememberFrameClock
 import com.gawi.core.ui.component.rememberMoodTransition
 import com.gawi.core.ui.theme.GawiSpacing
 
@@ -51,7 +48,7 @@ import com.gawi.core.ui.theme.GawiSpacing
  * into an app-bar chip on scroll — not the slot.
  */
 @Composable
-internal fun MascotPanel(mood: Mood, remaining: Int, total: Int, modifier: Modifier = Modifier) {
+internal fun MascotPanel(mood: Mood, remaining: Int, total: Int, motion: TodayMotion, modifier: Modifier = Modifier) {
     val copy = stringResource(moodCopy(mood, total))
     Column(
         modifier = modifier
@@ -66,7 +63,7 @@ internal fun MascotPanel(mood: Mood, remaining: Int, total: Int, modifier: Modif
         verticalArrangement = Arrangement.spacedBy(GawiSpacing.Gap),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Tank(mood)
+        Tank(mood, motion.animationsOn, motion.celebration)
         Text(
             text = copy,
             style = MaterialTheme.typography.titleMedium,
@@ -101,55 +98,67 @@ internal fun MascotPanel(mood: Mood, remaining: Int, total: Int, modifier: Modif
  * and leaning as it does. Fixed height, not a floor — the character has a size
  * and the copy below it is what grows with the font scale.
  *
- * The tank life runs on its own frame clock and Momo on its, both gated by
- * [rememberAnimationsEnabled], and the mood change they both follow is one
- * [rememberMoodTransition] each of the same mood, so the water drains on the
- * same curve the face changes on.
+ * One animations gate, one [rememberMoodTransition] and one frame clock for
+ * the water, the weeds and Momo, so nothing here can disagree about where a
+ * mood change stands; the gate and the celebration are the screen's, passed
+ * in, for the reasons [rememberCelebration] gives. Everything that moves is
+ * read inside a draw or layout lambda, so a frame redraws two canvases and
+ * recomposes nothing.
  */
 @Composable
-private fun Tank(mood: Mood, modifier: Modifier = Modifier) {
+private fun Tank(mood: Mood, animationsOn: Boolean, celebration: CelebrationState, modifier: Modifier = Modifier) {
     val scheme = MaterialTheme.colorScheme
-    val animationsOn by rememberAnimationsEnabled()
     val transition = rememberMoodTransition(mood, animationsOn)
     val seconds = rememberFrameClock(animationsOn)
     val full = listOf(scheme.primaryContainer, scheme.primaryFixedDim)
     val drained = listOf(scheme.surfaceContainerHighest, scheme.surfaceContainerHigh)
-    val water = full.zip(drained) { a, b -> lerp(a, b, transition.drained) }
     val colours = HabitatColours(weed = scheme.primary, weedDrained = scheme.outline, bubble = MomoPalette.Highlight)
+    // Built once per scheme, not per frame: a Brush caches its native shader
+    // per instance, and outside the ~33 frames of a transition the water is
+    // exactly one of these two. Only the change in between lerps the stops.
+    val fullWater = remember(scheme) { Brush.linearGradient(full) }
+    val drainedWater = remember(scheme) { Brush.linearGradient(drained) }
+    val celebrationOver by celebration.isOver
     Box(
         modifier = modifier
             .fillMaxWidth()
             .height(TankHeight)
-            .clip(RoundedCornerShape(TankCorner))
-            .background(Brush.linearGradient(water)),
+            .clip(RoundedCornerShape(TankCorner)),
         contentAlignment = Alignment.Center,
     ) {
-        // Behind Momo, so a frond never crosses the face; fillMaxSize for the
-        // reason Momo gives — a Canvas with no size measures 0 x 0.
+        // Water and tank life together, behind Momo so a frond never crosses
+        // the face; fillMaxSize for the reason Momo gives — a Canvas with no
+        // size measures 0 x 0.
         Canvas(Modifier.fillMaxSize().testTag("habitat")) {
+            val t = transition.current
             val s = seconds.value
-            val frame = HabitatFrame.between(HabitatFrame.at(transition.from, s), HabitatFrame.at(transition.to, s), transition.progress)
-            drawHabitat(frame, colours)
+            val d = t.drained
+            when {
+                d <= 0f -> drawRect(fullWater)
+                d >= 1f -> drawRect(drainedWater)
+                else -> drawRect(Brush.linearGradient(full.zip(drained) { a, b -> lerp(a, b, d) }))
+            }
+            drawHabitat(HabitatFrame.between(HabitatFrame.at(t.from, s), HabitatFrame.at(t.to, s), t.progress), colours)
         }
-        Momo(mood, Modifier.fillMaxSize().padding(GawiSpacing.Row), animated = animationsOn)
+        // The glow goes between the water and Momo — it brightens the water,
+        // not the face — but the burst goes in front: its lanes rise straight
+        // up behind the body, and drawn under Momo the bubbles simply vanish.
+        // Checked on the emulator; the design board's layering hid them too.
+        if (!celebrationOver) {
+            Canvas(Modifier.fillMaxSize().testTag("celebration")) { drawCelebrationGlow(celebration.frame, MomoPalette.Highlight) }
+        }
+        Momo(
+            transition,
+            seconds,
+            Modifier
+                .fillMaxSize()
+                .padding(GawiSpacing.Row)
+                .offset { IntOffset(0, -celebration.frame.hop.dp.roundToPx()) },
+        )
+        if (!celebrationOver) {
+            Canvas(Modifier.fillMaxSize()) { drawCelebrationBurst(celebration.frame, MomoPalette.Highlight) }
+        }
     }
-}
-
-/** Seconds since this composition started moving; frozen at 0 while [animationsOn] is false. */
-@Composable
-private fun rememberFrameClock(animationsOn: Boolean): State<Float> {
-    val seconds = remember { mutableFloatStateOf(0f) }
-    LaunchedEffect(animationsOn) {
-        if (!animationsOn) {
-            seconds.floatValue = 0f
-            return@LaunchedEffect
-        }
-        val start = withFrameNanos { it }
-        while (true) {
-            withFrameNanos { now -> seconds.floatValue = (now - start) / NANOS_PER_SECOND }
-        }
-    }
-    return seconds
 }
 
 /** The copy for a mood — one line each, all four (today-view §4). */
@@ -175,5 +184,4 @@ private fun moodCopy(mood: Mood, total: Int): Int = when {
  * alone needed.
  */
 private val TankHeight = 250.dp
-private const val NANOS_PER_SECOND = 1_000_000_000f
 private val TankCorner = 20.dp
