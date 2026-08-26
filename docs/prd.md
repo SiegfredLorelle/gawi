@@ -188,7 +188,7 @@ reason (2026-08-23).
 **Mascot (committed feature)**
 - Momo with emotional states (thriving, content, worried, regenerating) driven by streak health and today's completion status. "Regenerating" replaces "sad" on purpose — see §3.5.
 - Appears in Today view, widget, and reminder notifications ("Momo is worried — 2 habits left today!"). Placement in the Today view is fixed: see `docs/ux/today-view.md`.
-- Streak milestone celebrations (7, 30, 100 days; 4, 12, 52 weeks).
+- Streak milestone celebrations (7, 30, 100 days; 4, 12, 52 weeks). Not yet designed. What **is** built (2026-08-26) is a day-complete celebration — the tank marks the mood entering thriving, once per screen session — and Momo's habitat now has life in it that keeps the mood's tempo, both per `docs/ux/momo.md` §4 and §6.
 - **The app icon rides on the same decision** (recorded 2026-08-22; **built 2026-08-25**, the day the character was). Until then there was no `mipmap/ic_launcher` in the app at all — the manifest pointed `android:icon` at `@android:drawable/sym_def_app_icon`, Android's generic default and not public API, as a deliberate placeholder — because a logo drawn before Momo's art style was settled (OQ-4) would have been drawn twice. It is now Momo as a mark (`docs/ux/visual-identity.md` §7.1), an adaptive icon with the woven thread as its themed layer.
 - **Design tooling plan:**
   - Concepting: iterate on character personality, expression sheets, and design briefs with Claude; AI image tools for visual concept exploration.
