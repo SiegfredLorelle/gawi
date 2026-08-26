@@ -45,7 +45,7 @@ Now-in-Android convention: Gradle version catalog
 | `:feature:today` | Today view (app home screen, Momo's habitat) |
 | `:feature:habits` | Create/edit/archive habit, habit detail |
 | `:feature:insights` | Per-habit heatmap and completion-rate trends, tag effort distribution, and Phase 1.5's retrospectives — **all three Phase 1 surfaces are built; the retrospectives are not** |
-| `:feature:settings` | Day boundary, week start, reminder time, export and import, the 30-day export nudge |
+| `:feature:settings` | Day boundary, week start, reminder time, the app's theme, export and import, the 30-day export nudge |
 | `:widget` | Glance home-screen widget |
 
 Dependency rule: `feature → core`, `widget → core`, `app → everything`,

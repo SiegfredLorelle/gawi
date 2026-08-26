@@ -891,6 +891,11 @@ comparison, four widget surfaces and the launcher mark.
 ### 7.2 The scheme is decided
 
 **Candidate A, teal habitat — settled 2026-08-23**, after dark mode was drawn.
+**Which of the two a phone shows became the user's choice on 2026-08-26**
+([settings.md](settings.md) §7): the schemes here are unchanged, and what the
+setting adds is that dark mode is no longer only reachable through a system
+toggle. The one surface it cannot reach is the widget, for the reason §7.4
+already gives about `RemoteViews`.
 Dark is where the habitat earns itself: the tank drops to deep teal and coral
 Momo has nowhere to hide, which is also where candidate B gets worse rather than
 better. The role sets in §3 are the contract; `primary` and `tertiary` keep the
@@ -1170,4 +1175,6 @@ and must be solid, so it is a different medium — it is now Momo's silhouette
 - **Whether Momo appears on the Insights screens.** [insights.md](insights.md) §7
   raises it and defers it to OQ-4; it belongs to the second half, with the art.
 - **Dynamic colour.** Off, and staying off — a designed identity is the point of
-  this document, and Material You would hand it back to the wallpaper.
+  this document, and Material You would hand it back to the wallpaper. The theme
+  setting built on 2026-08-26 is not a step towards it and does not reopen this:
+  it chooses between the two schemes §7.2 designed, and offers no third.
