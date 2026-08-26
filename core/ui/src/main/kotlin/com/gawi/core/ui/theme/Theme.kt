@@ -50,9 +50,18 @@ import androidx.compose.runtime.Composable
  * [HabitPalette] is what the editor offers and [glyphColorOn] decides what is
  * drawn on top of it.
  *
+ * **Which of the two is drawn is the user's, since 2026-08-26.** It was the
+ * system's setting alone until then, and this KDoc said so. `UserSettings.theme`
+ * now holds System, Light or Dark; `MainActivity` resolves that against
+ * [isSystemInDarkTheme] and passes the answer in, and on API 31 and up it also
+ * tells the platform, so the window painted before `setContent` agrees
+ * (docs/ux/settings.md §7). Nothing about this function changed — the parameter
+ * was already here for previews and tests — which is the whole reason the
+ * setting cost `:core:ui` nothing.
+ *
  * @param darkTheme exposed, and defaulted, so a preview or a test can render a
- *   scheme the host is not in. Both are drawn in production by the system
- *   setting alone.
+ *   scheme the host is not in. The default is the device's setting, which is
+ *   what the app draws when the user has not chosen otherwise.
  */
 @Composable
 fun GawiTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
