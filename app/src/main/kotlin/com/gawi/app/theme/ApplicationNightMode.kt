@@ -3,6 +3,7 @@ package com.gawi.app.theme
 import android.app.UiModeManager
 import android.content.Context
 import android.os.Build
+import android.util.Log
 import com.gawi.core.data.settings.ThemeMode
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -30,9 +31,36 @@ import javax.inject.Singleton
  * **API 31 and up only.** `setApplicationNightMode` arrived in S, and there is
  * no earlier equivalent that does not drag in AppCompat — this app has no
  * AppCompat activity and `AppCompatDelegate.setDefaultNightMode` would not
- * reach a `ComponentActivity` anyway. On 29 and 30 the Compose side still draws
- * the chosen scheme correctly; what is lost is the pre-`setContent` window,
- * which flashes for one frame (docs/ux/settings.md §7).
+ * reach a `ComponentActivity` anyway.
+ *
+ * **What 29 and 30 lose is wider than one frame, and saying "one frame" was
+ * wrong.** Two things, both found by `/code-review` rather than by running it:
+ * `ThemeViewModel.theme` starts `null` and resolves to the *system* scheme
+ * until DataStore's first disk read lands, so a forced theme is not drawn for
+ * however long that read takes — real frames of real content, not the window.
+ * And because the configuration is never corrected, the window background, the
+ * starting window and the Recents snapshot stay in the system's scheme for the
+ * whole session rather than for an instant. On 31 and up neither applies: the
+ * override is already in the configuration before the process starts, so
+ * `isSystemInDarkTheme()` is right on the first frame and the `null` start
+ * costs nothing. docs/ux/settings.md §8 carries this.
+ *
+ * **`MODE_NIGHT_AUTO` is how "follow the system" is expressed, and the platform
+ * documents it as something else.** There is no call that *clears* a per-app
+ * override — the javadoc says the mode "is persisted for this application until
+ * it is either modified by the application, the user clears the data for the
+ * application, or this application is uninstalled" — so the only way back from
+ * a forced theme is to set another mode, and `AUTO` is the one whose AOSP
+ * implementation maps to "inherit". The javadoc for it says instead that it
+ * "automatically switches between night and notnight based on the device's
+ * current location and certain other sensors", which is not what this app
+ * means by System. **Measured on API 37**: after Dark, then System, the app
+ * followed a quick-settings dark toggle in both directions, so the AOSP
+ * behaviour is the inherit one. A ROM that honoured the javadoc literally
+ * would leave System behaving as twilight-based dark instead, which is
+ * recorded in docs/ux/settings.md §8 rather than guarded against — the
+ * alternative, not calling at all for System, leaves the previous override
+ * pinned forever, which is worse and is not a guess.
  *
  * **The preference stays the source of truth.** The platform persists this
  * value itself, so the two could disagree — a preferences file restored onto a
@@ -46,23 +74,39 @@ class ApplicationNightMode @Inject constructor(@ApplicationContext private val c
     /**
      * Applies [mode] to the process, or does nothing below API 31.
      *
-     * A `null` service is tolerated rather than asserted: this is a cosmetic
-     * refinement of a theme the app has already drawn, and no colour is wrong
-     * without it.
+     * **Nothing here may throw, and that is load-bearing rather than
+     * defensive.** This is a cosmetic refinement of a theme the app has already
+     * drawn — no colour is wrong without it — but it is called from the flow
+     * `MainActivity` reads its scheme from, on `viewModelScope`, which has no
+     * `CoroutineExceptionHandler`. An escaping exception there is not a missing
+     * refinement; it is the app failing to launch for anyone whose stored theme
+     * is not the default. `setApplicationNightMode` reaches `system_server` and
+     * rethrows a `RemoteException` from it, so the throw is real rather than
+     * hypothetical, and a null service is the same tolerance one line earlier.
+     *
+     * Not covered by a JVM test: Robolectric's `UiModeManager` shadow cannot be
+     * made to fail, and a seam that existed only to inject one would be a
+     * bigger change than the call it guards. Logged so a device can say so.
      */
     fun apply(mode: ThemeMode) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
         val manager = context.getSystemService(UiModeManager::class.java) ?: return
-        manager.setApplicationNightMode(mode.nightMode())
+        runCatching { manager.setApplicationNightMode(mode.nightMode()) }
+            .onFailure { cause -> Log.w(TAG, "could not tell the platform about $mode", cause) }
     }
 
     private fun ThemeMode.nightMode(): Int = when (this) {
-        // AUTO rather than CUSTOM or NO: it means "whatever the device says",
-        // which is exactly what SYSTEM means and what an unset app had before.
+        // AUTO, for the reason the KDoc gives at length: it is the only mode
+        // whose implementation means "inherit", and there is no call that
+        // removes an override outright.
         ThemeMode.SYSTEM -> UiModeManager.MODE_NIGHT_AUTO
 
         ThemeMode.LIGHT -> UiModeManager.MODE_NIGHT_NO
 
         ThemeMode.DARK -> UiModeManager.MODE_NIGHT_YES
+    }
+
+    private companion object {
+        const val TAG = "ApplicationNightMode"
     }
 }

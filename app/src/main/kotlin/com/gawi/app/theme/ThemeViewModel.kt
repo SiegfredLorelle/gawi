@@ -45,6 +45,17 @@ internal class ThemeViewModel @Inject constructor(settings: SettingsSource, nigh
      * worse answer to a bug than the scheme they had before this setting
      * existed.
      *
+     * **It sits *after* the side effect, and the order is the decision.**
+     * Upstream of it, that fallback would be applied: a read bug would write
+     * `MODE_NIGHT_AUTO` over a stored Dark, clearing a persisted platform
+     * override the user set, while the preferences file still said Dark and the
+     * settings row still read Dark. Downstream, the fallback only decides what
+     * this process draws, and the disagreement it can cause dies with the
+     * process. `catch` then ends the flow — the same property
+     * `SettingsSource.observe()` and `TodayViewModel` have, recorded in
+     * docs/ux/settings.md §8 — so the theme is frozen for the rest of this
+     * process, which is the price of not writing a guess to disk.
+     *
      * [SharingStarted.Eagerly], so the read starts with the Activity rather
      * than with the first frame that collects it, and so the side effect below
      * does not wait on a subscriber.
@@ -52,11 +63,12 @@ internal class ThemeViewModel @Inject constructor(settings: SettingsSource, nigh
     val theme: StateFlow<ThemeMode?> = settings.observe()
         .map { it.theme }
         .distinctUntilChanged()
-        .catch { emit(ThemeMode.SYSTEM) }
         // The platform's copy, kept in step with the preference. Here rather
         // than in the settings write, so a restored preferences file reaches
-        // the platform on the next start too — see ApplicationNightMode.
+        // the platform on the next start too — see ApplicationNightMode, which
+        // is also why this cannot throw into `viewModelScope`.
         .onEach(nightMode::apply)
+        .catch { emit(ThemeMode.SYSTEM) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 }
 

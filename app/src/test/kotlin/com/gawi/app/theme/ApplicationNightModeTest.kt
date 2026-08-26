@@ -28,11 +28,21 @@ class ApplicationNightModeTest {
         return shadowOf(context.getSystemService(UiModeManager::class.java)).applicationNightMode
     }
 
+    /**
+     * **SYSTEM is asserted last, and that ordering is the test.**
+     * `MODE_NIGHT_AUTO` is nought, which is also the shadow's untouched value,
+     * so asserting it first would pass against an `apply` that did nothing at
+     * all — and SYSTEM is the branch whose semantics the class KDoc argues
+     * about at length. Dirtying the shadow with `MODE_NIGHT_YES` first is what
+     * makes the last line mean "SYSTEM was applied" rather than "nothing has
+     * happened yet". Checked by inverting it: an early return for SYSTEM leaves
+     * this red.
+     */
     @Test
     fun `each mode maps to the platform's own name for it`() {
-        assertEquals(UiModeManager.MODE_NIGHT_AUTO, applied(ThemeMode.SYSTEM))
         assertEquals(UiModeManager.MODE_NIGHT_NO, applied(ThemeMode.LIGHT))
         assertEquals(UiModeManager.MODE_NIGHT_YES, applied(ThemeMode.DARK))
+        assertEquals(UiModeManager.MODE_NIGHT_AUTO, applied(ThemeMode.SYSTEM))
     }
 
     /**

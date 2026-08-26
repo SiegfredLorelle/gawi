@@ -91,4 +91,27 @@ class ThemeViewModelTest {
 
         assertEquals(ThemeMode.SYSTEM, viewModel(settings = broken).theme.value)
     }
+
+    /**
+     * And that fallback is **not** written to the platform.
+     *
+     * The whole reason `catch` sits downstream of the side effect. Applied, it
+     * would clear a persisted override the user set — the platform would say
+     * "follow the system" while the preferences file and the settings row both
+     * still said Dark, and nothing would put them back. So the stored DARK is
+     * what the platform keeps, even though this process draws SYSTEM.
+     *
+     * Found by `/code-review`.
+     */
+    @Test
+    fun `a broken read does not clear the platform's override`() = runTest {
+        stored.value = UserSettings(theme = ThemeMode.DARK)
+        viewModel()
+        assertEquals(UiModeManager.MODE_NIGHT_YES, appliedNightMode)
+
+        val broken = flow<UserSettings> { error("a bug") }
+        assertEquals(ThemeMode.SYSTEM, viewModel(settings = broken).theme.value)
+
+        assertEquals(UiModeManager.MODE_NIGHT_YES, appliedNightMode)
+    }
 }
