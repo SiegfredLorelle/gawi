@@ -6,7 +6,8 @@ as capabilities and never as a screen — *"configurable: day boundary time, wee
 start day (default Monday), reminder time, timezone behavior"* is the whole of
 it — so this document is where the screen those four words imply is decided.
 
-**Status:** decided and built 2026-08-20, with `:feature:settings`. **Export and
+**Status:** decided and built 2026-08-20, with `:feature:settings`. **The theme
+setting landed 2026-08-26** as a section of its own below the three (§7). **Export and
 import** landed the same day, as a labelled section below the three settings
 (§6). **The 30-day nudge landed 2026-08-21** and turned the export row into a
 `SettingRow` with a real stored value (§6). **The CSV of completions landed
@@ -33,6 +34,13 @@ one option is not a setting; it is a claim that something is configurable, and a
 user who opens it looking for a fix for a travel problem would find nothing and
 learn nothing. `UserSettings`' own KDoc has said this since it was written, and
 this section is where it stops being only a code comment.
+
+**There is a fourth setting now, and it is not the PRD's.** The theme landed
+2026-08-26 (§7), which leaves this section's title true in the only sense it
+ever meant: of the four capabilities the PRD lists, three are here and timezone
+behaviour is deliberately not. The theme is a different kind of setting
+entirely — it counts nothing, buckets nothing and changes no query — which is
+why it sits under its own header rather than becoming a fourth row among these.
 
 Revisit if a second timezone policy is ever wanted — "pin my habits to the zone
 I created them in" is the plausible one, and it is a real feature with real
@@ -193,7 +201,7 @@ at all, not an empty one, so the import row still puts no action verb where the
 three settings above it put a state — and it never will, because nothing an
 import leaves behind is a thing to report. What changed is only that keeping two
 composables would have meant maintaining one `Column` twice to express one
-difference. It also retires half of §7's duplication bullet.
+difference. It also retires half of §8's duplication bullet.
 
 **The nudge is words, not a colour, and it replaces the help line rather than
 joining it.** The value line says how long it has been; the help line underneath
@@ -208,7 +216,7 @@ means two different things and the log decides which: on a fresh install there i
 nothing to lose, and a nudge there is a warning about losing nothing; on a log
 that holds something it is exactly the case the nudge exists for, and it is
 overdue immediately rather than thirty days later. That second signal is why the
-stamp is not a `UserSettings` field — see §7.
+stamp is not a `UserSettings` field — see §8.
 
 **There is no "not now".** A nudge that can be dismissed for thirty days is a
 nudge that says nothing, and there is no second surface to dismiss it from. The
@@ -217,7 +225,7 @@ row that shows it is the row that fixes it.
 This used to carry a second reason — that a dismiss action would have needed a
 seventh `SettingsActions` property, one past detekt's constructor threshold. That
 was never true of this declaration and is now visibly untrue: the class has seven
-properties today. §7 has the measurement. The product reason above is the whole
+properties today. §8 has the measurement. The product reason above is the whole
 of it and always was.
 
 **The system picker is this section's "pick, then confirm" (§3), so there is no
@@ -278,7 +286,7 @@ taps the wrong row learns what it did from the copy either way.
 **It gets no value line and no nudge, and those are the same decision twice.**
 `ExportJournal` records the JSON export only. A CSV cannot restore anything, so
 letting one reset the 30-day warning would silence it for a month on the
-strength of a file that would be no use — the exact failure §7's rule about
+strength of a file that would be no use — the exact failure §8's rule about
 resolving towards nudging exists to prevent. That is enforced where it cannot be
 forgotten rather than remembered: the CSV archive is **not given the journal at
 all**, which `CompletionCsvArchiveWiringTest` asserts against the constructor,
@@ -349,7 +357,7 @@ already follows is to write copy that needs no quantity resource. The one thing
 a count says that copy cannot is that the file came out empty, and that case has
 its own sentence.
 
-**Export speaks on success where a settings write is silent.** §7 notes that a
+**Export speaks on success where a settings write is silent.** §8 notes that a
 successful settings change says nothing, because the row redrawing is the
 feedback. There is no row to redraw here, and the file went somewhere the app is
 never told about, so silence would be indistinguishable from nothing happening.
@@ -361,7 +369,69 @@ worse than one sentence, so the copy is written to need neither — "1 added, 1
 already here" and "128 added, 12 already here" are both grammatical — and the
 cases where a count is zero get their own string rather than reading "0 added".
 
-## 7. Still open
+## 7. Appearance: the one setting that counts nothing
+
+**Decided and built 2026-08-26.** Three modes — follow the system, Light, Dark
+— stored as a fourth `UserSettings` field and drawn by `GawiTheme`, which has
+taken a `darkTheme` parameter since it was written and needed no change at all.
+
+**It is a section of its own rather than a fourth row**, and that is the whole
+of what this screen had to decide. §2's argument is that every row here says
+what it changes because all three change *how a day or a week is counted* — the
+cutoff prospectively, the week start retroactively, the reminder in two places.
+A row that changes only paint, sitting fourth among them under the same silent
+grouping, would blunt that. The header is what separates the two kinds, in
+exactly the shape §6 already gave the Data section for rows that are not
+settings at all.
+
+**A radio dialog, not a segmented control.** Three named alternatives are the
+same shape as seven, so this reuses the week-start dialog rather than
+introducing a second idiom on one screen — `ChoiceDialog` is that dialog made
+generic, which is what the second copy of it was owed under AGENTS.md's
+look-in-`core/ui`-first rule, resolved here at two copies rather than three.
+§3's pick-then-confirm applies too, and for a weaker reason than it has
+elsewhere: nothing about a theme is expensive to change. The reason to keep it
+is that a Cancel which sometimes means "nothing changed" and sometimes means
+"changed, then changed back" is worse than a consistent one.
+
+**The help line names the widget, and that sentence is the point of the row's
+copy.** An in-app theme cannot reach a Glance widget: it is `RemoteViews`,
+inflated in the launcher's process, under the launcher's configuration
+(architecture §2, [widget.md](widget.md)). So a phone in light mode with Dark
+chosen here shows a dark app and a light widget on the home screen, and nothing
+about that is fixable from this side. §2's rule is that a row says what it does
+*not* change where a reader would assume otherwise, and this is the clearest
+case of it on the screen — without the sentence, a correct widget reads as a
+bug.
+
+**The platform is told too, on API 31 and up.** Compose alone would leave the
+window painted before `setContent` resolved from the *system's* night
+qualifier, so a cold start with Dark chosen on a light phone flashes the light
+surface and settles dark — the exact defect
+[visual-identity.md](visual-identity.md) §3 describes and `WindowBackgroundTest`
+exists to catch, produced here with no drift at all.
+`UiModeManager.setApplicationNightMode` fixes it at the source by changing the
+configuration, which also fixes the system bars for free. Two consequences
+worth stating rather than discovering:
+
+- **Applying it recreates the Activity**, since `uiMode` is a configuration
+  change. Harmless — the dialog has already closed on confirm and everything
+  else on the screen is `rememberSaveable` or read from the store — and it is
+  why the theme is held in a `ViewModel` that survives the recreation rather
+  than in the Activity.
+- **On API 29 and 30 there is no such call**, and no equivalent that does not
+  drag in AppCompat, which this app has no activity for. Those two versions get
+  the Compose half only: every frame the app draws is correct, and the window
+  behind the first one is not. One frame, on a minority of supported devices,
+  against a dependency the app does not otherwise need.
+
+**The preference is the source of truth, not the platform's copy.** The system
+persists what it is told, so the two can disagree — a preferences file imported
+onto a phone that was told something else. Re-applying on every process start
+is what keeps them in step, which is why the call hangs off the settings flow
+rather than off the write.
+
+## 8. Still open
 
 - ~~**The CSV of completions is not built.**~~ **Built 2026-08-21**, and this
   bullet's own warning is what shaped it. The JSON is the event log and the only
@@ -586,6 +656,18 @@ cases where a count is zero get their own string rather than reading "0 added".
   they are looking at is a guess. Fixing it means `observe()` distinguishing
   "defaulted because absent" from "defaulted because unreadable", which is a
   `:core:data` change and a wider one than it looks.
+- **The widget cannot follow the theme setting**, per §7. Not a gap that can be
+  closed from this side: a Glance tree is `RemoteViews` in the launcher's
+  process (architecture §2). The help line under the row says so, which is the
+  whole of the fix available. If `:widget` is ever given a palette of its own
+  (visual-identity §7.4), the question worth asking then is whether it should
+  read this preference and paint itself — a widget can be pushed an update, so
+  it is possible; what it costs is a widget that disagrees with every other
+  widget on that home screen.
+- **On API 29 and 30 a forced theme flashes on cold start**, per §7. The window
+  is painted from the system's night qualifier before Compose runs, and
+  `setApplicationNightMode` is API 31. Bounded to one frame and to the window
+  background, and the alternative is AppCompat for one call.
 - **No timezone setting**, per §1. Recorded here so it reads as a decision
   rather than an omission.
 - **`GlyphButton` wanted a home in `:core:ui`. It has one — resolved

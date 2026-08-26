@@ -599,7 +599,7 @@ the shape the 4b bug took. Wording itself is still yours to read.
       (the picker created the document and the screen died before the export
       started). What must *not* appear is a partial file — and if you import
       whichever file you got, it is refused as damaged, which is the property
-      that makes the gap bounded. See `docs/ux/settings.md` §7; closing it needs
+      that makes the gap bounded. See `docs/ux/settings.md` §8; closing it needs
       an application-scoped coroutine, which is a decision rather than a patch.
       Delete the file afterwards so the next check starts clean.
 - [ ] **Process death mid-export is not survived, and the file is refused rather
@@ -655,7 +655,7 @@ build on each other, and the third is the one that has no JVM test behind it.
       check of the ordering** — the stamp is written after the output stream
       closes, so that it means "a file landed" rather than "a write was
       attempted", and substituting a `ContentResolver` to test that needs a
-      Robolectric shadow this project does not use (docs/ux/settings.md §7).
+      Robolectric shadow this project does not use (docs/ux/settings.md §8).
 - [ ] **A cancelled export does not count as a backup.** Tap **Export a copy**
       and press Back out of the save dialog. The row still reads whatever it
       read before. Proves the stamp follows the write and not the tap.
@@ -1321,6 +1321,27 @@ Nothing A059 pass in §3 is still owed and is what would upgrade these.
       Compose runs, and its `windowBackground` was pointed at the scheme's dark
       surface for this reason. Any visible flip from a lighter grey to the app's
       background means the two have drifted apart.
+- [ ] **The theme setting, on a phone whose system theme is the opposite.**
+      New 2026-08-26 ([ux/settings.md](ux/settings.md) §7). Settings →
+      Appearance → Theme → Dark on a light phone: every screen flips
+      immediately, and the app does not leave Settings while doing it — the
+      Activity is recreated underneath on API 31+, so a lost scroll position or
+      a reopened dialog is what a failure looks like. Then Light on a dark
+      phone, then back to *Follow the system* and toggle dark from quick
+      settings, which must move the app again.
+- [ ] **Cold start with a forced theme, watching for the same flash.** The check
+      above this one, run with Dark chosen and the *system* in light mode.
+      Force-stop, launch, watch the first frame. On API 31+ there must be no
+      flash at all — `setApplicationNightMode` is what makes the window resolve
+      from `values-night/` — and on an API 29 or 30 image there will be one, for
+      one frame, which is the documented cost rather than a defect.
+- [ ] **The status bar's icons in both forced modes.** The bars follow the
+      resolved theme rather than the device's, so this is where that either
+      holds or produces white-on-white — the exact failure `enableEdgeToEdge`
+      was added for.
+- [ ] **The widget after switching**, on the home screen. It must stay in the
+      launcher's theme and change nothing. That is correct behaviour and the row
+      says so; the check is that the *row* said so, not that the widget moved.
 - [ ] **The habit hues against a real photo wallpaper**, on the Today list. Not
       because anything composites against the wallpaper — nothing does — but
       because the eight are tuned to one lightness and the failure to look for is
