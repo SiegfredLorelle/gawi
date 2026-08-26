@@ -1,5 +1,6 @@
 package com.gawi.feature.today
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,16 +13,27 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.gawi.core.domain.mascot.Mood
 import com.gawi.core.ui.component.Momo
+import com.gawi.core.ui.component.MomoPalette
+import com.gawi.core.ui.component.rememberAnimationsEnabled
+import com.gawi.core.ui.component.rememberMoodTransition
 import com.gawi.core.ui.theme.GawiSpacing
 
 /**
@@ -83,19 +95,27 @@ internal fun MascotPanel(mood: Mood, remaining: Int, total: Int, modifier: Modif
 }
 
 /**
- * The habitat: a teal water gradient in the theme's own roles, drained to
- * the neutral containers while Momo regenerates (momo.md §3). Fixed height,
- * not a floor — the character has a size and the copy below it is what grows
- * with the font scale.
+ * The habitat: teal water in the theme's own roles with the tank life behind
+ * Momo (momo.md §4) — four weeds and four bubbles keeping the mood's tempo —
+ * draining to the neutral containers while Momo regenerates, the weeds greying
+ * and leaning as it does. Fixed height, not a floor — the character has a size
+ * and the copy below it is what grows with the font scale.
+ *
+ * The tank life runs on its own frame clock and Momo on its, both gated by
+ * [rememberAnimationsEnabled], and the mood change they both follow is one
+ * [rememberMoodTransition] each of the same mood, so the water drains on the
+ * same curve the face changes on.
  */
 @Composable
 private fun Tank(mood: Mood, modifier: Modifier = Modifier) {
     val scheme = MaterialTheme.colorScheme
-    val water = if (mood == Mood.REGENERATING) {
-        listOf(scheme.surfaceContainerHighest, scheme.surfaceContainerHigh)
-    } else {
-        listOf(scheme.primaryContainer, scheme.primaryFixedDim)
-    }
+    val animationsOn by rememberAnimationsEnabled()
+    val transition = rememberMoodTransition(mood, animationsOn)
+    val seconds = rememberFrameClock(animationsOn)
+    val full = listOf(scheme.primaryContainer, scheme.primaryFixedDim)
+    val drained = listOf(scheme.surfaceContainerHighest, scheme.surfaceContainerHigh)
+    val water = full.zip(drained) { a, b -> lerp(a, b, transition.drained) }
+    val colours = HabitatColours(weed = scheme.primary, weedDrained = scheme.outline, bubble = MomoPalette.Highlight)
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -104,8 +124,32 @@ private fun Tank(mood: Mood, modifier: Modifier = Modifier) {
             .background(Brush.linearGradient(water)),
         contentAlignment = Alignment.Center,
     ) {
-        Momo(mood, Modifier.fillMaxSize().padding(GawiSpacing.Row))
+        // Behind Momo, so a frond never crosses the face; fillMaxSize for the
+        // reason Momo gives — a Canvas with no size measures 0 x 0.
+        Canvas(Modifier.fillMaxSize().testTag("habitat")) {
+            val s = seconds.value
+            val frame = HabitatFrame.between(HabitatFrame.at(transition.from, s), HabitatFrame.at(transition.to, s), transition.progress)
+            drawHabitat(frame, colours)
+        }
+        Momo(mood, Modifier.fillMaxSize().padding(GawiSpacing.Row), animated = animationsOn)
     }
+}
+
+/** Seconds since this composition started moving; frozen at 0 while [animationsOn] is false. */
+@Composable
+private fun rememberFrameClock(animationsOn: Boolean): State<Float> {
+    val seconds = remember { mutableFloatStateOf(0f) }
+    LaunchedEffect(animationsOn) {
+        if (!animationsOn) {
+            seconds.floatValue = 0f
+            return@LaunchedEffect
+        }
+        val start = withFrameNanos { it }
+        while (true) {
+            withFrameNanos { now -> seconds.floatValue = (now - start) / NANOS_PER_SECOND }
+        }
+    }
+    return seconds
 }
 
 /** The copy for a mood — one line each, all four (today-view §4). */
@@ -131,4 +175,5 @@ private fun moodCopy(mood: Mood, total: Int): Int = when {
  * alone needed.
  */
 private val TankHeight = 250.dp
+private const val NANOS_PER_SECOND = 1_000_000_000f
 private val TankCorner = 20.dp

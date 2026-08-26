@@ -360,6 +360,24 @@ class TodayScreenTest {
     }
 
     /**
+     * The tank life is drawn behind Momo, for every mood, with real bounds —
+     * the same "displayed, not merely present" bar the face is held to, since a
+     * 0 x 0 Canvas is exactly how the first tank shipped empty.
+     */
+    @Test
+    fun `the habitat is drawn behind momo in every mood`() {
+        val mood = mutableStateOf(Mood.CONTENT)
+        compose.setContent {
+            GawiTheme { TodayScreen(HABITS.copy(mood = mood.value), NO_ACTIONS, SnackbarHostState()) }
+        }
+        Mood.entries.forEach { next ->
+            mood.value = next
+            compose.waitForIdle()
+            compose.onNodeWithTag("habitat", useUnmergedTree = true).assertIsDisplayed()
+        }
+    }
+
+    /**
      * With animations off a mood change is a cut, not a fade: one frame after
      * the change the drawing is tagged with the new mood and nothing carries the
      * old one. Since the transition became one Canvas interpolating between two

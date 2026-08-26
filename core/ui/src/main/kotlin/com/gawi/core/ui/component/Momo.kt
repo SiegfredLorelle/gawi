@@ -14,12 +14,12 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
@@ -66,32 +66,97 @@ import kotlin.math.sin
  * **A Robolectric test that composes this must set
  * `Settings.Global.ANIMATOR_DURATION_SCALE` to 0 before the activity launches**
  * — `AnimationsOffRule` in `:feature:today`'s and `:app`'s test sets does it —
- * or `waitForIdle` never returns: the frame loop below is a permanent awaiter
+ * or `waitForIdle` never returns: [rememberFrameClock] is a permanent awaiter
  * on the frame clock, and the timeout it produces names nothing here.
  */
 @Composable
 fun Momo(mood: Mood, modifier: Modifier = Modifier, animated: Boolean = true) {
     val animationsOn by rememberAnimationsEnabled(animated)
-    val seconds = remember { mutableFloatStateOf(0f) }
-    LaunchedEffect(animationsOn) {
-        if (!animationsOn) {
-            seconds.floatValue = 0f
-            return@LaunchedEffect
-        }
-        val start = withFrameNanos { it }
-        while (true) {
-            withFrameNanos { now -> seconds.floatValue = (now - start) / 1_000_000_000f }
-        }
+    Momo(rememberMoodTransition(mood, animationsOn), animationsOn, modifier)
+}
+
+/**
+ * Momo following a [transition] the caller owns — the entry for a surface
+ * that has already read the animations gate and shares the mood change with
+ * something else, as the Today tank does with its water and weeds. One gate,
+ * one transition, so the face and the habitat can never disagree about where
+ * a mood change stands.
+ */
+@Composable
+fun Momo(transition: MoodTransitionState, animationsOn: Boolean, modifier: Modifier = Modifier) {
+    Momo(transition, rememberFrameClock(animationsOn), modifier)
+}
+
+/**
+ * Momo following a [transition] on a [seconds] clock the caller owns, both
+ * shared with whatever else moves around it — so the tank's water, weeds and
+ * Momo are one gate, one transition and one clock by construction, not three
+ * effects that happen to start on the same frame.
+ */
+@Composable
+fun Momo(transition: MoodTransitionState, seconds: State<Float>, modifier: Modifier = Modifier) {
+    // fillMaxSize is load-bearing: the caller sizes the box, and a Canvas with
+    // no size of its own measures 0 x 0 — which is a tank with nothing in it,
+    // while every test that only asked whether the node existed stayed green.
+    // Caught on the emulator. The clock and the progress are read in here and
+    // not above, so a frame redraws this Canvas and recomposes nothing.
+    Canvas(modifier.fillMaxSize().testTag("momo:${transition.to}")) {
+        val t = transition.current
+        val s = seconds.value
+        drawMomo(t.from, t.to, t.progress, MomoFrame.between(MomoFrame.at(t.from, s), MomoFrame.at(t.to, s), t.progress))
     }
-    // The mood being left, and how far the change toward `mood` has run. Both
-    // start settled so the first composition draws one face, not a fade-in.
-    var from by remember { mutableStateOf(mood) }
-    var target by remember { mutableStateOf(mood) }
-    val progress = remember { Animatable(1f) }
-    LaunchedEffect(mood, animationsOn) {
-        if (target == mood) return@LaunchedEffect
-        from = target
-        target = mood
+}
+
+/**
+ * Where a mood change stands: [progress] of the way from [from] to [to].
+ * Settled when [progress] is 1, at which point [from] equals [to].
+ */
+data class MoodTransition(val from: Mood, val to: Mood, val progress: Float) {
+    /** How far the habitat has drained: 1 while regenerating, 0 otherwise, and between during a change (momo.md §4). */
+    val drained: Float
+        get() {
+            val a = if (from == Mood.REGENERATING) 1f else 0f
+            val b = if (to == Mood.REGENERATING) 1f else 0f
+            return a + (b - a) * progress
+        }
+}
+
+/**
+ * A mood change in flight, as state. [from] and [to] are the moods either
+ * side of it; [current] is the snapshot to draw with, read inside a draw
+ * lambda so that the progress advancing redraws and does not recompose.
+ * Obtain one with [rememberMoodTransition].
+ */
+@Stable
+class MoodTransitionState internal constructor(mood: Mood) {
+    var from: Mood by mutableStateOf(mood)
+        private set
+    var to: Mood by mutableStateOf(mood)
+        private set
+    private val progress = Animatable(1f)
+
+    val current: MoodTransition get() = MoodTransition(from, to, progress.value)
+
+    /**
+     * Follows [mood], called from an effect keyed on it and on [animationsOn].
+     * A change that lands while a run is in flight — a second tick within the
+     * transition, or the gate flipping — first finishes the run it interrupted,
+     * over what was left of its time, so the body never jumps from an
+     * interpolated pose to a full frame; then the new run starts from where
+     * the last one settled. With animations off every step is a cut.
+     */
+    internal suspend fun follow(mood: Mood, animationsOn: Boolean) {
+        if (progress.value < 1f) {
+            if (animationsOn) {
+                progress.animateTo(1f, tween((MomoMotion.TRANSITION_MILLIS * (1f - progress.value)).toInt()))
+            } else {
+                progress.snapTo(1f)
+            }
+            from = to
+        }
+        if (to == mood) return
+        from = to
+        to = mood
         progress.snapTo(0f)
         if (animationsOn) {
             progress.animateTo(1f, tween(MomoMotion.TRANSITION_MILLIS))
@@ -100,15 +165,26 @@ fun Momo(mood: Mood, modifier: Modifier = Modifier, animated: Boolean = true) {
         }
         from = mood
     }
-    // fillMaxSize is load-bearing: the caller sizes the box, and a Canvas with
-    // no size of its own measures 0 x 0 — which is a tank with nothing in it,
-    // while every test that only asked whether the node existed stayed green.
-    // Caught on the emulator.
-    Canvas(modifier.fillMaxSize().testTag("momo:$target")) {
-        val t = progress.value
-        val frame = MomoFrame.between(MomoFrame.at(from, seconds.floatValue), MomoFrame.at(target, seconds.floatValue), t)
-        drawMomo(from, target, t, frame)
-    }
+}
+
+/**
+ * Follows [mood] through its changes: each new value starts a run from the one
+ * being left over [MomoMotion.TRANSITION_MILLIS], or a cut when [animationsOn]
+ * is false — a fade is an animation too. Starts settled, so the first
+ * composition draws one face and not a fade-in. [to] moves when the effect
+ * runs, one frame after the mood does; the alternative, moving it in
+ * composition, would draw the destination's full frame for that one frame
+ * before the fade began, which is the pop this exists to remove.
+ *
+ * Shared between [Momo] and the tank around it in `:feature:today`, which
+ * passes the one instance to the transition overload of [Momo], so the water
+ * drains and the weeds droop on exactly the progress the face changes on.
+ */
+@Composable
+fun rememberMoodTransition(mood: Mood, animationsOn: Boolean): MoodTransitionState {
+    val state = remember { MoodTransitionState(mood) }
+    LaunchedEffect(mood, animationsOn) { state.follow(mood, animationsOn) }
+    return state
 }
 
 /**
