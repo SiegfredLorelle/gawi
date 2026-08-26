@@ -12,7 +12,10 @@ is the one on the Gawi Redesign canvas, the motion is the one approved on its
 "Momo motion" page, and the code is `core/ui/component/Momo.kt` and
 `MomoDrawing.kt`, drawn into the Today panel by `feature/today/MascotPanel.kt`.
 The widget, the reminder and the launcher icon followed later the same day —
-the still frame on each of their own grounds (§4).
+the still frame on each of their own grounds (§4). **The habitat, the mood
+transition and the day-complete celebration followed on 2026-08-26**, designed
+on the canvas's "Habitat & motion" page and built in `feature/today/Habitat.kt`
+and `Celebration.kt` (§3, §4, §6).
 
 ---
 
@@ -104,9 +107,20 @@ half-cosine is.
 | Colour | full | full | full | 34 % saturation, and the tank drains |
 
 A blink is the canvas's `steps(1,end)`: the eyes are 12 % tall between 96 % and
-98 % of the period, and open otherwise. A mood change crossfades over 0.55 s,
-both faces drawing during the fade, so a gill changing length reads as a change
-and not a cut.
+98 % of the period, and open otherwise.
+
+**A mood change is one Momo, not two.** The first build crossfaded two whole
+drawings over 0.55 s, and because each mood floats at its own tempo the two
+bodies sat at different heights while both were visible. Since 2026-08-26 the
+body, tail and five ordinary gills are drawn once from the two moods' frames at
+the same instant, interpolated by a progress that runs over 550 ms
+(`MomoMotion.TRANSITION_MILLIS`, Compose's fast-out-slow-in), and only what
+differs between two drawings crossfades: the eyes and mouth, the sparkles, the
+sweat bead, and the right upper gill, which is short while it regrows. The
+water and the tank life (§4) drain and refill on the same progress. The Habitat
+& motion page's "Mood transition" board runs the same frame maths in the
+browser, which is where the duration was approved. With animations off the
+change is a cut: a fade is an animation too.
 
 **REGENERATING is the face this whole vocabulary exists for**, and its rules
 are in the drawing rather than the copy: the character is dimmer, slower and
@@ -120,7 +134,7 @@ the habit, and nothing tells the panel which habit yet.
 
 | Surface | Ground | Motion | Status |
 |---|---|---|---|
-| Today | the tank: a 250 dp panel, water in `primaryContainer → primaryFixedDim`, drained to `surfaceContainerHighest → surfaceContainerHigh` while regenerating | animated | **built** — `MascotPanel.kt` |
+| Today | the tank: a 250 dp panel, water in `primaryContainer → primaryFixedDim`, drained to `surfaceContainerHighest → surfaceContainerHigh` while regenerating, with four weeds and four bubbles keeping the mood's tempo behind the character | animated | **built** — `MascotPanel.kt`, `Habitat.kt` |
 | Widget | the Today widget's own background, above the rows, only when the host gives it two cells (≥ 170 dp) | the resting frame, `MomoFrame.rest`, rasterised by `drawMomo` at 72 dp | **built** — `widget/MomoBitmap.kt` |
 | Reminder | the notification's small icon is alpha-only, so a silhouette — of the launcher mark, which is what holds at 24 dp | still | **built** — `app/res/drawable/ic_reminder.xml` |
 | Launcher | visual-identity §7.1's mark, derived from this character, on light `primaryContainer`; the woven thread as the monochrome layer | still | **built** — `app/res/mipmap-anydpi/ic_launcher.xml` |
@@ -131,6 +145,26 @@ on their own grounds. The character itself is in `:core:ui` for the reason
 architecture §2 gives — the widget's still frame draws it too — and the
 widget → `core:ui` edge that carried one font now carries Momo's geometry as
 well, and nothing else.
+
+**The habitat has life in it, and the life keeps time with the mood.** The
+four weeds and four bubbles were on the canvas's Momo motion boards from the
+start, unchanged in shape and colour; the Today screen simply did not draw
+them until 2026-08-26. `Habitat.kt` transcribes them — `HabitatFrame.at` is a
+pure function of the mood and the clock, like `MomoFrame.at`, and
+`drawHabitat` paints it behind Momo, in dp, the left pair placed from the left
+edge and the right pair from the right so the tank keeps its shape at any
+width. What changes per mood is one **tempo**: a multiplier that scales the
+canvas's 5.2 s weed sway and its 7.4–10 s bubble rises together, so the tank
+cannot drift out of step with itself — 0.6 thriving, 1.0 content, 1.3
+worried, 1.7 regenerating — and a sway of ±5° / 5° / 3° / 1.5°. Regenerating
+leans the weeds 22° outward, greys them and stops the bubbles. The numbers are
+the Habitat & motion page's defaults, approved 2026-08-26. Colours are roles
+and a highlight: weeds `primary` at 55 % (light `#1F6F78` is the canvas's
+`#027273`, dark `#7FD4DC` its `#6CE0E1`), drained weeds `outline`, bubbles the
+same white as Momo's eye highlight so both themes read as the canvas did — and
+so the drain is a role swap, not a second `saturated()`. The habitat is
+`:feature:today`'s, like the tank, and nothing about it crosses the widget
+edge.
 
 **The widget draws `drawMomo`, not four drawables.** visual-identity §7.4
 priced Momo-on-a-widget as "a static vector drawable per mood: four assets"
@@ -172,19 +206,46 @@ desaturation, done arithmetically in `drawMomo` so a test can measure it.
   is the widget's lesson from both sides — the one `TodayWidget.kt`'s
   `HabitRows` note records, where review caught a row describing its image
   and its checkbox separately.
-- **Animations off means still.** `Momo` reads the system *Animator duration
-  scale* once per composition and draws the resting frame when it is off; the
-  same frame the widget will show. `docs/running.md` §4 checks it, because it
-  is a Settings read and no JVM test can see it.
-- **Every mood must read at rest.** The Momo Motion page's still-frame board
-  is the check: if a mood cannot be told from the others with nothing moving,
-  the motion was carrying meaning the drawing should carry.
+- **Animations off means still.** `rememberAnimationsEnabled` reads the
+  system *Animator duration scale* once per composition, and everything that
+  loops — Momo, the tank life, a celebration — answers to that one reading, so
+  a viewer who turned animations off gets a still tank, a still Momo, a cut on
+  a mood change and no celebration; the same frame the widget shows.
+  `docs/running.md` §4 checks it, because it is a Settings read and no JVM test
+  can see it. One reading rather than one per loop is also what keeps the
+  screen tests alive: a frame loop is a permanent awaiter, and one gated on
+  anything else would hang every composition of Today under Robolectric.
+- **Every mood must read at rest — the tank included.** The Momo Motion page's
+  still-frame board is the check, and the Habitat & motion page's "still
+  frame" board extends it to the habitat: upright weeds and bubbles, or drooped
+  weeds in drained water. If a mood cannot be told from the others with nothing
+  moving, the motion was carrying meaning the drawing should carry.
+- **A celebration is motion only, and says nothing.** Finishing the day (§6)
+  hops Momo and bursts bubbles; with animations off it never plays, and the
+  resting thriving frame already says thriving, so nothing is lost. It adds no
+  announcement: the copy line changing to the thriving line *is* the
+  announcement, and a second one would be the double reading this section
+  exists to prevent.
 
 ## 6. What this does not decide
 
-- **Milestone celebrations** (PRD §5: 7 / 30 / 100 days; 4 / 12 / 52 weeks).
-  No treatment. If one is ever a hand-keyed sequence rather than a loop, that
-  is where §1's Lottie fallback becomes relevant.
+- ~~**Celebrations.**~~ **Finishing the day is celebrated since 2026-08-26**
+  (`Celebration.kt`): when the mood the tank was showing gives way to thriving,
+  Momo hops 14 dp, fourteen bubbles rush up from under the tail on staggered
+  lanes and the water brightens for a beat, over 1.4 s — the Habitat & motion
+  page's "Celebration" board, with its defaults. The edge is detected in
+  composition and nowhere else, because the state flow re-emits the same mood
+  on every return to the screen and every reminder tick, and a detector there
+  would celebrate a finished day again each time the app came back; the
+  composition survives those and sees one change. So a cold start on a
+  finished day, a rotation and animations off never fire it — by design, and
+  `docs/running.md` §4 checks the first two. One part of the board was not
+  transcribed: it also popped the sparkles in, but the face crossfade already
+  brings them in over the transition, and a knob on `Momo`'s public API for one
+  caller was not worth it. **Streak milestones** (PRD §5: 7 / 30 / 100 days;
+  4 / 12 / 52 weeks) still have no treatment — this is a different trigger,
+  not that one closed. If a milestone is ever a hand-keyed sequence rather than
+  a loop, that is where §1's Lottie fallback becomes relevant.
 - ~~**The widget and reminder treatments** beyond "the still frame on their own
   ground"~~ — placement and size were decided with the build (§4): in the
   Today widget, above the rows, size-gated. Still open from visual-identity

@@ -1374,10 +1374,12 @@ Nothing A059 pass in §3 is still owed and is what would upgrade these.
 
 ### Momo — the four faces, both themes
 
-New with the character (2026-08-25, [momo.md](ux/momo.md)). `MomoRenderTest`
-proves each mood draws, differs from the others, and moves; what it cannot see
-is whether the motion reads as a character rather than a screensaver, and the
-two things that are Settings reads.
+New with the character (2026-08-25, [momo.md](ux/momo.md)); the habitat, the
+transition and the celebration joined on 2026-08-26. `MomoRenderTest`,
+`HabitatRenderTest` and `CelebrationRenderTest` prove each mood draws, differs
+from the others, and moves; what they cannot see is whether the motion reads as
+a character rather than a screensaver, the things that are Settings reads, and
+the one sequence that only plays while the frame loop runs.
 
 - [ ] **All four moods on the tank, in both themes.** Content is the default
       with habits added and nothing done late in the day; tick everything for
@@ -1387,17 +1389,37 @@ two things that are Settings reads.
       drains and one right-hand gill is short and pulsing. If any two are hard
       to tell apart with the app held at arm's length, that is a finding for
       momo.md §3, not for the tests.
+- [ ] **The tank keeps the mood's tempo.** Behind Momo, four weeds sway and
+      four bubbles rise: briskly while thriving, at the canvas's own pace while
+      content, slower while worried. Regenerating drains the water, leans the
+      weeds outward and greys them, and no bubble rises. If the weeds and
+      bubbles ever look out of step with each other, that is a finding for
+      momo.md §4 — they share one tempo by design.
+- [ ] **A mood change is one Momo.** Tick a habit so the mood changes and
+      watch the change: the body should glide from one float to the other with
+      the face crossfading on it, never two bodies at different heights. The
+      water should drain or refill on the same beat when regenerating is one
+      end of the change.
+- [ ] **Finishing the day plays once.** With one habit left, tick it: Momo
+      hops, bubbles rush up from under the tail and the water brightens for a
+      beat, then the thriving loop continues. Untick and re-tick: it plays
+      again, because the mood left thriving and came back. Now background the
+      app and return, and rotate the phone: nothing plays — a finished day is
+      not re-celebrated (momo.md §6). TalkBack says nothing extra either: the
+      line changing to "All done. Momo is thriving." is the whole announcement.
 - [ ] **The pastel body on the light tank.** momo.md §2 calls this the softest
       edge on purpose. Look at whether the silhouette reads from the gills and
       eyes alone; if the body vanishes into the water, the fix is the tank's
       gradient, not Momo's colour.
 - [ ] **Animator duration scale off** (Developer options → *Animator duration
       scale* → *Animation off*), then reopen Today. Momo must be still, at the
-      resting frame, and the mood change on a tick must cut rather than fade.
-      Turn it back on and restart the app; the float resumes. (Read once per
-      composition, by design — `Momo.kt` says why it is not observed.) Nothing
-      on the JVM can see this: the tests set the same switch to get a still
-      frame, so they prove the still frame, not the switch.
+      resting frame, the weeds upright and the bubbles frozen, and the mood
+      change on a tick must cut rather than glide; ticking the last habit must
+      not play the celebration. Turn it back on and restart the app; the float
+      resumes. (Read once per composition, by design — `Animations.kt` says why
+      it is not observed.) Nothing on the JVM can see this: the tests set the
+      same switch to get a still frame, so they prove the still frame, not the
+      switch.
 - [ ] **200 % font scale.** The tank stays 250 dp; the copy under it grows and
       wraps and pushes the list down rather than clipping. The character must
       not shrink.

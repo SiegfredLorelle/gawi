@@ -228,6 +228,9 @@ Small decisions that were easier to make once drawn:
 - The Phase 1 mascot treatment **in the widget and the reminder** (PRD §5).
   Only the Today-view slot is fixed here.
 - Milestone celebrations (7/30/100 days) have no visual treatment yet.
+  Finishing the day — the mood entering `thriving` — is celebrated since
+  2026-08-26 ([momo.md](momo.md) §6); that is a different trigger, not this
+  one closed.
 - §1's collapse into an app-bar chip, and the chip itself. See the status
   note above.
 - **The `regenerating` copy has nowhere to come from yet.** §3 says it
