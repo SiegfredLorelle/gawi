@@ -1,5 +1,6 @@
 package com.gawi.feature.settings
 
+import com.gawi.core.data.settings.ThemeMode
 import java.time.DayOfWeek
 import java.time.LocalTime
 
@@ -53,6 +54,7 @@ internal sealed interface SettingsUiState {
         val dayCutoff: LocalTime,
         val weekStart: DayOfWeek,
         val reminderTime: LocalTime,
+        val theme: ThemeMode,
         val dataTask: DataTask = DataTask.Idle,
         val exportRecency: ExportRecency = ExportRecency.NothingYet,
     ) : SettingsUiState

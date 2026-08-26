@@ -41,6 +41,24 @@
     <string name="settings_confirm">Set</string>
     <string name="settings_cancel">Cancel</string>
 
+    <!-- Appearance. One row, in its own section: the three settings above it
+         all change how a day or a week is counted and this one changes only
+         paint, which is why it is not a fourth row among them
+         (docs/ux/settings.md §7).
+
+         The help line names the widget because the widget is the one thing a
+         user can be wrong about here. It is drawn by the launcher, in the
+         launcher's process, under the launcher's configuration, so no in-app
+         choice can reach it (architecture §2) — and a home screen still in the
+         other scheme would otherwise read as a bug rather than as the platform
+         boundary it is. -->
+    <string name="settings_appearance_header">Appearance</string>
+    <string name="settings_theme_label">Theme</string>
+    <string name="settings_theme_help">Which colour scheme the app is drawn in. The home-screen widget is not the app\'s to paint — it follows your phone\'s theme whatever you pick here.</string>
+    <string name="settings_theme_system">Follow the system</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+
     <!-- The Data section. Neither row is a setting, and only one of them has
          anything set: the export row's value line is how long ago the log was
          last written to a file, which is the 30-day nudge PRD §5 asks for. The

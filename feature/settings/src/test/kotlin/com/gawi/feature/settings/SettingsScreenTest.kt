@@ -17,6 +17,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.dp
 import com.gawi.core.data.backup.ImportResult
+import com.gawi.core.data.settings.ThemeMode
 import com.gawi.core.ui.theme.GawiTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -703,6 +704,66 @@ class SettingsScreenTest {
             .assertHeightIsAtLeast(MIN_TOUCH_TARGET)
     }
 
+    /**
+     * The row shows the stored mode, and says the widget will not follow it.
+     *
+     * The sentence about the widget is the only part of this screen that
+     * describes another process, and it is what stops a home screen in the
+     * other scheme reading as a bug (docs/ux/settings.md §7).
+     */
+    @Test
+    fun themeRow_showsTheStoredModeAndWhatItDoesNotReach() {
+        render(STORED)
+
+        compose.onNodeWithText(string(R.string.settings_appearance_header)).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(string(labelFor(ThemeMode.DARK))).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(string(R.string.settings_theme_help)).performScrollTo().assertIsDisplayed()
+    }
+
+    /** Cancel means the stored mode is untouched, exactly as it does for the week start. */
+    @Test
+    fun cancellingTheThemePicker_writesNothing() {
+        val picked = mutableListOf<ThemeMode>()
+        render(STORED, actions = NO_ACTIONS.copy(onThemeChange = { picked += it }))
+
+        compose.onNodeWithText(string(R.string.settings_theme_label)).performScrollTo().performClick()
+        compose.onNodeWithText(string(labelFor(ThemeMode.LIGHT))).performClick()
+        compose.onNodeWithText(string(R.string.settings_cancel)).performClick()
+
+        assertEquals(emptyList<ThemeMode>(), picked)
+    }
+
+    /**
+     * And confirming reports the mode that was chosen, not the one already set.
+     *
+     * `STORED` is DARK and this picks LIGHT, so handing `selected` back instead
+     * of `choice` — the mutation the week-start twin exists to catch, now in
+     * shared generic code where it would break both pickers at once — fails
+     * here too.
+     */
+    @Test
+    fun confirmingTheThemePicker_reportsTheChosenMode() {
+        val picked = mutableListOf<ThemeMode>()
+        render(STORED, actions = NO_ACTIONS.copy(onThemeChange = { picked += it }))
+
+        compose.onNodeWithText(string(R.string.settings_theme_label)).performScrollTo().performClick()
+        compose.onNodeWithText(string(labelFor(ThemeMode.LIGHT))).performClick()
+        compose.onNodeWithText(string(R.string.settings_confirm)).performClick()
+
+        assertEquals(listOf(ThemeMode.LIGHT), picked)
+    }
+
+    /** The generic dialog keeps the touch-target floor the week-start one had. */
+    @Test
+    fun aThemeOptionMeetsTheTouchTargetFloor() {
+        render(STORED)
+
+        compose.onNodeWithText(string(R.string.settings_theme_label)).performScrollTo().performClick()
+
+        compose.onNodeWithText(string(labelFor(ThemeMode.LIGHT)))
+            .assertHeightIsAtLeast(MIN_TOUCH_TARGET)
+    }
+
     private fun render(
         state: SettingsUiState,
         actions: SettingsActions = NO_ACTIONS,
@@ -724,12 +785,14 @@ class SettingsScreenTest {
             dayCutoff = LocalTime.of(3, 0),
             weekStart = DayOfWeek.SUNDAY,
             reminderTime = LocalTime.of(22, 30),
+            theme = ThemeMode.DARK,
         )
 
         val NO_ACTIONS = SettingsActions(
             onDayCutoffChange = {},
             onWeekStartChange = {},
             onReminderTimeChange = {},
+            onThemeChange = {},
             onExport = {},
             onExportCompletions = {},
             onImport = {},

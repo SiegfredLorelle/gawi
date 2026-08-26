@@ -32,14 +32,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import com.gawi.core.data.settings.ThemeMode
 import com.gawi.core.ui.theme.GawiSpacing
 import java.time.DayOfWeek
 import java.time.LocalTime
 
-// The two dialogs, split out of SettingsScreen.kt because detekt's
-// TooManyFunctions applies per file as well as per class. Both hold the
-// half-made choice and hand it back only on confirm, so dismissing one leaves
-// the stored setting exactly as it was.
+// Every dialog this screen opens, split out of SettingsScreen.kt because
+// detekt's TooManyFunctions applies per file as well as per class. All of them
+// hold the half-made choice and hand it back only on confirm, so dismissing one
+// leaves the stored setting exactly as it was. The two that pick from a named
+// few — the week start and the theme — are one generic dialog underneath.
 
 /**
  * Pick a time.
@@ -114,24 +116,89 @@ internal fun TimeDialog(
  * on Saturday, and seven radio buttons cost nothing over two.
  */
 @Composable
-internal fun WeekStartDialog(selected: DayOfWeek, onConfirm: (DayOfWeek) -> Unit, onDismiss: () -> Unit) {
-    // Held rather than committed on tap, so the dialog reads like the time one
-    // next to it: choose, then confirm, and Cancel always means nothing changed.
+internal fun WeekStartDialog(selected: DayOfWeek, onConfirm: (DayOfWeek) -> Unit, onDismiss: () -> Unit) = ChoiceDialog(
+    titleRes = R.string.settings_week_start_label,
+    options = WEEK_START_OPTIONS.map { day -> Choice(day, labelFor(day)) },
+    selected = selected,
+    onConfirm = onConfirm,
+    onDismiss = onDismiss,
+)
+
+/**
+ * Pick the colour scheme (docs/ux/settings.md §7).
+ *
+ * The same dialog as the week start's, and deliberately not a segmented
+ * control: three modes are a set of named alternatives like the seven days,
+ * and one shape for every choice on this screen is worth more than a control
+ * that is a little more compact. §3's pick-then-confirm applies here too, even
+ * though nothing about this one is expensive to change — a Cancel that
+ * sometimes means "nothing changed" and sometimes means "changed and changed
+ * back" is the inconsistency worth avoiding.
+ */
+@Composable
+internal fun ThemeDialog(selected: ThemeMode, onConfirm: (ThemeMode) -> Unit, onDismiss: () -> Unit) = ChoiceDialog(
+    titleRes = R.string.settings_theme_label,
+    options = THEME_OPTIONS.map { theme -> Choice(theme, labelFor(theme)) },
+    selected = selected,
+    onConfirm = onConfirm,
+    onDismiss = onDismiss,
+)
+
+/**
+ * One option in a [ChoiceDialog]: the value it stands for, and its name.
+ *
+ * The pair rather than a `label: (T) -> Int` beside the list, which is what
+ * this was until detekt's six-parameter limit — and the better shape anyway,
+ * since an option and its name cannot then be supplied separately and get out
+ * of step.
+ */
+internal data class Choice<out T>(val value: T, @param:StringRes val label: Int)
+
+/**
+ * One choice out of a named few, held and then confirmed.
+ *
+ * Generic because the week start and the theme are the same dialog over
+ * different sets, and the accessibility decisions in it — the [selectableGroup]
+ * below, the [Role.RadioButton] and the touch-target floor on each row — are
+ * exactly the kind that get made once and then hand-copied slightly wrong. It
+ * was `WeekStartDialog` alone until the theme picker arrived, which is the
+ * two-copies threshold AGENTS.md names.
+ *
+ * [T] is stored by `rememberSaveable`'s default saver, which is why both call
+ * sites pass an enum: an enum is `Serializable` and so goes into a `Bundle`
+ * whole. A type that is not would need a saver here, and this signature does
+ * not offer one — deliberately, since there is no such choice on this screen.
+ *
+ * Held rather than committed on tap, so the dialog reads like the time ones
+ * next to it: choose, then confirm, and Cancel always means nothing changed.
+ */
+@Composable
+private fun <T> ChoiceDialog(
+    @StringRes titleRes: Int,
+    options: List<Choice<T>>,
+    selected: T,
+    onConfirm: (T) -> Unit,
+    onDismiss: () -> Unit,
+) {
     var choice by rememberSaveable { mutableStateOf(selected) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.settings_week_start_label)) },
+        title = { Text(stringResource(titleRes)) },
         text = {
             Column(
                 // selectableGroup, so assistive technology announces these as one
-                // set of seven and reads a position within it, rather than as
-                // seven unrelated selectable things that happen to be adjacent.
+                // set rather than as unrelated selectable things that happen to
+                // be adjacent, and reads a position within it.
                 modifier = Modifier.selectableGroup().verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(GawiSpacing.Line),
             ) {
-                WEEK_START_OPTIONS.forEach { day ->
-                    WeekStartOption(day = day, selected = day == choice, onSelect = { choice = day })
+                options.forEach { option ->
+                    ChoiceOption(
+                        labelRes = option.label,
+                        selected = option.value == choice,
+                        onSelect = { choice = option.value },
+                    )
                 }
             }
         },
@@ -145,7 +212,7 @@ internal fun WeekStartDialog(selected: DayOfWeek, onConfirm: (DayOfWeek) -> Unit
 }
 
 /**
- * One day in the week-start list.
+ * One option in a [ChoiceDialog].
  *
  * `selectable` on the whole row rather than an `onClick` on the radio button,
  * so the name is part of the target and assistive technology reads the two as
@@ -154,7 +221,7 @@ internal fun WeekStartDialog(selected: DayOfWeek, onConfirm: (DayOfWeek) -> Unit
  * does, so without it the row is only as tall as its text.
  */
 @Composable
-private fun WeekStartOption(day: DayOfWeek, selected: Boolean, onSelect: () -> Unit) {
+private fun ChoiceOption(@StringRes labelRes: Int, selected: Boolean, onSelect: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -168,6 +235,6 @@ private fun WeekStartOption(day: DayOfWeek, selected: Boolean, onSelect: () -> U
         // clickable button inside a selectable row would be two targets saying
         // the same thing.
         RadioButton(selected = selected, onClick = null)
-        Text(stringResource(labelFor(day)))
+        Text(stringResource(labelRes))
     }
 }

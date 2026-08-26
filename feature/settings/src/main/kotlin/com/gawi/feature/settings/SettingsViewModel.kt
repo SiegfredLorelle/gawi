@@ -8,6 +8,7 @@ import com.gawi.core.data.backup.CompletionCsvArchive
 import com.gawi.core.data.backup.EventArchive
 import com.gawi.core.data.backup.ExportStatus
 import com.gawi.core.data.settings.SettingsSource
+import com.gawi.core.data.settings.ThemeMode
 import com.gawi.core.data.settings.UserSettings
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -116,21 +117,41 @@ internal class SettingsViewModel @Inject constructor(
      * moving this does not rewrite last week — which is what the copy under the
      * row has to say, because it is not what a reader would assume.
      */
-    fun onDayCutoffChange(cutoff: LocalTime) = writeUnlessDegenerate { current ->
+    fun onDayCutoffChange(cutoff: LocalTime) = write { current ->
         current.takeIf { cutoff != it.reminderTime }?.copy(dayCutoff = cutoff)
     }
 
     /** The day a week is counted from, for weekly habits' progress and streaks. */
     fun onWeekStartChange(weekStart: DayOfWeek) = write { it.copy(weekStart = weekStart) }
 
+    /**
+     * Which scheme the app draws in.
+     *
+     * Plain [write], like the week start: every mode is legal, and unlike the
+     * two times there is no pair of settings that can collide. Nothing in the
+     * read path binds it, so this write moves no query — [UserSettings]' KDoc
+     * has the dedupe argument.
+     */
+    fun onThemeChange(theme: ThemeMode) = write { it.copy(theme = theme) }
+
     /** When the day is treated as nearly over. */
-    fun onReminderTimeChange(reminderTime: LocalTime) = writeUnlessDegenerate { current ->
+    fun onReminderTimeChange(reminderTime: LocalTime) = write { current ->
         current.takeIf { reminderTime != it.dayCutoff }?.copy(reminderTime = reminderTime)
     }
 
     /**
-     * A settings write that can be **refused**, which these two are and the week
-     * start is not.
+     * The one write path, for every setting.
+     *
+     * A transform rather than a setter per field is the shape [SettingsSource]
+     * asks for: a preferences file is read-modify-write, and per-field setters
+     * would be four chances to lose a concurrent edit to a different field.
+     *
+     * **A null return is a refusal**, which the two times can produce and the
+     * week start and the theme cannot — their transforms simply never return
+     * one. This was two functions until the theme arrived and made the
+     * unrefusable one the majority; they differed only in a nullability the
+     * signature already carries, so the second was a copy of this one with the
+     * `when` shortened.
      *
      * The refusal is one specific combination: the reminder time equal to the day
      * cutoff. `reminderOn`'s KDoc has always said that combination resolves to the
@@ -155,7 +176,7 @@ internal class SettingsViewModel @Inject constructor(
      * another setting*, which is a validation the store cannot do because it sees
      * one field at a time.
      */
-    private fun writeUnlessDegenerate(transform: (UserSettings) -> UserSettings?) {
+    private fun write(transform: (UserSettings) -> UserSettings?) {
         viewModelScope.launch {
             // `refused` is set inside `update`, which is where the current value is
             // visible — the collision is between the picked value and a stored one,
@@ -217,23 +238,6 @@ internal class SettingsViewModel @Inject constructor(
                 messages.send(message ?: SettingsMessage(failureFor(task)))
             } finally {
                 dataTask.value = DataTask.Idle
-            }
-        }
-    }
-
-    /**
-     * One write path for all three settings, because there is only one.
-     *
-     * A transform rather than three setters is the shape [SettingsSource] asks
-     * for: a preferences file is read-modify-write, and per-field setters would
-     * be three chances to lose a concurrent edit to a different field.
-     */
-    private fun write(transform: (UserSettings) -> UserSettings) {
-        viewModelScope.launch {
-            // Threw rather than rejected — there is no rejection here — and
-            // uncaught that is a crash on tapping a time rather than a snackbar.
-            if (commandOrNull(TAG, "the settings write") { settings.update(transform) } == null) {
-                messages.send(SettingsMessage(R.string.settings_error_unexpected))
             }
         }
     }

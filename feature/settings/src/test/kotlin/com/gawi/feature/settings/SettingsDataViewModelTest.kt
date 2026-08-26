@@ -4,6 +4,7 @@ import android.net.Uri
 import app.cash.turbine.test
 import com.gawi.core.data.backup.ExportStatus
 import com.gawi.core.data.backup.ImportResult
+import com.gawi.core.data.settings.ThemeMode
 import com.gawi.core.data.settings.UserSettings
 import com.gawi.feature.settings.testsupport.FakeCompletionCsvArchive
 import com.gawi.feature.settings.testsupport.FakeEventArchive
@@ -350,7 +351,13 @@ class SettingsDataViewModelTest {
 
             val state = awaitItem()
             assertEquals(
-                SettingsUiState.Settings(LocalTime.MIDNIGHT, DayOfWeek.SUNDAY, LocalTime.of(21, 0), exportRecency = ExportRecency.Never),
+                SettingsUiState.Settings(
+                    LocalTime.MIDNIGHT,
+                    DayOfWeek.SUNDAY,
+                    LocalTime.of(21, 0),
+                    ThemeMode.SYSTEM,
+                    exportRecency = ExportRecency.Never,
+                ),
                 state,
             )
             assertEquals(ExportRecency.Never, (state as SettingsUiState.Settings).exportRecency)
