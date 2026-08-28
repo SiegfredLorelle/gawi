@@ -49,8 +49,10 @@ class ApplicationNightModeTest {
      * Below API 31 there is nothing to call, and calling anyway would throw.
      *
      * minSdk is 29, so this is a supported device rather than a hypothetical
-     * one. What it loses is documented in docs/ux/settings.md §7: the window
-     * painted before Compose runs still comes from the system's qualifier.
+     * one. What it loses is documented in docs/ux/settings.md §8, and it is
+     * wider than the window: the drawn app follows the system's scheme until
+     * the first preferences read lands, and the Recents snapshot keeps it for
+     * the whole session.
      *
      * `MODE_NIGHT_AUTO` is also the shadow's untouched value, which is worth
      * saying rather than leaving to be discovered: the assertion is "nothing
