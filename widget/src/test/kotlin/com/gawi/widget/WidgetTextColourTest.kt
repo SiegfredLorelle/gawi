@@ -1,17 +1,21 @@
 package com.gawi.widget
 
-import androidx.compose.runtime.SideEffect
+import android.content.Context
+import android.content.res.Configuration
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.glance.BackgroundModifier
 import androidx.glance.EmittableImage
-import androidx.glance.GlanceTheme
 import androidx.glance.TintColorFilterParams
+import androidx.glance.appwidget.CheckBoxColors
+import androidx.glance.appwidget.EmittableCheckBox
 import androidx.glance.appwidget.testing.unit.GlanceAppWidgetUnitTest
 import androidx.glance.appwidget.testing.unit.runGlanceAppWidgetUnitTest
 import androidx.glance.testing.GlanceNodeMatcher
 import androidx.glance.testing.unit.MappedNode
+import com.gawi.widget.testsupport.MIN_CONTRAST
+import com.gawi.widget.testsupport.contrastRatio
 import com.gawi.widget.testsupport.habitId
 import com.gawi.widget.testsupport.todayHabit
 import com.gawi.widget.testsupport.todaySnapshot
@@ -57,13 +61,16 @@ import kotlin.time.Duration.Companion.seconds
  * counted it would report two texts per row and measure a colour nothing draws.
  * The count guards below are what make an empty tree fail, so they count images.
  *
- * **Known limit, stated rather than hidden.** [Probe] resolves the background
- * from a second `GlanceTheme { }`, not from the one inside [WidgetBody], because
- * `BackgroundModifier` exposes no colour to read back off the emitted tree. So
- * if `WidgetBody` ever takes an explicit palette — `GlanceTheme(colors = …)` —
- * this test would compare against the *default* background and stop measuring
- * what is drawn. It would not silently pass empty, which is the failure that
- * matters and which [Probe.resolved] rules out, but it would need updating.
+ * **The ground is the one that was actually drawn, since 2026-08-28.** Until
+ * then [Probe] resolved it from a second, default `GlanceTheme { }`, and this
+ * KDoc carried the consequence as a known limit: the moment the widget took a
+ * palette of its own, the test would measure real ink against a background
+ * nothing draws and stay green. The widget took one ([WidgetPalette]) — so the
+ * limit is gone rather than realised. `BackgroundModifier.Color` does expose its
+ * provider, which the old note had wrong, so [paletteBackground] asserts on the
+ * emitted tree that the drawn ground *is* that palette's surface and the ratios
+ * are measured against the same object. The identity check is the load-bearing
+ * half: without it the ground would be an assumption that happens to match.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(qualifiers = "night")
@@ -136,12 +143,33 @@ abstract class WidgetTextColourContract {
         onAllNodes(anyText()).assertCountEquals(2)
         onAllNodes(illegibleText(probe)).assertCountEquals(0)
     }
+
+    /**
+     * The checkbox glyph, in both of its states — the other half of the contrast
+     * failure measured on API 29 and 30, and until the palette pinned it the one
+     * colour on this surface that had no test at all because the app did not
+     * choose it.
+     */
+    @Test
+    fun `the checkbox glyphs are legible on the widget background`() = runGlanceAppWidgetUnitTest(RENDER_TIMEOUT) {
+        val snapshot = todaySnapshot(
+            habits = listOf(
+                todayHabit(id = habitId(1), name = "read", completedToday = true),
+                todayHabit(id = habitId(2), name = "walk", completedToday = false),
+            ),
+        )
+
+        val probe = renderWithProbe(WidgetContent.Ready(snapshot.toWidgetState()))
+
+        onAllNodes(anyGlyph()).assertCountEquals(2)
+        onAllNodes(illegibleGlyph(probe)).assertCountEquals(0)
+    }
 }
 
 /**
- * What the widget is drawn against. Captured during composition because
- * `GlanceTheme.colors` exists only there, and held so the matchers can resolve a
- * `ColorProvider` afterwards.
+ * What the widget is drawn against, plus the `Context` the matchers need to
+ * resolve a `ColorProvider` — a day/night provider answers differently in each
+ * theme, so the resolution has to happen against the running configuration.
  */
 private class Probe {
     lateinit var context: android.content.Context
@@ -168,15 +196,24 @@ private fun GlanceAppWidgetUnitTest.renderWithProbe(content: WidgetContent): Pro
     // SizeMode.Exact reads LocalSize; the harness has to supply one or the
     // composition has no width to give a name.
     setAppWidgetSize(DpSize(250.dp, 110.dp))
-    provideComposable {
-        GlanceTheme {
-            val background = GlanceTheme.colors.widgetBackground.getColor(probe.context)
-            SideEffect { probe.background = background }
-        }
-        WidgetBody(content)
-    }
+    provideComposable { WidgetBody(content) }
     awaitIdle()
+    // Prove the ground before measuring against it: exactly one node carries a
+    // background, and it is the palette's surface object itself.
+    onAllNodes(paletteBackground()).assertCountEquals(1)
+    probe.background = WidgetPalette.surface.getColor(probe.context)
     return probe.resolved()
+}
+
+/**
+ * The node whose background is [WidgetPalette.surface] — matched by identity on
+ * the provider, so it cannot be satisfied by a different colour that happens to
+ * resolve the same way in the theme this subclass runs in.
+ */
+private fun paletteBackground() = GlanceNodeMatcher<MappedNode>("is drawn on WidgetPalette.surface") { node ->
+    node.value.emittable.modifier.foldIn<BackgroundModifier.Color?>(null) { found, element ->
+        found ?: element as? BackgroundModifier.Color
+    }?.colorProvider === WidgetPalette.surface
 }
 
 private fun anyText() = GlanceNodeMatcher<MappedNode>("draws text") { node ->
@@ -190,9 +227,6 @@ private fun anyText() = GlanceNodeMatcher<MappedNode>("draws text") { node ->
  */
 private fun Any.tint() = (this as? EmittableImage)?.colorFilterParams as? TintColorFilterParams
 
-/** WCAG AA for normal text. Float, to match what [contrastRatio] returns. */
-private const val MIN_CONTRAST = 4.5f
-
 private fun illegibleText(probe: Probe) =
     GlanceNodeMatcher<MappedNode>("draws text below $MIN_CONTRAST:1 against the widget background") { node ->
         val tint = node.value.emittable.tint()
@@ -204,24 +238,51 @@ private fun illegibleText(probe: Probe) =
         }
     }
 
-/**
- * WCAG 2.1 contrast, over Compose's own relative luminance.
- *
- * [luminance] *is* the WCAG relative-luminance formula — the sRGB linearisation
- * and the 0.2126/0.7152/0.0722 weighting — so hand-rolling it here, in the one
- * test whose whole job is getting this arithmetic right, only added a second
- * place for it to be wrong. `core/ui/theme/HabitColor.kt` was already calling
- * the library version.
- *
- * It reads RGB and ignores alpha, which is fine for both operands here: each is
- * a resolved colour off a `ColorProvider`, not a translucent tint. A translucent
- * one would have to be composited first, the way `glyphColorOn` does it.
- */
-private fun contrastRatio(a: Color, b: Color): Float {
-    val la = a.luminance()
-    val lb = b.luminance()
-    return (maxOf(la, lb) + WCAG_OFFSET) / (minOf(la, lb) + WCAG_OFFSET)
+private fun anyGlyph() = GlanceNodeMatcher<MappedNode>("draws a checkbox glyph") { node ->
+    node.value.emittable is EmittableCheckBox
 }
 
-/** WCAG's constant, which keeps the ratio finite when one side is pure black. */
-private const val WCAG_OFFSET = 0.05f
+/** A checkbox whose glyph is below the floor in either state, against the ground it is drawn on. */
+private fun illegibleGlyph(probe: Probe) =
+    GlanceNodeMatcher<MappedNode>("draws a checkbox glyph below $MIN_CONTRAST:1 against the widget background") { node ->
+        val colours = (node.value.emittable as? EmittableCheckBox)?.colors
+        if (colours == null) {
+            false
+        } else {
+            listOf(true, false).any { checked ->
+                contrastRatio(colours.glyphColour(probe.context, checked), probe.background) < MIN_CONTRAST
+            }
+        }
+    }
+
+/**
+ * The glyph's resolved colour, reached through the one accessor Glance leaves
+ * `internal`.
+ *
+ * **Why reflection, and why it is worth the hop.** Until 2026-08-28 this colour
+ * was documented as unassertable, and while the app did not choose it that was
+ * the end of it. `CheckBoxColors` exposes its provider only as
+ * `getCheckBox$glance_appwidget_release`, returning `CheckableColorProvider` —
+ * a public interface with no members — so neither hop can be made in Kotlin
+ * source. But the object behind it does have a **public**
+ * `getColor(context, isNightMode, isChecked)`, so what is missing is reachability,
+ * not API. `WidgetRowTest` already reflects on the `internal`
+ * `CompoundButtonAction` for the same reason, so this is the module's existing
+ * bargain rather than a new one.
+ *
+ * Note the argument order: night comes before checked, and getting it the wrong
+ * way round would still compile and still pass, measuring the wrong state.
+ *
+ * What this does not replace: a JVM test cannot exercise a real host's
+ * translation, which is where the API 29/30 defect lived. docs/running.md §4
+ * keeps its by-hand toggle.
+ */
+private fun CheckBoxColors.glyphColour(context: Context, checked: Boolean): Color {
+    val checkable = checkNotNull(javaClass.getMethod("getCheckBox\$glance_appwidget_release").invoke(this)) {
+        "the checkbox exposed no colour provider"
+    }
+    val getColor = checkable.javaClass.methods.first { it.name.startsWith("getColor-") }
+    val night = (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+        Configuration.UI_MODE_NIGHT_YES
+    return Color((getColor.invoke(checkable, context, night, checked) as Long).toULong())
+}
