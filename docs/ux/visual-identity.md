@@ -45,7 +45,7 @@ parked themselves on OQ-4 and nothing recorded that they had.**
 | `GawiTheme` KDoc | Stock Material 3, no `ColorScheme`, no typography, "because Momo's palette is PRD OQ-4 and undesigned" | The designed schemes, and why dynamic colour stays off. Type is the one stock thing left, and says what it waits on |
 | `HabitPalette` KDoc | "Not a design system" — mid-tone Material hues, same deferral | Designed, and to the rule in §6, with the two rules that failed |
 | `GawiSpacing` KDoc | "Not a design system and not trying to be one — Momo's visual language is PRD OQ-4" | Narrowed, not rewritten: §8 records that dimensions were genuinely not in this brief, so it still defers — but only about spacing |
-| `TodayWidget`'s glyph comment | Checkbox glyph left unpinned because pinning needs two literals and "this project does not have a palette yet". Ends: "Revisit with OQ-4." | Still unpinned, for the two reasons that outlived the palette: `:widget` sees `:core:ui` for one font resource only (2026-08-25), so pinning still means copying hexes, and it would still not make the glyph assertable. Now points at §7.4 |
+| `TodayWidget`'s glyph comment | Checkbox glyph left unpinned because pinning needs two literals and "this project does not have a palette yet". Ends: "Revisit with OQ-4." | **Pinned on 2026-08-28**, after the check in running.md §4 turned it from styling into a legibility bug. Both reasons that had outlived the palette fell to measurement: the glyph is assertable through one reflective hop, and `CheckBoxColors` refuses only *resource-backed* providers, so a day/night pair works and no flat literals were needed |
 
 All four were rewritten when the scheme landed. Recorded this way rather than
 edited away, because "four places had quietly parked on one open question"
@@ -137,8 +137,8 @@ strings are laid out with `StaticLayout` (so bidi and shaping happen before the
 pixels exist), in Outfit at `wght` 400 through `Paint.setFontVariationSettings`
 — `Typeface.create(base, 400, false)` picks from a font *list* and never
 instances a variable axis, so it would have shipped Thin, the same trap Type.kt
-records — drawn white and handed to a Glance `Image` with
-`ColorFilter.tint(GlanceTheme.colors.onSurface)`. The three costs, corrected:
+records — drawn white and handed to a Glance `Image` with `ColorFilter.tint`, taking the
+ink from `WidgetPalette` since 2026-08-28. The three costs, corrected:
 
 - **Font scale is honoured, at the next render.** The size is resolved in sp
   against the configuration in force when the bitmap is drawn, so a scale change
@@ -154,15 +154,17 @@ records — drawn white and handed to a Glance `Image` with
   about 720 × 56 px in ARGB_8888, ~160 KB, against a budget near 14 MB; width
   is the text's own, clamped to the row, never a fixed canvas.
 
-Two things it does not do. Colour is not baked in: on API 31+ the tint is a
-colour *resource* the launcher resolves in its own theme, exactly as the
+Two things it does not do. Colour is not baked in: on API 31+ the launcher is
+handed a day/night pair and resolves the tint in its own theme, exactly as the
 background is; on API 29–30 Glance resolves it in our process at translation,
 which is how it already translates the checkbox glyph and plain text colour
-below 31. What that costs there is **not** the "whole widget stale together"
+below 31. What that cost there was **not** the "whole widget stale together"
 this paragraph used to claim — measured on emulators of both levels on
-2026-08-28, and identically on each, the background follows the host on its own
-and leaves the name and the glyph behind, which is a legibility failure rather
-than a stale one ([widget.md](widget.md), §7.4). And the glyphs of a script
+2026-08-28, and identically on each, the background was resource-backed and so
+followed the host on its own, leaving the name and the glyph behind, which is a
+legibility failure rather than a stale one. **Fixed the same day** by giving all
+three colours one kind of provider, which is what §7.4's palette turned out to
+be for ([widget.md](widget.md) carries the before-and-after ratios). And the glyphs of a script
 outside Outfit's `cmap` come from the device's fallback fonts, the same as the
 app, and take the *layout's* height rather than Outfit's so an emoji is not
 clipped. The edge this needed, `widget → core:ui`, carries `R.font.outfit` and
@@ -214,23 +216,32 @@ it says nothing about *multiple weights*: `fontVariationSettings` is not a
 one instance of a variable font. Moot while the route is dead; relevant again if
 it is ever reopened.
 
-Two more things follow that are easy to miss:
+Two more things followed that were easy to miss, and both came due on
+2026-08-28 when the palette landed. Kept as written plus what happened, because
+one prediction held exactly and the other was half wrong:
 
-- **`WidgetTextColourTest` and its light twin must be updated, not merely
-  re-run.** Their own KDoc predicted this: `Probe` resolves the background from a
-  *second*, default `GlanceTheme { }` because `BackgroundModifier` exposes no
-  colour to read back off the emitted tree. The moment `WidgetBody` takes an
-  explicit palette, the test measures contrast against the **default** background
-  rather than the one drawn. It will not go red. It will keep passing while
-  measuring nothing — which is the failure mode this repo keeps finding.
-- **The checkbox glyph decision reopens.** It is unpinned today only because
-  there was no palette to pin it to, and because every `GlanceTheme` colour is
-  resource-backed while `CheckBoxColors` rejects resource-backed providers
-  (`IllegalArgumentException` at runtime, not at compile time). With hexes
-  decided, `ColorProvider(Color)` literals become available. Note what does *not*
-  change: pinning still would not make the glyph assertable, because
-  `CheckBoxColors` exposes only an `internal` accessor returning an empty public
-  interface. `docs/running.md` §4 keeps its by-hand check either way.
+- **`WidgetTextColourTest` and its light twin had to be updated, not merely
+  re-run.** Their own KDoc predicted this: `Probe` resolved the background from a
+  *second*, default `GlanceTheme { }`, so the moment `WidgetBody` took an
+  explicit palette the test would measure contrast against the **default**
+  background rather than the one drawn. It would not go red. It would keep
+  passing while measuring nothing — which is the failure mode this repo keeps
+  finding, and it is what happened: the palette landed, the tests stayed green,
+  and they were blind until the `Probe` was changed. It now reads the drawn
+  background off the emitted tree and asserts by identity that it is the
+  palette's, which is possible because the reason given for not doing it was
+  wrong — `BackgroundModifier.Color` does expose its provider.
+- **The checkbox glyph decision reopened, and pinning it turned out to be
+  cheaper than priced here.** Two claims in this bullet did not survive being
+  tried. `CheckBoxColors` rejects resource-backed providers *only* — every
+  `GlanceTheme` colour is one, which is why every attempt hit the
+  `IllegalArgumentException`, but a day/night pair is not, so the glyph takes the
+  palette in both schemes and the flat literals this bullet priced were never
+  needed. And pinning *did* make the glyph assertable: the `internal` accessor
+  returns a memberless interface, but the object behind it has a public
+  `getColor`, so one reflective hop reaches it and both states are now measured
+  in both themes. `docs/running.md` §4 keeps a by-hand check anyway, for the one
+  thing no JVM test can see — how a real launcher translates the colour.
 
 ## 3. The colour scheme — the candidates, and what shipped
 
@@ -908,8 +919,11 @@ reading.
 This is what unblocked `Theme.kt`, the retuned hues, the widget's duplicate hexes
 and the Insights heatmap — the whole reason PRD §5's Phase 1 order was inverted.
 `Theme.kt` and the hues landed the same day; **the heatmap followed on
-2026-08-24** and is what §4.4 now records. The widget's own palette is the one
-still to come, and it has values to draw from.
+2026-08-24** and is what §4.4 now records. **The widget's own palette landed on
+2026-08-28**, last and for a reason that was not styling: the API 29/30 check in
+running.md §4 found the widget illegible for a moment after a night-mode toggle,
+and four of these values are the fix. §7.4 has the scope; the rest of that set
+is still to come.
 
 ~~**Still a leaning: Momo's style is flat.**~~ **Decided 2026-08-25: flat, and
 the character is the canvas's own, built for Today** — [momo.md](momo.md) is the
@@ -1007,11 +1021,18 @@ widget. Before any of it is built, the price:
   ([momo.md](momo.md) §4), in the existing Today widget, only when the host
   gives it two cells. The large-widget question this bullet list prices is
   thereby answered without a second provider.
-- **The checkbox glyph reopens**, as `TodayWidget`'s comment predicted. It is
-  unpinned only because there was no palette and because `CheckBoxColors` rejects
-  the resource-backed providers every `GlanceTheme` colour is. With hexes decided,
-  `ColorProvider(Color)` literals become available — and pinning still will not
-  make the glyph assertable, so `docs/running.md` §4 keeps its by-hand check.
+- **The legibility half of this set is built, and it came first.** Priced here as
+  styling to be done with the rest; done on **2026-08-28** ahead of it, because
+  the API 29/30 check in `docs/running.md` §4 found the widget illegible for a
+  moment after a night-mode toggle and four colours are the fix. `WidgetPalette`
+  holds them — surface, ink, and the checkbox glyph in both states — as day/night
+  pairs rather than the flat literals this section priced, since a flat literal
+  cannot clear 4.5:1 against a light *and* a dark ground. Two predictions here
+  were wrong and §2 records them: `CheckBoxColors` refuses only resource-backed
+  providers, and the glyph is assertable after all. `docs/running.md` §4 keeps a
+  by-hand check for what a JVM test cannot see.
+- **What is left of this set is the three surfaces above**, plus the rest of the
+  role list a full `GlanceTheme(colors = …)` would need. Unblocked, not built.
 
 ### 7.5 The icon set, and the dingbats it retires
 
