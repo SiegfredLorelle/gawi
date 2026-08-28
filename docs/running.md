@@ -874,15 +874,16 @@ the bitmaps are drawn and tinted:
 - [x] **API 29 or 30 emulator: the tint is resolved in our process.** Toggle
       dark mode with the widget placed. The expectation written here was that
       the text, the checkbox glyph and the background stay stale *together*
-      until the next render. **Run 2026-08-28 on API 30, and they do not** —
-      this check found the defect it was written for. The background follows
-      the host immediately and the name and the checkbox glyph do not, so the
-      widget lands on near-zero contrast: the checkbox outline's contrast
-      against its own ground fell from 240.7 to 48.0 on one toggle, and the
-      name goes dark-on-dark one way and white-on-light coming back.
-      Completing a habit in the app repairs it, so it lasts until the next
-      write, rollover or 30-minute update. [ux/widget.md](ux/widget.md) has
-      the mechanism and what it costs.
+      until the next render. **Run 2026-08-28 on API 29 and 30, and they do
+      not** — this check found the defect it was written for, and the two
+      levels measured the same to the decimal. The background follows the host
+      immediately and the name and the checkbox glyph do not, so the widget
+      lands on near-zero contrast. The name's contrast against its own ground
+      falls from 212.0 to 19.3 going into dark, and from 180.0 to 12.7 coming
+      back — the return trip is the worse one, white left on a light ground.
+      The checkbox outline falls from 240.7 to 48.0. Completing a habit in the
+      app repairs it, so it lasts until the next write, rollover or 30-minute
+      update. [ux/widget.md](ux/widget.md) has the mechanism and the cost.
 - [ ] **200 % font scale.** Rows grow; a long name ellipsises inside the row
       rather than under the widget's edge; nothing clips vertically. The change
       lands at the next render, not on the spot — complete a habit in the app
@@ -1346,14 +1347,16 @@ Nothing A059 pass in §3 is still owed and is what would upgrade these.
       the light `#F4FBFA` never appeared.
 - [x] **The same cold start on API 29 or 30, where it is a different check.**
       Its own item rather than a second half of the one above, because those
-      two versions have no `setApplicationNightMode`. **Run 2026-08-28 on an
-      API 30 emulator** (`google_apis`, x86_64, `medium_phone`), Dark chosen
-      with the system in light: nine cold starts sampled frame by frame off a
+      two versions have no `setApplicationNightMode`. **Run 2026-08-28 on
+      both**, `google_apis` x86_64 `medium_phone` emulators, Dark chosen with
+      the system in light: nine cold starts each, sampled frame by frame off a
       `screenrecord`. The launch window came up light `#F4FBFA` and held it
-      for 70–330 ms before the dark app replaced it — the flash API 31 and up
-      does not have. Backgrounding the app and opening Recents was part of the
-      check, and is where the doc turned out to be wrong: the thumbnail is a
-      screenshot of the window and measured `#0E1A1C` every time.
+      before the dark app replaced it — 66–331 ms on API 30, and 317–448 ms on
+      API 29, which is the one place the two levels measurably differ. That is
+      the flash API 31 and up does not have. Backgrounding the app and opening
+      Recents was part of the check, and is where the doc turned out to be
+      wrong: the thumbnail is a screenshot of the window and measured
+      `#0E1A1C` on both.
       [ux/settings.md](ux/settings.md) §8 carries the numbers and the two
       claims that did not survive them.
 - [x] **The status bar's icons in both forced modes.** The bars follow the
