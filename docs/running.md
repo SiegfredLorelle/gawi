@@ -893,10 +893,15 @@ the bitmaps are drawn and tinted:
       and 5.18:1 unchecked in light, 10.44:1 and 5.31:1 in dark, unchanged
       across a toggle in either direction. Completing a habit repairs the
       staleness, so it lasts until the next write, rollover or 30-minute update.
-      One trap worth not rediscovering: an `APPWIDGET_UPDATE` broadcast is
-      **not** a render and will not repair it — measure with one and you will
-      conclude, wrongly, that nothing moved. A tap on the widget or a write in
-      the app is a render. [ux/widget.md](ux/widget.md) has the mechanism.
+      Two traps worth not rediscovering, both of which make a broken widget and
+      a working one look identical. An `APPWIDGET_UPDATE` broadcast is **not** a
+      render and will not repair the staleness — measure with one and you will
+      conclude, wrongly, that nothing moved; a tap on the widget or a write in
+      the app is a render. And on a freshly booted emulator `cmd uimode night
+      yes` silently does nothing, printing `Night mode: no` back at you, until
+      `adb root` has been run: a toggle that never happened looks exactly like a
+      widget that correctly stayed light, so **read the setting back** before
+      believing either. [ux/widget.md](ux/widget.md) has the mechanism.
 - [x] **API 31 or later: the whole widget follows a toggle with no render.**
       Added 2026-08-28 with the widget palette, because the property changed
       hands. The background used to be a colour *resource* the launcher
