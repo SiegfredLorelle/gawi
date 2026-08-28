@@ -841,6 +841,13 @@ Decisions and reasoning are in [docs/ux/widget.md](ux/widget.md).
       reflective hop `TodayWidget.kt` explains). Confirm by eye anyway that both
       states stand out: what no JVM test can reach is how a real launcher
       translates the colour, which is where the defect lived.
+      **Unticked on purpose, and here is the split.** The emulator half has run
+      twice — 2026-08-28 on API 29 and 30, by eye and by sampling the rendered
+      pixels — and it is what found the 2.91:1 glyph above. What the tick waits
+      on is a phone, because this block's own standard is that an emulator is not
+      enough for a widget: it lives in a launcher's process, and an OEM
+      launcher's is not the emulator's. Read the body as done on emulators and
+      owed on hardware, not as unstarted.
 - [ ] **A tap completes.** Tap an unticked row's *glyph*: it ticks at once. Tap
       its *name* instead: nothing moves until the write round-trips (a second
       or so), then the glyph ticks — only the checkbox half flips instantly, so
