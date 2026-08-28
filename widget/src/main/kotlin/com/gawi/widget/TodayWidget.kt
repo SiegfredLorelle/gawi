@@ -7,7 +7,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.unit.dp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
-import androidx.glance.GlanceTheme
 import androidx.glance.LocalContext
 import androidx.glance.LocalSize
 import androidx.glance.action.actionParametersOf
@@ -109,28 +108,33 @@ internal fun repositoryFrom(context: Context): HabitRepository =
  * colours, which is why this surface now takes both of them from one place.
  * `WidgetTextColourDarkTest` and its light twin measure every ratio drawn here,
  * the glyph included.
+ *
+ * **There is no `GlanceTheme { }` here any more**, removed 2026-08-28 with the
+ * palette. Nothing under it read `GlanceTheme.colors` once all three colours
+ * came from [WidgetPalette] — the `CheckboxDefaults.colors(checked, unchecked)`
+ * overload does not consult the theme, only the no-argument one does — so it was
+ * a wrapper that did nothing except suggest the widget still draws on Glance's
+ * default theme, which is the one thing this change is about not doing.
  */
 @Composable
 internal fun WidgetBody(content: WidgetContent) {
-    GlanceTheme {
-        Column(
-            modifier = GlanceModifier.fillMaxSize().background(WidgetPalette.surface).padding(WIDGET_PADDING.dp),
-        ) {
-            val context = LocalContext.current
-            when (val body = content.body(LocalSize.current)) {
-                is WidgetBodyContent.Copy -> {
-                    body.mood?.let { MomoImage(it, contentDescription = null) }
-                    val copy = context.getString(body.text)
-                    OutfitText(text = copy, maxWidth = contentWidth(), maxLines = MAX_COPY_LINES, contentDescription = copy)
-                }
-
-                is WidgetBodyContent.Rows -> {
-                    body.mood?.let { MomoImage(it, contentDescription = context.getString(it.description())) }
-                    HabitRows(body.rows)
-                }
-
-                WidgetBodyContent.Blank -> Unit
+    Column(
+        modifier = GlanceModifier.fillMaxSize().background(WidgetPalette.surface).padding(WIDGET_PADDING.dp),
+    ) {
+        val context = LocalContext.current
+        when (val body = content.body(LocalSize.current)) {
+            is WidgetBodyContent.Copy -> {
+                body.mood?.let { MomoImage(it, contentDescription = null) }
+                val copy = context.getString(body.text)
+                OutfitText(text = copy, maxWidth = contentWidth(), maxLines = MAX_COPY_LINES, contentDescription = copy)
             }
+
+            is WidgetBodyContent.Rows -> {
+                body.mood?.let { MomoImage(it, contentDescription = context.getString(it.description())) }
+                HabitRows(body.rows)
+            }
+
+            WidgetBodyContent.Blank -> Unit
         }
     }
 }

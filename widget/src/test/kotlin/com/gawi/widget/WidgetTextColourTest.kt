@@ -19,7 +19,6 @@ import com.gawi.widget.testsupport.contrastRatio
 import com.gawi.widget.testsupport.habitId
 import com.gawi.widget.testsupport.todayHabit
 import com.gawi.widget.testsupport.todaySnapshot
-import org.junit.Assert.assertNotEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -174,19 +173,6 @@ abstract class WidgetTextColourContract {
 private class Probe {
     lateinit var context: android.content.Context
     var background: Color = Color.Unspecified
-
-    /**
-     * That the capture actually happened.
-     *
-     * Load-bearing, not defensive. `Color.Unspecified` is `Color(0)`, whose
-     * channels are all zero, so [contrastRatio] reads it as **pure black** and
-     * every light-on-dark assertion below would pass at about 16:1 having
-     * measured nothing at all. A composition that never ran the probe lambda
-     * would leave three green tests proving only that the default is black.
-     */
-    fun resolved(): Probe = apply {
-        assertNotEquals("the probe never resolved a background", Color.Unspecified, background)
-    }
 }
 
 private fun GlanceAppWidgetUnitTest.renderWithProbe(content: WidgetContent): Probe {
@@ -198,11 +184,19 @@ private fun GlanceAppWidgetUnitTest.renderWithProbe(content: WidgetContent): Pro
     setAppWidgetSize(DpSize(250.dp, 110.dp))
     provideComposable { WidgetBody(content) }
     awaitIdle()
-    // Prove the ground before measuring against it: exactly one node carries a
-    // background, and it is the palette's surface object itself.
+    // Load-bearing, not defensive, and it replaces a weaker guard. Until
+    // 2026-08-28 the ground was captured inside the composition and this line
+    // asserted only that the capture was not `Color.Unspecified` — `Color(0)`,
+    // which reads as pure black, so a composition that never ran would have left
+    // every light-on-dark assertion passing at about 16:1 having measured
+    // nothing. Resolving the ground from the palette makes that particular hole
+    // impossible but opens another: the value would be an assumption about what
+    // was drawn. So the tree is asked instead. Exactly one node carries a
+    // background and it is the palette's surface object itself; nothing below
+    // measures anything until that holds.
     onAllNodes(paletteBackground()).assertCountEquals(1)
     probe.background = WidgetPalette.surface.getColor(probe.context)
-    return probe.resolved()
+    return probe
 }
 
 /**

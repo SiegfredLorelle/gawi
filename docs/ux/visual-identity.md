@@ -137,8 +137,8 @@ strings are laid out with `StaticLayout` (so bidi and shaping happen before the
 pixels exist), in Outfit at `wght` 400 through `Paint.setFontVariationSettings`
 — `Typeface.create(base, 400, false)` picks from a font *list* and never
 instances a variable axis, so it would have shipped Thin, the same trap Type.kt
-records — drawn white and handed to a Glance `Image` with `ColorFilter.tint`, taking the
-ink from `WidgetPalette` since 2026-08-28. The three costs, corrected:
+records — drawn white and handed to a Glance `Image` with `ColorFilter.tint`,
+taking its ink from `WidgetPalette` since 2026-08-28. The three costs, corrected:
 
 - **Font scale is honoured, at the next render.** The size is resolved in sp
   against the configuration in force when the bitmap is drawn, so a scale change
@@ -164,11 +164,11 @@ this paragraph used to claim — measured on emulators of both levels on
 followed the host on its own, leaving the name and the glyph behind, which is a
 legibility failure rather than a stale one. **Fixed the same day** by giving all
 three colours one kind of provider, which is what §7.4's palette turned out to
-be for ([widget.md](widget.md) carries the before-and-after ratios). And the glyphs of a script
-outside Outfit's `cmap` come from the device's fallback fonts, the same as the
-app, and take the *layout's* height rather than Outfit's so an emoji is not
-clipped. The edge this needed, `widget → core:ui`, carries `R.font.outfit` and
-nothing else; architecture §2 says so.
+be for ([widget.md](widget.md) carries the before-and-after ratios). And the
+glyphs of a script outside Outfit's `cmap` come from the device's fallback
+fonts, the same as the app, and take the *layout's* height rather than Outfit's
+so an emoji is not clipped. The edge this needed, `widget → core:ui`, carries
+`R.font.outfit` and nothing else; architecture §2 says so.
 
 Three things the first cut got wrong, caught by review the same day and worth
 keeping because each looked like something else. **A right-to-left name drew

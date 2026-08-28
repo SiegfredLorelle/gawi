@@ -3,8 +3,10 @@ package com.gawi.widget
 import android.content.Context
 import android.content.res.Configuration
 import androidx.compose.ui.graphics.luminance
+import com.gawi.core.ui.theme.gawiWindowBackground
 import com.gawi.widget.testsupport.MIN_CONTRAST
 import com.gawi.widget.testsupport.contrastRatio
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -15,17 +17,24 @@ import org.robolectric.RuntimeEnvironment
  * [WidgetPalette] is legible in both schemes, and is genuinely two schemes.
  *
  * **Why this exists next to `WidgetTextColourTest`.** That test measures what the
- * widget draws; this one measures the palette it draws *from*, including the two
- * colours no render test can reach — the checkbox glyph's, which `CheckBoxColors`
- * hides behind an `internal` accessor returning a memberless interface.
+ * widget draws, and since 2026-08-28 it reaches the checkbox glyph too. This one
+ * measures the palette the widget draws *from*, independent of any tree — so a
+ * colour is covered here even in a state no render test happens to compose, and
+ * the polarity check below has nothing to do with drawing at all.
  *
- * **Why every assertion resolves against a `Context` instead of reading a hex.**
- * Pinning the eight literals would only restate the source file, and it is not
- * the literals that were wrong before 2026-08-28 — it was that the widget's three
- * colours took different translation paths, so one followed a night-mode toggle
- * and two did not. The property that fixes that is *in-process resolution against
- * the running configuration*, so that is what is asserted: resolve each provider
- * in a day and a night `Context` and check the answers behave like a scheme pair.
+ * **Why most assertions resolve against a `Context` instead of reading a hex.**
+ * Pinning these eight literals against this file's own source would only restate
+ * it, and the literals are not what was wrong before 2026-08-28 — it was that the
+ * widget's three colours took different translation paths, so one followed a
+ * night-mode toggle and two did not. The property that fixes that is *in-process
+ * resolution against the running configuration*, so that is what is asserted:
+ * resolve each provider in a day and a night `Context` and check the answers
+ * behave like a scheme pair.
+ *
+ * Pinning against `core/ui/theme/Color.kt` is a different test, and a useful one,
+ * because these hexes are a hand-copy of the app's. `:core:ui` publishes exactly
+ * one of them — `gawiWindowBackground` — so exactly one is pinned, by the last
+ * test below. [WidgetPalette] records what that leaves unguarded.
  *
  * **What this cannot see, stated rather than implied.** A JVM test cannot tell
  * which of Glance's translation paths a provider will take on a real host — that
@@ -91,6 +100,20 @@ class WidgetPaletteTest {
                 nightInk.luminance() > dayInk.luminance(),
             )
         }
+    }
+
+    /**
+     * The one hex this module can check rather than trust.
+     *
+     * `:core:ui` exposes `gawiWindowBackground` precisely so a module that has to
+     * *reproduce* the surface can be pinned to it — `:app`'s XML copy is, by
+     * `WindowBackgroundTest`. Imported in the test source set only, so the
+     * production edge stays the two things architecture §2 allows.
+     */
+    @Test
+    fun `the surface is the app's window background, both schemes`() {
+        assertEquals(gawiWindowBackground(darkTheme = false), WidgetPalette.surface.getColor(context(night = false)))
+        assertEquals(gawiWindowBackground(darkTheme = true), WidgetPalette.surface.getColor(context(night = true)))
     }
 
     /** The same application context, in a configuration with night mode forced either way. */
