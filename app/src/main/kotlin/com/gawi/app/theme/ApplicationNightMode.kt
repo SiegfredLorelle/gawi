@@ -33,17 +33,20 @@ import javax.inject.Singleton
  * AppCompat activity and `AppCompatDelegate.setDefaultNightMode` would not
  * reach a `ComponentActivity` anyway.
  *
- * **What 29 and 30 lose is wider than one frame, and saying "one frame" was
- * wrong.** Two things, both found by `/code-review` rather than by running it:
- * `ThemeViewModel.theme` starts `null` and resolves to the *system* scheme
- * until DataStore's first disk read lands, so a forced theme is not drawn for
- * however long that read takes — real frames of real content, not the window.
- * And because the configuration is never corrected, the window background, the
- * starting window and the Recents snapshot stay in the system's scheme for the
- * whole session rather than for an instant. On 31 and up neither applies: the
+ * **What 29 and 30 lose is one flash of the starting window, measured
+ * 2026-08-28 on an API 30 emulator.** With Dark chosen and the system in
+ * light, nine cold starts sampled off a `screenrecord` showed the light
+ * `#F4FBFA` window for 70–330 ms before the dark app replaced it. Two wider
+ * claims stood here first, both reasoned from this code rather than watched,
+ * and the emulator retired both. `ThemeViewModel.theme` does start `null` and
+ * resolve to the *system* scheme, but the read beats the first composed frame:
+ * a light-scheme content frame appeared only with the page cache dropped, once
+ * each in four runs of six, and never in three warm ones. And the Recents
+ * snapshot does not hold the system's scheme at all — it is a screenshot of
+ * the window, so it shows what was drawn. On 31 and up none of it applies: the
  * override is already in the configuration before the process starts, so
  * `isSystemInDarkTheme()` is right on the first frame and the `null` start
- * costs nothing. docs/ux/settings.md §8 carries this.
+ * costs nothing. docs/ux/settings.md §8 carries the numbers.
  *
  * **`MODE_NIGHT_AUTO` is how "follow the system" is expressed, and the platform
  * documents it as something else.** There is no call that *clears* a per-app
