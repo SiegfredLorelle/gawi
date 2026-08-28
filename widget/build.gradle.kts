@@ -34,9 +34,19 @@ dependencies {
     // the theme" is the first thing a reviewer asks here and the answer is that
     // it does not compile. :core:ui exposes compose and material3 as `api`, so
     // the compiler will not stop a third import; treat any other
-    // com.gawi.core.ui.* import in this module as a defect. A minimal widget
-    // (PRD OQ-5, docs/ux/widget.md §2) draws no habit colour, so HabitPalette
-    // and parseHabitColor are not wanted either.
+    // com.gawi.core.ui.* import in this module as a defect.
+    //
+    // One carve-out, added 2026-08-28 so the rule and the code do not drift
+    // apart: WidgetPaletteTest imports gawiWindowBackground, in the TEST source
+    // set only. WidgetPalette hand-copies the app's hexes because a Glance tree
+    // cannot consume the scheme, and :core:ui publishes that one accessor
+    // precisely so a module reproducing the surface can be pinned to it — the
+    // same guard :app's XML copy has in WindowBackgroundTest. The production
+    // edge is still the two things above, and a third import in `main` is still
+    // a defect.
+    //
+    // A minimal widget (PRD OQ-5, docs/ux/widget.md §2) draws no habit colour,
+    // so HabitPalette and parseHabitColor are not wanted either.
     implementation(project(":core:ui"))
     // Glance brings WorkManager with it, and it is NOT optional: androidx.glance
     // runs its composition session in SessionWorker, a CoroutineWorker, which

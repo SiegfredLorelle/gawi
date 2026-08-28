@@ -1033,6 +1033,22 @@ widget. Before any of it is built, the price:
   by-hand check for what a JVM test cannot see.
 - **What is left of this set is the three surfaces above**, plus the rest of the
   role list a full `GlanceTheme(colors = …)` would need. Unblocked, not built.
+- **Three of the four built hexes have no tripwire, and that is this set's debt
+  to clear.** `WidgetPalette` is a hand-copy, sanctioned by §2, and only
+  `surface` is pinned to the original: `:core:ui` publishes
+  `gawiWindowBackground` for exactly that, so `WidgetPaletteTest` checks it the
+  way `WindowBackgroundTest` checks `:app`'s XML copy. `onSurface`, `primary` and
+  `outline` have no such accessor — **retune one in `core/ui/theme/Color.kt` and
+  the app's checkboxes move while the widget's glyph does not, with every test in
+  the module still green**, because the palette test measures contrast and
+  polarity (both survive a retune) and the render test measures the widget
+  against itself. Two ways out, and the choice is this set's rather than the
+  legibility fix's: three more `gawiXxx(darkTheme)` accessors, which means
+  overriding `Color.kt`'s decision that the window background is *deliberately*
+  the only value leaving that module; or reading the roles off a composed
+  `GawiTheme` in a Robolectric test, which closes all four at once but puts
+  `compose-ui-test-junit4` — and Espresso with it — into a module that has
+  neither.
 
 ### 7.5 The icon set, and the dingbats it retires
 
