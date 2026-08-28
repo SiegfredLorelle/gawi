@@ -17,11 +17,23 @@ import androidx.glance.color.ColorProvider
  * **Why a second copy of hexes that already exist.** A Glance tree is
  * `RemoteViews` under the composition, so it cannot consume `GawiTheme`
  * (docs/architecture.md §2), and `:widget` sees `:core:ui` for the Outfit font
- * and Momo's geometry only (build.gradle.kts). `GawiLightColors` is `internal`
- * besides, so even a wider edge would not expose it. Hand-copied hexes are the
- * duplication docs/ux/visual-identity.md §2 sanctions: there is no mechanism
- * that would make this one copy. The values are `surface`, `onSurface`,
- * `primary` and `outline` from `core/ui/theme/Color.kt`.
+ * and Momo's geometry only (build.gradle.kts). Hand-copied hexes are the
+ * duplication docs/ux/visual-identity.md §2 sanctions. The values are `surface`,
+ * `onSurface`, `primary` and `outline` from `core/ui/theme/Color.kt`.
+ *
+ * **The copy is not unguarded, and it is half-guarded rather than whole.**
+ * `:core:ui` already publishes `gawiWindowBackground(darkTheme)` for exactly this
+ * problem — its KDoc calls it "the only value that leaves the module without
+ * going through `GawiTheme`, because it is the only one another module has to
+ * reproduce rather than consume", and `:app`'s XML copy is pinned against it by
+ * `WindowBackgroundTest`. [surface] is the same two hexes, so `WidgetPaletteTest`
+ * pins it the same way, from the test source set so no production import
+ * widens the edge. The other three have no such accessor, deliberately, so
+ * **retuning `onSurface`, `primary` or `outline` in `core/ui/theme/Color.kt`
+ * will not fail anything here** — the app's checkboxes would move and the
+ * widget's glyph would not. Adding three accessors to `:core:ui` would close
+ * that, and it is a decision for §7.4's full palette rather than a legibility
+ * fix to make on its way past.
  *
  * **Why day/night providers, and not the pinned literals the docs asked for
  * until 2026-08-28.** The bug this fixes is a disagreement between two colours,
@@ -48,11 +60,13 @@ import androidx.glance.color.ColorProvider
  * leaves the widget stale *together* and legible, repairing at the next render
  * — which is what docs/running.md §4 expected of it in the first place.
  *
- * Contrast against [surface] in the matching scheme, light then night: 15.0 and
- * 14.0 for [onSurface], 5.6 and 10.2 for [glyphChecked], 5.2 and 5.2 for
- * [glyphUnchecked]. `WidgetPaletteTest` asserts all six, so a retuned hex
- * cannot quietly drop below the threshold; `WidgetTextColourTest` measures what
- * the widget actually draws against the ground it actually draws it on.
+ * Contrast against [surface] in the matching scheme, light then night: 16.59 and
+ * 14.82 for [onSurface], 5.56 and 10.44 for [glyphChecked], 5.18 and 5.31 for
+ * [glyphUnchecked] — WCAG ratios, matching what was sampled off a launcher on
+ * API 29 and 30 (docs/ux/widget.md). `WidgetPaletteTest` asserts all six against
+ * the 4.5 floor rather than against these figures, so treat them as a record of
+ * the headroom and not as a contract; `WidgetTextColourTest` measures what the
+ * widget actually draws, against the ground it actually draws it on.
  *
  * The type is deliberately left inferred. `androidx.glance.color.ColorProvider`
  * returns a `DayNightColorProvider`, and that class is `@RestrictTo(LIBRARY)`,
