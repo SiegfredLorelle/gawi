@@ -1337,16 +1337,18 @@ Nothing A059 pass in §3 is still owed and is what would upgrade these.
       2026-08-26 on API 37** — the launch window came up `#0E1A1C` with the
       system in light mode, measured frame by frame off a `screenrecord`, so
       the light `#F4FBFA` never appeared.
-- [ ] **The same cold start on API 29 or 30, where it is a different check.**
+- [x] **The same cold start on API 29 or 30, where it is a different check.**
       Its own item rather than a second half of the one above, because those
-      two versions have no `setApplicationNightMode` and what they lose is
-      wider than a flash ([ux/settings.md](ux/settings.md) §8): the app itself
-      draws the *system's* scheme until the first preferences read lands, and
-      the Recents snapshot keeps that scheme for the whole session. So
-      force-stop and launch as above, then background the app and open Recents
-      as part of this check. Owed, and it belongs with the standing API 29/30
-      pass — this is the item that would put numbers on a gap currently
-      described from reading the code rather than from watching it.
+      two versions have no `setApplicationNightMode`. **Run 2026-08-28 on an
+      API 30 emulator** (`google_apis`, x86_64, `medium_phone`), Dark chosen
+      with the system in light: nine cold starts sampled frame by frame off a
+      `screenrecord`. The launch window came up light `#F4FBFA` and held it
+      for 70–330 ms before the dark app replaced it — the flash API 31 and up
+      does not have. Backgrounding the app and opening Recents was part of the
+      check, and is where the doc turned out to be wrong: the thumbnail is a
+      screenshot of the window and measured `#0E1A1C` every time.
+      [ux/settings.md](ux/settings.md) §8 carries the numbers and the two
+      claims that did not survive them.
 - [x] **The status bar's icons in both forced modes.** The bars follow the
       resolved theme rather than the device's, so this is where that either
       holds or produces white-on-white — the exact failure `enableEdgeToEdge`

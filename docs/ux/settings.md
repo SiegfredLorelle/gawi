@@ -423,9 +423,9 @@ worth stating rather than discovering:
   which is worth knowing before a fifth one is added the same way.
 - **On API 29 and 30 there is no such call**, and no equivalent that does not
   drag in AppCompat, which this app has no activity for. Those two versions get
-  the Compose half only, and §8 has what that costs — more than the single
-  frame this bullet claimed when it was written, which is recorded there rather
-  than quietly corrected here.
+  the Compose half only, so a cold start there does flash: measured at
+  70–330 ms of the light window on API 30, which is §8's to carry along with
+  the two wider costs this bullet once claimed and the emulator retired.
 
 **The preference is the source of truth, not the platform's copy.** The system
 persists what it is told, so the two can disagree — a preferences file imported
@@ -658,19 +658,33 @@ rather than off the write.
   they are looking at is a guess. Fixing it means `observe()` distinguishing
   "defaulted because absent" from "defaulted because unreadable", which is a
   `:core:data` change and a wider one than it looks.
-- **On API 29 and 30 a forced theme is wider than the "one frame" §7 first
-  claimed**, and the correction is worth more than the bullet. Two parts. The
-  drawn app is wrong for as long as the first DataStore read takes, because
-  `ThemeViewModel.theme` starts at "not read yet" and that resolves to the
-  device's own scheme by design — on 31 and up the configuration already
-  carries the override so this costs nothing, and below it there is nothing to
-  correct it. And the window background, the starting window and the Recents
-  snapshot come from the `values-night` qualifier for the whole session, so the
-  launcher shows the app in the other scheme the entire time it is backgrounded
-  rather than for an instant. Neither is fixable without either AppCompat or a
-  blocking disk read on the launch path, and both are worse. **Unmeasured**:
-  the standing API 29/30 emulator pass is what would put numbers on the first
-  part.
+- **On API 29 and 30 a forced theme costs a starting window** — and, measured,
+  nothing else. **Measured 2026-08-28** on an API 30 emulator (`google_apis`,
+  x86_64, `medium_phone`) with Dark chosen and the system in light mode: nine
+  cold starts, sampled frame by frame off a `screenrecord` at 30 fps. What is
+  real is the window painted before `setContent`. It resolves from `values`
+  rather than `values-night`, so a launch shows the light `#F4FBFA` for
+  70–330 ms — median about 170 — before the dark app replaces it. That is
+  exactly the flash §7 credits `setApplicationNightMode` with removing, and
+  these two versions keep it. Closing it needs either AppCompat or a blocking
+  disk read on the launch path, and both are worse, so it stays open.
+
+  ~~The drawn app is wrong for as long as the first DataStore read takes.~~
+  True in principle and almost never visible, which is not what this bullet
+  said. `ThemeViewModel.theme` does start at "not read yet", but the read beats
+  the first composed frame: no light-scheme content frame appeared in three
+  runs with a warm page cache, and with the cache dropped before every start —
+  the worst case the argument has — exactly one frame did, in four runs of six.
+  One frame at 30 fps is 33 ms.
+
+  ~~The window background, the starting window and the Recents snapshot come
+  from the `values-night` qualifier for the whole session.~~ Wrong about
+  Recents, which was the alarming half. The task snapshot is a screenshot of
+  the window, so it shows the scheme the app actually drew: backgrounded, after
+  `am kill`, and after a rotation, the thumbnail measured `#0E1A1C` every time.
+  Nor does it last "the whole session" — a warm resume with the process still
+  alive shows no wrong-scheme frame at all, because the starting window is only
+  reached when there is no window left to restore.
 - **A snackbar in flight does not survive a theme change**, on API 31 and up.
   The recreation rebuilds `SnackbarHostState`, and `events` is a
   single-consumer `Channel` whose element has already been taken, so the
