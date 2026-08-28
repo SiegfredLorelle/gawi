@@ -1,4 +1,4 @@
-# Settings: the three preferences, and the fourth that is not one
+# Settings: four preferences, and the PRD's fourth that is not one
 
 Companion to [the PRD](../prd.md) §5 and §7, and to
 [the architecture](../architecture.md) §2, §3 and §5. The PRD specifies these
@@ -24,9 +24,9 @@ to admit (§2), and where the gear points (§4).
 
 ## 1. Three settings, not the PRD's four
 
-`UserSettings` holds `dayCutoff`, `weekStart` and `reminderTime`. The PRD's
-fourth, **timezone behaviour, is deliberately absent** — from the data type as
-much as from this screen.
+`UserSettings` holds `dayCutoff`, `weekStart` and `reminderTime`, and since
+2026-08-26 `theme` as well (§7). The PRD's fourth, **timezone behaviour, is
+deliberately absent** — from the data type as much as from this screen.
 
 It is absent because it has exactly one value. The behaviour is "use the device
 zone", which `DeviceClock` supplies per call, on every call. A control offering
@@ -688,10 +688,6 @@ rather than off the write.
   read this preference and paint itself — a widget can be pushed an update, so
   it is possible; what it costs is a widget that disagrees with every other
   widget on that home screen.
-- **On API 29 and 30 a forced theme flashes on cold start**, per §7. The window
-  is painted from the system's night qualifier before Compose runs, and
-  `setApplicationNightMode` is API 31. Bounded to one frame and to the window
-  background, and the alternative is AppCompat for one call.
 - **No timezone setting**, per §1. Recorded here so it reads as a decision
   rather than an omission.
 - **`GlyphButton` wanted a home in `:core:ui`. It has one — resolved

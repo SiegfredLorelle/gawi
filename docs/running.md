@@ -1329,20 +1329,24 @@ Nothing A059 pass in §3 is still owed and is what would upgrade these.
       a reopened dialog is what a failure looks like. Then Light on a dark
       phone, then back to *Follow the system* and toggle dark from quick
       settings, which must move the app again.
-- [x] **Cold start with a forced theme, watching for the same flash.** The check
-      above this one, run with Dark chosen and the *system* in light mode.
-      Force-stop, launch, watch the first frame. On API 31+ there must be no
-      flash at all — `setApplicationNightMode` is what makes the window resolve
-      from `values-night/` — and on an API 29 or 30 image there will be one.
-      **What to look for there is longer than a flash**: the app itself draws
-      the system's scheme until the first preferences read lands, and the
-      Recents snapshot stays in the system's scheme for the whole session, so
-      background the app and open Recents as part of this check
-      ([ux/settings.md](ux/settings.md) §8). **Run
-      2026-08-26 on API 37**: the launch window came up `#0E1A1C` with the
+- [x] **Cold start with a forced theme, on API 31 or later.** The check above
+      this one, run with Dark chosen and the *system* in light mode.
+      Force-stop, launch, watch the first frame. There must be no flash at all:
+      `setApplicationNightMode` puts the choice in the configuration, so the
+      window resolves from `values-night/` before Compose runs. **Run
+      2026-08-26 on API 37** — the launch window came up `#0E1A1C` with the
       system in light mode, measured frame by frame off a `screenrecord`, so
-      the light `#F4FBFA` never appeared. The 29/30 half is still owed and
-      belongs with the standing API 29/30 pass.
+      the light `#F4FBFA` never appeared.
+- [ ] **The same cold start on API 29 or 30, where it is a different check.**
+      Its own item rather than a second half of the one above, because those
+      two versions have no `setApplicationNightMode` and what they lose is
+      wider than a flash ([ux/settings.md](ux/settings.md) §8): the app itself
+      draws the *system's* scheme until the first preferences read lands, and
+      the Recents snapshot keeps that scheme for the whole session. So
+      force-stop and launch as above, then background the app and open Recents
+      as part of this check. Owed, and it belongs with the standing API 29/30
+      pass — this is the item that would put numbers on a gap currently
+      described from reading the code rather than from watching it.
 - [x] **The status bar's icons in both forced modes.** The bars follow the
       resolved theme rather than the device's, so this is where that either
       holds or produces white-on-white — the exact failure `enableEdgeToEdge`
