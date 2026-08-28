@@ -45,11 +45,13 @@ import kotlin.math.ceil
  * is not new — Glance already translates the checkbox glyph the same way below
  * 31 — but the conclusion drawn from it here was, and it was wrong. This said
  * a night-mode change on those levels leaves the whole widget stale together;
- * **measured on API 30 on 2026-08-28, the background is not translated with
- * them.** It follows the host immediately while this tint keeps the last
- * render's literal and the glyph, for whatever reason, does not move either —
- * so the toggle produces near-zero contrast rather than a stale widget. The
- * checkbox outline measured 240.7 against its ground before and 48.0 after.
+ * **measured on API 29 and 30 on 2026-08-28, and the same to the decimal on
+ * each, the background is not translated with them.** It follows the host
+ * immediately while this tint keeps the last render's literal and the glyph,
+ * for whatever reason, does not move either — so the toggle produces near-zero
+ * contrast rather than a stale widget. The name measured 212.0 of contrast
+ * against its ground before the toggle and 19.3 after, and 180.0 then 12.7
+ * coming back the other way; the checkbox outline goes 240.7 to 48.0.
  * It repairs at the next render. The fix is pinned
  * literals, which belongs to the widget palette (docs/ux/visual-identity.md
  * §7.4); docs/ux/widget.md carries the cost.

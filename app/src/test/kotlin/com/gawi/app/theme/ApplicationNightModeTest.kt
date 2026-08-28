@@ -50,10 +50,11 @@ class ApplicationNightModeTest {
      *
      * minSdk is 29, so this is a supported device rather than a hypothetical
      * one. What it loses is documented in docs/ux/settings.md §8 and was
-     * measured on an API 30 emulator on 2026-08-28: the window painted before
-     * `setContent` is the system's scheme for 70–330 ms of a cold start. It is
-     * the window and essentially only the window — the wider costs this KDoc
-     * used to claim did not survive the measurement.
+     * measured on an emulator of each level on 2026-08-28: the window painted
+     * before `setContent` is the system's scheme for 66–331 ms of a cold start
+     * on API 30, and 317–448 ms on API 29. It is the window and essentially
+     * only the window — the wider costs this KDoc used to claim did not
+     * survive the measurement.
      *
      * `MODE_NIGHT_AUTO` is also the shadow's untouched value, which is worth
      * saying rather than leaving to be discovered: the assertion is "nothing

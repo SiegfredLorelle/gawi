@@ -34,19 +34,21 @@ import javax.inject.Singleton
  * reach a `ComponentActivity` anyway.
  *
  * **What 29 and 30 lose is one flash of the starting window, measured
- * 2026-08-28 on an API 30 emulator.** With Dark chosen and the system in
- * light, nine cold starts sampled off a `screenrecord` showed the light
- * `#F4FBFA` window for 70–330 ms before the dark app replaced it. Two wider
- * claims stood here first, both reasoned from this code rather than watched,
- * and the emulator retired both. `ThemeViewModel.theme` does start `null` and
- * resolve to the *system* scheme, but the read beats the first composed frame:
- * a light-scheme content frame appeared only with the page cache dropped, once
- * each in four runs of six, and never in three warm ones. And the Recents
- * snapshot does not hold the system's scheme at all — it is a screenshot of
- * the window, so it shows what was drawn. On 31 and up none of it applies: the
- * override is already in the configuration before the process starts, so
- * `isSystemInDarkTheme()` is right on the first frame and the `null` start
- * costs nothing. docs/ux/settings.md §8 carries the numbers.
+ * 2026-08-28 on an emulator of each.** With Dark chosen and the system in
+ * light, nine cold starts per level sampled off a `screenrecord` showed the
+ * light `#F4FBFA` window before the dark app replaced it: 66–331 ms on API 30,
+ * and 317–448 ms on API 29, which holds it more than twice as long and is the
+ * one place the two differ. Two wider claims stood here first, both reasoned
+ * from this code rather than watched, and both emulators retired them.
+ * `ThemeViewModel.theme` does start `null` and resolve to the *system* scheme,
+ * but the read beats the first composed frame: a light-scheme content frame
+ * appeared only with the page cache dropped, in four runs of six on each
+ * level, and never in the warm ones. And the Recents snapshot does not hold
+ * the system's scheme at all — it is a screenshot of the window, so it shows
+ * what was drawn. On 31 and up none of it applies: the override is already in
+ * the configuration before the process starts, so `isSystemInDarkTheme()` is
+ * right on the first frame and the `null` start costs nothing.
+ * docs/ux/settings.md §8 carries the numbers.
  *
  * **`MODE_NIGHT_AUTO` is how "follow the system" is expressed, and the platform
  * documents it as something else.** There is no call that *clears* a per-app

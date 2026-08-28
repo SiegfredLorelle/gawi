@@ -424,8 +424,9 @@ worth stating rather than discovering:
 - **On API 29 and 30 there is no such call**, and no equivalent that does not
   drag in AppCompat, which this app has no activity for. Those two versions get
   the Compose half only, so a cold start there does flash: measured at
-  70–330 ms of the light window on API 30, which is §8's to carry along with
-  the two wider costs this bullet once claimed and the emulator retired.
+  66–331 ms of the light window on API 30 and 317–448 ms on API 29, which is
+  §8's to carry along with the two wider costs this bullet once claimed and the
+  emulators retired.
 
 **The preference is the source of truth, not the platform's copy.** The system
 persists what it is told, so the two can disagree — a preferences file imported
@@ -659,29 +660,36 @@ rather than off the write.
   "defaulted because absent" from "defaulted because unreadable", which is a
   `:core:data` change and a wider one than it looks.
 - **On API 29 and 30 a forced theme costs a starting window** — and, measured,
-  nothing else. **Measured 2026-08-28** on an API 30 emulator (`google_apis`,
-  x86_64, `medium_phone`) with Dark chosen and the system in light mode: nine
-  cold starts, sampled frame by frame off a `screenrecord` at 30 fps. What is
-  real is the window painted before `setContent`. It resolves from `values`
-  rather than `values-night`, so a launch shows the light `#F4FBFA` for
-  70–330 ms — median about 170 — before the dark app replaces it. That is
-  exactly the flash §7 credits `setApplicationNightMode` with removing, and
-  these two versions keep it. Closing it needs either AppCompat or a blocking
-  disk read on the launch path, and both are worse, so it stays open.
+  nothing else. **Measured 2026-08-28 on both levels**, `google_apis` x86_64
+  `medium_phone` emulators of identical geometry, Dark chosen with the system
+  in light: nine cold starts each, sampled frame by frame off a `screenrecord`
+  at about 33 ms a frame. What is real is the window painted before
+  `setContent`. It resolves from `values` rather than `values-night`, so a
+  launch shows the light `#F4FBFA` before the dark app replaces it —
+  **66–331 ms on API 30, median 166; 317–448 ms on API 29, median 383**. The
+  two are quoted apart because they are not the same number: API 29 holds the
+  wrong scheme more than twice as long, and that is the one place these levels
+  measurably differ. It is also why this bullet now carries two measurements
+  rather than one generalised onto the other. Either way it is the flash §7
+  credits `setApplicationNightMode` with removing, and both versions keep it.
+  Closing it needs either AppCompat or a blocking disk read on the launch path,
+  and both are worse, so it stays open.
 
   ~~The drawn app is wrong for as long as the first DataStore read takes.~~
   True in principle and almost never visible, which is not what this bullet
   said. `ThemeViewModel.theme` does start at "not read yet", but the read beats
-  the first composed frame: no light-scheme content frame appeared in three
-  runs with a warm page cache, and with the cache dropped before every start —
-  the worst case the argument has — exactly one frame did, in four runs of six.
-  One frame at 30 fps is 33 ms.
+  the first composed frame, and does so identically on both levels: no
+  light-scheme content frame appeared in three runs with a warm page cache, and
+  with the cache dropped before every start — the worst case the argument has —
+  one appeared in four runs of six. It survives a single captured frame on
+  API 30 and one to three on API 29, so tens of milliseconds either way.
 
   ~~The window background, the starting window and the Recents snapshot come
   from the `values-night` qualifier for the whole session.~~ Wrong about
-  Recents, which was the alarming half. The task snapshot is a screenshot of
-  the window, so it shows the scheme the app actually drew: backgrounded, after
-  `am kill`, and after a rotation, the thumbnail measured `#0E1A1C` every time.
+  Recents, on both levels, and that was the alarming half. The task snapshot is
+  a screenshot of the window, so it shows the scheme the app actually drew:
+  backgrounded, after `am kill`, and after a rotation, the thumbnail measured
+  `#0E1A1C` every time, with no light-scheme pixel in any of the six captures.
   Nor does it last "the whole session" — a warm resume with the process still
   alive shows no wrong-scheme frame at all, because the starting window is only
   reached when there is no window left to restore.
