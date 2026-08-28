@@ -49,10 +49,11 @@ class ApplicationNightModeTest {
      * Below API 31 there is nothing to call, and calling anyway would throw.
      *
      * minSdk is 29, so this is a supported device rather than a hypothetical
-     * one. What it loses is documented in docs/ux/settings.md §8, and it is
-     * wider than the window: the drawn app follows the system's scheme until
-     * the first preferences read lands, and the Recents snapshot keeps it for
-     * the whole session.
+     * one. What it loses is documented in docs/ux/settings.md §8 and was
+     * measured on an API 30 emulator on 2026-08-28: the window painted before
+     * `setContent` is the system's scheme for 70–330 ms of a cold start. It is
+     * the window and essentially only the window — the wider costs this KDoc
+     * used to claim did not survive the measurement.
      *
      * `MODE_NIGHT_AUTO` is also the shadow's untouched value, which is worth
      * saying rather than leaving to be discovered: the assertion is "nothing
