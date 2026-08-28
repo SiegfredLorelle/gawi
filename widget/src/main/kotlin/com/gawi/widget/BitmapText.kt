@@ -47,16 +47,21 @@ import kotlin.math.ceil
  * change below 31 left the whole widget stale together. **Measured on API 29 and
  * 30 on 2026-08-28, the same to the decimal on each, it did not**: the
  * background was resource-backed, so the host re-resolved it on its own while
- * this tint and the checkbox glyph kept the last render's baked value. The name
- * measured 212.0 of contrast against its ground before the toggle and 19.3
- * after, and 180.0 then 12.7 coming back — the return trip the worse one, white
- * ink left on a light ground. The checkbox outline went 240.7 to 48.0. A toggle
+ * this tint and the checkbox glyph kept the last render's baked value. A toggle
  * left the widget illegible rather than stale, until the next render repaired it.
+ * Re-measured against the unfixed build on API 29 the same day, as WCAG ratios
+ * — the unit the tests use, and the unit every figure here is in, because the
+ * first pass reported these on a scale it never named — the name fell to
+ * **1.31:1** against its own ground and the checkbox to **1.60:1**. The same run
+ * found the glyph below the floor in dark mode even freshly rendered, at 2.91:1
+ * checked and 1.60:1 unchecked, which is a second defect the toggle was hiding.
  *
  * Fixed by giving all three colours one kind of provider, so they are translated
  * by the same path and cannot disagree ([WidgetPalette] has the mechanism).
  * Below 31 a toggle now leaves the widget stale *together* and readable, which is
- * what docs/running.md §4 expected of it before it was measured.
+ * what docs/running.md §4 expected of it before it was measured: 16.59:1 for the
+ * name in light and 14.82:1 in dark, unchanged across a toggle either way, and
+ * on 31 and up the whole widget still follows one within about two seconds.
  *
  * **Why `setFontVariationSettings` and not `Typeface.create`.** `outfit.ttf` is
  * one variable file whose `fvar` default is `wght` 100, Thin — `Type.kt`

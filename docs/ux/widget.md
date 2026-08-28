@@ -393,33 +393,43 @@ all either `exported="false"` or guarded by `DUMP` / `BIND_JOB_SERVICE`.
   stand was the sentence that followed it here — "bitmap text is the only escape
   and is not worth it for a checkbox list" — which was reversed the next day:
   `BitmapText.kt` lays each name out in Outfit with `StaticLayout`, draws it
-  white, and a Glance `Image` carries it with `ColorFilter.tint(onSurface)`, so
-  colour still resolves where it did. docs/ux/visual-identity.md §2 has the
+  white, and a Glance `Image` carries it with `ColorFilter.tint`, taking the ink
+  from `WidgetPalette` since 2026-08-28. docs/ux/visual-identity.md §2 has the
   numbers, the controls, and what the bitmap route costs once built. Two of
   those costs belong to this module's design and are recorded here as well:
   - **Font scale follows at the next render, not immediately.** Glance
     recomposes on a locale change and not on a configuration change, so a scale
     change lands with the next write, rollover or 30-minute update — the same
     latency §4 accepts for a day rollover.
-  - **On API 29–30 the text colour is resolved in our process**, at translation
-    time, because Glance hands a launcher below 31 a literal rather than a
-    colour resource. That is how it already handled the checkbox glyph and the
-    plain-text colour on those levels. This bullet used to reason from that to
-    "the whole widget goes stale together — no new failure shape", and
-    **measured on API 29 and 30 on 2026-08-28 that is wrong, in the direction
-    that matters**. The background is *not* translated with them: it follows
-    the host the instant night mode changes, while the name keeps the literal
-    from the last render and the glyph does not move either. (The name's cause
-    is this bullet's own translation; the glyph was only observed not to
-    follow — it could as easily be the missing `-night` variant on the
-    attribute it takes, and that was not isolated.) So a toggle does not leave
-    a stale widget, it leaves an illegible one. The name's contrast against its
-    own ground measured 212.0 before the toggle and 19.3 after; coming back the
-    other way it is 180.0 then 12.7, which is the worse trip because white ink
-    is left on a light ground. The checkbox outline goes 240.7 to 48.0. **The
-    two levels measured the same to the decimal**, which is what the shared
-    below-31 translation predicts. The next render repairs it, which on §4's
-    latency is the next write, rollover or 30-minute update. Pinning the two
-    literals is the fix and it is the widget palette's to make
-    (docs/ux/visual-identity.md §7.4) — which this promotes from
-    styling to a legibility bug on the two lowest supported levels.
+  - **On API 29–30 every colour the widget draws is resolved in our process**,
+    at translation time, because below 31 Glance hands a launcher a literal
+    rather than a colour resource for an image tint or a compound button. This
+    bullet used to reason from that to "the whole widget goes stale together —
+    no new failure shape", and **measured on API 29 and 30 on 2026-08-28 that
+    was wrong** — because it was not true of *every* colour, and the one
+    exception was the one that mattered. `GlanceTheme`'s `widgetBackground` is
+    resource-backed, so it became `setViewBackgroundColorResource` and the
+    **host** re-resolved it the instant night mode changed, while the name and
+    the glyph kept the values baked at the last render. One side of the contrast
+    pair moved and the other two did not, so a toggle left the widget illegible
+    rather than stale: the name fell to 1.31:1 against its own ground and the
+    checkbox to 1.60:1. A second defect fell out of the same measurement, which
+    no toggle was needed to see — the glyph was below the floor in dark mode
+    *even freshly rendered*, at 2.91:1 checked and 1.60:1 unchecked, because it
+    was taking the platform accent against a background this module chose.
+  - **Fixed on 2026-08-28**, by giving all three colours one kind of provider —
+    a day/night pair from `WidgetPalette` (docs/ux/visual-identity.md §7.4), so
+    they take the same translation path and cannot disagree. Below 31 all three
+    now resolve here at the same instant, from the same configuration, so **a
+    toggle leaves the widget stale together and readable**, which is the shape
+    this bullet predicted before it was measured; it repairs at the next write,
+    rollover or 30-minute update, exactly as §4's latency says. Measured after
+    the fix on emulators of both levels and identical on each: the name at
+    16.59:1 in light and 14.82:1 in dark, the glyph at 5.56:1 checked and
+    5.18:1 unchecked in light, 10.44:1 and 5.31:1 in dark, and unchanged across
+    a toggle in either direction. One cost, recorded rather than hidden: the
+    light-mode checked glyph falls from 18.43:1 to 5.56:1, because it used to be
+    pure black by accident and is now the brand teal by choice. **Above API 31
+    nothing regressed** — the host is handed a day/night pair for each colour, so
+    the whole widget still follows a toggle within about two seconds with no
+    render at all, measured on API 37 on 2026-08-28.

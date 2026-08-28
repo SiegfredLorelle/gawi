@@ -418,13 +418,15 @@ Scanner, and the widget on a launcher, which is the only end-to-end
 `ProjectionListener` exercise and has still never run. The Nothing A059 pass
 (§3) is what would upgrade the rest.
 
-One part of the debt does *not* come due yet, and the distinction matters. The
-widget still draws on Glance's default theme on purpose — a Glance tree cannot
-consume the Compose theme (architecture §2), so the widget takes any palette
-separately and that is its own piece of work ([visual-identity.md](ux/visual-identity.md)
-§7.4). So the widget legibility check is due against the *unchanged* widget, and
-it will be owed a second time when the widget gets the palette. Nothing else in
-this section is deferred.
+That deferral has expired. The widget drew on Glance's default theme on purpose
+for two phases — a Glance tree cannot consume the Compose theme (architecture
+§2), so the widget takes any palette separately, and this section said the
+legibility check was due against the *unchanged* widget and would be owed a
+second time once it had one. **It has one since 2026-08-28**
+([visual-identity.md](ux/visual-identity.md) §7.4), because the check found a
+real defect and the palette turned out to be its fix rather than styling laid on
+top. So the second time has arrived and is what the widget items below now ask
+for. Nothing in this section is deferred any longer.
 
 The clock-dependent checks below used to need an `adb` call into a debug
 activity. They drive the settings screen now, which is the same code path a user
@@ -828,17 +830,17 @@ Decisions and reasoning are in [docs/ux/widget.md](ux/widget.md).
       measure the ratio of every text the widget emits, in both themes — so the
       part worth a human's eyes is what those cannot reach: **toggle the system
       dark-mode setting and look at the widget in both**. Specifically check the
-      **checkbox glyph**, not just the label — it is the one thing on this
-      surface whose colour the app does not choose. It takes
+      **checkbox glyph**, not just the label. Until 2026-08-28 it was the one
+      thing on this surface whose colour the app did not choose — it took
       `?android:attr/colorControlNormal` (unchecked) and `colorControlActivated`
-      (checked) from Glance's own selector, which ships no `-night` variant, so
-      it resolves in the **launcher's** theme against a background this app
-      picked. Confirm by eye that both states stand out.
-      `TodayWidget.kt` records why it is not simply pinned: handing a
-      `GlanceTheme` colour to `CheckBox(colors = …)` throws at runtime, because
-      every theme colour is resource-backed and `CheckBoxColors` refuses those,
-      so pinning would mean inventing hardcoded literals while PRD OQ-4 is open.
-      No test sees this colour either way.
+      (checked) from Glance's own selector — and this check is what caught the
+      consequence: on API 29 it resolved to the platform accent and sat at
+      2.91:1 against a background this app picked, freshly rendered. The app
+      chooses it now, from `WidgetPalette`, and a JVM test does see it after all
+      (`WidgetTextColourTest` measures both states in both themes, via the one
+      reflective hop `TodayWidget.kt` explains). Confirm by eye anyway that both
+      states stand out: what no JVM test can reach is how a real launcher
+      translates the colour, which is where the defect lived.
 - [ ] **A tap completes.** Tap an unticked row's *glyph*: it ticks at once. Tap
       its *name* instead: nothing moves until the write round-trips (a second
       or so), then the glyph ticks — only the checkbox half flips instantly, so
@@ -871,19 +873,40 @@ the bitmaps are drawn and tinted:
       the typography block further down uses for the app. Both themes, and the
       text follows the theme on API 31+: force-stop after `cmd uimode night yes`
       or the running widget will not re-theme.
-- [x] **API 29 or 30 emulator: the tint is resolved in our process.** Toggle
-      dark mode with the widget placed. The expectation written here was that
-      the text, the checkbox glyph and the background stay stale *together*
-      until the next render. **Run 2026-08-28 on API 29 and 30, and they do
-      not** — this check found the defect it was written for, and the two
-      levels measured the same to the decimal. The background follows the host
-      immediately and the name and the checkbox glyph do not, so the widget
-      lands on near-zero contrast. The name's contrast against its own ground
-      falls from 212.0 to 19.3 going into dark, and from 180.0 to 12.7 coming
-      back — the return trip is the worse one, white left on a light ground.
-      The checkbox outline falls from 240.7 to 48.0. Completing a habit in the
-      app repairs it, so it lasts until the next write, rollover or 30-minute
-      update. [ux/widget.md](ux/widget.md) has the mechanism and the cost.
+- [x] **API 29 or 30 emulator: every colour is resolved in our process.**
+      Toggle dark mode with the widget placed. The expectation written here was
+      that the text, the checkbox glyph and the background stay stale
+      *together* until the next render. **Run 2026-08-28 on API 29 and 30, and
+      they did not** — this check found the defect it was written for, and the
+      two levels measured the same to the decimal. The background was
+      resource-backed, so the host re-resolved it immediately while the name and
+      the glyph kept the value baked at the last render, and the widget landed
+      at 1.31:1 for the name and 1.60:1 for the glyph. The same run found a
+      second defect no toggle was needed to see: the glyph was below the floor
+      in dark mode even freshly rendered, at 2.91:1 checked and 1.60:1
+      unchecked, taking the platform accent against a background this app chose.
+      **Re-run the same day against the fix, on both levels and identical on
+      each**, and the expectation this check was written with now holds. All
+      three colours are day/night pairs from `WidgetPalette`, so they take one
+      translation path, stay stale together, and stay readable throughout: the
+      name at 16.59:1 in light and 14.82:1 in dark, the glyph at 5.56:1 checked
+      and 5.18:1 unchecked in light, 10.44:1 and 5.31:1 in dark, unchanged
+      across a toggle in either direction. Completing a habit repairs the
+      staleness, so it lasts until the next write, rollover or 30-minute update.
+      One trap worth not rediscovering: an `APPWIDGET_UPDATE` broadcast is
+      **not** a render and will not repair it — measure with one and you will
+      conclude, wrongly, that nothing moved. A tap on the widget or a write in
+      the app is a render. [ux/widget.md](ux/widget.md) has the mechanism.
+- [x] **API 31 or later: the whole widget follows a toggle with no render.**
+      Added 2026-08-28 with the widget palette, because the property changed
+      hands. The background used to be a colour *resource* the launcher
+      resolved; it is now a day/night pair the launcher picks from, so "it still
+      follows" became a claim about this repo's code rather than about Glance's
+      default, and the check above is the reason not to trust that reasoning
+      unmeasured. Run on API 37 the same day: `cmd uimode night yes` then `no`
+      with the widget placed and the app not running, and the ground, the name
+      and the glyph all move together within about two seconds — 16.59:1 and
+      5.18:1 in light, 14.82:1 and 5.31:1 in dark.
 - [ ] **200 % font scale.** Rows grow; a long name ellipsises inside the row
       rather than under the widget's edge; nothing clips vertically. The change
       lands at the next render, not on the spot — complete a habit in the app
