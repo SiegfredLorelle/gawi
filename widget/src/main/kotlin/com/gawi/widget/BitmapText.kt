@@ -42,9 +42,17 @@ import kotlin.math.ceil
  * launcher a colour *resource* and the launcher resolves it in its own theme,
  * so the text follows dark mode exactly as the background does; on 29–30 Glance
  * resolves the provider in this process at translation time. That second case
- * is not new — Glance already translates the checkbox glyph and plain text
- * colour the same way below 31 — so a night-mode change on those levels leaves
- * the whole widget stale together until its next render, not the text alone.
+ * is not new — Glance already translates the checkbox glyph the same way below
+ * 31 — but the conclusion drawn from it here was, and it was wrong. This said
+ * a night-mode change on those levels leaves the whole widget stale together;
+ * **measured on API 30 on 2026-08-28, the background is not translated with
+ * them.** It follows the host immediately while this tint keeps the last
+ * render's literal and the glyph, for whatever reason, does not move either —
+ * so the toggle produces near-zero contrast rather than a stale widget. The
+ * checkbox outline measured 240.7 against its ground before and 48.0 after.
+ * It repairs at the next render. The fix is pinned
+ * literals, which belongs to the widget palette (docs/ux/visual-identity.md
+ * §7.4); docs/ux/widget.md carries the cost.
  *
  * **Why `setFontVariationSettings` and not `Typeface.create`.** `outfit.ttf` is
  * one variable file whose `fvar` default is `wght` 100, Thin — `Type.kt`

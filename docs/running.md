@@ -871,11 +871,18 @@ the bitmaps are drawn and tinted:
       the typography block further down uses for the app. Both themes, and the
       text follows the theme on API 31+: force-stop after `cmd uimode night yes`
       or the running widget will not re-theme.
-- [ ] **API 29 or 30 emulator: the tint is resolved in our process.** Toggle
-      dark mode with the widget placed; the text, the checkbox glyph and the
-      background are expected to stay stale *together* until the next render,
-      then flip together when a habit is completed in the app. Text that changes
-      alone, or fails to change when the rest does, is the defect this is for.
+- [x] **API 29 or 30 emulator: the tint is resolved in our process.** Toggle
+      dark mode with the widget placed. The expectation written here was that
+      the text, the checkbox glyph and the background stay stale *together*
+      until the next render. **Run 2026-08-28 on API 30, and they do not** —
+      this check found the defect it was written for. The background follows
+      the host immediately and the name and the checkbox glyph do not, so the
+      widget lands on near-zero contrast: the checkbox outline's contrast
+      against its own ground fell from 240.7 to 48.0 on one toggle, and the
+      name goes dark-on-dark one way and white-on-light coming back.
+      Completing a habit in the app repairs it, so it lasts until the next
+      write, rollover or 30-minute update. [ux/widget.md](ux/widget.md) has
+      the mechanism and what it costs.
 - [ ] **200 % font scale.** Rows grow; a long name ellipsises inside the row
       rather than under the widget's edge; nothing clips vertically. The change
       lands at the next render, not on the spot — complete a habit in the app
