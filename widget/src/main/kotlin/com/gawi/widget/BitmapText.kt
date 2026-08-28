@@ -16,7 +16,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.Dp
 import androidx.core.graphics.createBitmap
 import androidx.glance.ColorFilter
-import androidx.glance.GlanceTheme
 import androidx.glance.Image
 import androidx.glance.ImageProvider
 import androidx.glance.LocalContext
@@ -37,24 +36,27 @@ import kotlin.math.ceil
  * checkbox list"; §5 has the trade.
  *
  * **Why white ink and a tint.** The bitmap carries shape only. Colour arrives
- * through `ColorFilter.tint(GlanceTheme.colors.onSurface)` on the `Image`, and
- * what that does depends on the host's API level: on 31+ Glance hands the
- * launcher a colour *resource* and the launcher resolves it in its own theme,
- * so the text follows dark mode exactly as the background does; on 29–30 Glance
- * resolves the provider in this process at translation time. That second case
- * is not new — Glance already translates the checkbox glyph the same way below
- * 31 — but the conclusion drawn from it here was, and it was wrong. This said
- * a night-mode change on those levels leaves the whole widget stale together;
- * **measured on API 29 and 30 on 2026-08-28, and the same to the decimal on
- * each, the background is not translated with them.** It follows the host
- * immediately while this tint keeps the last render's literal and the glyph,
- * for whatever reason, does not move either — so the toggle produces near-zero
- * contrast rather than a stale widget. The name measured 212.0 of contrast
- * against its ground before the toggle and 19.3 after, and 180.0 then 12.7
- * coming back the other way; the checkbox outline goes 240.7 to 48.0.
- * It repairs at the next render. The fix is pinned
- * literals, which belongs to the widget palette (docs/ux/visual-identity.md
- * §7.4); docs/ux/widget.md carries the cost.
+ * through `ColorFilter.tint` on the `Image`, from [WidgetPalette], and what that
+ * does depends on the host's API level: on 31+ Glance hands the launcher a
+ * day/night pair and the launcher picks, so the text follows dark mode as the
+ * background does; on 29–30 there is no resource path for an image tint at all,
+ * so Glance resolves the provider in this process at translation time.
+ *
+ * That asymmetry is what shipped a defect, and the numbers are kept because they
+ * are the argument for the palette. This paragraph used to claim a night-mode
+ * change below 31 left the whole widget stale together. **Measured on API 29 and
+ * 30 on 2026-08-28, the same to the decimal on each, it did not**: the
+ * background was resource-backed, so the host re-resolved it on its own while
+ * this tint and the checkbox glyph kept the last render's baked value. The name
+ * measured 212.0 of contrast against its ground before the toggle and 19.3
+ * after, and 180.0 then 12.7 coming back — the return trip the worse one, white
+ * ink left on a light ground. The checkbox outline went 240.7 to 48.0. A toggle
+ * left the widget illegible rather than stale, until the next render repaired it.
+ *
+ * Fixed by giving all three colours one kind of provider, so they are translated
+ * by the same path and cannot disagree ([WidgetPalette] has the mechanism).
+ * Below 31 a toggle now leaves the widget stale *together* and readable, which is
+ * what docs/running.md §4 expected of it before it was measured.
  *
  * **Why `setFontVariationSettings` and not `Typeface.create`.** `outfit.ttf` is
  * one variable file whose `fvar` default is `wght` 100, Thin — `Type.kt`
@@ -170,7 +172,7 @@ internal fun rememberOutfitPaint(): TextPaint {
 }
 
 /**
- * [text] drawn in Outfit, in `onSurface`, no wider than [maxWidth].
+ * [text] drawn in Outfit, in [WidgetPalette]'s ink, no wider than [maxWidth].
  *
  * The bitmap is remembered against everything that would change its pixels:
  * the text, the room it has, the paint, and the density and font scale in
@@ -206,7 +208,7 @@ internal fun OutfitText(
         provider = ImageProvider(bitmap),
         contentDescription = contentDescription,
         contentScale = ContentScale.Fit,
-        colorFilter = ColorFilter.tint(GlanceTheme.colors.onSurface),
+        colorFilter = ColorFilter.tint(WidgetPalette.onSurface),
     )
 }
 

@@ -13,6 +13,7 @@ import androidx.glance.LocalSize
 import androidx.glance.action.actionParametersOf
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.CheckBox
+import androidx.glance.appwidget.CheckboxDefaults
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.action.actionRunCallback
@@ -98,19 +99,22 @@ internal fun repositoryFrom(context: Context): HabitRepository =
  * above it, which is a value on the body and not a branch here. The choice is
  * tested; this is only the drawing.
  *
- * Every string here is an [OutfitText] — a bitmap in the app's face, tinted
- * `onSurface` — rather than a Glance `Text`, since 2026-08-25. [BitmapText] has
- * why a bitmap and what it costs; the colour history is the same as it was for
- * `Text`: the default is not theme-aware while the background is, which drew
- * near-black on `#303030` at 1.59:1 on a Nothing A059 on 2026-08-22, and
- * `WidgetTextColourDarkTest` and its light twin still measure the ratio in both
- * themes — reading the tint now, where they read the style before.
+ * Every string here is an [OutfitText] — a bitmap in the app's face, tinted from
+ * [WidgetPalette] — rather than a Glance `Text`, since 2026-08-25. [BitmapText]
+ * has why a bitmap and what it costs. The colour history is one bug twice: the
+ * default text colour was not theme-aware while the background was, which drew
+ * near-black on `#303030` at 1.59:1 on a Nothing A059 on 2026-08-22; then the
+ * *fix* was theme-aware in a way the background was not below API 31, which is
+ * the 2026-08-28 measurement in [BitmapText]. Both were a mismatch between two
+ * colours, which is why this surface now takes both of them from one place.
+ * `WidgetTextColourDarkTest` and its light twin measure every ratio drawn here,
+ * the glyph included.
  */
 @Composable
 internal fun WidgetBody(content: WidgetContent) {
     GlanceTheme {
         Column(
-            modifier = GlanceModifier.fillMaxSize().background(GlanceTheme.colors.widgetBackground).padding(WIDGET_PADDING.dp),
+            modifier = GlanceModifier.fillMaxSize().background(WidgetPalette.surface).padding(WIDGET_PADDING.dp),
         ) {
             val context = LocalContext.current
             when (val body = content.body(LocalSize.current)) {
@@ -159,8 +163,10 @@ private fun HabitRows(rows: List<WidgetRow>) {
                     checked = row.completed,
                     onCheckedChange = toggle,
                     modifier = GlanceModifier.semantics { contentDescription = row.name },
-                    // No `colors`: see the note below on why the glyph cannot take
-                    // the theme's, and what that leaves to check by hand.
+                    colors = CheckboxDefaults.colors(
+                        checkedColor = WidgetPalette.glyphChecked,
+                        uncheckedColor = WidgetPalette.glyphUnchecked,
+                    ),
                 )
                 OutfitText(text = row.name, maxWidth = nameWidth, paint = paint)
             }
@@ -173,50 +179,42 @@ private fun HabitRows(rows: List<WidgetRow>) {
 private fun contentWidth() = LocalSize.current.width - (2 * WIDGET_PADDING).dp
 
 /*
- * The checkbox glyph is deliberately NOT pinned, and this is the measurement
- * behind that. Review reasonably suggested it should be.
+ * The checkbox glyph is pinned, since 2026-08-28, and this records what changed
+ * — because for two phases this comment argued the opposite, and the argument
+ * was sound at the time rather than lazy.
  *
- * The glyph does have the same defect shape as the label had. Left unset it
- * takes Glance's `res/color/glance_default_check_box.xml`, which is
- * `?android:attr/colorControlActivated` when checked and
- * `?android:attr/colorControlNormal` otherwise: theme attributes, with no
- * `-night` variant. A widget's `RemoteViews` are inflated by the host, so both
- * resolve in the *launcher's* theme against a background this module chose.
+ * Left unset, the glyph takes Glance's `res/color/glance_default_check_box.xml`:
+ * `?android:attr/colorControlActivated` when checked and `colorControlNormal`
+ * otherwise, theme attributes with no `-night` variant. That was read as "the
+ * host resolves it in the launcher's theme", and on API 31 and up it is very
+ * nearly that. **Below 31 it is not**, and that is the correction the API 29/30
+ * pass forced: `CheckBoxTranslator` branches at 31, and under it the glyph is
+ * resolved in *our* process and baked into the `RemoteViews` as one colour. The
+ * selector never reaches the host, so its missing `-night` variant was never the
+ * cause. [WidgetPalette] has the full path-by-path account and the measurements;
+ * it is not repeated here, because two copies of it would drift.
  *
- * `CheckBox` does take `colors`, and the obvious fix does not work.
- * `CheckboxDefaults.colors(checkedColor = GlanceTheme.colors.primary, …)`
- * compiles and then **throws at runtime** — `IllegalArgumentException: Cannot
- * provide resource-backed ColorProviders to CheckBoxColors`, from
- * `CheckedUncheckedColorProvider.<init>`. Every `GlanceTheme` colour is
- * resource-backed, so no theme colour can be handed to a checkbox. The new
- * render test caught this on the first run; the decision-only tests could not
- * have. Glance 1.1.1 offers only `ColorProvider(Color)` and
- * `ColorProvider(@ColorRes Int)` publicly, and the second is the kind being
- * rejected — so pinning means two hardcoded literals per state, chosen to work
- * in both themes without a day/night provider to express them. That much has
- * not changed with the palette: a designed scheme is still Compose-side, and a
- * `RemoteViews` tree cannot reach it.
+ * The other half of the old argument was that no provider could be handed to a
+ * checkbox at all: `CheckboxDefaults.colors(checkedColor = GlanceTheme.colors.primary, …)`
+ * compiles and throws `IllegalArgumentException: Cannot provide resource-backed
+ * ColorProviders to CheckBoxColors` from `CheckedUncheckedColorProvider.<init>`.
+ * That was too strong a reading of a true observation. The guard rejects
+ * **resource-backed** providers only — every `GlanceTheme` colour is one, which
+ * is why every attempt hit it — and a day/night provider is not resource-backed.
+ * So the glyph can carry the palette, in both schemes, without inventing the
+ * flat literals this comment used to price.
  *
- * That used to be the end of it, because the project had no palette to pin the
- * glyph to. It has one now — `GawiTheme` carries designed light and dark
- * schemes — so the reason this is still unpinned has changed and is worth
- * restating rather than leaving as a stale deferral:
+ * One more claim here has been retired: that pinning still would not make the
+ * glyph assertable. `CheckBoxColors` does expose its provider only through an
+ * `internal` accessor returning a memberless public interface — but the object
+ * behind it has a public `getColor(context, isNightMode, isChecked)`, so one
+ * reflective hop reaches it, which is the bargain `WidgetRowTest` already makes
+ * for `CompoundButtonAction`. `WidgetTextColourTest` now measures both glyph
+ * states in both themes, and removing the `colors` argument above turns it red.
  *
- *  - `ColorProvider(Color)` literals are now available, and picking two is no
- *    longer inventing a palette. But `:widget` sees `:core:ui` for the font and
- *    Momo's geometry and nothing else (build.gradle.kts), so it still means *copying*
- *    two hexes into this module, and the widget's own palette is
- *    a separate piece of work with three more surfaces in it
- *    (docs/ux/visual-identity.md §7.4). Doing a third of it here would leave the
- *    widget half-styled and the duplication undocumented.
- *  - Pinning still would not make the glyph assertable, which was the stated
- *    reason to do it. `EmittableCheckBox.colors` is readable, but
- *    `CheckBoxColors` exposes only an `internal` accessor returning
- *    `CheckableColorProvider`, a public interface with no members.
- *
- * So the glyph keeps the host's tint for now and docs/running.md §4 keeps the
- * by-hand check. Revisit with the widget set, not with the palette:
- * docs/ux/visual-identity.md §7.4 is the scope and the price.
+ * What a JVM test still cannot see is which translation path a real host takes,
+ * which is where the defect lived, so docs/running.md §4 keeps its by-hand
+ * toggle on API 29 or 30.
  */
 
 private const val WIDGET_PADDING = 8
