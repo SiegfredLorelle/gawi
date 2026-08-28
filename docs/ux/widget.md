@@ -404,6 +404,20 @@ all either `exported="false"` or guarded by `DUMP` / `BIND_JOB_SERVICE`.
   - **On API 29–30 the text colour is resolved in our process**, at translation
     time, because Glance hands a launcher below 31 a literal rather than a
     colour resource. That is how it already handled the checkbox glyph and the
-    plain-text colour on those levels, so a night-mode change there leaves the
-    whole widget stale together until the next render — no new failure shape,
-    but a check docs/running.md now owes on a 29 or 30 emulator.
+    plain-text colour on those levels. This bullet used to reason from that to
+    "the whole widget goes stale together — no new failure shape", and
+    **measured on API 30 on 2026-08-28 that is wrong, in the direction that
+    matters**. The background is *not* translated with them: it follows the
+    host the instant night mode changes, while the name keeps the literal from
+    the last render and the glyph does not move either. (The name's cause is
+    this bullet's own translation; the glyph was only observed not to follow —
+    it could as easily be the missing `-night` variant on the attribute it
+    takes, and that was not isolated.) So a toggle does not leave a stale
+    widget,
+    it leaves an illegible one — the checkbox outline's contrast against its
+    own ground measured 240.7 before and 48.0 after, and the name is
+    dark-on-dark going one way and white-on-light coming back. The next render
+    repairs it, which on §4's latency is the next write, rollover or 30-minute
+    update. Pinning the two literals is the fix and it is the widget palette's
+    to make (docs/ux/visual-identity.md §7.4) — which this promotes from
+    styling to a legibility bug on the two lowest supported levels.

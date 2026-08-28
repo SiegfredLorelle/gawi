@@ -158,8 +158,11 @@ Two things it does not do. Colour is not baked in: on API 31+ the tint is a
 colour *resource* the launcher resolves in its own theme, exactly as the
 background is; on API 29–30 Glance resolves it in our process at translation,
 which is how it already translates the checkbox glyph and plain text colour
-below 31, so a night-mode change there leaves the whole widget stale together
-until the next render rather than the text alone. And the glyphs of a script
+below 31. What that costs there is **not** the "whole widget stale together"
+this paragraph used to claim — measured on API 30 on 2026-08-28, the
+background follows the host on its own and leaves the name and the glyph
+behind, which is a legibility failure rather than a stale one
+([widget.md](widget.md), §7.4). And the glyphs of a script
 outside Outfit's `cmap` come from the device's fallback fonts, the same as the
 app, and take the *layout's* height rather than Outfit's so an emoji is not
 clipped. The edge this needed, `widget → core:ui`, carries `R.font.outfit` and
