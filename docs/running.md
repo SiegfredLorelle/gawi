@@ -880,6 +880,22 @@ Decisions and reasoning are in [docs/ux/widget.md](ux/widget.md).
 provider, so its own picker entry, and the first one here carrying API 31
 attributes.
 
+**What `StreakWidgetHostTest` already covers, so these checks need not.** Run on
+emulators at API 30 and API 37 on 2026-08-29: the provider binds to a real host,
+Glance's session renders it, the rows body is what renders, its `LazyColumn`
+translates to a `RemoteViews` collection with the "as of" footer pinned outside
+it, and on API 31+ `targetCellWidth/Height`, `description` and `previewLayout`
+resolve from `res/xml-v31` (3×2, and a non-empty description). Below 31 those
+three fields **do not exist** on `AppWidgetProviderInfo` — reading one throws
+`NoSuchFieldError`, which is the sharpest possible statement of why the provider
+xml is split.
+
+Two things that test cannot reach, so they stay below. The **row content**: a
+`RemoteViews` collection's item views are materialised by the host when it lays
+out, and an unattached `AppWidgetHostView` never lays out — the `ListView` comes
+back present and childless. And anything about a **launcher's own cells, theme or
+process**, which is the standard this block already holds.
+
 - [ ] **It is offered, and the picker says what it is.** Long-press → *Widgets* →
       **Gawi**: two entries, *Today* and *Streaks*. On API 31+ the *Streaks*
       entry shows a description under the name and a preview of the rows; on 29
