@@ -38,6 +38,19 @@ class HeaderCopyTest {
     @Config(fontScale = 2f)
     fun `every mood line still fits at a doubled font scale, at the width the gate then needs`() = assertFits()
 
+    /**
+     * The gate reserves at the caption's scale, not the numeral's: small text
+     * grows at least as much as large under the platform's curve, so probing at
+     * 16sp would under-reserve for 12sp ink. Robolectric's curve may be linear,
+     * in which case both are 2.0 and the direction still holds.
+     */
+    @Test
+    @Config(fontScale = 2f)
+    fun `the caption scale is never below the body scale`() {
+        val context = RuntimeEnvironment.getApplication()
+        assertTrue(BitmapText.textScale(context, BitmapText.CAPTION_SIZE_SP) >= BitmapText.textScale(context))
+    }
+
     /** The gate divides by the text scale, so at 2.0 a 220dp widget is not large and a 440dp one is. */
     @Test
     fun `the width gate scales with the text`() {
@@ -54,7 +67,7 @@ class HeaderCopyTest {
     private fun assertFits() {
         val context = RuntimeEnvironment.getApplication()
         val metrics = context.resources.displayMetrics
-        val scale = BitmapText.textScale(context)
+        val scale = BitmapText.textScale(context, BitmapText.CAPTION_SIZE_SP)
         // The narrowest widget the gate admits at this scale, and the copy room it leaves.
         val copyDp = LARGE_MIN_WIDTH * scale - 2 * WIDGET_PADDING - MOMO_PILL_WIDTH - HEADER_GAP
         val copyPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, copyDp, metrics).toInt()

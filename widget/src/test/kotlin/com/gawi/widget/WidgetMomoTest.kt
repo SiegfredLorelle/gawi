@@ -188,9 +188,9 @@ private fun GlanceNodeAssertion<MappedNode, *>.mask(): Bitmap {
     return checkNotNull(found)
 }
 
-/** Whether each of [n] equal segments across the mask has any ink in its middle column. */
+/** Whether each of [n] equal segments across the mask has any ink at its leading column, `i · width / n`. */
 private fun Bitmap.segmentsInked(n: Int): List<Boolean> = (0 until n).map { i ->
-    val x = ((i + 0.5f) * width / n).toInt().coerceIn(0, width - 1)
+    val x = (i * width / n.toFloat()).toInt().coerceIn(0, width - 1)
     (0 until height).any { y -> Color.alpha(getPixel(x, y)) > 0 }
 }
 

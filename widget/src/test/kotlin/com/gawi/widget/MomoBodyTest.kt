@@ -15,10 +15,12 @@ import com.gawi.widget.testsupport.todayHabit
 import com.gawi.widget.testsupport.todaySnapshot
 import com.gawi.widget.testsupport.untintedImage
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
+import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import kotlin.time.Duration.Companion.seconds
 
@@ -86,19 +88,31 @@ class MomoBodyTest {
 
     /**
      * The face gives way to the caption, never the other way round: full size
-     * where the tile has room, shrinking as the text scale eats it, floored so
-     * a face is always a face. Review found the unbounded 72 overflowed a 110dp
-     * tile from about 1.3× on.
+     * where the tile has room, shrinking as the text scale eats it, and gone
+     * when the two-line no-habits copy leaves less than a face. Review found
+     * the unbounded 72 overflowed a 110dp tile from about 1.3× on, and the PR
+     * found the reservation counting one line where up to three were drawn.
      */
     @Test
     fun `the face is full size on the default tile and gives way to a scaled caption`() {
         val tile = DpSize(110.dp, 110.dp)
-        assertEquals(MomoBitmap.HEIGHT_DP, momoFaceHeight(tile, textScale = 1f))
+        assertEquals(MomoBitmap.HEIGHT_DP, momoFaceHeight(tile, textScale = 1f, captionLines = 1))
         // 110 - 16 - 3 - 15*2 = 61: less than 72, more than the floor.
-        assertEquals(61f, momoFaceHeight(tile, textScale = 2f))
-        assertEquals(MIN_FACE_DP, momoFaceHeight(DpSize(110.dp, 60.dp), textScale = 2f))
+        assertEquals(61f, momoFaceHeight(tile, textScale = 2f, captionLines = 1))
+        // Two lines at 2x leave 31dp, under the floor: no face rather than a sliver.
+        assertNull(momoFaceHeight(tile, textScale = 2f, captionLines = 2))
         // A taller tile never grows her past the constant.
-        assertEquals(MomoBitmap.HEIGHT_DP, momoFaceHeight(DpSize(300.dp, 300.dp), textScale = 1f))
+        assertEquals(MomoBitmap.HEIGHT_DP, momoFaceHeight(DpSize(300.dp, 300.dp), textScale = 1f, captionLines = 1))
+    }
+
+    /** The empty tile at 200 %: the copy stays whole and read, and the face steps aside. */
+    @Test
+    @Config(fontScale = 2f)
+    fun `no habits at a doubled font scale draws the copy and no face`() = runGlanceAppWidgetUnitTest(RENDER_TIMEOUT) {
+        render(WidgetContent.Ready(todaySnapshot().toWidgetState()))
+
+        onAllNodes(untintedImage()).assertCountEquals(0)
+        onNode(describedText()).assertHasContentDescriptionEqualTo(app.getString(R.string.widget_no_habits))
     }
 
     private fun GlanceAppWidgetUnitTest.render(content: WidgetContent) {
