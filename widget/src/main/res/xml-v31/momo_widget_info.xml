@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    API 31 and up. A full replacement for res/xml/momo_widget_info.xml, not an
+    overlay: every attribute the base file sets is repeated here, and a change
+    to one file is a change to both.
+
+    targetCellWidth/Height place it two by two on a fresh placement;
+    description is the picker's line under the name; previewLayout is the
+    picker's still approximation, on the widget's own ground with a sample word
+    - a Glance tree cannot be previewed until a session has composed one.
+-->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/widget_momo_description"
+    android:initialLayout="@layout/glance_default_loading_layout"
+    android:minHeight="110dp"
+    android:minWidth="110dp"
+    android:previewLayout="@layout/momo_widget_preview"
+    android:resizeMode="horizontal|vertical"
+    android:targetCellHeight="2"
+    android:targetCellWidth="2"
+    android:updatePeriodMillis="1800000"
+    android:widgetCategory="home_screen" />

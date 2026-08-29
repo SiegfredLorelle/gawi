@@ -125,4 +125,4 @@ internal suspend fun refreshEach(updates: List<suspend () -> Unit>, onFailure: (
  * than holding it ([ToggleHabitAction]). Exposed to tests so the list cannot
  * silently fall behind the manifest.
  */
-internal fun refreshedWidgets(): List<GlanceAppWidget> = listOf(TodayWidget(), StreakWidget())
+internal fun refreshedWidgets(): List<GlanceAppWidget> = listOf(TodayWidget(), StreakWidget(), MomoWidget())
