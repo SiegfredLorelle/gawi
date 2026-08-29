@@ -230,7 +230,11 @@ desaturation, done arithmetically in `drawMomo` so a test can measure it.
   is the one exception on the text half: no mood line changes when a streak
   reaches seven, so the panel's line *becomes* the milestone line for the
   length of the run and then returns — that change is the announcement, still
-  the only one. It happens with animations off too, for the same two seconds,
+  the only one. Since 2026-08-29 the panel is a polite live region, so the
+  change is read wherever TalkBack's focus is; without that it was read only
+  when the panel itself held focus, which right after ticking a row it never
+  does. The same region reads the mood line and the remaining count when they
+  change, one short sentence after each tick. It happens with animations off too, for the same two seconds,
   because a line is text and the gate governs what moves; the row's badge
   takes its pill for the same window, so the row and the line agree.
 

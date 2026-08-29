@@ -1702,9 +1702,12 @@ the one sequence that only plays while the frame loop runs.
       Background the app and return, and rotate: nothing plays (momo.md §6).
       A weekly habit reaching its fourth week does the same with "4 weeks" and
       a gold pill.
-- [ ] **TalkBack on a milestone.** With TalkBack on, tick the six-day habit:
-      the panel's node reads the milestone line once as it changes and the mood
-      line once more when it returns; the badge announces nothing extra.
+- [ ] **TalkBack on a milestone.** With TalkBack on and focus on the row,
+      tick the six-day habit: after "checked", the panel's live region reads
+      the milestone line once, and the mood line once more when it returns two
+      seconds later; the badge announces nothing extra. Tick and untick any
+      other row: each is followed by one sentence — the mood line and the
+      remaining count — and nothing else.
 - [ ] **Animator duration scale off** (Developer options → *Animator duration
       scale* → *Animation off*), then reopen Today. Momo must be still, at the
       resting frame, the weeds upright and the bubbles frozen, and the mood
