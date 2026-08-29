@@ -83,8 +83,8 @@ internal class GlanceProjectionListener @Inject constructor(@ApplicationContext 
  *
  * A function rather than a `val`, and fresh instances rather than shared ones,
  * because a `GlanceAppWidget` reaches Glance's session machinery from its own
- * constructor — the same reason `updateAll` is called off a new object at each of
- * the three existing call sites. Exposed to tests so the list cannot silently
- * fall behind the manifest.
+ * constructor — the same reason the tap path constructs one for `update` rather
+ * than holding it ([ToggleHabitAction]). Exposed to tests so the list cannot
+ * silently fall behind the manifest.
  */
 internal fun refreshedWidgets(): List<GlanceAppWidget> = listOf(TodayWidget(), StreakWidget())

@@ -73,6 +73,44 @@ class StreakLabelTest {
         assertEquals("was 9", StreakUi.Broken(previous = 9, weekly = false).label(context, StreakLayout.Full))
     }
 
+    /**
+     * A break keeps its unit, because "was 12" means twelve days or twelve weeks
+     * and those are not the same loss. `StreakBadge` and `HabitDetailScreen` both
+     * branch here; a widget that did not would contradict them and the invariant
+     * this whole type exists for. Found by review, and it had been drawing both
+     * the same.
+     */
+    @Test
+    fun `a broken weekly run does not read like a broken daily one`() {
+        assertNotEquals(
+            StreakUi.Broken(previous = 12, weekly = false).label(context, StreakLayout.Full),
+            StreakUi.Broken(previous = 12, weekly = true).label(context, StreakLayout.Full),
+        )
+    }
+
+    /** Zero is zero in either unit, so the compact form has nothing to disambiguate. */
+    @Test
+    fun `the compact break is the same in both units, deliberately`() {
+        assertEquals(
+            StreakUi.Broken(previous = 12, weekly = false).label(context, StreakLayout.Compact),
+            StreakUi.Broken(previous = 12, weekly = true).label(context, StreakLayout.Compact),
+        )
+    }
+
+    /** "was 12w" reads out as "was 12 w", so the spoken form spells the unit. */
+    @Test
+    fun `a spoken break names its unit in words`() {
+        assertEquals("was 12 days", StreakUi.Broken(previous = 12, weekly = false).spokenLabel(context))
+        assertEquals("was 12 weeks", StreakUi.Broken(previous = 12, weekly = true).spokenLabel(context))
+    }
+
+    /** And it is a plural, because "was 1 days" is what lint caught here. */
+    @Test
+    fun `a spoken break of one is singular`() {
+        assertEquals("was 1 day", StreakUi.Broken(previous = 1, weekly = false).spokenLabel(context))
+        assertEquals("was 1 week", StreakUi.Broken(previous = 1, weekly = true).spokenLabel(context))
+    }
+
     /** A zero is what a break reads. Never having started is not a break. */
     @Test
     fun `no history draws a dash, not a zero`() {

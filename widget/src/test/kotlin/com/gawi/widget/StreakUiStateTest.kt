@@ -126,17 +126,41 @@ class StreakUiStateTest {
         assertEquals(StreakLayout.Compact, layoutAt(180.dp, 400.dp))
     }
 
+    /**
+     * The room is dp and the text is sp, so a 200% scale halves the room measured
+     * in text. A widget that would take the unit word at scale 1 must not try it
+     * at scale 2 — that is the `3 we…` the compact form exists to avoid, arriving
+     * by the one setting the gate used to ignore.
+     */
+    @Test
+    fun `a large widget drops to compact at a doubled font scale`() {
+        assertEquals(StreakLayout.Full, layoutAt(250.dp, 200.dp, fontScale = 1f))
+        assertEquals(StreakLayout.Compact, layoutAt(250.dp, 200.dp, fontScale = 2f))
+    }
+
+    /** Room enough for the word even at 200%, so the gate is scaling and not just refusing. */
+    @Test
+    fun `a very large widget still takes the full form at a doubled font scale`() {
+        assertEquals(StreakLayout.Full, layoutAt(460.dp, 320.dp, fontScale = 2f))
+    }
+
+    /** Shrinking the text does not make the widget's cells wider in any way a user asked for. */
+    @Test
+    fun `a font scale below one buys no extra room`() {
+        assertEquals(StreakLayout.Compact, layoutAt(180.dp, 110.dp, fontScale = 0.5f))
+    }
+
     // -------- the non-row bodies --------
 
     @Test
     fun `nothing is drawn before the first read arrives`() {
-        assertSame(StreakBodyContent.Blank, StreakContent.Loading.body(DpSize(250.dp, 200.dp)))
+        assertSame(StreakBodyContent.Blank, StreakContent.Loading.body(DpSize(250.dp, 200.dp), SCALE_1))
     }
 
     @Test
     fun `a failed read and an empty log say different things`() {
-        val unavailable = StreakContent.Unavailable.body(DpSize(250.dp, 200.dp))
-        val empty = StreakContent.Ready(todaySnapshot().toStreakState()).body(DpSize(250.dp, 200.dp))
+        val unavailable = StreakContent.Unavailable.body(DpSize(250.dp, 200.dp), SCALE_1)
+        val empty = StreakContent.Ready(todaySnapshot().toStreakState()).body(DpSize(250.dp, 200.dp), SCALE_1)
 
         assertTrue(unavailable is StreakBodyContent.Copy)
         assertTrue(empty is StreakBodyContent.Copy)
@@ -150,18 +174,27 @@ class StreakUiStateTest {
     @Test
     fun `the copy states carry no date at any size`() {
         for (size in listOf(DpSize(180.dp, 110.dp), DpSize(250.dp, 200.dp))) {
-            assertTrue(StreakContent.Unavailable.body(size) is StreakBodyContent.Copy)
-            assertTrue(StreakContent.Ready(todaySnapshot().toStreakState()).body(size) is StreakBodyContent.Copy)
+            assertTrue(StreakContent.Unavailable.body(size, SCALE_1) is StreakBodyContent.Copy)
+            assertTrue(StreakContent.Ready(todaySnapshot().toStreakState()).body(size, SCALE_1) is StreakBodyContent.Copy)
         }
     }
 
-    private fun layoutAt(width: androidx.compose.ui.unit.Dp, height: androidx.compose.ui.unit.Dp): StreakLayout {
+    private fun layoutAt(
+        width: androidx.compose.ui.unit.Dp,
+        height: androidx.compose.ui.unit.Dp,
+        fontScale: Float = SCALE_1,
+    ): StreakLayout {
         val body = StreakContent.Ready(todaySnapshot(habits = listOf(todayHabit())).toStreakState())
-            .body(DpSize(width, height))
+            .body(DpSize(width, height), fontScale)
         return (body as StreakBodyContent.Rows).layout
     }
 
     private fun run(count: Int) = StreakSnapshot(current = count, previous = 0, brokenOn = null)
+
+    private companion object {
+        /** The device default, spelled out where a test is not about font scaling. */
+        const val SCALE_1 = 1f
+    }
 
     private fun broken(previous: Int) = StreakSnapshot(current = 0, previous = previous, brokenOn = FIXED_DATE.minusDays(2))
 }

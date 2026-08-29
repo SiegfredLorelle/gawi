@@ -77,8 +77,8 @@ class ProjectionRefreshTest {
 
     /**
      * Fresh instances, not shared ones. A `GlanceAppWidget` reaches Glance's
-     * session machinery from its own constructor, which is why all three existing
-     * call sites construct one rather than holding it.
+     * session machinery from its own constructor, which is why the tap path
+     * constructs one for `update` rather than holding it.
      */
     @Test
     fun `each call hands back new instances`() {

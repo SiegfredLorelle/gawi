@@ -7,10 +7,16 @@
     the widget is placed - which is why previewLayout has to be hand-built. Two
     consequences worth knowing before comparing it against the real thing:
 
-      The type is the system face, not Outfit. The widget rasterises Outfit to
-      bitmaps because RemoteViews drops a bundled font (BitmapText); a preview
-      layout is inflated by the picker and has no such escape. The picker is the
-      one surface in this app that is deliberately off-brand in its type.
+      The type is the system face, not Outfit, and that is the ONLY intended
+      difference. The widget rasterises Outfit to bitmaps because RemoteViews
+      drops a bundled font (BitmapText); a preview layout is inflated by the
+      picker and has no such escape. The picker is the one surface in this app
+      that is deliberately off-brand in its type.
+
+      Everything else is matched deliberately, so a reader comparing the two has
+      only the face to discount: 16sp rows and a 12sp "as of" line, numerals bold
+      against names at regular weight (the widget draws Outfit wght 600 against
+      400), and the role colours below.
 
       The numbers are sample values. They are the canvas's own row set, so the
       preview shows the compact layout the three-by-two default placement gets.

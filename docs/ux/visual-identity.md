@@ -1037,11 +1037,19 @@ widget. Before any of it is built, the price:
   `MOMO_MIN_HEIGHT`. What is genuinely outstanding is the other half: the
   attributes that make a widget resize properly — `targetCellWidth/Height`,
   `previewLayout`, `description` — still need a **`res/xml-v31` variant**. They
-  are absent on purpose: minSdk is 29 and `warningsAsErrors` is on, so lint's
-  `UnusedAttribute` is a failed build. One cost this bullet never priced:
-  `previewLayout` needs a real layout resource and the module ships none — its
-  `initialLayout` is Glance's own — so it is a static XML approximation of the
-  widget, or a `previewImage` drawable, either way a new asset.
+  were absent on purpose: minSdk is 29 and `warningsAsErrors` is on, so lint's
+  `UnusedAttribute` is a failed build. **Half closed 2026-08-29:** the streak
+  widget carries all three in a `res/xml-v31` variant; the Today widget still
+  carries none, because nothing has asked it to. What building the variant
+  taught, and this bullet had guessed at: the `-v31` file **replaces** the base
+  one rather than merging with it, so every attribute is repeated and the two are
+  kept in step by hand. And one cost the bullet never priced at all —
+  `previewLayout` needs a real layout resource, which the module did not have
+  (its `initialLayout` is Glance's own). It now ships one, in the system face
+  because a picker inflates real XML with no bitmap escape, and with the only
+  hand-copied palette left in the module: XML cannot read Kotlin, so
+  `res/values/colors.xml` reproduces four roles and `StreakPreviewColorsTest`
+  pins them the way `WindowBackgroundTest` pins `:app`'s window background.
 - **Momo on a widget does not move.** `RemoteViews` cannot run the animation, so
   ~~it is a static vector drawable per mood: four assets~~ — priced before the
   character was code. Built 2026-08-25 as **zero assets**: the widget
