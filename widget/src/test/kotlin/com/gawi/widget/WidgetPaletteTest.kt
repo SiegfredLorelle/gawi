@@ -3,6 +3,7 @@ package com.gawi.widget
 import android.content.Context
 import android.content.res.Configuration
 import androidx.compose.ui.graphics.luminance
+import androidx.glance.unit.ColorProvider
 import com.gawi.core.ui.theme.GawiRole
 import com.gawi.core.ui.theme.gawiRole
 import com.gawi.widget.testsupport.MIN_CONTRAST
@@ -61,55 +62,48 @@ import org.robolectric.RuntimeEnvironment
 @RunWith(RobolectricTestRunner::class)
 class WidgetPaletteTest {
 
-    /** Every colour the widget draws, with the `:core:ui` role it is derived from. */
-    private val roles = listOf(
-        Triple("surface", WidgetPalette.surface, GawiRole.Surface),
-        Triple("onSurface", WidgetPalette.onSurface, GawiRole.OnSurface),
-        Triple("glyphChecked", WidgetPalette.glyphChecked, GawiRole.Primary),
-        Triple("glyphUnchecked", WidgetPalette.glyphUnchecked, GawiRole.Outline),
-        Triple("caption", WidgetPalette.caption, GawiRole.OnSurfaceVariant),
-        Triple("streakDays", WidgetPalette.streakDays, GawiRole.Primary),
-        Triple("streakWeeks", WidgetPalette.streakWeeks, GawiRole.Tertiary),
-        Triple("streakBroken", WidgetPalette.streakBroken, GawiRole.Outline),
-        Triple("momoGround", WidgetPalette.momoGround, GawiRole.PrimaryContainer),
-        Triple("momoCaption", WidgetPalette.momoCaption, GawiRole.OnPrimaryContainer),
-        Triple("bandWoven", WidgetPalette.bandWoven, GawiRole.Primary),
-        Triple("bandOutstanding", WidgetPalette.bandOutstanding, GawiRole.OutlineVariant),
+    /**
+     * Every colour the widget draws: the `:core:ui` role it is derived from, and
+     * the ground it is drawn on — `null` for the grounds and fills themselves.
+     * One table, so each loop below derives its set from it rather than naming
+     * roles: the next ink drawn on a ground other than the surface is measured
+     * against that ground by adding one row here, and cannot be measured against
+     * the wrong one or fall out of the polarity check. Review found the first
+     * cut special-casing the Momo widget's caption by name in three places.
+     */
+    private class Entry(val name: String, val provider: ColorProvider, val role: GawiRole, val ground: ColorProvider?)
+
+    private val entries = listOf(
+        Entry("surface", WidgetPalette.surface, GawiRole.Surface, ground = null),
+        Entry("onSurface", WidgetPalette.onSurface, GawiRole.OnSurface, WidgetPalette.surface),
+        Entry("glyphChecked", WidgetPalette.glyphChecked, GawiRole.Primary, WidgetPalette.surface),
+        Entry("glyphUnchecked", WidgetPalette.glyphUnchecked, GawiRole.Outline, WidgetPalette.surface),
+        Entry("caption", WidgetPalette.caption, GawiRole.OnSurfaceVariant, WidgetPalette.surface),
+        Entry("streakDays", WidgetPalette.streakDays, GawiRole.Primary, WidgetPalette.surface),
+        Entry("streakWeeks", WidgetPalette.streakWeeks, GawiRole.Tertiary, WidgetPalette.surface),
+        Entry("streakBroken", WidgetPalette.streakBroken, GawiRole.Outline, WidgetPalette.surface),
+        // Grown 2026-08-29 with the Momo widget and the large Today body: a second
+        // ground, the one ink drawn on it, and the band's two fills.
+        Entry("momoGround", WidgetPalette.momoGround, GawiRole.PrimaryContainer, ground = null),
+        Entry("momoCaption", WidgetPalette.momoCaption, GawiRole.OnPrimaryContainer, WidgetPalette.momoGround),
+        Entry("bandWoven", WidgetPalette.bandWoven, GawiRole.Primary, ground = null),
+        Entry("bandOutstanding", WidgetPalette.bandOutstanding, GawiRole.OutlineVariant, ground = null),
     )
 
-    /**
-     * The grounds and fills — nothing is drawn *in* them, so they owe no text
-     * contrast and they darken at night rather than lightening. Grown 2026-08-29
-     * with the two surfaces that finished visual-identity §7.4's set: Momo's
-     * ground, and the band's outstanding fill.
-     */
-    private val grounds = setOf(GawiRole.Surface, GawiRole.PrimaryContainer, GawiRole.OutlineVariant)
+    /** Everything drawn *on* a ground. */
+    private val inks = entries.filter { it.ground != null }
 
-    /** Everything drawn *on* [WidgetPalette.surface] rather than being it or another ground. */
-    private val ink = roles.filterNot { it.third in grounds || it.third == GawiRole.OnPrimaryContainer }.map { it.first to it.second }
+    /** The grounds and fills — nothing is drawn in them, so they owe no text contrast and darken at night. */
+    private val grounds = entries.filter { it.ground == null }
 
     @Test
-    fun `every ink is legible on the surface it is drawn on, in both schemes`() {
+    fun `every ink is legible on the ground it is drawn on, in both schemes`() {
         for (night in listOf(false, true)) {
             val context = context(night)
-            val ground = WidgetPalette.surface.getColor(context)
-            for ((name, provider) in ink) {
-                val ratio = contrastRatio(provider.getColor(context), ground)
-                assertTrue(
-                    "$name is $ratio:1 on the surface with night=$night, below $MIN_CONTRAST",
-                    ratio >= MIN_CONTRAST,
-                )
+            for (ink in inks) {
+                val ratio = contrastRatio(ink.provider.getColor(context), ink.ground!!.getColor(context))
+                assertTrue("${ink.name} is $ratio:1 on its ground with night=$night, below $MIN_CONTRAST", ratio >= MIN_CONTRAST)
             }
-        }
-    }
-
-    /** The Momo widget's caption is drawn on [WidgetPalette.momoGround], not on the surface, so it is measured there. */
-    @Test
-    fun `the caption is legible on Momo's ground, in both schemes`() {
-        for (night in listOf(false, true)) {
-            val context = context(night)
-            val ratio = contrastRatio(WidgetPalette.momoCaption.getColor(context), WidgetPalette.momoGround.getColor(context))
-            assertTrue("momoCaption is $ratio:1 on momoGround with night=$night, below $MIN_CONTRAST", ratio >= MIN_CONTRAST)
         }
     }
 
@@ -136,10 +130,10 @@ class WidgetPaletteTest {
      */
     @Test
     fun `every colour answers differently in the two schemes`() {
-        for ((name, provider) in roles.map { it.first to it.second }) {
+        for (entry in entries) {
             assertTrue(
-                "$name resolves the same in both schemes, so it is not a scheme at all",
-                provider.getColor(context(night = false)) != provider.getColor(context(night = true)),
+                "${entry.name} resolves the same in both schemes, so it is not a scheme at all",
+                entry.provider.getColor(context(night = false)) != entry.provider.getColor(context(night = true)),
             )
         }
     }
@@ -147,28 +141,23 @@ class WidgetPaletteTest {
     /**
      * Polarity, which the two tests above would both pass with the day and night
      * values swapped: contrast survives a swap and so does answering differently,
-     * but a widget that turns *light* when the phone turns dark does not.
+     * but a widget that turns *light* when the phone turns dark does not. Grounds
+     * darken; inks lighten. `bandWoven` is a fill that is also `primary`, so it
+     * lightens like the glyph it shares a role with — listed as a ground for the
+     * contrast loop, excepted here by role rather than by name.
      */
     @Test
-    fun `the night scheme darkens the ground and lightens the ink`() {
-        val day = WidgetPalette.surface.getColor(context(night = false))
-        val night = WidgetPalette.surface.getColor(context(night = true))
-        assertTrue("the night surface ($night) is not darker than the day one ($day)", night.luminance() < day.luminance())
-
-        // The other grounds turn the same way the surface does.
-        for ((name, provider, role) in roles.filter { it.third in grounds }) {
+    fun `the night scheme darkens the grounds and lightens the inks`() {
+        for (entry in grounds.filter { it.role != GawiRole.Primary }) {
             assertTrue(
-                "$name does not darken for the night scheme, so the pair is swapped",
-                provider.getColor(context(night = true)).luminance() < provider.getColor(context(night = false)).luminance(),
+                "${entry.name} does not darken for the night scheme, so the pair is swapped",
+                entry.provider.getColor(context(night = true)).luminance() < entry.provider.getColor(context(night = false)).luminance(),
             )
         }
-
-        for ((name, provider) in ink + ("momoCaption" to WidgetPalette.momoCaption)) {
-            val dayInk = provider.getColor(context(night = false))
-            val nightInk = provider.getColor(context(night = true))
+        for (entry in inks + grounds.filter { it.role == GawiRole.Primary }) {
             assertTrue(
-                "$name does not lighten for the night scheme, so the pair is swapped",
-                nightInk.luminance() > dayInk.luminance(),
+                "${entry.name} does not lighten for the night scheme, so the pair is swapped",
+                entry.provider.getColor(context(night = true)).luminance() > entry.provider.getColor(context(night = false)).luminance(),
             )
         }
     }
@@ -186,12 +175,12 @@ class WidgetPaletteTest {
      */
     @Test
     fun `each colour is the core-ui role it claims, both schemes`() {
-        for ((name, provider, role) in roles) {
+        for (entry in entries) {
             for (night in listOf(false, true)) {
                 assertEquals(
-                    "$name is not gawiRole($role) with night=$night",
-                    gawiRole(role, darkTheme = night),
-                    provider.getColor(context(night)),
+                    "${entry.name} is not gawiRole(${entry.role}) with night=$night",
+                    gawiRole(entry.role, darkTheme = night),
+                    entry.provider.getColor(context(night)),
                 )
             }
         }

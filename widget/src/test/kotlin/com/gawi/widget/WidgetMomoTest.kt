@@ -1,23 +1,29 @@
 package com.gawi.widget
 
+import android.graphics.Bitmap
+import android.graphics.Color
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import androidx.glance.BackgroundModifier
-import androidx.glance.Emittable
-import androidx.glance.EmittableImage
 import androidx.glance.appwidget.EmittableCheckBox
 import androidx.glance.appwidget.testing.unit.GlanceAppWidgetUnitTest
 import androidx.glance.appwidget.testing.unit.runGlanceAppWidgetUnitTest
-import androidx.glance.semantics.SemanticsModifier
+import androidx.glance.testing.GlanceNodeAssertion
+import androidx.glance.testing.GlanceNodeAssertionCollection
 import androidx.glance.testing.GlanceNodeMatcher
 import androidx.glance.testing.unit.MappedNode
 import androidx.glance.testing.unit.assertHasContentDescriptionEqualTo
-import androidx.glance.unit.ColorProvider
 import com.gawi.widget.testsupport.anyText
+import com.gawi.widget.testsupport.bitmap
+import com.gawi.widget.testsupport.describedText
 import com.gawi.widget.testsupport.drawnOn
 import com.gawi.widget.testsupport.habitId
+import com.gawi.widget.testsupport.isDescribed
+import com.gawi.widget.testsupport.silentUntintedImage
+import com.gawi.widget.testsupport.tintedWith
 import com.gawi.widget.testsupport.todayHabit
 import com.gawi.widget.testsupport.todaySnapshot
+import com.gawi.widget.testsupport.untintedImage
+import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -101,10 +107,13 @@ class WidgetMomoTest {
         }
 
     /**
-     * The band is the rows' flags, one segment each, in the rows' order — woven
-     * segments on [WidgetPalette.bandWoven] and outstanding ones on
-     * [WidgetPalette.bandOutstanding], matched by provider identity so a swap of
-     * the two turns this red. Nothing in the band is described.
+     * The band is the rows' flags, one segment each, in the rows' order: two
+     * masks in the tree, the woven one tinted [WidgetPalette.bandWoven] and the
+     * outstanding one [WidgetPalette.bandOutstanding], matched by identity so a
+     * swap of the two turns this red — and each mask's ink lands where its
+     * habits' segments are, read off the pixels, so the tint cannot be on the
+     * wrong mask either. Nothing in the band is described. `BandBitmapTest` has
+     * the geometry; this is the wiring.
      */
     @Test
     fun `the band has one segment per habit, in order, coloured by whether today is done`() = runGlanceAppWidgetUnitTest(RENDER_TIMEOUT) {
@@ -117,15 +126,32 @@ class WidgetMomoTest {
         )
         render(WidgetContent.Ready(snapshot.toWidgetState()), DpSize(250.dp, 220.dp))
 
-        onAllNodes(drawnOn(WidgetPalette.bandWoven)).assertCountEquals(2)
-        onAllNodes(drawnOn(WidgetPalette.bandOutstanding)).assertCountEquals(1)
-        // Document order is the rows' order; the collection walks the tree depth-first.
-        val band = onAllNodes(segment())
-        band.assertCountEquals(3)
-        band[0].assert(drawnOn(WidgetPalette.bandWoven))
-        band[1].assert(drawnOn(WidgetPalette.bandOutstanding))
-        band[2].assert(drawnOn(WidgetPalette.bandWoven))
-        onAllNodes(describedSegment()).assertCountEquals(0)
+        onAllNodes(tintedWith(WidgetPalette.bandWoven)).assertCountEquals(1)
+        onAllNodes(tintedWith(WidgetPalette.bandOutstanding)).assertCountEquals(1)
+        val woven = onNode(tintedWith(WidgetPalette.bandWoven)).mask()
+        val outstanding = onNode(tintedWith(WidgetPalette.bandOutstanding)).mask()
+        assertEquals(listOf(true, false, true), woven.segmentsInked(3))
+        assertEquals(listOf(false, true, false), outstanding.segmentsInked(3))
+        assertEquals(
+            0,
+            onAllNodes(tintedWith(WidgetPalette.bandWoven)).fetchDescribed() +
+                onAllNodes(tintedWith(WidgetPalette.bandOutstanding)).fetchDescribed(),
+        )
+    }
+
+    /**
+     * Six habits is eleven children as boxes, one over Glance's cap, and the
+     * first cut lost the sixth segment there. As masks the count is two
+     * whatever the day holds, and every habit is inked.
+     */
+    @Test
+    fun `six habits are six segments, not five`() = runGlanceAppWidgetUnitTest(RENDER_TIMEOUT) {
+        val snapshot = todaySnapshot(habits = (1..6).map { todayHabit(id = habitId(it), name = "h$it", completedToday = true) })
+        render(WidgetContent.Ready(snapshot.toWidgetState()), DpSize(250.dp, 220.dp))
+
+        onAllNodes(tintedWith(WidgetPalette.bandWoven)).assertCountEquals(1)
+        onAllNodes(tintedWith(WidgetPalette.bandOutstanding)).assertCountEquals(0)
+        assertEquals(List(6) { true }, onNode(tintedWith(WidgetPalette.bandWoven)).mask().segmentsInked(6))
     }
 
     /** One cell tall keeps the widget docs/ux/widget.md §2 settled: no band, however wide. */
@@ -133,7 +159,8 @@ class WidgetMomoTest {
     fun `one cell tall, however wide, draws no band`() = runGlanceAppWidgetUnitTest(RENDER_TIMEOUT) {
         render(rows, DpSize(400.dp, 110.dp))
 
-        onAllNodes(segment()).assertCountEquals(0)
+        onAllNodes(tintedWith(WidgetPalette.bandWoven)).assertCountEquals(0)
+        onAllNodes(tintedWith(WidgetPalette.bandOutstanding)).assertCountEquals(0)
         onAllNodes(drawnOn(WidgetPalette.momoGround)).assertCountEquals(0)
     }
 
@@ -152,44 +179,31 @@ private fun GlanceAppWidgetUnitTest.render(content: WidgetContent, size: DpSize)
     awaitIdle()
 }
 
-/** An image with no colour filter — Momo, who carries her own palette. */
-private fun untintedImage() = GlanceNodeMatcher<MappedNode>("is an untinted image") { node ->
-    (node.value.emittable as? EmittableImage)?.let { it.colorFilterParams == null } == true
-}
-
 private fun checkBox() = GlanceNodeMatcher<MappedNode>("is a checkbox") { it.value.emittable is EmittableCheckBox }
 
-/** The same, carrying no description: decorative. Glance's harness has no negative assertion, so a matcher. */
-private fun silentUntintedImage() = GlanceNodeMatcher<MappedNode>("is an untinted image with no description") { node ->
-    // Glance's Image attaches a SemanticsModifier only when given a description,
-    // so an image with none in its modifier chain is a decorative one.
-    (node.value.emittable as? EmittableImage)?.let { image ->
-        image.colorFilterParams == null && !image.modifier.foldIn(false) { described, element -> described || element is SemanticsModifier }
-    } == true
+/** The bitmap a matched image node carries. */
+private fun GlanceNodeAssertion<MappedNode, *>.mask(): Bitmap {
+    var found: Bitmap? = null
+    assert(GlanceNodeMatcher("carries a bitmap") { node -> node.value.emittable.bitmap().also { found = it } != null })
+    return checkNotNull(found)
 }
 
-/** A tinted string carrying a description — the mood line; every other string in the large body is decorative. */
-private fun describedText() = GlanceNodeMatcher<MappedNode>("is a described text") { node ->
-    node.value.emittable.let {
-        it is EmittableImage && it.colorFilterParams != null &&
-            it.modifier.foldIn(false) { d, e -> d || e is SemanticsModifier }
-    }
+/** Whether each of [n] equal segments across the mask has any ink in its middle column. */
+private fun Bitmap.segmentsInked(n: Int): List<Boolean> = (0 until n).map { i ->
+    val x = ((i + 0.5f) * width / n).toInt().coerceIn(0, width - 1)
+    (0 until height).any { y -> Color.alpha(getPixel(x, y)) > 0 }
 }
 
-/** The colour provider a node's background is drawn with, or null. */
-private fun Emittable.ground(): ColorProvider? = modifier
-    .foldIn<BackgroundModifier.Color?>(null) { found, element -> found ?: element as? BackgroundModifier.Color }
-    ?.colorProvider
-
-/** A band segment: a box on one of the two band fills. */
-private fun segment() = GlanceNodeMatcher<MappedNode>("is a band segment") { node ->
-    node.value.emittable.ground().let { it === WidgetPalette.bandWoven || it === WidgetPalette.bandOutstanding }
-}
-
-private fun describedSegment() = GlanceNodeMatcher<MappedNode>("is a band segment with a description") { node ->
-    val e = node.value.emittable
-    e.ground().let { it === WidgetPalette.bandWoven || it === WidgetPalette.bandOutstanding } &&
-        e.modifier.foldIn(false) { d, el -> d || el is SemanticsModifier }
+/** How many of the matched nodes carry a description; the harness has no negative assertion. */
+private fun GlanceNodeAssertionCollection<MappedNode, *>.fetchDescribed(): Int {
+    var count = 0
+    assertAll(
+        GlanceNodeMatcher("counts descriptions") { node ->
+            if (node.value.emittable.isDescribed()) count++
+            true
+        },
+    )
+    return count
 }
 
 /** See WidgetTextColourTest for why 60s and not the harness's 2s default. */

@@ -4,11 +4,13 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.glance.appwidget.testing.unit.GlanceAppWidgetUnitTest
 import androidx.glance.appwidget.testing.unit.runGlanceAppWidgetUnitTest
-import com.gawi.core.domain.mascot.Mood
 import com.gawi.widget.testsupport.RenderProbe
 import com.gawi.widget.testsupport.anyText
 import com.gawi.widget.testsupport.drawnOn
+import com.gawi.widget.testsupport.habitId
 import com.gawi.widget.testsupport.illegibleText
+import com.gawi.widget.testsupport.todayHabit
+import com.gawi.widget.testsupport.todaySnapshot
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -38,7 +40,7 @@ abstract class MomoTextColourContract {
 
     @Test
     fun `the word under the face is legible on Momo's ground`() = runGlanceAppWidgetUnitTest(RENDER_TIMEOUT) {
-        val probe = renderWithProbe(MomoContent.Ready(Mood.REGENERATING, empty = false))
+        val probe = renderWithProbe(WidgetContent.Ready(todaySnapshot(habits = listOf(todayHabit(id = habitId(1)))).toWidgetState()))
 
         onAllNodes(anyText()).assertCountEquals(1)
         onAllNodes(illegibleText(probe.context, probe.background)).assertCountEquals(0)
@@ -46,7 +48,7 @@ abstract class MomoTextColourContract {
 
     @Test
     fun `the no-habits copy is legible on Momo's ground`() = runGlanceAppWidgetUnitTest(RENDER_TIMEOUT) {
-        val probe = renderWithProbe(MomoContent.Ready(Mood.CONTENT, empty = true))
+        val probe = renderWithProbe(WidgetContent.Ready(todaySnapshot().toWidgetState()))
 
         onAllNodes(anyText()).assertCountEquals(1)
         onAllNodes(illegibleText(probe.context, probe.background)).assertCountEquals(0)
@@ -54,7 +56,7 @@ abstract class MomoTextColourContract {
 
     @Test
     fun `the failure copy is legible on Momo's ground`() = runGlanceAppWidgetUnitTest(RENDER_TIMEOUT) {
-        val probe = renderWithProbe(MomoContent.Unavailable)
+        val probe = renderWithProbe(WidgetContent.Unavailable)
 
         onAllNodes(anyText()).assertCountEquals(1)
         onAllNodes(illegibleText(probe.context, probe.background)).assertCountEquals(0)
@@ -62,7 +64,7 @@ abstract class MomoTextColourContract {
 }
 
 /** The ground actually drawn, asserted by identity before anything is measured against it. */
-private fun GlanceAppWidgetUnitTest.renderWithProbe(content: MomoContent): RenderProbe {
+private fun GlanceAppWidgetUnitTest.renderWithProbe(content: WidgetContent): RenderProbe {
     val context = RuntimeEnvironment.getApplication()
     setContext(context)
     setAppWidgetSize(DpSize(110.dp, 110.dp))

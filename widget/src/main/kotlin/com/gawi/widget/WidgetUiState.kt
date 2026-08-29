@@ -118,7 +118,7 @@ internal sealed interface WidgetBodyContent {
  * guessed mood would be the wrong answer [widgetContent] refuses to trade a
  * blank one for.
  */
-internal fun WidgetContent.body(size: DpSize): WidgetBodyContent = when (this) {
+internal fun WidgetContent.body(size: DpSize, textScale: Float = 1f): WidgetBodyContent = when (this) {
     WidgetContent.Unavailable -> WidgetBodyContent.Copy(R.string.widget_unavailable)
 
     WidgetContent.Loading -> WidgetBodyContent.Blank
@@ -128,11 +128,22 @@ internal fun WidgetContent.body(size: DpSize): WidgetBodyContent = when (this) {
         val mood = state.mood.takeIf { tall }
         when {
             state.rows.isEmpty() -> WidgetBodyContent.Copy(R.string.widget_no_habits, mood)
-            tall && size.width >= LARGE_MIN_WIDTH.dp -> WidgetBodyContent.Large(state.rows, state.mood)
+            tall && fitsLargeBody(size, textScale) -> WidgetBodyContent.Large(state.rows, state.mood)
             else -> WidgetBodyContent.Rows(state.rows, mood)
         }
     }
 }
+
+/**
+ * Whether [size] has the width for the large body's header once [textScale] is
+ * taken into account — `BitmapText.textScale`, what the ink actually does. The
+ * header's copy is drawn in sp and the room is dp, so at a large font setting
+ * the same 220dp holds less of the mood line; dividing asks how much room there
+ * is in units of the text, the question `StreakUiState.kt`'s `fitsFullForm`
+ * asks for the same reason. The height gate is not divided: Momo is a constant
+ * size, and the rows beneath scroll.
+ */
+private fun fitsLargeBody(size: DpSize, textScale: Float): Boolean = size.width / textScale.coerceAtLeast(1f) >= LARGE_MIN_WIDTH.dp
 
 /**
  * The least height, in dp, at which Momo is drawn.
@@ -161,8 +172,9 @@ internal const val MOMO_MIN_HEIGHT = 170
  * The header puts the mood line *beside* Momo rather than under her, and that
  * costs width the face-above-rows body does not: at the provider's 180dp, 164dp
  * of usable width less a 66dp pill and 10dp of gap leaves 88dp for the copy,
- * and no mood line fits that in two lines of caption type — the regenerating
- * one is 47 characters. 220 is the streak widget's threshold for the same kind
+ * and the regenerating mood line — 47 characters — does not fit that in the
+ * three lines of caption type the header allows; at 220 it gets 128dp and does
+ * (`HeaderCopyTest` measures it). 220 is the streak widget's threshold for the same kind
  * of reason, and it sits between the 180dp three-cell minimum and the 250dp
  * four-cell placement the canvas drew, so a tall-but-narrow widget keeps the
  * face above the rows and a four-by-three one gets the header
