@@ -77,7 +77,36 @@ class WidgetHostTest {
         println("GAWI_WIDGET rendered=$rendered")
     }
 
+    /**
+     * The large body reaches a real host (docs/ux/widget.md §7). Told it is
+     * 250×200dp — the four-by-three placement the canvas drew — the widget must
+     * recompose past both gates and draw the mood line, which is the one string
+     * only that body emits. With no habits the widget draws the empty copy at
+     * every size, so the assertion accepts that too rather than seeding; the
+     * seeded variant is `StreakWidgetHostTest`'s job.
+     */
+    @Test
+    fun theLargeBodyRendersWhenTheHostReportsRoom() {
+        val bound = widget!!
+        bound.resize(LARGE_WIDTH_DP, LARGE_HEIGHT_DP)
+        val moods = MOOD_STRINGS.map(::stringByName)
+        val empty = stringByName("widget_no_habits")
+
+        val rendered = bound.awaitText(TIMEOUT_SECONDS) { text -> text.any { it in moods } || empty in text }
+
+        assertTrue(
+            "neither a mood line nor the empty copy rendered at ${LARGE_WIDTH_DP}x$LARGE_HEIGHT_DP: $rendered",
+            rendered.any { it in moods } || empty in rendered,
+        )
+        println("GAWI_WIDGET large=$rendered")
+    }
+
+    private fun stringByName(name: String): String = context.getString(context.resources.getIdentifier(name, "string", context.packageName))
+
     private companion object {
         const val TIMEOUT_SECONDS = 20L
+        const val LARGE_WIDTH_DP = 250
+        const val LARGE_HEIGHT_DP = 200
+        val MOOD_STRINGS = listOf("widget_mood_thriving", "widget_mood_content", "widget_mood_worried", "widget_mood_regenerating")
     }
 }
