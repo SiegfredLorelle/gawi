@@ -7,6 +7,8 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.gawi.app.reminder.WorkerEntryPoint
 import com.gawi.app.testsupport.WidgetHostBinding
 import com.gawi.core.data.repository.HabitRepository
+import com.gawi.core.domain.command.CommandResult
+import com.gawi.core.domain.model.HabitId
 import com.gawi.core.domain.model.Schedule
 import com.gawi.core.domain.projection.HabitMetadata
 import dagger.hilt.android.EntryPointAccessors
@@ -72,10 +74,18 @@ class StreakWidgetHostTest {
      * never translated at all. A widget's content also depends on whatever the
      * device happened to hold, which makes an ambient-data test a coin toss.
      */
+    private var seeded: HabitId? = null
+
     @Before
     fun seedAndBind() {
         runBlocking {
-            habits.createHabit(
+            // Asserted, not fired and forgotten. A rejected write leaves the
+            // widget drawing the empty copy, and two of the tests below accept
+            // that copy — so a silent seed failure reproduces the very false
+            // pass this @Before's KDoc claims to have removed, one level down,
+            // with only the rows test failing and blaming the LazyColumn.
+            // Caught on review.
+            val result = habits.createHabit(
                 HabitMetadata(
                     name = SEEDED_HABIT,
                     icon = "book",
@@ -84,13 +94,29 @@ class StreakWidgetHostTest {
                     tag = null,
                 ),
             )
+            assertTrue("seeding failed, so the rows body will not render: $result", result is CommandResult.Accepted)
+            seeded = (result as CommandResult.Accepted).payload
         }
         widget = WidgetHostBinding.bind(context, WidgetHostBinding.STREAK_RECEIVER)
     }
 
+    /**
+     * Release the host **and** put the seeded habit away.
+     *
+     * `@Before` runs per test, so without this each run left four
+     * "Widget host probe" habits behind — visible to `WidgetHostTest` in the same
+     * suite and accumulating across `make itest` runs until the uninstall. That
+     * makes every later assertion depend on how many times the suite has been
+     * run before, which is the ambient-data problem this class seeds to avoid.
+     *
+     * Archived rather than deleted because the log is append-only: archiving is
+     * what removes a habit from `observeToday()`, and there is no delete.
+     */
     @After
     fun releaseWidget() {
         widget?.release()
+        seeded?.let { id -> runBlocking { habits.archiveHabit(id) } }
+        seeded = null
     }
 
     @Test
