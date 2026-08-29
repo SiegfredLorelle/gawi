@@ -248,5 +248,5 @@ private val BurstLanes = List(14) { i ->
 }
 
 /** Bubbles start this far above the floor — under Momo's tail — and, for the day's burst, rise this far, dp. */
-internal const val BURST_START = 70f
+private const val BURST_START = 70f
 private const val BURST_RISE = 170f

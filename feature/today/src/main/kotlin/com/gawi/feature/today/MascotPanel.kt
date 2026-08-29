@@ -23,6 +23,8 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
@@ -52,10 +54,11 @@ import com.gawi.core.ui.theme.GawiSpacing
 internal fun MascotPanel(mood: Mood, remaining: Int, total: Int, motion: TodayMotion, modifier: Modifier = Modifier) {
     // For the length of a milestone run the line is the milestone's, and its
     // changing is the announcement (momo.md §5): the node below merges the
-    // picture and the caption, so TalkBack reads the new line once and the
-    // mood line once more when it returns. A line is text, not motion, so this
-    // swap happens with animations off too — MilestoneState keeps `current`
-    // set for the same two seconds either way.
+    // picture and the caption and is a polite live region, so TalkBack reads
+    // the new line once and the mood line once more when it returns, wherever
+    // focus is. A line is text, not motion, so this swap happens with
+    // animations off too — MilestoneState keeps `current` set for the same two
+    // seconds either way.
     val milestone = motion.milestone.current
     val copy = if (milestone == null) {
         stringResource(moodCopy(mood, total))
@@ -70,8 +73,13 @@ internal fun MascotPanel(mood: Mood, remaining: Int, total: Int, motion: TodayMo
             // mood once — the copy is the description of the face, and a
             // description on the tank as well would read it twice, while none
             // at all leaves a nameless image beside a line that names it: the
-            // widget's lesson (docs/ux/widget.md §5) from either side.
-            .semantics(mergeDescendants = true) {},
+            // widget's lesson (docs/ux/widget.md §5) from either side. A polite
+            // live region, because the line changing is the whole announcement
+            // (momo.md §5) and without one it would only be read when this node
+            // already held focus — never, right after ticking a row. The cost is
+            // one short sentence after every tick, the remaining count riding
+            // along with the mood line.
+            .semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite },
         verticalArrangement = Arrangement.spacedBy(GawiSpacing.Gap),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
