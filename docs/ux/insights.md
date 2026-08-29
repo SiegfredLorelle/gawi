@@ -559,6 +559,12 @@ clock. `Period.window(today, back)` is the one piece of date arithmetic, and
 "the period before" — which the focus sentence needs — is the same function
 asked once more, not a second calculation that could drift from the first.
 
+The month's title reuses the grid's `insights_month_title` rather than a second
+identical template: one string, two steppers. The two stepper *rows* stay
+separate on purpose — the grid hides its later arrow at zero and leaves a
+footprint, this one disables it — and merging them would mean a policy
+parameter for a two-line difference.
+
 **Picking a different period resets the offset.** "Three quarters back" has no
 meaning in years, and carrying the number across would land the user on 2023
 without having asked for it.
@@ -589,12 +595,36 @@ creation-clipped window as the rate (§8.9), so the two figures on a row describ
 one span.
 
 It rides on the schedule line — *"3× a week · best 9 weeks"* — because the unit
-it is counted in is the schedule's, and null rather than zero when the period
-held no run: "best 0 days" under a row is the screen accusing the user, and the
-dash beside it already said nothing happened.
+it is counted in is the schedule's, carried as `StreakUi.Days` or `.Weeks` so the
+row cannot pick the wrong plural, and null rather than zero when the period held
+no run: "best 0 days" under a row is the screen accusing the user.
+
+**A best run can stand beside a dash**, and the first device look showed exactly
+that: a habit created and completed today reads *"Every day · best 1 day —"*.
+Not a contradiction. A run counts today when today is done, as the streak on
+Today does, while a rate counts only finished units (§4), so the two rules meet
+on that row and both are right. The review that raised it proposed clipping the
+run at yesterday to match the rate; that would have made the best run on
+Insights read one less than the streak on Today for the same habit and the same
+dates, which is the worse disagreement. Pinned by a `BestRunTest` case.
+
+**The birth week of a weekly habit is judged partial**, because the window handed
+to `BestRun` is already clipped to the habit's creation (§8.9) and the whole-week
+rule is applied to the window as handed in. A habit created on a Wednesday that
+hit its target that same week has that week discarded from both its rate and its
+best run. `Rates.completionRate` has always done this, so the two figures on the
+row agree, and it is recorded here as a known narrowing rather than fixed: the
+fix belongs to both calculators at once and to §4's definition of a countable
+week, not to the retrospective.
 
 **No worst.** Every habit's worst run is zero. A column of zeros carries nothing,
 so the PRD's "best/worst" is built as "best", and this is where that is decided.
+
+The hit-week rule is `Streaks.hitWeeks`, now `internal` and called from
+`BestRun` rather than copied into it — "which weeks count" is written once in
+`:core:domain`, so the weekly best run on Insights and the weekly streak on Today
+cannot come to disagree about the same dates. The walk itself is linear: a run
+is walked from its head only, the date whose predecessor is absent.
 
 ### 9.4 The trend measures turning up
 
@@ -609,16 +639,35 @@ days is not a completion rate and must not be read as one.
 **A month that has not begun is not a point** — not a zero, not a gap. §8.3's
 rule for future days, in months: a year drawn with four zeros at its end would
 read as a year already lost. The current month is a real point over the days it
-has had so far, for the reason §8.7 gives about the rate card's current month.
-A single Month period has no trend; one point is not a line.
+has had so far — its own count over its own elapsed days, which on the 1st is
+one day over one day and reads as such; this is a count of turning up, not
+§8.7's rate, and it does not borrow that rule.
+
+**One point is not a line, whatever the period.** The first cut keyed this on
+Month and the review caught what that missed: a quarter viewed in its first month
+and a year in January also have one begun month, and would have drawn a lone
+dot. The rule is now the count of points — fewer than two and there is no trend —
+which makes Month a case of it rather than the exception.
+
+**The trend and the headline are one figure at two resolutions**, built from one
+set of dates and clipped by neither, so they always sum. A future-dated
+completion — a fast clock, an import — is in both or in neither; the first cut
+clipped the trend at today and not the headline, and the two could differ by one.
 
 **Twelve columns cannot carry twelve month names on a phone.** Under a year the
 label is the month's initial, and J, M and A each name two months — §8.4's
 weekday-letters problem, solved the same way: every column carries its own
 spoken form, *"March, 15 active days"*, so the ambiguous letters are covered by
-the thing a screen reader actually reads. Under three columns the short name is
-used and nothing is hidden. Owed a look at 200 % font on a device (running.md
-§4).
+the thing a screen reader actually reads. The initial is a **resource**
+(`insights_month_initial_*`), not the name's first character: "Juin" and
+"Juillet" share one, "1月" and "11月" would share a digit, and §8.4 already
+decided that an abbreviation is the translator's call. Under three columns the
+full name is used, as on the rate card's five. Seen at 200 % font on a device
+(running.md §4).
+
+The value-over-label row under both sparklines is one composable,
+`LabelledColumns`, because `Sparkline` centres its dots on the promise that the
+row beneath it is `size` equal columns — a promise better held once than twice.
 
 The line itself is the rate card's `Sparkline`, now a shared file taking bare
 0–1 fractions: the two cards draw one series over equal label columns and a

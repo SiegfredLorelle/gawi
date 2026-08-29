@@ -18,6 +18,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.gawi.core.ui.streak.StreakUi
 import com.gawi.core.ui.theme.GawiSpacing
 
 /**
@@ -117,9 +118,13 @@ internal fun HabitRates(habits: List<HabitRateUi>, modifier: Modifier = Modifier
  * in, or nothing when the period held no run (docs/ux/insights.md §9).
  */
 @Composable
-private fun bestText(habit: HabitRateUi): String? = habit.best?.let { best ->
-    val plural = if (habit.schedule.timesPerWeek == null) R.plurals.insights_best_days else R.plurals.insights_best_weeks
-    pluralStringResource(plural, best, best)
+private fun bestText(habit: HabitRateUi): String? = when (val best = habit.best) {
+    is StreakUi.Days -> pluralStringResource(R.plurals.insights_best_days, best.count, best.count)
+
+    is StreakUi.Weeks -> pluralStringResource(R.plurals.insights_best_weeks, best.count, best.count)
+
+    // A best run is a length or nothing; the live and broken states are Today's.
+    is StreakUi.None, is StreakUi.Broken, null -> null
 }
 
 /**

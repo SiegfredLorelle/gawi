@@ -191,7 +191,7 @@ private fun PeriodStepper(label: PeriodLabelUi, canStepLater: Boolean, actions: 
 
 @Composable
 private fun periodTitle(label: PeriodLabelUi): String = when (label) {
-    is PeriodLabelUi.Month -> stringResource(R.string.insights_period_month_title, stringResource(label.name), label.year)
+    is PeriodLabelUi.Month -> stringResource(R.string.insights_month_title, stringResource(label.name), label.year)
     is PeriodLabelUi.Quarter -> stringResource(R.string.insights_period_quarter_title, label.quarter, label.year)
     is PeriodLabelUi.Year -> stringResource(R.string.insights_period_year_title, label.year)
 }

@@ -1,6 +1,7 @@
 package com.gawi.feature.insights
 
 import androidx.annotation.StringRes
+import com.gawi.core.ui.streak.StreakUi
 
 /**
  * What the Insights screen draws: one period, two numbers about it, and one
@@ -121,7 +122,7 @@ internal sealed interface FocusShiftUi {
  * daily and a weekly habit at once (docs/ux/insights.md §4); a per-habit rate
  * trend over the period would be one line per habit or a dishonest average.
  */
-internal data class TrendPointUi(@StringRes val monthName: Int, val activeDays: Int, val fill: Float)
+internal data class TrendPointUi(@StringRes val monthName: Int, @StringRes val monthInitial: Int, val activeDays: Int, val fill: Float)
 
 /**
  * One habit's adherence over the period.
@@ -135,12 +136,16 @@ internal data class TrendPointUi(@StringRes val monthName: Int, val activeDays: 
  * [percent] is null when the period held nothing that had finished — a habit
  * created today, or one created after the period ended. A dash, never a zero.
  *
- * [best] is the longest run inside the period in the schedule's own unit, and
- * null rather than zero when there was none: "best 0 days" under a row is the
- * screen accusing the user, and the dash beside it already said nothing
- * happened.
+ * [best] is the longest run inside the period, carrying its unit the way every
+ * other streak on screen does ([StreakUi.Days] or [StreakUi.Weeks]), and null
+ * rather than a zero when there was none: "best 0 days" under a row is the
+ * screen accusing the user. It can stand beside a dash — a habit created and
+ * completed today has a one-day run and no finished day to rate — because a run
+ * counts today when today is done, as the streak on Today does, while a rate
+ * counts only finished units. Two rules, both honest, and this is where they
+ * meet.
  */
-internal data class HabitRateUi(val name: String, val schedule: ScheduleLabelUi, val percent: Int?, val best: Int? = null)
+internal data class HabitRateUi(val name: String, val schedule: ScheduleLabelUi, val percent: Int?, val best: StreakUi? = null)
 
 /**
  * One tag's share of the effort.

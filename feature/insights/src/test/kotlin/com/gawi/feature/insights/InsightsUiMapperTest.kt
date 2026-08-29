@@ -5,6 +5,7 @@ import com.gawi.core.data.model.TagEffort
 import com.gawi.core.domain.model.HabitId
 import com.gawi.core.domain.model.Schedule
 import com.gawi.core.domain.projection.HabitState
+import com.gawi.core.ui.streak.StreakUi
 import com.gawi.feature.insights.testsupport.TODAY
 import com.gawi.feature.insights.testsupport.habitId
 import com.gawi.feature.insights.testsupport.habitState
@@ -233,7 +234,7 @@ class InsightsUiMapperTest {
             ),
         )
 
-        assertEquals(listOf(3, 3, null), state.habits.map { it.best })
+        assertEquals(listOf(StreakUi.Days(3), StreakUi.Weeks(3), null), state.habits.map { it.best })
     }
 
     @Test
@@ -241,7 +242,7 @@ class InsightsUiMapperTest {
         val born = habitState(createdOn = thisMonth(12))
         val state = overview(habits = listOf(born), completions = mapOf(born.id to (10..14).map { thisMonth(it) }.toSet()))
 
-        assertEquals(3, state.habits.single().best)
+        assertEquals(StreakUi.Days(3), state.habits.single().best)
     }
 
     @Test
@@ -259,6 +260,24 @@ class InsightsUiMapperTest {
         // July over its 31 days; August over the 18 it has had.
         assertEquals(2f / 31, quarter.trend[0].fill, 1e-6f)
         assertEquals(1f / 18, quarter.trend[1].fill, 1e-6f)
+    }
+
+    @Test
+    fun `a quarter in its first month has no trend either, one point being no line`() {
+        val state = overview(period = Period.QUARTER, today = LocalDate.parse("2026-07-15"))
+
+        assertTrue(state.trend.isEmpty())
+        assertTrue(overview(period = Period.YEAR, today = LocalDate.parse("2026-01-20")).trend.isEmpty())
+    }
+
+    @Test
+    fun `the trend sums to the headline, future-dated completions included`() {
+        val state = overview(
+            period = Period.QUARTER,
+            completions = mapOf(habitId(1) to setOf(LocalDate.parse("2026-07-01"), thisMonth(3), TODAY.plusDays(1))),
+        )
+
+        assertEquals(state.activeDays, state.trend.sumOf { it.activeDays })
     }
 
     @Test

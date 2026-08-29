@@ -1,7 +1,6 @@
 package com.gawi.core.domain.streak
 
 import com.gawi.core.domain.model.Schedule
-import com.gawi.core.domain.time.weekStartOn
 import java.time.DayOfWeek
 import java.time.LocalDate
 
@@ -37,8 +36,17 @@ object BestRun {
         today: LocalDate,
         weekStart: DayOfWeek,
     ): Int = when (schedule) {
-        is Schedule.Daily -> longestRun(completedDates.filter { it in window && !it.isAfter(today) }) { it.plusDays(1) }
-        is Schedule.Weekly -> longestRun(hitWeeksWithin(completedDates, schedule, window, today, weekStart)) { it.plusWeeks(1) }
+        is Schedule.Daily -> longestRun(
+            completedDates.filter { it in window && !it.isAfter(today) }.toSet(),
+            prev = { it.minusDays(1) },
+            next = { it.plusDays(1) },
+        )
+
+        is Schedule.Weekly -> longestRun(
+            hitWeeksWithin(completedDates, schedule, window, today, weekStart),
+            prev = { it.minusWeeks(1) },
+            next = { it.plusWeeks(1) },
+        )
     }
 
     /**
@@ -49,8 +57,12 @@ object BestRun {
      * days may be in the period and the other four — and the completions on
      * them — out of it, so a miss there would be the window's doing rather than
      * the user's. `Rates.completionRate` draws the same line for the same
-     * reason. The current week is not excluded for being unfinished: if it has
-     * already hit its target it is a hit week, as `Streaks` also holds.
+     * reason — and, like it, applies the line to the window *as handed in*, so
+     * a habit created midweek has its birth week judged partial too. The
+     * current week is not excluded for being unfinished: if it has already hit
+     * its target it is a hit week, as `Streaks` also holds.
+     *
+     * The hit rule itself is [Streaks.hitWeeks], not a copy of it.
      */
     private fun hitWeeksWithin(
         completedDates: Set<LocalDate>,
@@ -58,33 +70,31 @@ object BestRun {
         window: ClosedRange<LocalDate>,
         today: LocalDate,
         weekStart: DayOfWeek,
-    ): Collection<LocalDate> {
+    ): Set<LocalDate> {
         val lastDayOffset = Schedule.DAYS_PER_WEEK - 1L
-        return completedDates
-            .filter { it in window && !it.isAfter(today) }
-            .groupingBy { weekStartOn(it, weekStart) }
-            .eachCount()
-            .filter { (week, count) ->
-                count >= schedule.timesPerWeek && week >= window.start && week.plusDays(lastDayOffset) <= window.endInclusive
-            }
-            .keys
+        val inside = completedDates.filter { it in window }.toSet()
+        return Streaks.hitWeeks(inside, schedule, today, weekStart)
+            .filter { week -> week >= window.start && week.plusDays(lastDayOffset) <= window.endInclusive }
+            .toSet()
     }
 
-    /** Longest chain of dates in which each is [next] of the one before. */
-    private fun longestRun(dates: Collection<LocalDate>, next: (LocalDate) -> LocalDate): Int {
-        val present = dates.toSet()
+    /**
+     * Longest chain in [present] in which each member is [next] of the one
+     * before. A chain is walked from its head only — the member whose [prev] is
+     * absent — so the whole thing is linear in the set, which matters because
+     * the mapper runs it per habit on every emission.
+     */
+    private fun longestRun(present: Set<LocalDate>, prev: (LocalDate) -> LocalDate, next: (LocalDate) -> LocalDate): Int {
         var best = 0
         for (start in present) {
-            // Only the head of a chain is walked, so each date is visited once.
-            if (present.none { next(it) == start }) {
-                var length = 0
-                var cursor = start
-                while (cursor in present) {
-                    length++
-                    cursor = next(cursor)
-                }
-                best = maxOf(best, length)
+            if (prev(start) in present) continue
+            var length = 0
+            var cursor = start
+            while (cursor in present) {
+                length++
+                cursor = next(cursor)
             }
+            best = maxOf(best, length)
         }
         return best
     }

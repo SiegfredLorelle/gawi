@@ -26,10 +26,11 @@
     <string name="insights_breakdown_tags">Tags</string>
 
     <!-- The stepper's caption and its two arrows — Phase 1.5's retrospective
-         (docs/ux/insights.md §9). The quarter is "Q3 2026" rather than a month
-         range because the chips already say the period is a quarter, and a
-         range would be the longest label on the row at 200% font. -->
-    <string name="insights_period_month_title">%1$s %2$d</string>
+         (docs/ux/insights.md §9). A month is titled with insights_month_title,
+         the grid's own, so one template serves both steppers. The quarter is
+         "Q3 2026" rather than a month range because the chips already say the
+         period is a quarter, and a range would be the longest label on the row
+         at 200% font. -->
     <string name="insights_period_quarter_title">Q%1$d %2$d</string>
     <string name="insights_period_year_title">%d</string>
     <string name="insights_period_earlier">Earlier period</string>
@@ -50,6 +51,24 @@
     <string name="insights_trend_title">Active days per month</string>
     <string name="insights_trend_subtitle">Days with at least one completion</string>
     <string name="insights_trend_point">%1$s, %2$s</string>
+
+    <!-- One initial per month for the year's twelve trend columns, where a name
+         cannot fit. A resource rather than the first character of the name, for
+         the reason the weekday letters are: an initial is the translator's call,
+         and J, M and A each naming two months is covered by every column's
+         spoken form (insights_trend_point), not by the letter. -->
+    <string name="insights_month_initial_january">J</string>
+    <string name="insights_month_initial_february">F</string>
+    <string name="insights_month_initial_march">M</string>
+    <string name="insights_month_initial_april">A</string>
+    <string name="insights_month_initial_may">M</string>
+    <string name="insights_month_initial_june">J</string>
+    <string name="insights_month_initial_july">J</string>
+    <string name="insights_month_initial_august">A</string>
+    <string name="insights_month_initial_september">S</string>
+    <string name="insights_month_initial_october">O</string>
+    <string name="insights_month_initial_november">N</string>
+    <string name="insights_month_initial_december">D</string>
 
     <!-- The best run inside the period, in the schedule's own unit, beside the
          schedule label on an adherence row. No "worst": every habit's worst

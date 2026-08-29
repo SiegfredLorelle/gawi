@@ -162,6 +162,28 @@ internal fun monthName(month: Month): Int = when (month) {
     Month.DECEMBER -> R.string.insights_month_december
 }
 
+/**
+ * A month's initial, from resources for the same reason — and because an
+ * initial is a translator's call, not `take(1)`: "Juin" and "Juillet" share one,
+ * "1月" and "11月" would share a digit, and the trend's twelve columns are the
+ * one place in the app that shows it.
+ */
+@StringRes
+internal fun monthInitial(month: Month): Int = when (month) {
+    Month.JANUARY -> R.string.insights_month_initial_january
+    Month.FEBRUARY -> R.string.insights_month_initial_february
+    Month.MARCH -> R.string.insights_month_initial_march
+    Month.APRIL -> R.string.insights_month_initial_april
+    Month.MAY -> R.string.insights_month_initial_may
+    Month.JUNE -> R.string.insights_month_initial_june
+    Month.JULY -> R.string.insights_month_initial_july
+    Month.AUGUST -> R.string.insights_month_initial_august
+    Month.SEPTEMBER -> R.string.insights_month_initial_september
+    Month.OCTOBER -> R.string.insights_month_initial_october
+    Month.NOVEMBER -> R.string.insights_month_initial_november
+    Month.DECEMBER -> R.string.insights_month_initial_december
+}
+
 /** Shared with the grid, which chunks its slots by it. */
 internal const val DAYS_IN_WEEK = 7
 

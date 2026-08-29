@@ -3,9 +3,11 @@ package com.gawi.feature.insights
 import com.gawi.core.data.model.ReadContext
 import com.gawi.core.data.model.TagEffort
 import com.gawi.core.domain.model.HabitId
+import com.gawi.core.domain.model.Schedule
 import com.gawi.core.domain.projection.HabitState
 import com.gawi.core.domain.rate.Rates
 import com.gawi.core.domain.streak.BestRun
+import com.gawi.core.ui.streak.StreakUi
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.temporal.IsoFields
@@ -28,16 +30,19 @@ internal fun overviewOf(
     context: ReadContext,
     reads: PeriodReads,
 ): InsightsUiState.Overview = with(reads) {
+    // The union, not the sum: two habits done on one day is one active day. Made
+    // once, because the headline and the trend are the same number at two
+    // resolutions and must be built from one set.
+    val activeDates = completions.values.flatten().toSet()
     InsightsUiState.Overview(
         period = period,
         label = period.labelOf(window),
         canStepLater = back > 0,
         breakdown = breakdown,
-        // The union, not the sum: two habits done on one day is one active day.
-        activeDays = completions.values.flatten().toSet().size,
+        activeDays = activeDates.size,
         completions = completions.values.sumOf { it.size },
         focus = focusShift(previousTagEffort, tagEffort),
-        trend = if (period == Period.MONTH) emptyList() else trendOf(window, context.today, completions),
+        trend = trendOf(window, context.today, activeDates),
         habits = habits.toRates(window, context, completions),
         tags = tagEffort.toShares(),
         // The unfiltered list, which is the whole reason this is a separate
@@ -81,24 +86,32 @@ private fun Period.labelOf(window: ClosedRange<LocalDate>): PeriodLabelUi = when
 
 /**
  * Active days per month, oldest first, for the months of the window that have
- * begun.
+ * begun — or nothing, when fewer than two have.
  *
  * **A month that has not started is not a point** — not a zero, not a gap. The
  * history grid's rule for future days (docs/ux/insights.md §8.3), in months: a
  * year drawn with four zeros at its end would read as a year already lost. The
- * current month is a real point over the days it has had so far, for the same
- * reason the rate card draws a real number for it (§8.7).
+ * current month is a real point over the days it has had so far.
+ *
+ * **One point is not a line.** A Month period always has one; a quarter in its
+ * first month and a year in January have one too, so the rule is the count of
+ * points rather than the kind of period.
+ *
+ * The dates are counted as the headline counts them, with no clip at today: the
+ * two are one figure at two resolutions and must sum. A future-dated completion
+ * (a fast clock, an import) is in both or in neither.
  */
-private fun trendOf(window: ClosedRange<LocalDate>, today: LocalDate, completions: Map<HabitId, Set<LocalDate>>): List<TrendPointUi> {
-    val activeDates = completions.values.flatten().toSet()
-    return generateSequence(YearMonth.from(window.start)) { it.plusMonths(1) }
+private fun trendOf(window: ClosedRange<LocalDate>, today: LocalDate, activeDates: Set<LocalDate>): List<TrendPointUi> {
+    val byMonth = activeDates.groupingBy { YearMonth.from(it) }.eachCount()
+    val points = generateSequence(YearMonth.from(window.start)) { it.plusMonths(1) }
         .takeWhile { it <= YearMonth.from(window.endInclusive) && it.atDay(1) <= today }
         .map { month ->
-            val active = activeDates.count { YearMonth.from(it) == month && !it.isAfter(today) }
+            val active = byMonth[month] ?: 0
             val elapsed = if (YearMonth.from(today) == month) today.dayOfMonth else month.lengthOfMonth()
-            TrendPointUi(monthName = monthName(month.month), activeDays = active, fill = active.toFloat() / elapsed)
+            TrendPointUi(monthName(month.month), monthInitial(month.month), active, fill = active.toFloat() / elapsed)
         }
         .toList()
+    return if (points.size > 1) points else emptyList()
 }
 
 /**
@@ -151,8 +164,18 @@ private fun List<HabitState>.toRates(
         name = habit.name,
         schedule = habit.schedule.toLabelUi(),
         percent = measured?.let { habit.percentOver(it, context, dates) },
-        best = measured?.let { BestRun.within(dates, habit.schedule, it, context.today, context.weekStart).takeIf { run -> run > 0 } },
+        best = measured?.let { habit.bestOver(it, context, dates) },
     )
+}
+
+/** The best run in its unit, or null for none — `StreakUi` so the row cannot pick the wrong plural. */
+private fun HabitState.bestOver(window: ClosedRange<LocalDate>, context: ReadContext, dates: Set<LocalDate>): StreakUi? {
+    val run = BestRun.within(dates, schedule, window, context.today, context.weekStart)
+    return when {
+        run == 0 -> null
+        schedule is Schedule.Weekly -> StreakUi.Weeks(run)
+        else -> StreakUi.Days(run)
+    }
 }
 
 /**

@@ -12,6 +12,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import com.gawi.core.domain.model.Schedule
+import com.gawi.core.ui.streak.StreakUi
 import com.gawi.core.ui.theme.GawiTheme
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -51,7 +52,7 @@ class InsightsScreenTest {
         activeDays: Int = 3,
         completions: Int = 7,
         habits: List<HabitRateUi> = listOf(
-            HabitRateUi("read", ScheduleLabelUi(R.string.insights_schedule_daily, null), percent = 83, best = 12),
+            HabitRateUi("read", ScheduleLabelUi(R.string.insights_schedule_daily, null), percent = 83, best = StreakUi.Days(12)),
             HabitRateUi("run", ScheduleLabelUi(R.string.insights_schedule_weekly, 3), percent = null),
         ),
         tags: List<TagShareUi> = listOf(
@@ -292,13 +293,13 @@ class InsightsScreenTest {
     }
 
     @Test
-    fun `a quarter's trend shows three short month names, each column spoken in full`() {
+    fun `a quarter's trend names its three months, each column spoken in full`() {
         render(
             overview(
                 trend = listOf(
-                    TrendPointUi(R.string.insights_month_april, 17, 17f / 30),
-                    TrendPointUi(R.string.insights_month_may, 22, 22f / 31),
-                    TrendPointUi(R.string.insights_month_june, 22, 22f / 30),
+                    TrendPointUi(R.string.insights_month_april, R.string.insights_month_initial_april, 17, 17f / 30),
+                    TrendPointUi(R.string.insights_month_may, R.string.insights_month_initial_may, 22, 22f / 31),
+                    TrendPointUi(R.string.insights_month_june, R.string.insights_month_initial_june, 22, 22f / 30),
                 ),
             ),
         )
@@ -310,6 +311,7 @@ class InsightsScreenTest {
             resources.getQuantityString(R.plurals.insights_active_days, 17, 17),
         )
         compose.onNodeWithContentDescription(spoken).assertIsDisplayed()
+        compose.onNodeWithText(string(R.string.insights_month_april), useUnmergedTree = true).assertExists()
     }
 
     @Test
@@ -324,12 +326,22 @@ class InsightsScreenTest {
             R.string.insights_month_july,
             R.string.insights_month_august,
         )
-        render(overview(trend = months.map { TrendPointUi(it, 10, 0.3f) }))
+        val initials = listOf(
+            R.string.insights_month_initial_january,
+            R.string.insights_month_initial_february,
+            R.string.insights_month_initial_march,
+            R.string.insights_month_initial_april,
+            R.string.insights_month_initial_may,
+            R.string.insights_month_initial_june,
+            R.string.insights_month_initial_july,
+            R.string.insights_month_initial_august,
+        )
+        render(overview(trend = months.zip(initials).map { (name, initial) -> TrendPointUi(name, initial, 10, 0.3f) }))
 
         // Twelve columns cannot hold "Jan": the label is the initial, and the
         // ambiguous letters are covered by each column's spoken form.
         compose.onAllNodesWithText("J", useUnmergedTree = true).assertCountEquals(3)
-        compose.onAllNodesWithText("Jan", useUnmergedTree = true).assertCountEquals(0)
+        compose.onAllNodesWithText(string(R.string.insights_month_january), useUnmergedTree = true).assertCountEquals(0)
     }
 
     @Test
