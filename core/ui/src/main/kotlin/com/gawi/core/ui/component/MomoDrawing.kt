@@ -329,8 +329,13 @@ private val SweatBead = Path().apply {
     close()
 }
 
-/** An eight-point star, as the canvas draws it: `l a,b b,a -b,a -a,b -a,-b -b,-a b,-a`. */
-private fun star(origin: Offset, a: Float, b: Float) = Path().apply {
+/**
+ * An eight-point star, as the canvas draws it: `l a,b b,a -b,a -a,b -a,-b -b,-a b,-a`,
+ * starting from its top point at [origin]; it is `2 * (a + b)` across and its centre
+ * sits `a + b` below [origin]. Public because Today's milestone ring (docs/ux/momo.md
+ * §6) draws eight of the same star: a second copy would be a second geometry.
+ */
+fun sparkleStar(origin: Offset, a: Float, b: Float): Path = Path().apply {
     moveTo(origin.x, origin.y)
     relativeLineTo(a, b)
     relativeLineTo(b, a)
@@ -341,5 +346,5 @@ private fun star(origin: Offset, a: Float, b: Float) = Path().apply {
     relativeLineTo(b, -a)
     close()
 }
-private val SparkleLarge = star(Offset(46f, 30f), 4.6f, 11.5f)
-private val SparkleSmall = star(Offset(214f, 24f), 3.8f, 9.5f)
+private val SparkleLarge = sparkleStar(Offset(46f, 30f), 4.6f, 11.5f)
+private val SparkleSmall = sparkleStar(Offset(214f, 24f), 3.8f, 9.5f)
