@@ -1,39 +1,31 @@
 package com.gawi.widget
 
-import androidx.compose.ui.graphics.Color
 import androidx.glance.color.ColorProvider
-
-/*
- * On the `@Suppress("MagicNumber")` below: the same reasoning as
- * core/ui/theme/Color.kt, which carries the argument in full. A colour literal
- * is the value, not a number standing in for one, and detekt's
- * `ignoreNamedArgument` does not reach a literal nested one call deeper, so
- * `day = Color(0xFFF4FBFA)` is flagged even though the argument is named.
- */
+import com.gawi.core.ui.theme.GawiRole
+import com.gawi.core.ui.theme.gawiRole
 
 /**
- * The widget's own four colours, each in a day and a night value.
+ * The widget's colours, each in a day and a night value, derived from `:core:ui`.
  *
- * **Why a second copy of hexes that already exist.** A Glance tree is
- * `RemoteViews` under the composition, so it cannot consume `GawiTheme`
- * (docs/architecture.md §2), and `:widget` sees `:core:ui` for the Outfit font
- * and Momo's geometry only (build.gradle.kts). Hand-copied hexes are the
- * duplication docs/ux/visual-identity.md §2 sanctions. The values are `surface`,
- * `onSurface`, `primary` and `outline` from `core/ui/theme/Color.kt`.
+ * **Why the widget needs its own object at all.** A Glance tree is `RemoteViews`
+ * under the composition, so it cannot consume `GawiTheme`
+ * (docs/architecture.md §2) — it has to draw the same colours from its own
+ * values. What it does *not* have to do is retype them: `GawiRole` publishes the
+ * roles a reproducing surface draws, and every value below is read from there.
  *
- * **The copy is not unguarded, and it is half-guarded rather than whole.**
- * `:core:ui` already publishes `gawiWindowBackground(darkTheme)` for exactly this
- * problem — its KDoc calls it "the only value that leaves the module without
- * going through `GawiTheme`, because it is the only one another module has to
- * reproduce rather than consume", and `:app`'s XML copy is pinned against it by
- * `WindowBackgroundTest`. [surface] is the same two hexes, so `WidgetPaletteTest`
- * pins it the same way, from the test source set so no production import
- * widens the edge. The other three have no such accessor, deliberately, so
- * **retuning `onSurface`, `primary` or `outline` in `core/ui/theme/Color.kt`
- * will not fail anything here** — the app's checkboxes would move and the
- * widget's glyph would not. Adding three accessors to `:core:ui` would close
- * that, and it is a decision for §7.4's full palette rather than a legibility
- * fix to make on its way past.
+ * **This used to be eight hand-typed literals, and that was the debt.** Four
+ * roles in two schemes, of which only `surface`'s pair was pinned to its
+ * original, by a test-source-only import of `gawiWindowBackground`. The other
+ * three roles had no accessor, so retuning
+ * `onSurface`, `primary` or `outline` in `core/ui/theme/Color.kt` moved the
+ * app's checkboxes and left the widget's glyph behind with every test in this
+ * module still green. docs/ux/visual-identity.md §7.4 named that as the widget
+ * set's debt to clear and costed two ways out — three more accessors, or reading
+ * a composed `GawiTheme` in a Robolectric test. Deriving is neither: it removes
+ * the second copy rather than guarding it, so there is no longer a drift to
+ * detect. §2's claim that "there is no mechanism that would let it be one" was
+ * wrong, and wrong in a way that reads as correct — a Glance tree cannot take a
+ * Compose *theme*, but a plain `Color` is not a theme.
  *
  * **Why day/night providers, and not the pinned literals the docs asked for
  * until 2026-08-28.** The bug this fixes is a disagreement between two colours,
@@ -72,17 +64,18 @@ import androidx.glance.color.ColorProvider
  * returns a `DayNightColorProvider`, and that class is `@RestrictTo(LIBRARY)`,
  * so it can be built and used but never named.
  */
-@Suppress("MagicNumber")
 internal object WidgetPalette {
-    /** The ground the whole widget is drawn on — `surface`. */
-    val surface = ColorProvider(day = Color(0xFFF4FBFA), night = Color(0xFF0E1A1C))
+    /** The ground the whole widget is drawn on. */
+    val surface = provider(GawiRole.Surface)
 
-    /** Every string the widget draws, as the tint on a bitmap — `onSurface`. */
-    val onSurface = ColorProvider(day = Color(0xFF101C1E), night = Color(0xFFDCEEF0))
+    /** Every string the widget draws, as the tint on a bitmap. */
+    val onSurface = provider(GawiRole.OnSurface)
 
-    /** A completed habit's checkbox glyph — `primary`. */
-    val glyphChecked = ColorProvider(day = Color(0xFF1F6F78), night = Color(0xFF7FD4DC))
+    /** A completed habit's checkbox glyph. */
+    val glyphChecked = provider(GawiRole.Primary)
 
-    /** An outstanding habit's checkbox glyph — `outline`, which docs/ux/visual-identity.md §4.1 makes semantic. */
-    val glyphUnchecked = ColorProvider(day = Color(0xFF5B6D70), night = Color(0xFF7D9093))
+    /** An outstanding habit's checkbox glyph — semantic, per docs/ux/visual-identity.md §4.1. */
+    val glyphUnchecked = provider(GawiRole.Outline)
+
+    private fun provider(role: GawiRole) = ColorProvider(day = gawiRole(role, darkTheme = false), night = gawiRole(role, darkTheme = true))
 }

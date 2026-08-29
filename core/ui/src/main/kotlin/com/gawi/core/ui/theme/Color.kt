@@ -178,6 +178,76 @@ internal val GawiDarkColors: ColorScheme = darkColorScheme(
 )
 
 /**
+ * A palette role that another module has to **reproduce** rather than consume.
+ *
+ * The two [ColorScheme]s stay `internal`, and a surface inside the app reads
+ * `MaterialTheme.colorScheme` — it must not come here. What this exists for is
+ * the surfaces that cannot: a Glance tree is `RemoteViews` under the
+ * composition and cannot consume [GawiTheme] (docs/architecture.md §2), and a
+ * platform window or an adaptive icon is XML, which cannot read Kotlin at all.
+ * Those surfaces have to draw the same colours from their own values, so the
+ * only question is whether the second copy is derived or typed out again.
+ *
+ * **It used to be typed out again, and that was the debt.** `WidgetPalette`
+ * held six literals of which only `surface` was pinned to its original, so
+ * retuning `onSurface`, `primary` or `outline` here moved the app's checkboxes
+ * and left the widget's glyph where it was, with every test in `:widget` still
+ * green — docs/ux/visual-identity.md §7.4 named that as the widget set's debt
+ * to clear, and §2 claimed no mechanism could reduce the two copies to one.
+ * A plain [Color] is not a theme, which is why one can: the widget now derives
+ * its `ColorProvider`s from these values and holds no hex of its own.
+ *
+ * Only the roles a reproducing surface actually draws are listed. Adding an
+ * entry is a deliberate widening of that edge, not a convenience.
+ */
+enum class GawiRole {
+    /** The ground every other role in this list is measured against. */
+    Surface,
+
+    /** Body text and any glyph that is not carrying a semantic role. */
+    OnSurface,
+
+    /** Captions and secondary lines — a date, a unit, a "was 12". */
+    OnSurfaceVariant,
+
+    /** A day streak, and a completed checkbox. Semantic, per §4.1. */
+    Primary,
+
+    /** A week streak. Never interchangeable with [Primary] — see `StreakUi`. */
+    Tertiary,
+
+    /** An outstanding checkbox, and a broken streak. Semantic, per §4.1. */
+    Outline,
+}
+
+/**
+ * One [GawiRole]'s value in the named scheme.
+ *
+ * `darkTheme` rather than a `ColorScheme`, because the callers that need this
+ * have no composition to read one from: they are asked for both values at once
+ * and hand the pair to something that resolves it later (a Glance day/night
+ * `ColorProvider`) or to a test comparing an XML copy against both.
+ *
+ * Every role listed clears WCAG 4.5:1 against [GawiRole.Surface] in the
+ * matching scheme, which is what makes deriving safe for text: light 16.59,
+ * 7.63, 5.56, 7.36 and 5.18; dark 14.82, 8.32, 10.44, 7.34 and 5.31, in the
+ * order the entries are declared. `GawiColorSchemeTest` asserts the pairs the
+ * app draws and `WidgetPaletteTest` asserts these against the floor on the
+ * widget's own ground, so a retune that breaks either fails a test.
+ */
+fun gawiRole(role: GawiRole, darkTheme: Boolean): Color {
+    val scheme = if (darkTheme) GawiDarkColors else GawiLightColors
+    return when (role) {
+        GawiRole.Surface -> scheme.surface
+        GawiRole.OnSurface -> scheme.onSurface
+        GawiRole.OnSurfaceVariant -> scheme.onSurfaceVariant
+        GawiRole.Primary -> scheme.primary
+        GawiRole.Tertiary -> scheme.tertiary
+        GawiRole.Outline -> scheme.outline
+    }
+}
+
+/**
  * The colour a host should paint its window before Compose runs.
  *
  * Exists because that window is not drawn by this module and cannot be. A
@@ -192,11 +262,12 @@ internal val GawiDarkColors: ColorScheme = darkColorScheme(
  * `GawiColorSchemeTest` pins that, but what a window sits under is the surface
  * the first screen draws.
  *
- * The two [ColorScheme]s stay `internal`. This is deliberately the only value
- * that leaves the module without going through [GawiTheme], because it is the
- * only one another module has to reproduce rather than consume.
+ * Kept as its own name rather than folded into [gawiRole], because the caller
+ * is XML and the question it asks is "what goes behind the window", not "what
+ * is the surface role" — the two are equal here by a decision that could be
+ * revisited.
  */
-fun gawiWindowBackground(darkTheme: Boolean): Color = if (darkTheme) GawiDarkColors.surface else GawiLightColors.surface
+fun gawiWindowBackground(darkTheme: Boolean): Color = gawiRole(GawiRole.Surface, darkTheme)
 
 /**
  * The launcher icon's ground, for `:app`'s `LauncherIconTest` to pin

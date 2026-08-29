@@ -22,28 +22,34 @@ dependencies {
     // plugin that Glance's @Composable tree needs; the compose BOM it also
     // brings governs nothing here, because Glance is not in it.
     //
-    // :core:ui for TWO things, both rasterised here because RemoteViews can
-    // carry neither: R.font.outfit, which BitmapText draws because a host drops
-    // a bundled font resource (visual-identity §2), and Momo's geometry —
-    // drawMomo, MomoFrame and MomoDesignSize — which MomoBitmap draws at the
-    // resting frame because a host cannot run the animation (momo.md §4).
-    // Nothing else may cross this edge. The theme, GawiSpacing and the shared
-    // composables are androidx.compose.ui types, and a Glance tree cannot
-    // consume one — a widget is RemoteViews under the composition, so it has
-    // its own Column, its own GlanceModifier and its own GlanceTheme. "Reuse
-    // the theme" is the first thing a reviewer asks here and the answer is that
-    // it does not compile. :core:ui exposes compose and material3 as `api`, so
-    // the compiler will not stop a third import; treat any other
-    // com.gawi.core.ui.* import in this module as a defect.
+    // :core:ui for THREE things, and the list is the whole rule:
     //
-    // One carve-out, added 2026-08-28 so the rule and the code do not drift
-    // apart: WidgetPaletteTest imports gawiWindowBackground, in the TEST source
-    // set only. WidgetPalette hand-copies the app's hexes because a Glance tree
-    // cannot consume the scheme, and :core:ui publishes that one accessor
-    // precisely so a module reproducing the surface can be pinned to it — the
-    // same guard :app's XML copy has in WindowBackgroundTest. The production
-    // edge is still the two things above, and a third import in `main` is still
-    // a defect.
+    //  1. R.font.outfit, which BitmapText rasterises because a host drops a
+    //     bundled font resource (visual-identity §2).
+    //  2. Momo's geometry — drawMomo, MomoFrame and MomoDesignSize — which
+    //     MomoBitmap rasterises at the resting frame because a host cannot run
+    //     the animation (momo.md §4).
+    //  3. GawiRole and gawiRole, which WidgetPalette derives its day/night
+    //     ColorProviders from. Added 2026-08-29 with the streak widget, which
+    //     needs `tertiary` as well as `primary` and so would have added two
+    //     more untethered hexes to the three visual-identity §7.4 already
+    //     named as this set's debt. Deriving removes the copy instead of
+    //     guarding it; the accessor's KDoc carries the argument.
+    //
+    // Nothing else may cross this edge. Note what item 3 is NOT: the theme,
+    // GawiSpacing and the shared composables are androidx.compose.ui types, and
+    // a Glance tree cannot consume one — a widget is RemoteViews under the
+    // composition, so it has its own Column and its own GlanceModifier. "Reuse
+    // the theme" is the first thing a reviewer asks here and the answer is
+    // still that it does not compile. A plain Color is not a theme, which is
+    // the distinction that makes item 3 legal and GawiTheme not. :core:ui
+    // exposes compose and material3 as `api`, so the compiler will not stop a
+    // fourth import; treat any other com.gawi.core.ui.* import in this module
+    // as a defect.
+    //
+    // The 2026-08-28 test-source carve-out for gawiWindowBackground is gone
+    // with the hexes it guarded: WidgetPaletteTest no longer needs to pin a
+    // copy that no longer exists.
     //
     // A minimal widget (PRD OQ-5, docs/ux/widget.md §2) draws no habit colour,
     // so HabitPalette and parseHabitColor are not wanted either.

@@ -3,7 +3,8 @@ package com.gawi.widget
 import android.content.Context
 import android.content.res.Configuration
 import androidx.compose.ui.graphics.luminance
-import com.gawi.core.ui.theme.gawiWindowBackground
+import com.gawi.core.ui.theme.GawiRole
+import com.gawi.core.ui.theme.gawiRole
 import com.gawi.widget.testsupport.MIN_CONTRAST
 import com.gawi.widget.testsupport.contrastRatio
 import org.junit.Assert.assertEquals
@@ -31,10 +32,20 @@ import org.robolectric.RuntimeEnvironment
  * resolve each provider in a day and a night `Context` and check the answers
  * behave like a scheme pair.
  *
- * Pinning against `core/ui/theme/Color.kt` is a different test, and a useful one,
- * because these hexes are a hand-copy of the app's. `:core:ui` publishes exactly
- * one of them — `gawiWindowBackground` — so exactly one is pinned, by the last
- * test below. [WidgetPalette] records what that leaves unguarded.
+ * **What changed on 2026-08-29, and what it did to this file.** [WidgetPalette]
+ * no longer holds hexes: every value is derived from `:core:ui`'s `gawiRole`, so
+ * the old "is `surface` still the app's window background?" test became a
+ * restatement of one function calling another and is gone. What replaced it is
+ * the question deriving actually leaves open — *which role does each widget
+ * colour draw?* — because that mapping is a decision (`primary` for a completed
+ * glyph, `outline` for an outstanding one, semantic per visual-identity §4.1)
+ * and swapping two of them would still compile, still be two schemes, and still
+ * have the right polarity.
+ *
+ * The contrast test below also changed meaning without changing a line, and this
+ * is the tripwire §7.4 asked for: a retune in `core/ui/theme/Color.kt` now
+ * reaches this module, so a role that drops under 4.5:1 on the widget's ground
+ * fails here. Before, a retune could not fail anything in `:widget` at all.
  *
  * **What this cannot see, stated rather than implied.** A JVM test cannot tell
  * which of Glance's translation paths a provider will take on a real host — that
@@ -45,11 +56,16 @@ import org.robolectric.RuntimeEnvironment
 @RunWith(RobolectricTestRunner::class)
 class WidgetPaletteTest {
 
-    private val ink = listOf(
-        "onSurface" to WidgetPalette.onSurface,
-        "glyphChecked" to WidgetPalette.glyphChecked,
-        "glyphUnchecked" to WidgetPalette.glyphUnchecked,
+    /** Every colour the widget draws, with the `:core:ui` role it is derived from. */
+    private val roles = listOf(
+        Triple("surface", WidgetPalette.surface, GawiRole.Surface),
+        Triple("onSurface", WidgetPalette.onSurface, GawiRole.OnSurface),
+        Triple("glyphChecked", WidgetPalette.glyphChecked, GawiRole.Primary),
+        Triple("glyphUnchecked", WidgetPalette.glyphUnchecked, GawiRole.Outline),
     )
+
+    /** The three that are drawn *on* [WidgetPalette.surface] rather than being it. */
+    private val ink = roles.filterNot { it.third == GawiRole.Surface }.map { it.first to it.second }
 
     @Test
     fun `every ink is legible on the surface it is drawn on, in both schemes`() {
@@ -103,17 +119,27 @@ class WidgetPaletteTest {
     }
 
     /**
-     * The one hex this module can check rather than trust.
+     * Each widget colour draws the role it says it draws.
      *
-     * `:core:ui` exposes `gawiWindowBackground` precisely so a module that has to
-     * *reproduce* the surface can be pinned to it — `:app`'s XML copy is, by
-     * `WindowBackgroundTest`. Imported in the test source set only, so the
-     * production edge stays the two things architecture §2 allows.
+     * The mapping is the part deriving does not settle. A completed glyph is
+     * `primary` and an outstanding one is `outline` because visual-identity §4.1
+     * makes both semantic; swap them and the widget still resolves two schemes
+     * with the right polarity and every contrast still clears the floor, so
+     * nothing else in this file would notice. This is also what keeps a literal
+     * from creeping back in: a hand-typed hex equal to today's value would pass
+     * every other test here and fail this one the moment `:core:ui` moved.
      */
     @Test
-    fun `the surface is the app's window background, both schemes`() {
-        assertEquals(gawiWindowBackground(darkTheme = false), WidgetPalette.surface.getColor(context(night = false)))
-        assertEquals(gawiWindowBackground(darkTheme = true), WidgetPalette.surface.getColor(context(night = true)))
+    fun `each colour is the core-ui role it claims, both schemes`() {
+        for ((name, provider, role) in roles) {
+            for (night in listOf(false, true)) {
+                assertEquals(
+                    "$name is not gawiRole($role) with night=$night",
+                    gawiRole(role, darkTheme = night),
+                    provider.getColor(context(night)),
+                )
+            }
+        }
     }
 
     /** The same application context, in a configuration with night mode forced either way. */
