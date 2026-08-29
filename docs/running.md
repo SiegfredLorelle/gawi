@@ -1518,6 +1518,29 @@ and an upgrade not losing anything.
       active day · 1 completion" above "Every habit is archived", which is the
       contradiction the three-way split was made to remove.
 
+**The retrospective** (built 2026-08-29, docs/ux/insights.md §9) is the same
+screen one period back, and its owed looks are the ones no JVM test can take:
+
+- [ ] **Step back to a quarter that holds real data.** On `gawi-api30` — the
+      rootable image, so the clock can be walked (`adb root`, `settings put
+      global auto_time 0`, `date @<epoch>`) — seed two quarters with a tagged
+      habit each, then open Insights → Quarter → ◀. The label reads "Q2 2026",
+      the headline changes, the trend has three columns with a dot centred over
+      each, and ▶ is greyed only on the current quarter. Then flip to Year: the
+      offset resets to now, so the label reads "2026" and ▶ is greyed.
+- [ ] **The focus sentence flips when the top tag does.** With `health` leading
+      last quarter and `career` this one: "Focus shifted from health to career."
+      Re-tag the leading habit so both quarters agree: "Still mostly career."
+      Remove every tag: no sentence at all, not "Untagged".
+- [ ] **200 % font scale on Year.** The eight-to-twelve trend columns are the
+      densest row in the app: the counts stay on one line each, the initials
+      under them do not collide, and the stepper label between its two arrows
+      does not wrap. The initials are what bought the room, so this is the look
+      that decides whether they were enough.
+- [ ] **A row's best run reads as one line.** "Daily · best 31 days" beside the
+      percentage, and a habit made this period with no run shows the schedule
+      alone — no "best 0 days" anywhere.
+
 ---
 
 ### The restyle — both themes, once
@@ -1768,6 +1791,10 @@ without sight, and whether it survives a reader who needs it larger.
       label, the total, and nothing announcing the bar itself. The bars carry no
       text, so a row is its label and its number — if that is not enough to know
       which tag is which, the row needs a spoken description of its own.
+      Then the trend on Year: each column should be one stop reading "March, 15
+      active days" in full, never a bare "M" — the initials are hidden behind
+      the column's own description (insights.md §9.4). And the disabled ▶ on the
+      current period should still be announced, as disabled, not skipped.
 - [ ] **A TalkBack pass over the history grid, swipe-only.** Its own item because
       it is the one screen in this app that **hides content from a screen
       reader** — the seven column letters carry `clearAndSetSemantics`, since `T`

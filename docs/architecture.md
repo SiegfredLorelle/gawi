@@ -44,7 +44,7 @@ Now-in-Android convention: Gradle version catalog
 | `:core:ui` | Theme, shared composables, and presentation types shared by more than one feature |
 | `:feature:today` | Today view (app home screen, Momo's habitat) |
 | `:feature:habits` | Create/edit/archive habit, habit detail |
-| `:feature:insights` | Per-habit heatmap and completion-rate trends, tag effort distribution, and Phase 1.5's retrospectives — **all three Phase 1 surfaces are built; the retrospectives are not** |
+| `:feature:insights` | Per-habit heatmap and completion-rate trends, tag effort distribution, and Phase 1.5's retrospective — **all three Phase 1 surfaces and the retrospective are built**; the review is the app-wide screen stepped back through the calendar, not a screen of its own |
 | `:feature:settings` | Day boundary, week start, reminder time, the app's theme, export and import, the 30-day export nudge |
 | `:widget` | Glance home-screen widget |
 
@@ -157,7 +157,7 @@ completion-rate trend and is reached from habit detail; `Destination.Insights` i
 a **top-level** destination holding the tag distribution and a per-habit
 adherence list over one period, reached from a third action in Today's app bar.
 That second screen is the app's only report on every habit at once, and it is
-where PRD §5's Phase 1.5 retrospectives will grow from. It gets its own module rather than a corner of
+where PRD §5's Phase 1.5 retrospective grew from on 2026-08-29 (a stepper and three facts, no new destination). It gets its own module rather than a corner of
 `:feature:habits`, which is worth recording because the heatmap is *per habit*
 and reached from habit detail, so the corner looks right. Two things say
 otherwise. The navigation rule below makes "reached from habit detail" free: a
@@ -170,7 +170,7 @@ names the other. And the third surface settles it, because **tag effort
 distribution is not per-habit** — one number per tag across every habit — so it
 has no home in `:feature:habits` under any reading, and splitting the two would
 push their first shared piece into `:core:ui` for no reason. PRD §5's Phase 1.5
-retrospectives are this module's second job, so the room is not speculative.
+retrospective was this module's second job, and it landed there.
 [docs/ux/insights.md](ux/insights.md) is the record — a sketch for the two
 unbuilt surfaces and, in its §8, what building the heatmap settled. `insights`
 was in `scope-enum` in `.commitlintrc.yaml` before its first commit, as this

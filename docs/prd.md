@@ -206,8 +206,8 @@ reason (2026-08-23).
 - **Beyond what this section asked for**, and worth recording rather than leaving to be discovered: that screen also carries an app-wide headline and a per-habit adherence list, which is the first line of Phase 1.5 below. Everything in the app until then reported on one habit or one day, and the gap was raised as soon as the heatmap was reviewable. The retrospectives now have a screen to grow out of rather than a blank module.
 
 ### Phase 1.5 — Retrospectives (the long-horizon payoff)
-- **Quarterly / yearly review screens**: adherence per habit and per tag across the period, trend lines, best/worst streaks, "focus shifted from X to Y" summaries.
-- Export of a review as an image/PDF (nice-to-have).
+- **Quarterly / yearly review screens**: adherence per habit and per tag across the period, trend lines, best/worst streaks, "focus shifted from X to Y" summaries. (**Built 2026-08-29**, not as new screens: the Insights overview gained a stepper that walks its Month/Quarter/Year back through the calendar, an active-days-per-month trend, a best run per habit row and the focus sentence. "Worst" was deliberately not built — every habit's worst streak is zero. [docs/ux/insights.md](ux/insights.md) §9 has each decision.)
+- Export of a review as an image/PDF (nice-to-have). (**Deferred 2026-08-29** — recorded as a later feature in [docs/ux/insights.md](ux/insights.md) §7; nothing built prevents it.)
 
 ### Phase 2 — LAN Sync (committed)
 - Device discovery on same network via mDNS; pairing with confirmation code (LocalSend-style trust model).

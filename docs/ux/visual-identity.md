@@ -300,7 +300,9 @@ Costs: the app chrome is cooler and quieter than the character.
 The strongest tie to the mascot, and the least generic on first launch. Two
 costs, both real: Momo stops standing out once everything around it is already
 coral, and a pink primary has to work on the long-horizon retrospective screens
-(PRD §5 Phase 1.5), which are the most data-dense surfaces planned.
+(PRD §5 Phase 1.5), which are the most data-dense surfaces planned. (That surface
+exists as of 2026-08-29 — the Insights overview on Year, with a twelve-column
+trend — and it is drawn in the teal that won, so this cost was never paid.)
 
 ### Candidate C — woven earth
 
