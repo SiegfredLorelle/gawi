@@ -227,10 +227,12 @@ Small decisions that were easier to make once drawn:
   minimal, no streak.** Reasoning in [widget.md](widget.md) §2.
 - The Phase 1 mascot treatment **in the widget and the reminder** (PRD §5).
   Only the Today-view slot is fixed here.
-- Milestone celebrations (7/30/100 days) have no visual treatment yet.
-  Finishing the day — the mood entering `thriving` — is celebrated since
-  2026-08-26 ([momo.md](momo.md) §6); that is a different trigger, not this
-  one closed.
+- ~~Milestone celebrations (7/30/100 days) have no visual treatment yet.~~
+  **Built 2026-08-29** ([momo.md](momo.md) §5 and §6): the tank plays a
+  bigger sequence than finishing the day's, the panel's line swaps to the
+  milestone line for the run, and §5's streak badge sits on a pill of its
+  container role and swells — the day/week distinction holds on the pill as
+  it does on the number.
 - §1's collapse into an app-bar chip, and the chip itself. See the status
   note above.
 - **The `regenerating` copy has nowhere to come from yet.** §3 says it

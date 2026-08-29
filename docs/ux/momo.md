@@ -226,7 +226,13 @@ desaturation, done arithmetically in `drawMomo` so a test can measure it.
   resting thriving frame already says thriving, so nothing is lost. It adds no
   announcement: the copy line changing to the thriving line *is* the
   announcement, and a second one would be the double reading this section
-  exists to prevent.
+  exists to prevent. A streak milestone (§6) keeps the motion half of this and
+  is the one exception on the text half: no mood line changes when a streak
+  reaches seven, so the panel's line *becomes* the milestone line for the
+  length of the run and then returns — that change is the announcement, still
+  the only one. It happens with animations off too, for the same two seconds,
+  because a line is text and the gate governs what moves; the row's badge
+  takes its pill for the same window, so the row and the line agree.
 
 ## 6. What this does not decide
 
@@ -243,10 +249,25 @@ desaturation, done arithmetically in `drawMomo` so a test can measure it.
   `docs/running.md` §4 checks the first two. One part of the board was not
   transcribed: it also popped the sparkles in, but the face crossfade already
   brings them in over the transition, and a knob on `Momo`'s public API for one
-  caller was not worth it. **Streak milestones** (PRD §5: 7 / 30 / 100 days;
-  4 / 12 / 52 weeks) still have no treatment — this is a different trigger,
-  not that one closed. If a milestone is ever a hand-keyed sequence rather than
-  a loop, that is where §1's Lottie fallback becomes relevant.
+  caller was not worth it. ~~**Streak milestones** (PRD §5: 7 / 30 / 100 days;
+  4 / 12 / 52 weeks) still have no treatment.~~ **Celebrated since 2026-08-29**
+  (`Milestone.kt`), designed on the canvas's "Milestone celebration" page: when
+  a row's streak crosses a rung — `previous < m ≤ next`, the largest such m, so
+  a retro fill from 6 to 31 celebrates 30 — Momo hops twice (18 dp), twenty-two
+  bubbles rush up across the middle 200 dp, a ring of eight of the thriving
+  face's own sparkles opens out from 40 to 110 dp around her, and the water
+  brightens to .30 and holds, over 2.0 s; the row's badge swells on a pill of
+  its container role. The edge is each row's streak against the one last seen
+  for that habit, detected in composition for the reason above, so a cold start
+  on day seven, a rotation and a return from the background never fire it;
+  None and Broken count as zero on the way in, a change of unit is a first
+  sighting, and an untick-then-retick replays it. When it and the day's
+  celebration fire on one tick the milestone owns the tank and the day's run
+  finishes unseen beneath it (1400 ms inside 2000); two rows crossing at once
+  get one sequence, for the higher rung, and every crossing badge pulses. §5
+  records the one thing it does that the day's does not: the copy line swaps.
+  Still rigid motion of existing parts, drawn by an `Animatable` — §1's Lottie
+  fallback stays unused.
 - ~~**The widget and reminder treatments** beyond "the still frame on their own
   ground"~~ — placement and size were decided with the build (§4): in the
   Today widget, above the rows, size-gated. ~~Still open from visual-identity
