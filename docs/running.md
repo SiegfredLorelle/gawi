@@ -867,6 +867,71 @@ Decisions and reasoning are in [docs/ux/widget.md](ux/widget.md).
       `pm clear`, which destroys the log.)
 - [ ] **Resizing keeps it usable.** Drag the handles: rows reflow and the list
       scrolls rather than clipping.
+- [ ] **A write in the app moves *both* widgets.** With the Today widget and the
+      streak widget both placed, complete a habit in the app and go to the home
+      screen without touching either. Both change. This is the same
+      `ProjectionListener` check as above and it is listed separately because the
+      failure it catches is different: a provider missing from
+      `GlanceProjectionListener` still *renders*, so it looks placed and working
+      and simply stops following writes. `ProjectionRefreshTest` reads the
+      receivers out of the merged manifest, which is as far as a JVM test reaches.
+
+**The streak widget — built 2026-08-29** (docs/ux/widget.md §6). Its own
+provider, so its own picker entry, and the first one here carrying API 31
+attributes.
+
+- [ ] **It is offered, and the picker says what it is.** Long-press → *Widgets* →
+      **Gawi**: two entries, *Today* and *Streaks*. On API 31+ the *Streaks*
+      entry shows a description under the name and a preview of the rows; on 29
+      and 30 it shows neither, which is correct rather than broken — those
+      attributes only exist in `res/xml-v31`. The preview is in the **system
+      face, not Outfit**, also correct: a picker inflates real XML and there is no
+      bitmap escape there.
+- [ ] **A fresh placement lands three cells by two** on API 31+, from
+      `targetCellWidth/Height`. On 29 and 30 the launcher sizes it off `minWidth`
+      instead, so a narrower first placement there is expected.
+- [ ] **It dates its number.** The bottom line reads *as of* and then a weekday,
+      a day and a month — no year, no clock time. This is the requirement
+      docs/ux/visual-identity.md §7.1 makes non-negotiable, so it is the one
+      element on this widget that must never be missing or clipped.
+- [ ] **Three rows and the date at the smallest size.** Place it one row tall
+      with four or more active habits: three habit rows, the date pinned beneath
+      them, and the rows scroll. Four rows and no date is the failure — 94dp buys
+      one or the other and the date is not the half that gives way.
+- [ ] **The unit word appears only when there is room.** At the smallest size a
+      weekly habit reads `3w` and a daily one a bare number. Resize to two rows
+      and two columns wider: they become `3 weeks` and `12 days`, under a
+      *Streaks* header. `StreakUiStateTest` pins the thresholds; only a launcher
+      shows whether its cells clear them.
+- [ ] **Days and weeks never look like the same number.** With one daily and one
+      weekly habit both on a run, check all three signals are present at the
+      larger size — the unit word, and two visibly different inks — and that at
+      the smallest size the `w` and the ink still separate them. Then check it in
+      greyscale (Settings → Accessibility → colour correction → monochromacy):
+      the `w` and the word must carry it alone.
+- [ ] **A break and a fresh habit read differently.** A habit whose streak has
+      broken shows a muted `0` (and *was 12* at the larger size); a habit with no
+      completions ever shows an em dash. If both show `0`, the two states have
+      been collapsed and the widget is telling a new user they have failed.
+- [ ] **It survives a rollover untouched.** Set the day cutoff a couple of
+      minutes ahead, wait past it without touching anything, and a streak that
+      depended on yesterday updates itself. Same mechanism as the Today widget's
+      rollover check further down, and worth repeating here because this is the
+      widget whose number can go stale *without any event at all* — which is why
+      it carries a date in the first place.
+- [ ] **TalkBack reads each row once, with the unit.** Swipe through the rows:
+      each announces as *"read, 12 days"* — the **full** wording even where the
+      widget is drawing `3w`, because a spoken "12" cannot say whether it counts
+      days or weeks. The date is announced too. Nothing announces twice.
+- [ ] **You can read it in the theme the device is in.** Both schemes, on
+      hardware, sampled the way the API 29/30 pass sampled the Today widget. The
+      role to watch is `tertiary` — the week-streak ink, and the only role in this
+      module that no other surface draws, so nothing measured it against a real
+      launcher before this widget existed.
+- [ ] **200 % font scale.** Rows grow, a long habit name ellipsises inside its
+      row rather than under the numeral, and the numeral is never pushed off the
+      edge. The name and the streak have fixed slots, so what fails here is the
+      slot width rather than the layout.
 
 **The widget's text is in Outfit since 2026-08-25, as bitmaps** — a font
 resource cannot reach a widget (measured 2026-08-24, docs/ux/visual-identity.md
