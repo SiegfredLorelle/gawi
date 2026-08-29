@@ -897,10 +897,10 @@ back present and childless. And anything about a **launcher's own cells, theme o
 process**, which is the standard this block already holds.
 
 **Seen by eye on a launcher, 2026-08-29** — API 37 emulator, Pixel launcher, dark
-mode, both widgets placed and one daily habit. The boxes below stay unticked
-because this block's standard is that an emulator is not an OEM launcher, but
-these were watched rather than inferred and the next pass need not rediscover
-them:
+mode, both widgets placed and one daily habit; then again the same day with four
+habits, one of them weekly. The boxes below stay unticked because this block's
+standard is that an emulator is not an OEM launcher, but these were watched
+rather than inferred and the next pass need not rediscover them:
 
 - The rows render, which is the half `StreakWidgetHostTest` cannot see: habit
   name left, streak numeral right in `primary`, `as of Sat, Aug 29` pinned
@@ -912,11 +912,33 @@ them:
 - **`1 day`, not `1 days`** — the plural, end to end, on the surface that draws
   it.
 
-Not seen, and both need habits the device did not have: **three rows at the
-smallest size** (needs four or more habits) and **days versus weeks never looking
-alike** (needs one weekly-schedule habit beside a daily one). The second is the
-invariant the whole design turns on and is the most valuable check left in this
-block.
+- **Days and weeks do not look alike — the second pass, with `Read` (daily,
+  done today) beside `Stretch` (weekly, target 1, done today), and `Water` and
+  `Journal` never completed.** Compact: `1` in `primary` and `1w` in `tertiary`,
+  the two em dashes in `outline`. Full: `1 day` and `1 week` under the *Streaks*
+  header. The inks were measured from the screenshot, not eyeballed, and they
+  reproduce `gawiRole`'s dark-scheme numbers exactly — 10.44:1, 7.34:1 and
+  5.31:1 against the widget's own surface. **The two inks are only 1.42:1
+  apart from each other**, which is the whole reason the `w` and the unit word
+  exist — in greyscale they are near-identical greys, so on this surface the
+  suffix and the word carry the distinction alone, and they were both present.
+- **The greyscale step cannot be screenshotted.** Turning on monochromacy
+  (`settings put secure accessibility_display_daltonizer_enabled 1` and
+  `accessibility_display_daltonizer 0`) reads back as set, and `screencap`
+  returns the same colours as before — colour correction is applied on the
+  display path, after the frame a capture reads. Judge it by eye on the
+  device, or compute the luminance as above; a capture proves nothing here.
+- **Never-completed reads as an em dash, not `0`**, on both rows that had
+  no history.
+- **This launcher's smallest cell is two rows, about 240×132dp**, and at that
+  size four rows and the date all fit. The "one row tall, three rows and the
+  date" case below needs a launcher whose cells come closer to the 110dp
+  minimum; dragging the handle further up here snaps back.
+- Placing it from the picker is a drag, and `input draganddrop` does it on
+  API 37 — the only part of this block that had always needed a hand.
+
+Still not seen: **three rows at the smallest size** proper, for the reason
+above — the launcher, not the habits, is what this pass lacked.
 
 - [ ] **It is offered, and the picker says what it is.** Long-press → *Widgets* →
       **Gawi**: two entries, *Today* and *Streaks*. On API 31+ the *Streaks*
