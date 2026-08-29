@@ -385,7 +385,10 @@ translation path. The pair of fills is held to WCAG 1.4.11's 3:1 in
 the history grid's two cell fills are, because the pair is the information.
 `WidgetMomoTest` matches each mask by tint identity and reads its segments off
 the pixels, so swapping the two colours is a red test rather than a launcher
-surprise, and `BandBitmapTest` holds the geometry at thirty.
+surprise, and `BandBitmapTest` holds the geometry at thirty — including thirty
+in 60px, where the gap gives way to nothing and every habit still ends on the
+bitmap; the PR review found the first mask placing segments by a fixed gap,
+which walked the tail off the edge from about 48 habits.
 
 **One reading, and in this body it is the mood line's.** In the face-above-rows
 body Momo carries the mood sentence because nothing else says it; in the large
@@ -404,8 +407,13 @@ reads what the Today widget reads — `widgetContent()`, the same three states o
 the same snapshot — and takes the mood and whether there are rows from that; a
 parallel `MomoContent` type was written first and deleted on review as a copy
 with two fields fewer. Her face is her usual 72 dp until the caption needs the
-room: at a large font scale on the 110 dp tile it gives way, down to a 40 dp
-floor, rather than pushing the word off (`momoFaceHeight`).
+room: at a large font scale on the 110 dp tile it gives way, and when the
+two-line no-habits copy leaves less than 40 dp it goes altogether rather than
+clip — she is decorative in that state (`momoFaceHeight`). A mood word is one
+line; the reservation counts the lines actually drawn, which the PR review
+found the first cut did not. Both this and the large body's width gate reserve
+at the caption's own text scale, since 12 sp grows more than 16 sp under
+Android 14's curve (`BitmapText.textScale` takes the size now).
 Two by two, 110dp square, her ground the tank colour — `primaryContainer`, flat,
 because a `RemoteViews` background is one colour and flat was decided anyway —
 and under the resting frame **one word**: *thriving*, *pottering*, *worried*,
