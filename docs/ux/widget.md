@@ -348,7 +348,98 @@ to write, so nothing here takes that on. Adding a tap later means adding an
   palette by hand, because XML cannot read Kotlin — pinned to `:core:ui` by
   `StreakPreviewColorsTest`, exactly the way `:app`'s window background is.
 
-## 7. Still open
+## 7. The Momo widget, and the Today widget's large body
+
+**Both built 2026-08-29**, closing docs/ux/visual-identity.md §7.4's set of four
+surfaces. Both were drawn on the design canvas's page 3 before any of the set was
+built; the caption decision below was drawn again on page 9 ("Widget set — round
+three") and chosen there, the way §6's direction was.
+
+**Today large is a third body of the same provider, not a fourth provider.**
+At 170dp of height *and* 220dp of width the Today widget draws the canvas's
+header — Momo on a `primaryContainer` pill, and beside her the mood line over
+the **woven day band** — above the same rows it always drew. Tall but narrower
+than 220 keeps the face-above-rows body that shipped 2026-08-25; under 170 stays
+§2's minimal widget at any width. The width gate is arithmetic rather than
+taste: at the provider's 180dp, 164dp of usable width less the 66dp pill and 10dp
+of gap leaves 88dp for the copy, and the regenerating line is 47 characters, so
+no mood line fits that in two lines of caption type. 220 sits between the
+three-cell minimum and the 250dp four-cell placement the canvas drew, and it is
+the streak widget's `FULL_MIN_WIDTH` for the same kind of reason.
+`LARGE_MIN_WIDTH` in `WidgetUiState.kt` carries the numbers and `WidgetBodyTest`
+pins both gates at both edges.
+
+**The band is the rows' own flags, and nothing else.** One segment per habit in
+the rows' order, `primary` when today's cell is ticked and `outlineVariant` when
+it is not, drawn as flat `Box`es on day/night providers rather than as a bitmap
+— a background colour is the one thing `RemoteViews` draws in every scheme
+without a raster. Nothing is counted, sorted or capped, so the band cannot say
+something the checkboxes beneath it do not; with many habits the segments thin
+rather than fold, which at thirty is a texture and still true. The pair of fills
+is held to WCAG 1.4.11's 3:1 in `GawiColorSchemeTest` and `WidgetPaletteTest`
+(light 3.78, dark 6.34), the way the history grid's two cell fills are, because
+the pair is the information. `WidgetMomoTest` asserts the segments by provider
+identity in order, so swapping the two colours is a red test rather than a
+launcher surprise.
+
+**One reading, and in this body it is the mood line's.** In the face-above-rows
+body Momo carries the mood sentence because nothing else says it; in the large
+body the sentence is drawn, so she is decorative and the band is decorative, and
+TalkBack reads the line once and then the rows (momo.md §5). Her height on the
+pill is a second constant, `MomoBitmap.PILL_HEIGHT_DP`, for the reason the first
+one is a constant: the bitmap's cost must not follow a host's idea of "large".
+
+**The Momo widget is the fourth provider, and the cheapest to keep honest.**
+Two by two, 110dp square, her ground the tank colour — `primaryContainer`, flat,
+because a `RemoteViews` background is one colour and flat was decided anyway —
+and under the resting frame **one word**: *thriving*, *pottering*, *worried*,
+*regrowing*. Mood only: no rows, no number, so nothing here can rot and nothing
+here needs §6's "as of" line or §4's re-reading tap. The habitat's weeds and
+bubbles stay Today's own (momo.md §4); the canvas did not draw them here and
+nothing about them crosses the widget edge.
+
+**The caption was the open call, and page 9 settled it.** Three were drawn at
+true size for all four moods in both schemes: one word, the full `widget_mood_*`
+sentence, and no caption. The sentence reuses strings but its longest line clips
+on the second line at 94dp of usable width, and Momo has to shrink to 52dp to
+make the room; no caption leaves a greyscale viewer with only an expression to
+read. One word costs four new strings and a fifth mood vocabulary to keep in
+step with the sentences, and that was judged the cheaper cost. TalkBack does not
+read the word: the face carries the full sentence once, and the word is
+decorative — so the widget never says "Momo is pottering about. pottering." With
+no habits the roles swap, the way the Today widget's do: the no-habits copy is
+drawn and read, and the face is decorative. A failed read draws the failure copy
+and no face, because nothing was read.
+
+**What the palette gained, and what the edge did not.** Three roles joined
+`GawiRole` in `:core:ui`: `PrimaryContainer` (Momo's ground, the pill),
+`OnPrimaryContainer` (the one ink drawn on it — light 10.10:1, dark 6.37:1) and
+`OutlineVariant` (an outstanding segment). `WidgetPalette` names them
+`momoGround`, `momoCaption`, `bandWoven` and `bandOutstanding`; the first two are
+grounds and darken at night, which `WidgetPaletteTest` now distinguishes from the
+inks that lighten. The canvas's page 3 drew the caption in `onSurface`, which
+predates the role list; `onPrimaryContainer` is the role that pairs with that
+ground and it is what ships. The `:core:ui` edge still carries four things
+(architecture §2) — the role list grew, the list of things did not.
+
+**The preview cannot show her face.** The Momo widget's API 31 picker preview
+is its ground and its word in the system face, because there is no drawable of
+Momo in `:widget` — she is `drawMomo` rasterised at render time — and a
+hand-drawn copy for the picker would be the fifth copy of the geometry that
+`MomoBitmap` exists to avoid. The description names her instead. Its two
+colours join the same hand-copied list `WidgetPreviewColorsTest` pins
+(`StreakPreviewColorsTest` until this day).
+
+**Every place a provider has to be named was named**: the manifest,
+`refreshedWidgets()` (a provider missing there freezes for the life of a session,
+§6), `ProjectionRefreshTest`, `WidgetHostBinding`, and a `res/xml-v31` variant
+that repeats every base attribute. `MomoWidgetHostTest` binds it to a real host
+and reads the 2×2 back off `AppWidgetProviderInfo`; `WidgetHostTest` now also
+tells the Today provider it is 250×200dp and waits for the mood line, which is
+the one string only the large body emits. Neither has been placed on a launcher
+yet — docs/running.md §4 has the boxes.
+
+## 8. Still open
 
 - ~~**A boundary refresh** (§4).~~ **Built 2026-08-21** with the reminder, as
   `RolloverWorker` (reminder.md §2). A widget on a launcher now follows the day

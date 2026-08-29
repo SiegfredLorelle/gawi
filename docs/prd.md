@@ -177,8 +177,10 @@ and names the ten roles the app draws, but the typeface waits on an experiment
 widget sit side by side on a home screen and a face that cannot reach the widget
 is a different choice from one that can. So the app is no longer generic in
 colour and still is in type, which is the largest remaining gap between it and
-the design canvas. The widget also still draws on Glance's defaults; §7.4 of that
-document scopes its palette and the three further surfaces. The cost is honest and worth stating: engineering now
+the design canvas. ~~The widget also still draws on Glance's defaults; §7.4 of that
+document scopes its palette and the three further surfaces.~~ The widget set
+§7.4 scoped is built and derives its palette from the app's (2026-08-28/29;
+[docs/ux/widget.md](ux/widget.md) §6–§7). The cost is honest and worth stating: engineering now
 waits on a design decision that has been open since this document was written,
 and the split is what bounds that wait rather than removing it.
 
