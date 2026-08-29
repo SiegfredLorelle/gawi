@@ -1270,7 +1270,8 @@ and must be solid, so it is a different medium — it is now Momo's silhouette
   (the canvas's own weeds and bubbles, at a per-mood tempo), the mood change
   became one interpolated body rather than two crossfaded ones, and finishing
   the day is celebrated — all designed on the canvas's "Habitat & motion" page
-  (momo.md §3, §4, §6). Still open there: streak milestones.
+  (momo.md §3, §4, §6). Streak milestones followed on 2026-08-29, from the
+  canvas's "Milestone celebration" page (momo.md §6).
 - ~~**The launcher icon — its drawing and its wiring, not its design.**~~
   **Built 2026-08-25.** §7.1's decision — Momo as a mark, the woven thread as
   the monochrome layer — is `ic_launcher_foreground.xml` and

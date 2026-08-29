@@ -1692,11 +1692,26 @@ the one sequence that only plays while the frame loop runs.
       edge on purpose. Look at whether the silhouette reads from the gills and
       eyes alone; if the body vanishes into the water, the fix is the tank's
       gradient, not Momo's colour.
+- [ ] **A milestone plays bigger.** With a habit at six days, tick it: Momo
+      hops twice, a wider burst rises, a ring of gold sparkles opens out around
+      her and the water brightens harder; the line under the tank reads "7 days
+      in a row. Momo is dazzled." for two seconds and the row's streak badge
+      swells on a teal pill, then everything returns. Untick and re-tick: it
+      plays again. If that habit was also the last one of the day, only the
+      milestone plays, and the thriving line follows the milestone line.
+      Background the app and return, and rotate: nothing plays (momo.md §6).
+      A weekly habit reaching its fourth week does the same with "4 weeks" and
+      a gold pill.
+- [ ] **TalkBack on a milestone.** With TalkBack on, tick the six-day habit:
+      the panel's node reads the milestone line once as it changes and the mood
+      line once more when it returns; the badge announces nothing extra.
 - [ ] **Animator duration scale off** (Developer options → *Animator duration
       scale* → *Animation off*), then reopen Today. Momo must be still, at the
       resting frame, the weeds upright and the bubbles frozen, and the mood
       change on a tick must cut rather than glide; ticking the last habit must
-      not play the celebration. Turn it back on and restart the app; the float
+      not play the celebration, and a habit reaching seven must not move
+      anything — but its line still swaps and its badge still takes the pill,
+      for the same two seconds. Turn it back on and restart the app; the float
       resumes. (Read once per composition, by design — `Animations.kt` says why
       it is not observed.) Nothing on the JVM can see this: the tests set the
       same switch to get a still frame, so they prove the still frame, not the
