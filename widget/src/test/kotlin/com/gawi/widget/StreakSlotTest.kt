@@ -30,7 +30,9 @@ import org.robolectric.annotation.GraphicsMode
  * that returns one pixel per character regardless of text size — so the first
  * version of this file passed at every scale, and passed just as happily with the
  * scaling removed. It measured nothing. NATIVE gives real font metrics: `99w` is
- * 30dp of ink at the default and 54dp at a reported `fontScale` of 2.0.
+ * 30dp of ink at the default and 54dp at a reported `fontScale` of 2.0 — a 1.8×
+ * growth against a scale the platform reports as 2.0, which is the non-linearity
+ * `BitmapText.textScale` exists to measure rather than assume.
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -60,7 +62,10 @@ class StreakSlotTest {
         val metrics = context.resources.displayMetrics
         // The same scale the widget uses, which is NOT configuration.fontScale:
         // at a reported 2.0 the ink grows 1.75x, because font scaling has been
-        // non-linear since Android 14 (BitmapText.textScale).
+        // non-linear since Android 14. BitmapText.textScale probes at the drawn
+        // size to get that number — an earlier version probed at 1sp, which sits
+        // below FontScaleConverter's table and so returned the 2.0 its own KDoc
+        // said not to read. Measured here at 1.75 against a 28.0px paint.
         val scale = BitmapText.textScale(context)
         // The same two conversions the widget makes: the slot is scaled by hand,
         // then handed to OutfitText as a Dp and turned into px there.
