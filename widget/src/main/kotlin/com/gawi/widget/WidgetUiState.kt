@@ -138,8 +138,14 @@ internal fun WidgetContent.body(size: DpSize): WidgetBodyContent = when (this) {
  * The least height, in dp, at which Momo is drawn.
  *
  * The provider's `minHeight` is 110dp — one grid cell on every launcher
- * measured — and two cells land at 220 or more, so 170 separates the two
- * without depending on any one launcher's cell size. Above it, [MomoBitmap]'s
+ * measured when this was written — and two cells landed at 220 or more, so 170
+ * seemed to separate the two without depending on any one launcher's cell
+ * size. ~~Without depending~~ — **it does depend, measured 2026-08-29**: the
+ * API 37 Pixel launcher on a small phone gives two rows 132dp, so a 3×2
+ * placement there never clears this gate and a third row is what shows the
+ * face. The rule is about dp of room, which is the property that matters, and
+ * docs/running.md §4 records which side of it each launcher lands on. Above
+ * it, [MomoBitmap]'s
  * 72dp face still leaves at least 82dp for rows after the padding, so Momo
  * never displaces every habit. Rather than a resize breakpoint from the
  * provider xml, because the API 31 attributes that would express one are a
@@ -202,7 +208,7 @@ internal fun Mood.description(): Int = when (this) {
  * A *persistent* failure still lands on [WidgetContent.Unavailable] and stays
  * there, which is correct — there is nothing else to show. How long it stays is
  * not something this code can promise: it clears when the Glance session ends,
- * or when the provider's update period next gets through (§4).
+ * or when the provider's update period next gets through (docs/ux/widget.md §4).
  *
  * The `catch` sits after the `map`, so a failed read replaces the whole content
  * rather than one row. Cancellation is never retried and never caught as a

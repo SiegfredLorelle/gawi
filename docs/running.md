@@ -1128,8 +1128,9 @@ binds and Glance composes it" is a machine's job; what follows is what only a
 launcher shows.
 
 **Seen by eye on a launcher, 2026-08-29** — API 37 emulator, Pixel launcher, dark
-mode, the same four habits as the streak pass. Boxes stay unticked for this
-block's usual reason; these were watched and measured, not inferred:
+mode, the same four habits as the streak pass. Boxes stay unticked because an
+emulator is not an OEM launcher, the streak block's standard; these were
+watched and measured, not inferred:
 
 - **The picker offers three entries**, and the *Momo* one shows its description
   and a preview that is the ground and the word with no face, as intended.
@@ -1149,8 +1150,11 @@ block's usual reason; these were watched and measured, not inferred:
   face-above-rows body cannot be reached here at three rows tall. Like the
   streak block's "smallest size" case, that is the launcher's cell size and
   not the widget; a launcher with narrower cells is what shows the flip.
-- At three by two the Today widget drew rows alone (132dp is under the height
-  gate), which is the 2026-08-21 widget unchanged.
+- **At three by two the Today widget drew rows alone**, because two rows here
+  are 132dp and the face needs 170. That refutes `MOMO_MIN_HEIGHT`'s old KDoc
+  claim that two cells land at 220 or more on every launcher, and the "two
+  cells tall" wording widget.md §2 and momo.md §4 used; all three now say 170dp
+  of room and name this launcher as the one where that is three rows.
 
 Not seen: greyscale by eye (the capture cannot show it), TalkBack, the light
 scheme, and the two-column flip.
@@ -1159,10 +1163,13 @@ scheme, and the two-column flip.
       resize it to four cells wide and three tall (250×200dp on the canvas):
       Momo on a teal pill at the left, the mood line beside her, and beneath the
       line a band of thin segments — one per habit, filled where today is done.
-      Then narrow it to three cells wide, still three tall: the header goes and
-      the face sits above the rows again, the 2026-08-25 body. Then one row
-      tall: rows alone. `WidgetBodyTest` pins the two gates; only a launcher
-      shows whether its cells land on the right side of 220dp.
+      Then narrow it, still three tall, to the first width under 220dp the
+      launcher allows: the header goes and the face sits above the rows again,
+      the 2026-08-25 body. Then shorten it to under 170dp: rows alone. On the
+      small-phone Pixel launcher neither is reachable — three columns is 240dp
+      and the floor, and two rows is 132dp — so this box needs a launcher with
+      other cells. `WidgetBodyTest` pins the two gates; only a launcher shows
+      which side of them its cells land on.
 - [ ] **The band is the checkboxes.** Count the segments against the rows and
       tap a row: its segment flips with its box, on the same write. A band that
       disagrees with the rows beneath it has been given a rule of its own, which
