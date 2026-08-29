@@ -422,6 +422,15 @@ to write, so nothing here takes that on. Adding a tap later means adding an
   streak widget's variant proved is the cost: the `-v31` file **replaces** the
   base one rather than merging with it, so every attribute has to be repeated and
   the two kept in step by hand.
+
+  **The other half, stated because "half closed" does not say which half.** On
+  API 29 and 30 the streak widget's picker entry has no preview *and* no
+  description: `previewLayout` is API 31, and neither provider declares
+  `previewImage`, which is API 11 and so would be legal in the base file. The
+  entry falls back to the launcher icon and its label alone. Deliberate for now
+  rather than overlooked — a preview image is a drawn asset, so it belongs on the
+  design canvas before it belongs in `res/` — but it means the platform range
+  where the picker says least is exactly the one with no preview at all.
 - **A habit's colour and icon are not drawn.** `HabitPalette` and
   `parseHabitColor` are `:core:ui`, which a Glance tree cannot consume (the
   theme is Compose UI). Drawing them means Glance-side colour parsing, which is
