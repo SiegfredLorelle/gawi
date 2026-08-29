@@ -51,6 +51,10 @@ class MilestoneFrameTest {
         // Days(7) after Weeks(3) is a schedule edit, not seven days earned; and 4 is no rung for days.
         assertNull(milestoneCrossed(StreakUi.Weeks(3), StreakUi.Days(7)))
         assertNull(milestoneCrossed(StreakUi.Days(3), StreakUi.Weeks(4)))
+        // A break remembers its unit: a daily break handing on to a weekly count is a schedule edit.
+        assertNull(milestoneCrossed(StreakUi.Broken(previous = 3, weekly = false), StreakUi.Weeks(4)))
+        assertNull(milestoneCrossed(StreakUi.Broken(previous = 3, weekly = true), StreakUi.Days(7)))
+        assertEquals(4, milestoneCrossed(StreakUi.Broken(previous = 3, weekly = true), StreakUi.Weeks(4)))
         assertNull(milestoneCrossed(StreakUi.Days(3), StreakUi.Days(4)))
         assertNull(milestoneCrossed(StreakUi.Weeks(6), StreakUi.Weeks(7)))
     }
