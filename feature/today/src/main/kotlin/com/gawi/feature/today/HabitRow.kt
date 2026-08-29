@@ -35,13 +35,7 @@ import com.gawi.core.ui.theme.glyphColorOn
  * control that happen to sit together.
  */
 @Composable
-internal fun HabitRow(
-    row: HabitRowUi,
-    onToggle: (Boolean) -> Unit,
-    modifier: Modifier = Modifier,
-    celebrating: Boolean = false,
-    pulse: (() -> Float)? = null,
-) {
+internal fun HabitRow(row: HabitRowUi, onToggle: (Boolean) -> Unit, modifier: Modifier = Modifier, pulse: (() -> Float)? = null) {
     val completeLabel = stringResource(if (row.completed) R.string.today_undo else R.string.today_complete)
     Row(
         modifier = modifier
@@ -61,7 +55,7 @@ internal fun HabitRow(
     ) {
         HabitIcon(icon = row.icon, tint = row.iconTint)
         HabitTitles(row, Modifier.weight(1f))
-        StreakBadge(row.streak, celebrating = celebrating, pulse = pulse)
+        StreakBadge(row.streak, pulse = pulse)
         Checkbox(
             checked = row.completed,
             // The row owns the click. A checkbox that also handled it would be
