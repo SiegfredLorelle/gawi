@@ -125,7 +125,7 @@ class ReminderScheduler @Inject constructor(
      * the reminder time moves the threshold, and neither writes anything to the
      * log — so nothing can push either change at WorkManager. `SettingsSource`
      * already re-emits on both, which makes one collector the whole mechanism, and
-     * it closes docs/ux/widget.md §6's *"a settings edit is not an event either"*
+     * it closes docs/ux/widget.md §7's *"a settings edit is not an event either"*
      * gap as a side effect rather than needing anything of its own.
      *
      * Deduped on the two fields that move a wake. The week start also lives in

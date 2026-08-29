@@ -94,7 +94,7 @@ internal fun StreakBody(content: StreakContent) {
         modifier = GlanceModifier.fillMaxSize().background(WidgetPalette.surface).padding(WIDGET_PADDING.dp),
     ) {
         val context = LocalContext.current
-        when (val body = content.body(LocalSize.current)) {
+        when (val body = content.body(LocalSize.current, BitmapText.textScale(context))) {
             is StreakBodyContent.Copy -> {
                 val copy = context.getString(body.text)
                 OutfitText(text = copy, maxWidth = contentWidth(), maxLines = MAX_COPY_LINES, contentDescription = copy)
@@ -107,7 +107,11 @@ internal fun StreakBody(content: StreakContent) {
                     OutfitText(
                         text = context.getString(R.string.widget_streak_header),
                         maxWidth = contentWidth(),
-                        ink = rememberOutfitInk(WidgetPalette.caption),
+                        ink = rememberOutfitInk(
+                            tint = WidgetPalette.caption,
+                            textSizeSp = BitmapText.CAPTION_SIZE_SP,
+                            weight = BitmapText.OUTFIT_WEIGHT_SEMIBOLD,
+                        ),
                     )
                 }
                 StreakRows(body.rows, body.layout, GlanceModifier.defaultWeight())
@@ -134,8 +138,22 @@ internal fun StreakBody(content: StreakContent) {
 private fun StreakRows(rows: List<StreakRow>, layout: StreakLayout, modifier: GlanceModifier) {
     val context = LocalContext.current
     val ink = rememberOutfitInk()
-    val slot = if (layout == StreakLayout.Full) FULL_NUMERAL_SLOT else COMPACT_NUMERAL_SLOT
-    val nameWidth = contentWidth() - slot.dp
+    // One semibold paint for every numeral: the canvas draws them at 600 against
+    // names at 400, which is a fourth signal separating a streak from its name and
+    // the only one that survives both greyscale and the narrow slot.
+    val numeralInk = rememberOutfitInk(weight = BitmapText.OUTFIT_WEIGHT_SEMIBOLD)
+    // The slot is dp and the numeral inside it is sp, so it has to be scaled by
+    // hand or a large font setting ellipsises the number the widget exists to
+    // show — and in the compact form the `w` is the first character to go.
+    // Measured: "99w" is 30dp of ink at the default and 54dp at a reported
+    // fontScale of 2.0, against an unscaled 32dp slot.
+    val base = if (layout == StreakLayout.Full) FULL_NUMERAL_SLOT else COMPACT_NUMERAL_SLOT
+    val slot = (base * BitmapText.textScale(context)).dp
+    // Never negative: Glance's Exact size reports zero until the host has told it
+    // anything, and a negative width collapses the column to nothing rather than
+    // ellipsising, which is the failure OutfitText's own MIN_WIDTH_DP floor avoids
+    // for the bitmap but cannot avoid for the Box around it.
+    val nameWidth = (contentWidth() - slot).coerceAtLeast(0.dp)
     LazyColumn(modifier = modifier) {
         items(rows) { row ->
             val spoken = context.getString(
@@ -150,12 +168,12 @@ private fun StreakRows(rows: List<StreakRow>, layout: StreakLayout, modifier: Gl
                 Box(modifier = GlanceModifier.width(nameWidth), contentAlignment = Alignment.CenterStart) {
                     OutfitText(text = row.name, maxWidth = nameWidth, ink = ink)
                 }
-                Box(modifier = GlanceModifier.width(slot.dp), contentAlignment = Alignment.CenterEnd) {
+                Box(modifier = GlanceModifier.width(slot), contentAlignment = Alignment.CenterEnd) {
                     OutfitText(
                         text = row.streak.label(context, layout),
-                        maxWidth = slot.dp,
+                        maxWidth = slot,
                         // One paint, one bitmap per string; only the ColorFilter varies by unit.
-                        ink = ink.copy(tint = row.streak.tint()),
+                        ink = numeralInk.copy(tint = row.streak.tint()),
                     )
                 }
             }
@@ -172,7 +190,7 @@ private fun AsOfLine(asOf: LocalDate) {
     OutfitText(
         text = line,
         maxWidth = contentWidth(),
-        ink = rememberOutfitInk(WidgetPalette.caption),
+        ink = rememberOutfitInk(tint = WidgetPalette.caption, textSizeSp = BitmapText.CAPTION_SIZE_SP),
         contentDescription = line,
     )
 }
@@ -180,10 +198,17 @@ private fun AsOfLine(asOf: LocalDate) {
 /**
  * Room reserved for the streak, in dp, at each layout.
  *
- * Sized to the longest string each form can produce at 16sp: "12 weeks" is about
- * 66dp in Outfit and "was 12" about 50dp, so [FULL_NUMERAL_SLOT] clears both;
- * "3w" is about 17dp. Reserving rather than measuring keeps the column aligned
- * down the widget, and the remainder is what the name ellipsises inside.
+ * Sized to the widest string each form can produce **at a text scale of 1**,
+ * measured rather than estimated (`StreakSlotTest` holds the numbers): the full
+ * form's worst case is "99 weeks" at 66dp and the compact form's is "99w" at
+ * 30dp. [COMPACT_NUMERAL_SLOT] was 32 until review measured it — a 2dp margin,
+ * which is not one. Reserving rather than measuring at draw time keeps the column
+ * aligned down the widget, and the remainder is what the name ellipsises inside.
+ *
+ * Both are multiplied by the font scale at the call site. They have to be: the
+ * numeral is drawn in sp and the slot is declared in dp, so leaving them fixed
+ * ellipsises the number itself at 200% — and truncating the payload is worse than
+ * truncating a name, which is why the name is what gives up the room.
  */
-private const val FULL_NUMERAL_SLOT = 76
-private const val COMPACT_NUMERAL_SLOT = 32
+internal const val FULL_NUMERAL_SLOT = 76
+internal const val COMPACT_NUMERAL_SLOT = 36

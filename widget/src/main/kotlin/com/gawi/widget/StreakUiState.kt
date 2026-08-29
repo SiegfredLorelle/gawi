@@ -93,17 +93,27 @@ internal sealed interface StreakBodyContent {
 }
 
 /**
- * The body for a given size.
+ * The body for a given size, at a given font scale.
  *
  * **[StreakLayout.Full] needs both dimensions, unlike [MOMO_MIN_HEIGHT].** The
  * unit word costs width and the header costs height, so a widget that is tall and
  * narrow gets [StreakLayout.Compact] — a `3 weeks` that ellipsises to `3 we…`
  * would be worse than the `3w` the compact form draws on purpose.
  *
+ * **[textScale] is a parameter and not a detail, because the room is measured in
+ * dp and the text is drawn in sp.** `BitmapText` sizes its paint with
+ * `COMPLEX_UNIT_SP`, so at a large font setting every string is wider while the
+ * widget is exactly as wide as before. Comparing the raw dp against these
+ * thresholds would therefore pick the full form at the one setting where the unit
+ * word is least able to fit — producing the `3 we…` this gate exists to avoid.
+ * Dividing by the scale asks the question that matters: how much room is there
+ * *in units of the text that has to go in it*. Pass `BitmapText.textScale`, not
+ * `configuration.fontScale`; its KDoc has the 1.75-versus-2.0 measurement.
+ *
  * Unavailable and empty both fall to [StreakBodyContent.Copy] at every size:
  * there is no number to date, so the "as of" line would be dating nothing.
  */
-internal fun StreakContent.body(size: DpSize): StreakBodyContent = when (this) {
+internal fun StreakContent.body(size: DpSize, textScale: Float): StreakBodyContent = when (this) {
     StreakContent.Unavailable -> StreakBodyContent.Copy(R.string.widget_unavailable)
 
     StreakContent.Loading -> StreakBodyContent.Blank
@@ -115,11 +125,7 @@ internal fun StreakContent.body(size: DpSize): StreakBodyContent = when (this) {
             StreakBodyContent.Rows(
                 rows = state.rows,
                 asOf = state.asOf,
-                layout = if (size.width >= FULL_MIN_WIDTH.dp && size.height >= FULL_MIN_HEIGHT.dp) {
-                    StreakLayout.Full
-                } else {
-                    StreakLayout.Compact
-                },
+                layout = if (fitsFullForm(size, textScale)) StreakLayout.Full else StreakLayout.Compact,
             )
         }
 }
@@ -136,6 +142,16 @@ internal fun StreakContent.body(size: DpSize): StreakBodyContent = when (this) {
  */
 internal const val FULL_MIN_WIDTH = 220
 internal const val FULL_MIN_HEIGHT = 150
+
+/**
+ * Whether [size] has room for the unit word and the header once [textScale] is
+ * taken into account — `BitmapText.textScale`, which is what the ink actually
+ * does rather than what `fontScale` reports.
+ */
+private fun fitsFullForm(size: DpSize, textScale: Float): Boolean {
+    val scale = textScale.coerceAtLeast(1f)
+    return size.width / scale >= FULL_MIN_WIDTH.dp && size.height / scale >= FULL_MIN_HEIGHT.dp
+}
 
 /**
  * The trailing text for one streak, in the given layout.
@@ -159,8 +175,14 @@ internal fun StreakUi.label(context: Context, layout: StreakLayout): String = wh
     }
 
     is StreakUi.Broken -> when (layout) {
+        // A zero is a zero in either unit, so the compact form has nothing to
+        // disambiguate and the `w` would be claiming a count that is not there.
         StreakLayout.Compact -> context.getString(R.string.widget_streak_broken_compact)
-        StreakLayout.Full -> context.getString(R.string.widget_streak_broken, previous)
+
+        StreakLayout.Full -> context.getString(
+            if (weekly) R.string.widget_streak_broken_weeks else R.string.widget_streak_broken_days,
+            previous,
+        )
     }
 
     StreakUi.None -> context.getString(R.string.widget_streak_none)
@@ -192,6 +214,15 @@ internal fun StreakUi.tint(): ColorProvider = when (this) {
  */
 internal fun StreakUi.spokenLabel(context: Context): String = when (this) {
     StreakUi.None -> context.getString(R.string.widget_streak_none_spoken)
+
+    // "was 12w" would be read out as "was 12 w". The drawn form abbreviates; the
+    // spoken one cannot, and it is the unit that must not be lost.
+    is StreakUi.Broken -> context.resources.getQuantityString(
+        if (weekly) R.plurals.widget_streak_was_weeks_spoken else R.plurals.widget_streak_was_days_spoken,
+        previous,
+        previous,
+    )
+
     else -> label(context, StreakLayout.Full)
 }
 

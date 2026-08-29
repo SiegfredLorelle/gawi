@@ -39,7 +39,12 @@
         <item quantity="one">%1$d week</item>
         <item quantity="other">%1$d weeks</item>
     </plurals>
-    <string name="widget_streak_broken">was %1$d</string>
+    <!-- A break keeps its unit. StreakBadge and HabitDetailScreen both branch
+         the same way, and "a count of days and a count of weeks must never be
+         styled as the same number" applies to what a break lost as much as to a
+         live run. -->
+    <string name="widget_streak_broken_days">was %1$d</string>
+    <string name="widget_streak_broken_weeks">was %1$dw</string>
     <!-- A habit with no history at all. An em dash and not a zero: zero is what
          a broken streak reads, and never having started is not a break. -->
     <string name="widget_streak_none">\u2014</string>
@@ -48,6 +53,17 @@
          cannot say whether it means days or weeks. -->
     <string name="widget_streak_row_description">%1$s, %2$s</string>
     <string name="widget_streak_none_spoken">no streak yet</string>
+    <!-- Spoken forms for a break: "was 12w" reads out as "was 12 w", so the unit
+         is spelled. Plurals because "was 1 days" is wrong, which is exactly what
+         lint's PluralsCandidate caught here. -->
+    <plurals name="widget_streak_was_days_spoken">
+        <item quantity="one">was %1$d day</item>
+        <item quantity="other">was %1$d days</item>
+    </plurals>
+    <plurals name="widget_streak_was_weeks_spoken">
+        <item quantity="one">was %1$d week</item>
+        <item quantity="other">was %1$d weeks</item>
+    </plurals>
     <!-- Sample values for the API 31+ picker preview only. Not translated
          content in the usual sense: they stand in for real habits, and the
          preview cannot read the log. -->

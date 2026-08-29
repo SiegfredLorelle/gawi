@@ -89,9 +89,10 @@ and would be wrong the day a module adds an import.
 
 Two things the picture carries better than the line above it. **`widget →
 core:ui` is the narrowest edge in it**: added 2026-08-25, it carries exactly
-three things — the resource `R.font.outfit`, Momo's geometry (`drawMomo`,
-`MomoFrame`, `MomoDesignSize`) and the palette roles (`GawiRole`, `gawiRole`) —
-and no theme or composable, for the reasons below. And `:core:domain` is the
+four things — the resource `R.font.outfit`, Momo's geometry (`drawMomo`,
+`MomoFrame`, `MomoDesignSize`), the palette roles (`GawiRole`, `gawiRole`) and
+the streak vocabulary (`StreakUi`, `StreakSnapshot.toUi`) — and no theme or
+composable, for the reasons below. And `:core:domain` is the
 only sink, which is the whole point.
 
 `core:ui → core:domain` was added 2026-08-21 with habit detail, which made the
@@ -112,21 +113,25 @@ Built so far: `:app`, `:core:domain`, `:core:data`, `:core:ui`,
 `:feature:today`, `:feature:habits`, `:feature:settings` and — as of 2026-08-21
 — **`:widget`**, which is the first module here that is not a screen. Its
 decisions are in [docs/ux/widget.md](ux/widget.md). It takes `:core:data` and
-`:core:domain`, and since 2026-08-25 `:core:ui` **for three things only**. Two
+`:core:domain`, and since 2026-08-25 `:core:ui` **for four things only**. Two
 of them the widget rasterises to bitmaps because `RemoteViews` can carry
 neither: the bundled Outfit font, which a host cannot load as a resource
 (docs/ux/visual-identity.md §2), and Momo's geometry — `drawMomo`, `MomoFrame`
 and `MomoDesignSize` — which a host cannot animate, so the widget draws the
 resting frame (docs/ux/momo.md §4; the edge was widened from the font alone
-later the same day). The third, added **2026-08-29**, is the palette roles:
-`GawiRole` and `gawiRole(role, darkTheme)`, which `WidgetPalette` derives its
-day/night `ColorProvider`s from instead of holding hexes of its own. Nothing
-else crosses — a Glance tree is `RemoteViews` under the composition, so it
+later the same day). The third and fourth were added **2026-08-29** with the
+streak widget: the palette roles, `GawiRole` and `gawiRole(role, darkTheme)`,
+which `WidgetPalette` derives its day/night `ColorProvider`s from instead of
+holding hexes of its own; and `StreakUi` with `StreakSnapshot.toUi`, which the
+streak widget maps its rows through rather than reinventing "days versus weeks
+versus broken" — a rule `StreakUi.kt` says has to be one rule or the surfaces
+drift. Nothing else crosses — a Glance tree is `RemoteViews` under the composition, so it
 cannot consume a Compose UI theme or a shared composable, and `GawiTheme`,
 `GawiSpacing` and every `androidx.compose.ui` type would fail to compile
-against it. **The third item is the line that distinction draws, not a
-loosening of it:** a plain `Color` is a value the widget reproduces, a theme is
-something it would have to consume, and only the second is impossible. What
+against it. **The third and fourth items are the line that distinction draws,
+not a loosening of it:** a plain `Color` is a value the widget reproduces and a
+sealed interface over `Int` is a vocabulary it shares, while a theme is
+something it would have to *consume* — and only the last is impossible. What
 `:core:ui` publishes is therefore a role list, not the schemes — both
 `ColorScheme`s stay `internal`, and a surface inside the app still reads
 `MaterialTheme.colorScheme`. `:core:ui` exposes compose and material3 as `api`,

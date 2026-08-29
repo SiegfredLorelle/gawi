@@ -99,7 +99,18 @@ internal object BitmapText {
     internal const val TEXT_SIZE_SP = 16f
 
     /** Outfit's `wght` for body text; the file's own default is 100, Thin. */
-    private const val OUTFIT_WEIGHT_NORMAL = 400
+    internal const val OUTFIT_WEIGHT_NORMAL = 400
+
+    /**
+     * Outfit's `wght` for a number that is the point of its row — the streak
+     * widget's numerals, which the canvas drew at 600 against names at 400.
+     * A fourth signal separating a streak from the name beside it, and the only
+     * one that survives greyscale *and* a narrow slot.
+     */
+    internal const val OUTFIT_WEIGHT_SEMIBOLD = 600
+
+    /** A caption: the streak widget's "as of" line, drawn smaller than its rows. */
+    internal const val CAPTION_SIZE_SP = 12f
 
     /** White, so a tint of any colour reproduces it exactly. */
     private const val INK = Color.WHITE
@@ -108,17 +119,41 @@ internal object BitmapText {
     internal class OutfitPaint(val paint: TextPaint, val weightAxisApplied: Boolean)
 
     /**
-     * Outfit at [OUTFIT_WEIGHT_NORMAL] and [textSizeSp], scaled by the device's
-     * density and font scale as they are *now*. `Resources.getFont` is API 26;
-     * minSdk is 29, so no compat shim is needed.
+     * Outfit at [weight] and [textSizeSp], scaled by the device's density and
+     * font scale as they are *now*. `Resources.getFont` is API 26; minSdk is 29,
+     * so no compat shim is needed.
+     *
+     * **[textSizeSp] is an sp size and therefore grows with the user's font
+     * scale**, which is the whole point and also a trap for any caller that
+     * reserves room for the result in dp: the ink scales and the dp does not.
+     * [StreakWidget] scales its slots to match.
      */
-    internal fun outfitPaint(context: Context, textSizeSp: Float = TEXT_SIZE_SP): OutfitPaint {
+    internal fun outfitPaint(context: Context, textSizeSp: Float = TEXT_SIZE_SP, weight: Int = OUTFIT_WEIGHT_NORMAL): OutfitPaint {
         val paint = TextPaint(Paint.ANTI_ALIAS_FLAG or Paint.SUBPIXEL_TEXT_FLAG)
         paint.typeface = context.resources.getFont(R.font.outfit)
-        val applied = paint.setFontVariationSettings("'wght' $OUTFIT_WEIGHT_NORMAL")
+        val applied = paint.setFontVariationSettings("'wght' $weight")
         paint.textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, textSizeSp, context.resources.displayMetrics)
         paint.color = INK
         return OutfitPaint(paint, applied)
+    }
+
+    /**
+     * How much wider sp text is than the same number of dp, on this device, now.
+     *
+     * **Not `configuration.fontScale`, and that difference is measurable.** Since
+     * Android 14 font scaling is non-linear: at a reported `fontScale` of 2.0,
+     * 16sp resolves to 28px rather than 32, so text grows 1.75× while the setting
+     * says 2. Anything reserving dp room for sp ink has to scale by what the text
+     * actually does — reading `fontScale` over-reserves, which is safe but wrong,
+     * and any code that inverted it would under-reserve and ellipsise.
+     *
+     * Floored at 1: shrinking the text does not make a widget's cells wider in
+     * any way the user asked for.
+     */
+    internal fun textScale(context: Context): Float {
+        val metrics = context.resources.displayMetrics
+        val onePx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 1f, metrics)
+        return (onePx / metrics.density).coerceAtLeast(1f)
     }
 
     /** Ascent to descent for [paint], with no line-spacing padding: what one line of Outfit is tall. */
@@ -181,16 +216,21 @@ internal data class OutfitInk(val paint: TextPaint, val tint: ColorProvider)
  * `setFontVariationSettings` creates a native `Typeface` instance each call.
  */
 @Composable
-internal fun rememberOutfitPaint(): TextPaint {
+internal fun rememberOutfitPaint(textSizeSp: Float = BitmapText.TEXT_SIZE_SP, weight: Int = BitmapText.OUTFIT_WEIGHT_NORMAL): TextPaint {
     val context = LocalContext.current
     val configuration = context.resources.configuration
-    return remember(configuration.fontScale, configuration.densityDpi) { BitmapText.outfitPaint(context).paint }
+    return remember(configuration.fontScale, configuration.densityDpi, textSizeSp, weight) {
+        BitmapText.outfitPaint(context, textSizeSp, weight).paint
+    }
 }
 
-/** [rememberOutfitPaint] with an ink, defaulting to the widget's body colour. */
+/** [rememberOutfitPaint] with an ink, defaulting to the widget's body colour at body size. */
 @Composable
-internal fun rememberOutfitInk(tint: ColorProvider = WidgetPalette.onSurface): OutfitInk =
-    OutfitInk(paint = rememberOutfitPaint(), tint = tint)
+internal fun rememberOutfitInk(
+    tint: ColorProvider = WidgetPalette.onSurface,
+    textSizeSp: Float = BitmapText.TEXT_SIZE_SP,
+    weight: Int = BitmapText.OUTFIT_WEIGHT_NORMAL,
+): OutfitInk = OutfitInk(paint = rememberOutfitPaint(textSizeSp, weight), tint = tint)
 
 /**
  * [text] drawn in Outfit, in [ink], no wider than [maxWidth].
