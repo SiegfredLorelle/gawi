@@ -83,7 +83,7 @@ internal fun TodayScreen(state: TodayUiState, actions: TodayActions, snackbarHos
             // already accepted Momo leaving the screen on a long list; the
             // collapse into an app-bar chip is what is still deferred.
             is TodayUiState.Empty -> {
-                val motion = rememberTodayMotion(state.mood)
+                val motion = rememberTodayMotion(state.mood, emptyList())
                 Column(
                     Modifier
                         .fillMaxSize()
@@ -105,7 +105,11 @@ private fun HabitList(state: TodayUiState.Habits, onToggle: (HabitId, Boolean, L
     // The gate and the celebration live here, above the list, because the
     // mascot item below is disposed when it scrolls off and the celebration's
     // memory of the last mood has to outlive that (rememberCelebration).
-    val motion = rememberTodayMotion(state.mood)
+    val motion = rememberTodayMotion(state.mood, state.rows)
+    // Read in composition: it changes twice per milestone, so only the rows
+    // that crossed recompose; the per-frame scale is read inside a layer
+    // lambda in StreakBadge and recomposes nothing.
+    val pulsing = motion.milestone.pulsing
     LazyColumn(modifier) {
         // The habitat is the first item, not a header outside the list: §1 keeps
         // habit rows on plain surface, so row contrast is never a function of the
@@ -119,6 +123,8 @@ private fun HabitList(state: TodayUiState.Habits, onToggle: (HabitId, Boolean, L
                 // The date travels with the row, so a tap writes to the day it
                 // was drawn for rather than to one resolved a moment later.
                 onToggle = { onToggle(row.id, row.completed, state.logicalDate) },
+                celebrating = row.id in pulsing,
+                pulse = if (motion.animationsOn && row.id in pulsing) ({ motion.milestone.frame.badgeScale }) else null,
             )
         }
     }

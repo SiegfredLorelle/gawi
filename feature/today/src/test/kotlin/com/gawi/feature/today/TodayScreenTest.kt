@@ -429,6 +429,90 @@ class TodayScreenTest {
         compose.onNodeWithTag("momo:${Mood.WORRIED}", useUnmergedTree = true).assertIsDisplayed()
     }
 
+    /**
+     * A streak crossing a rung swaps the copy line for the milestone line and puts
+     * the row's badge on its pill, then two seconds later both return — with
+     * animations off, where the line and the pill are all there is (momo.md §5:
+     * the line changing is the announcement). The clock is held so the swap can
+     * be observed at both ends rather than raced; `advanceTimeBy` drives the
+     * delay the milestone holds its line on, because the remembered scope runs
+     * on the test's clock.
+     */
+    @Test
+    fun `a streak reaching seven swaps the line and highlights the badge then returns`() {
+        val rows = mutableStateOf(listOf(READ.copy(streak = StreakUi.Days(6)), WALK))
+        compose.mainClock.autoAdvance = false
+        compose.setContent {
+            GawiTheme { TodayScreen(HABITS.copy(rows = rows.value), NO_ACTIONS, SnackbarHostState()) }
+        }
+        settle()
+        compose.onNodeWithText(string(R.string.today_mood_neutral)).assertIsDisplayed()
+        compose.onNodeWithTag("milestone-badge", useUnmergedTree = true).assertDoesNotExist()
+
+        rows.value = listOf(READ.copy(streak = StreakUi.Days(7)), WALK)
+        settle()
+
+        compose.onNodeWithText(quantity(R.plurals.today_milestone_days, 7)).assertIsDisplayed()
+        compose.onNodeWithText(string(R.string.today_mood_neutral)).assertDoesNotExist()
+        compose.onNodeWithTag("milestone-badge", useUnmergedTree = true).assertIsDisplayed()
+        // No motion with animations off: the milestone canvas is never composed.
+        compose.onNodeWithTag("milestone", useUnmergedTree = true).assertDoesNotExist()
+
+        compose.mainClock.advanceTimeBy(MilestoneFrame.MILLIS + 100L)
+        settle()
+
+        compose.onNodeWithText(string(R.string.today_mood_neutral)).assertIsDisplayed()
+        compose.onNodeWithText(quantity(R.plurals.today_milestone_days, 7)).assertDoesNotExist()
+        compose.onNodeWithTag("milestone-badge", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    /** A screen opened on day seven shows a seven and no party — the first sighting never fires. */
+    @Test
+    fun `opening the screen on a milestone does not celebrate it`() {
+        compose.mainClock.autoAdvance = false
+        compose.setContent {
+            GawiTheme {
+                TodayScreen(HABITS.copy(rows = listOf(READ.copy(streak = StreakUi.Days(7)), WALK)), NO_ACTIONS, SnackbarHostState())
+            }
+        }
+        settle()
+
+        compose.onNodeWithText(string(R.string.today_mood_neutral)).assertIsDisplayed()
+        compose.onNodeWithText(quantity(R.plurals.today_milestone_days, 7)).assertDoesNotExist()
+        compose.onNodeWithTag("milestone-badge", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    /** Unticking the habit mid-run cuts the run: the line and the badge snap back at once. */
+    @Test
+    fun `unticking during a milestone settles the line`() {
+        val rows = mutableStateOf(listOf(READ.copy(streak = StreakUi.Days(6)), WALK))
+        compose.mainClock.autoAdvance = false
+        compose.setContent {
+            GawiTheme { TodayScreen(HABITS.copy(rows = rows.value), NO_ACTIONS, SnackbarHostState()) }
+        }
+        settle()
+        rows.value = listOf(READ.copy(streak = StreakUi.Days(7)), WALK)
+        settle()
+        compose.onNodeWithText(quantity(R.plurals.today_milestone_days, 7)).assertIsDisplayed()
+
+        rows.value = listOf(READ.copy(streak = StreakUi.Days(6)), WALK)
+        settle()
+
+        compose.onNodeWithText(string(R.string.today_mood_neutral)).assertIsDisplayed()
+        compose.onNodeWithText(quantity(R.plurals.today_milestone_days, 7)).assertDoesNotExist()
+        compose.onNodeWithTag("milestone-badge", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    /** A few frames with the clock held: advancing does not recompose and waitForIdle does not move time, so the two alternate. */
+    private fun settle() {
+        repeat(3) {
+            compose.mainClock.advanceTimeByFrame()
+            compose.waitForIdle()
+        }
+    }
+
+    private fun quantity(id: Int, n: Int): String = resources.getQuantityString(id, n, n)
+
     private companion object {
         val LOGICAL_DATE: LocalDate = LocalDate.parse("2026-08-17")
         val NO_ACTIONS = TodayActions(
