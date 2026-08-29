@@ -88,10 +88,11 @@ Drawing today's import list instead would make that difference look like a rule,
 and would be wrong the day a module adds an import.
 
 Two things the picture carries better than the line above it. **`widget →
-core:ui` is the narrowest edge in it**: added 2026-08-25, it carries exactly two
-things — the resource `R.font.outfit`, and Momo's geometry (`drawMomo`,
-`MomoFrame`, `MomoDesignSize`) — and no theme or composable, for the reasons
-below. And `:core:domain` is the only sink, which is the whole point.
+core:ui` is the narrowest edge in it**: added 2026-08-25, it carries exactly
+three things — the resource `R.font.outfit`, Momo's geometry (`drawMomo`,
+`MomoFrame`, `MomoDesignSize`) and the palette roles (`GawiRole`, `gawiRole`) —
+and no theme or composable, for the reasons below. And `:core:domain` is the
+only sink, which is the whole point.
 
 `core:ui → core:domain` was added 2026-08-21 with habit detail, which made the
 Today view's `StreakUi` a thing two feature modules need — and feature modules
@@ -111,18 +112,26 @@ Built so far: `:app`, `:core:domain`, `:core:data`, `:core:ui`,
 `:feature:today`, `:feature:habits`, `:feature:settings` and — as of 2026-08-21
 — **`:widget`**, which is the first module here that is not a screen. Its
 decisions are in [docs/ux/widget.md](ux/widget.md). It takes `:core:data` and
-`:core:domain`, and since 2026-08-25 `:core:ui` **for two things only**, both
-of which the widget rasterises to bitmaps because `RemoteViews` can carry
+`:core:domain`, and since 2026-08-25 `:core:ui` **for three things only**. Two
+of them the widget rasterises to bitmaps because `RemoteViews` can carry
 neither: the bundled Outfit font, which a host cannot load as a resource
 (docs/ux/visual-identity.md §2), and Momo's geometry — `drawMomo`, `MomoFrame`
 and `MomoDesignSize` — which a host cannot animate, so the widget draws the
 resting frame (docs/ux/momo.md §4; the edge was widened from the font alone
-later the same day). Nothing else crosses — a Glance tree is `RemoteViews`
-under the composition, so it cannot consume a Compose UI theme or a shared
-composable, and `GawiTheme`, `GawiSpacing` and every `androidx.compose.ui`
-type would fail to compile against it. `:core:ui` exposes those as `api`, so
-nothing mechanical enforces the list; any other `com.gawi.core.ui.*` import in
-`:widget` is a defect for review to catch. `app/src/debug/` is gone: the debug-only
+later the same day). The third, added **2026-08-29**, is the palette roles:
+`GawiRole` and `gawiRole(role, darkTheme)`, which `WidgetPalette` derives its
+day/night `ColorProvider`s from instead of holding hexes of its own. Nothing
+else crosses — a Glance tree is `RemoteViews` under the composition, so it
+cannot consume a Compose UI theme or a shared composable, and `GawiTheme`,
+`GawiSpacing` and every `androidx.compose.ui` type would fail to compile
+against it. **The third item is the line that distinction draws, not a
+loosening of it:** a plain `Color` is a value the widget reproduces, a theme is
+something it would have to consume, and only the second is impossible. What
+`:core:ui` publishes is therefore a role list, not the schemes — both
+`ColorScheme`s stay `internal`, and a surface inside the app still reads
+`MaterialTheme.colorScheme`. `:core:ui` exposes compose and material3 as `api`,
+so nothing mechanical enforces the list; any other `com.gawi.core.ui.*` import
+in `:widget` is a defect for review to catch. `app/src/debug/` is gone: the debug-only
 activity that set the day cutoff and the reminder time over `adb` was deleted
 when `:feature:settings` landed, and there is no debug source set anywhere in
 the project now.
