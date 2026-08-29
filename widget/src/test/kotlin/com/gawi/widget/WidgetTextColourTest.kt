@@ -15,8 +15,12 @@ import androidx.glance.appwidget.testing.unit.runGlanceAppWidgetUnitTest
 import androidx.glance.testing.GlanceNodeMatcher
 import androidx.glance.testing.unit.MappedNode
 import com.gawi.widget.testsupport.MIN_CONTRAST
+import com.gawi.widget.testsupport.RenderProbe
+import com.gawi.widget.testsupport.anyText
 import com.gawi.widget.testsupport.contrastRatio
+import com.gawi.widget.testsupport.drawnOn
 import com.gawi.widget.testsupport.habitId
+import com.gawi.widget.testsupport.illegibleText
 import com.gawi.widget.testsupport.todayHabit
 import com.gawi.widget.testsupport.todaySnapshot
 import org.junit.Test
@@ -61,12 +65,12 @@ import kotlin.time.Duration.Companion.seconds
  * The count guards below are what make an empty tree fail, so they count images.
  *
  * **The ground is the one that was actually drawn, since 2026-08-28.** Until
- * then [Probe] resolved it from a second, default `GlanceTheme { }`, and this
+ * then the probe resolved it from a second, default `GlanceTheme { }`, and this
  * KDoc carried the consequence as a known limit: the moment the widget took a
  * palette of its own, the test would measure real ink against a background
  * nothing draws and stay green. The widget took one ([WidgetPalette]) — so the
  * limit is gone rather than realised. `BackgroundModifier.Color` does expose its
- * provider, which the old note had wrong, so [paletteBackground] asserts on the
+ * provider, which the old note had wrong, so `drawnOn` asserts on the
  * emitted tree that the drawn ground *is* that palette's surface and the ratios
  * are measured against the same object. The identity check is the load-bearing
  * half: without it the ground would be an assumption that happens to match.
@@ -119,7 +123,7 @@ abstract class WidgetTextColourContract {
         val probe = renderWithProbe(WidgetContent.Ready(todaySnapshot().toWidgetState()))
 
         onAllNodes(anyText()).assertCountEquals(1)
-        onAllNodes(illegibleText(probe)).assertCountEquals(0)
+        onAllNodes(illegibleText(probe.context, probe.background)).assertCountEquals(0)
     }
 
     @Test
@@ -127,7 +131,7 @@ abstract class WidgetTextColourContract {
         val probe = renderWithProbe(WidgetContent.Unavailable)
 
         onAllNodes(anyText()).assertCountEquals(1)
-        onAllNodes(illegibleText(probe)).assertCountEquals(0)
+        onAllNodes(illegibleText(probe.context, probe.background)).assertCountEquals(0)
     }
 
     /** The rows, which are `CheckBox`es and not `Text`s — the case that hides. */
@@ -140,7 +144,7 @@ abstract class WidgetTextColourContract {
         val probe = renderWithProbe(WidgetContent.Ready(snapshot.toWidgetState()))
 
         onAllNodes(anyText()).assertCountEquals(2)
-        onAllNodes(illegibleText(probe)).assertCountEquals(0)
+        onAllNodes(illegibleText(probe.context, probe.background)).assertCountEquals(0)
     }
 
     /**
@@ -179,15 +183,9 @@ abstract class WidgetTextColourContract {
  * resolve a `ColorProvider` — a day/night provider answers differently in each
  * theme, so the resolution has to happen against the running configuration.
  */
-private class Probe {
-    lateinit var context: android.content.Context
-    var background: Color = Color.Unspecified
-}
-
-private fun GlanceAppWidgetUnitTest.renderWithProbe(content: WidgetContent): Probe {
-    val probe = Probe()
-    probe.context = RuntimeEnvironment.getApplication()
-    setContext(probe.context)
+private fun GlanceAppWidgetUnitTest.renderWithProbe(content: WidgetContent): RenderProbe {
+    val context = RuntimeEnvironment.getApplication()
+    setContext(context)
     // SizeMode.Exact reads LocalSize; the harness has to supply one or the
     // composition has no width to give a name.
     setAppWidgetSize(DpSize(250.dp, 110.dp))
@@ -203,50 +201,16 @@ private fun GlanceAppWidgetUnitTest.renderWithProbe(content: WidgetContent): Pro
     // was drawn. So the tree is asked instead. Exactly one node carries a
     // background and it is the palette's surface object itself; nothing below
     // measures anything until that holds.
-    onAllNodes(paletteBackground()).assertCountEquals(1)
-    probe.background = WidgetPalette.surface.getColor(probe.context)
-    return probe
+    onAllNodes(drawnOn(WidgetPalette.surface)).assertCountEquals(1)
+    return RenderProbe(context, WidgetPalette.surface.getColor(context))
 }
-
-/**
- * The node whose background is [WidgetPalette.surface] — matched by identity on
- * the provider, so it cannot be satisfied by a different colour that happens to
- * resolve the same way in the theme this subclass runs in.
- */
-private fun paletteBackground() = GlanceNodeMatcher<MappedNode>("is drawn on WidgetPalette.surface") { node ->
-    node.value.emittable.modifier.foldIn<BackgroundModifier.Color?>(null) { found, element ->
-        found ?: element as? BackgroundModifier.Color
-    }?.colorProvider === WidgetPalette.surface
-}
-
-private fun anyText() = GlanceNodeMatcher<MappedNode>("draws text") { node ->
-    node.value.emittable.tint() != null
-}
-
-/**
- * The tint an [OutfitText] carries, or null for anything that is not one — which
- * includes Momo's still frame, untinted by design because she carries her own
- * palette ([MomoBitmap]). `WidgetMomoTest` counts her the other way round.
- */
-private fun Any.tint() = (this as? EmittableImage)?.colorFilterParams as? TintColorFilterParams
-
-private fun illegibleText(probe: Probe) =
-    GlanceNodeMatcher<MappedNode>("draws text below $MIN_CONTRAST:1 against the widget background") { node ->
-        val tint = node.value.emittable.tint()
-        if (tint == null) {
-            false
-        } else {
-            val colour = tint.colorProvider.getColor(probe.context)
-            contrastRatio(colour, probe.background) < MIN_CONTRAST
-        }
-    }
 
 private fun anyGlyph() = GlanceNodeMatcher<MappedNode>("draws a checkbox glyph") { node ->
     node.value.emittable is EmittableCheckBox
 }
 
 /** A checkbox whose glyph is below the floor in either state, against the ground it is drawn on. */
-private fun illegibleGlyph(probe: Probe) =
+private fun illegibleGlyph(probe: RenderProbe) =
     GlanceNodeMatcher<MappedNode>("draws a checkbox glyph below $MIN_CONTRAST:1 against the widget background") { node ->
         val colours = (node.value.emittable as? EmittableCheckBox)?.colors
         if (colours == null) {
