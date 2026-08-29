@@ -98,6 +98,31 @@ internal object WidgetPalette {
     /** A broken streak's zero, and the habit name beside it. */
     val streakBroken = provider(GawiRole.Outline)
 
+    /**
+     * Momo's ground on a widget: the Momo widget's whole background, and the
+     * pill behind her face on the large Today body (docs/ux/widget.md §7). The
+     * tank colour the Today screen paints behind her, flat — a `RemoteViews`
+     * background is one colour, and flat was decided anyway. A *ground*, so the
+     * polarity test treats it like [surface]: darker at night, not lighter.
+     */
+    val momoGround = provider(GawiRole.PrimaryContainer)
+
+    /** The one ink drawn on [momoGround]: the Momo widget's caption. */
+    val momoCaption = provider(GawiRole.OnPrimaryContainer)
+
+    /**
+     * A woven segment of the large Today body's day band — the same role as a
+     * completed glyph, named separately for the reason the streak inks are.
+     */
+    val bandWoven = provider(GawiRole.Primary)
+
+    /**
+     * An outstanding segment of the band. A *fill* with nothing drawn on it, so
+     * it owes no 4.5:1 to anything; what it owes is 3:1 against [bandWoven], the
+     * pair being the information, and `WidgetPaletteTest` holds that.
+     */
+    val bandOutstanding = provider(GawiRole.OutlineVariant)
+
     /*
      * On [streakDays] and [glyphChecked] being two names for one role, and
      * [streakBroken] and [glyphUnchecked] likewise: the sharing is the point,

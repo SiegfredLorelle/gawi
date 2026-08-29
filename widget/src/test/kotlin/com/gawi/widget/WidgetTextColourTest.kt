@@ -28,6 +28,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -77,11 +78,13 @@ import kotlin.time.Duration.Companion.seconds
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(qualifiers = "night")
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
 class WidgetTextColourDarkTest : WidgetTextColourContract()
 
 /** The mirror. See the contract's note on why one theme alone is not enough. */
 @RunWith(RobolectricTestRunner::class)
 @Config(qualifiers = "notnight")
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
 class WidgetTextColourLightTest : WidgetTextColourContract()
 
 /**
@@ -148,6 +151,23 @@ abstract class WidgetTextColourContract {
     }
 
     /**
+     * The large body's mood line, drawn beside Momo on the surface — the one
+     * string the header adds, measured on the ground it is actually on. The
+     * count is three: the line and two names.
+     */
+    @Test
+    fun `the large body's mood line is legible on the widget background`() = runGlanceAppWidgetUnitTest(RENDER_TIMEOUT) {
+        val snapshot = todaySnapshot(
+            habits = listOf(todayHabit(id = habitId(1), name = "read", completedToday = true), todayHabit(id = habitId(2), name = "walk")),
+        )
+
+        val probe = renderWithProbe(WidgetContent.Ready(snapshot.toWidgetState()), DpSize(250.dp, 220.dp))
+
+        onAllNodes(anyText()).assertCountEquals(3)
+        onAllNodes(illegibleText(probe.context, probe.background)).assertCountEquals(0)
+    }
+
+    /**
      * The checkbox glyph, in both of its states — the other half of the contrast
      * failure measured on API 29 and 30, and until the palette pinned it the one
      * colour on this surface that had no test at all because the app did not
@@ -183,12 +203,12 @@ abstract class WidgetTextColourContract {
  * resolve a `ColorProvider` — a day/night provider answers differently in each
  * theme, so the resolution has to happen against the running configuration.
  */
-private fun GlanceAppWidgetUnitTest.renderWithProbe(content: WidgetContent): RenderProbe {
+private fun GlanceAppWidgetUnitTest.renderWithProbe(content: WidgetContent, size: DpSize = DpSize(250.dp, 110.dp)): RenderProbe {
     val context = RuntimeEnvironment.getApplication()
     setContext(context)
     // SizeMode.Exact reads LocalSize; the harness has to supply one or the
     // composition has no width to give a name.
-    setAppWidgetSize(DpSize(250.dp, 110.dp))
+    setAppWidgetSize(size)
     provideComposable { WidgetBody(content) }
     awaitIdle()
     // Load-bearing, not defensive, and it replaces a weaker guard. Until
