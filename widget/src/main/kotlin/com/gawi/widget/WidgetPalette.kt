@@ -77,5 +77,38 @@ internal object WidgetPalette {
     /** An outstanding habit's checkbox glyph — semantic, per docs/ux/visual-identity.md §4.1. */
     val glyphUnchecked = provider(GawiRole.Outline)
 
+    /** A secondary line: the streak widget's "as of" date, and its "was 12". */
+    val caption = provider(GawiRole.OnSurfaceVariant)
+
+    /** A day streak's numeral. */
+    val streakDays = provider(GawiRole.Primary)
+
+    /**
+     * A week streak's numeral.
+     *
+     * Never interchangeable with [streakDays]. `StreakUi` is a sealed type
+     * precisely so a count of days and a count of weeks cannot be styled as the
+     * same number, and this is one of the three signals that keeps them apart on
+     * the widget — the others being the unit, which is a `w` suffix when the
+     * host reports too little width for the word, and the word itself when it
+     * fits.
+     */
+    val streakWeeks = provider(GawiRole.Tertiary)
+
+    /** A broken streak's zero, and the habit name beside it. */
+    val streakBroken = provider(GawiRole.Outline)
+
+    /*
+     * On [streakDays] and [glyphChecked] being two names for one role, and
+     * [streakBroken] and [glyphUnchecked] likewise: the sharing is the point,
+     * not an oversight to be collapsed. `primary` means the positive semantic
+     * state on both surfaces and `outline` the neutral one (§4.1), so a retune
+     * of either role should move both — while the two *names* are what let
+     * `WidgetPaletteTest` pin which role each drawn thing claims. Collapsing
+     * them to one name each would make that test a restatement of the
+     * declaration, which is the trap the pin against `gawiWindowBackground`
+     * fell into.
+     */
+
     private fun provider(role: GawiRole) = ColorProvider(day = gawiRole(role, darkTheme = false), night = gawiRole(role, darkTheme = true))
 }

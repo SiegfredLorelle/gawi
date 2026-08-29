@@ -20,6 +20,7 @@ import androidx.glance.Image
 import androidx.glance.ImageProvider
 import androidx.glance.LocalContext
 import androidx.glance.layout.ContentScale
+import androidx.glance.unit.ColorProvider
 import com.gawi.core.ui.R
 import kotlin.math.ceil
 
@@ -166,6 +167,16 @@ internal object BitmapText {
 }
 
 /**
+ * How a rasterised string is drawn: which face, and which ink.
+ *
+ * The two travel together because a caller almost never varies one without
+ * meaning to hold the other fixed — the streak rows share one [paint] across
+ * every row and vary only [tint] by streak unit, which is the case that made a
+ * pair worth naming.
+ */
+internal data class OutfitInk(val paint: TextPaint, val tint: ColorProvider)
+
+/**
  * One Outfit paint for a composition, built once rather than once per row:
  * `setFontVariationSettings` creates a native `Typeface` instance each call.
  */
@@ -176,14 +187,23 @@ internal fun rememberOutfitPaint(): TextPaint {
     return remember(configuration.fontScale, configuration.densityDpi) { BitmapText.outfitPaint(context).paint }
 }
 
+/** [rememberOutfitPaint] with an ink, defaulting to the widget's body colour. */
+@Composable
+internal fun rememberOutfitInk(tint: ColorProvider = WidgetPalette.onSurface): OutfitInk =
+    OutfitInk(paint = rememberOutfitPaint(), tint = tint)
+
 /**
- * [text] drawn in Outfit, in [WidgetPalette]'s ink, no wider than [maxWidth].
+ * [text] drawn in Outfit, in [ink], no wider than [maxWidth].
  *
  * The bitmap is remembered against everything that would change its pixels:
  * the text, the room it has, the paint, and the density and font scale in
  * force — the paint is a key in its own right rather than a proxy through the
  * other two, so a caller with a different paint cannot get a stale bitmap. Colour
- * is not among them, because the bitmap has none — see [BitmapText].
+ * is not among them, because the bitmap has none — see [BitmapText]. That is also
+ * why the tint half of [ink] is free, and why only its paint is a remember key:
+ * two rows with the same string in different roles share one bitmap and differ
+ * only in the `ColorFilter`, so the streak widget's day and week numerals cost no
+ * extra rasterisation.
  *
  * [maxWidth] is floored at [MIN_WIDTH_DP]: Glance's `Exact` size falls back to
  * zero when the host has no info for the id yet, and a widget that draws
@@ -197,23 +217,23 @@ internal fun rememberOutfitPaint(): TextPaint {
 internal fun OutfitText(
     text: String,
     maxWidth: Dp,
-    paint: TextPaint = rememberOutfitPaint(),
+    ink: OutfitInk = rememberOutfitInk(),
     maxLines: Int = 1,
     contentDescription: String? = null,
 ) {
     val context = LocalContext.current
     val configuration = context.resources.configuration
     val metrics = context.resources.displayMetrics
-    val bitmap = remember(text, maxWidth, maxLines, paint, configuration.fontScale, configuration.densityDpi) {
+    val bitmap = remember(text, maxWidth, maxLines, ink.paint, configuration.fontScale, configuration.densityDpi) {
         val widthDp = maxWidth.value.coerceAtLeast(MIN_WIDTH_DP)
         val maxWidthPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, widthDp, metrics)
-        BitmapText.render(text, paint, maxWidthPx.toInt(), metrics.densityDpi, maxLines)
+        BitmapText.render(text, ink.paint, maxWidthPx.toInt(), metrics.densityDpi, maxLines)
     } ?: return
     Image(
         provider = ImageProvider(bitmap),
         contentDescription = contentDescription,
         contentScale = ContentScale.Fit,
-        colorFilter = ColorFilter.tint(WidgetPalette.onSurface),
+        colorFilter = ColorFilter.tint(ink.tint),
     )
 }
 

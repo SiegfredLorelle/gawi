@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Four colours for the widget picker's preview layout, and ONLY for it.
+
+    Nothing in the Glance tree reads these. WidgetPalette derives every colour it
+    draws from :core:ui's gawiRole, so the widget itself holds no hex - see that
+    file for why the hand-copy was removed. A previewLayout is the one thing here
+    that cannot join in: it is a real Android layout inflated by the launcher's
+    picker, and XML cannot read Kotlin.
+
+    So this is a reproduced copy, and it is pinned the way :app's window
+    background is: StreakPreviewColorsTest compares each value against
+    gawiRole(role, darkTheme) in both schemes, so retuning a role in
+    core/ui/theme/Color.kt fails a test here instead of leaving the picker
+    showing last month's palette. The names say which role each one reproduces.
+-->
+<resources>
+    <color name="widget_preview_surface">#FFF4FBFA</color>
+    <color name="widget_preview_on_surface">#FF101C1E</color>
+    <color name="widget_preview_primary">#FF1F6F78</color>
+    <color name="widget_preview_caption">#FF405457</color>
+</resources>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The night half of res/values/colors.xml, which carries the argument. Resolved
+    by the launcher's picker in its own theme, which is the one place a widget
+    resource variant does work: the picker inflates this layout itself, unlike the
+    Glance tree, where below API 31 an image tint has no resource path at all
+    (WidgetPalette).
+-->
+<resources>
+    <color name="widget_preview_surface">#FF0E1A1C</color>
+    <color name="widget_preview_on_surface">#FFDCEEF0</color>
+    <color name="widget_preview_primary">#FF7FD4DC</color>
+    <color name="widget_preview_caption">#FFA2B5B9</color>
+</resources>

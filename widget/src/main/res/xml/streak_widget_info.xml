@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The base provider, for API 29 and 30.
+
+    No API 31 attributes here: minSdk is 29 and lint's UnusedAttribute is a
+    failed build under warningsAsErrors, so targetCellWidth/Height, description
+    and previewLayout live in res/xml-v31 alongside this file. The two must be
+    kept in step by hand - the -v31 copy replaces this one whole, it does not
+    merge with it.
+
+    minWidth/minHeight are the three-by-two cell the design canvas drew, and
+    StreakContent.body reads the size the host actually reports rather than a
+    breakpoint declared here, which is why the compact form needs no attribute.
+
+    updatePeriodMillis matches the Today widget: 30 minutes is the framework's
+    clamp floor, so a smaller number would be a lie. It is the backstop for a day
+    rollover, not the mechanism - RolloverWorker calls ProjectionListener at the
+    cutoff, which is what actually clears yesterday's numbers.
+-->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:initialLayout="@layout/glance_default_loading_layout"
+    android:minHeight="110dp"
+    android:minWidth="180dp"
+    android:resizeMode="horizontal|vertical"
+    android:updatePeriodMillis="1800000"
+    android:widgetCategory="home_screen" />

@@ -14,4 +14,46 @@
     <string name="widget_mood_content">Momo is pottering about.</string>
     <string name="widget_mood_worried">Momo is getting worried.</string>
     <string name="widget_mood_regenerating">Momo is regrowing a gill. Pick the thread back up.</string>
+    <!-- ===== The streak widget (docs/ux/visual-identity.md 7.4) ===== -->
+    <string name="widget_streak_name">Streaks</string>
+    <!-- Shown by the launcher's widget picker on API 31+, from res/xml-v31. -->
+    <string name="widget_streak_description">Every habit\'s current run, dated</string>
+    <string name="widget_streak_header">Streaks</string>
+    <!-- The provenance line 7.1 makes mandatory: a streak reaches zero with no
+         new event, so it is the one value whose staleness is not bounded by the
+         user doing nothing, on the one surface with no live query. -->
+    <string name="widget_streak_as_of">as of %1$s</string>
+    <!-- Compact forms, for the one-cell widget where the unit word does not
+         fit. The `w` is one of StreakUi's three signals for weeks-not-days; the
+         colour role is the other one that survives at this size. -->
+    <string name="widget_streak_days_compact">%1$d</string>
+    <string name="widget_streak_weeks_compact">%1$dw</string>
+    <string name="widget_streak_broken_compact">0</string>
+    <!-- Full forms. Plurals rather than "%1$d days", because 1 is a different
+         string and only getQuantityString picks correctly in every locale. -->
+    <plurals name="widget_streak_days">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
+    <plurals name="widget_streak_weeks">
+        <item quantity="one">%1$d week</item>
+        <item quantity="other">%1$d weeks</item>
+    </plurals>
+    <string name="widget_streak_broken">was %1$d</string>
+    <!-- A habit with no history at all. An em dash and not a zero: zero is what
+         a broken streak reads, and never having started is not a break. -->
+    <string name="widget_streak_none">\u2014</string>
+    <!-- One row, as TalkBack reads it: the name, then the streak in its full
+         form even when the widget is drawing the compact one. A spoken "12"
+         cannot say whether it means days or weeks. -->
+    <string name="widget_streak_row_description">%1$s, %2$s</string>
+    <string name="widget_streak_none_spoken">no streak yet</string>
+    <!-- Sample values for the API 31+ picker preview only. Not translated
+         content in the usual sense: they stand in for real habits, and the
+         preview cannot read the log. -->
+    <string name="widget_preview_row_one">Reading</string>
+    <string name="widget_preview_streak_one">12</string>
+    <string name="widget_preview_row_two">Drink water</string>
+    <string name="widget_preview_streak_two">5</string>
+    <string name="widget_preview_as_of">as of today</string>
 </resources>

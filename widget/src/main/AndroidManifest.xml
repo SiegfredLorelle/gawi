@@ -27,6 +27,31 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/today_widget_info" />
         </receiver>
+
+        <!-- The streak widget (docs/ux/visual-identity.md §7.4). Its own
+             receiver because one AppWidgetProvider serves one
+             appwidget-provider, and the launcher offers one picker entry per
+             receiver - which is the per-widget cost that section prices.
+
+             Same two notes as above: fully qualified because a library manifest
+             has no package to resolve a relative name against, and
+             exported="true" because AppWidgetManager is what binds it.
+
+             The xml resource resolves to res/xml-v31 on API 31 and up, which is
+             where targetCellWidth/Height, description and previewLayout live -
+             each of them a lint UnusedAttribute, and so a failed build, in the
+             base file at minSdk 29. -->
+        <receiver
+            android:name="com.gawi.widget.StreakWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_streak_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/streak_widget_info" />
+        </receiver>
     </application>
 
 </manifest>

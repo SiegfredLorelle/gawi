@@ -155,7 +155,7 @@ internal fun WidgetBody(content: WidgetContent) {
 @Composable
 private fun HabitRows(rows: List<WidgetRow>) {
     val nameWidth = contentWidth() - CHECKBOX_SLOT.dp
-    val paint = rememberOutfitPaint()
+    val ink = rememberOutfitInk()
     LazyColumn {
         items(rows) { row ->
             val toggle = actionRunCallback<ToggleHabitAction>(actionParametersOf(HABIT_ID to row.habitId))
@@ -172,15 +172,19 @@ private fun HabitRows(rows: List<WidgetRow>) {
                         uncheckedColor = WidgetPalette.glyphUnchecked,
                     ),
                 )
-                OutfitText(text = row.name, maxWidth = nameWidth, paint = paint)
+                OutfitText(text = row.name, maxWidth = nameWidth, ink = ink)
             }
         }
     }
 }
 
-/** The width inside the padding, off the size the host actually gave this instance. */
+/**
+ * The width inside the padding, off the size the host actually gave this
+ * instance. Shared with [StreakWidget]: both providers pad the same way, and two
+ * copies of that arithmetic would be two places to get the ellipsis wrong.
+ */
 @Composable
-private fun contentWidth() = LocalSize.current.width - (2 * WIDGET_PADDING).dp
+internal fun contentWidth() = LocalSize.current.width - (2 * WIDGET_PADDING).dp
 
 /*
  * The checkbox glyph is pinned, since 2026-08-28, and this records what changed
@@ -221,7 +225,7 @@ private fun contentWidth() = LocalSize.current.width - (2 * WIDGET_PADDING).dp
  * toggle on API 29 or 30.
  */
 
-private const val WIDGET_PADDING = 8
+internal const val WIDGET_PADDING = 8
 
 /**
  * Room reserved for the checkbox glyph beside a name, in dp. Glance's glyph is
@@ -231,4 +235,4 @@ private const val WIDGET_PADDING = 8
 private const val CHECKBOX_SLOT = 48
 
 /** The copy states may wrap: "Can't read your habits" is 159dp at 16sp, wider than the smallest widget. */
-private const val MAX_COPY_LINES = 3
+internal const val MAX_COPY_LINES = 3
