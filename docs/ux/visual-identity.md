@@ -74,9 +74,23 @@ change, not a per-screen rewrite.
 
 **The widget is the exception, and it is structural rather than an oversight.** A
 Glance tree compiles to `RemoteViews` and cannot consume a Compose theme
-(architecture §2), so `:widget` takes the palette a *second* time as its own
-`GlanceTheme(colors = …)`. Two copies of the same hexes, maintained by hand, is
-the sanctioned duplication here — there is no mechanism that would let it be one.
+(architecture §2), so `:widget` draws the palette a *second* time from values of
+its own rather than consuming the scheme.
+
+~~Two copies of the same hexes, maintained by hand, is the sanctioned
+duplication here — there is no mechanism that would let it be one.~~
+**Wrong, and corrected 2026-08-29.** There is a mechanism, and the sentence
+above talked itself out of looking for one: it reasoned from a true premise — a
+Glance tree cannot consume a Compose *theme* — to a conclusion about *hexes*,
+which are not a theme. A plain `Color` crosses the module edge like any other
+value. `:core:ui` now publishes `GawiRole` and `gawiRole(role, darkTheme)`, and
+`WidgetPalette` derives its day/night `ColorProvider`s from them, so there is
+one copy and the widget cannot drift from the app. Both `ColorScheme`s stay
+`internal` and a surface inside the app still reads `MaterialTheme.colorScheme`
+— what leaves the module is a role list, not the schemes. §7.4's closing bullet
+records what this cost and what it closed. The lesson is the one that keeps
+recurring here: a claim reasoned correctly from a correct reading of the library
+can still be false, and this one stood for two phases.
 
 **And it is not only colour.** Checked against Glance 1.1.1:
 `TextStyle.fontFamily` takes `FontFamily(String)` — a family *name* — with only
@@ -1007,13 +1021,27 @@ widget. Before any of it is built, the price:
 
 - **Each new widget is its own provider** — a `GlanceAppWidget`, a
   `GlanceAppWidgetReceiver`, an `appwidget-provider` xml and a manifest entry,
-  three times over. The streak and Momo widgets also each need a read
-  `observeToday()` does not currently serve.
-- **Two sizes of one widget** means `SizeMode.Single` → `SizeMode.Responsive`, and
-  the attributes that make a widget resize properly — `targetCellWidth/Height`,
-  `previewLayout`, `description` — need a **`res/xml-v31` variant**. They are
-  absent today on purpose: minSdk is 29 and `warningsAsErrors` is on, so lint's
-  `UnusedAttribute` is a failed build.
+  three times over. ~~The streak and Momo widgets also each need a read
+  `observeToday()` does not currently serve.~~ **Wrong, corrected 2026-08-29:**
+  `observeToday()` serves both already. `TodayHabit` carries a `StreakSnapshot`
+  per habit and `TodaySnapshot` carries `today` and `weekStart`, which is a
+  streak widget's whole input including its "as of" date; the mood a Momo widget
+  needs is `moodInputs()`, on the same snapshot. Neither needs a repository
+  method. What each still costs is the provider triple above, and one thing this
+  list forgot: `GlanceProjectionListener` pushes `TodayWidget()` and nothing
+  else, so a second provider that is not added there freezes for the life of a
+  session — which looks exactly like a widget nobody placed.
+- **Two sizes of one widget** means ~~`SizeMode.Single` → `SizeMode.Responsive`~~
+  — **stale: the provider has been `SizeMode.Exact` since the Momo gate was
+  built**, which is what makes `LocalSize` drive both `contentWidth()` and
+  `MOMO_MIN_HEIGHT`. What is genuinely outstanding is the other half: the
+  attributes that make a widget resize properly — `targetCellWidth/Height`,
+  `previewLayout`, `description` — still need a **`res/xml-v31` variant**. They
+  are absent on purpose: minSdk is 29 and `warningsAsErrors` is on, so lint's
+  `UnusedAttribute` is a failed build. One cost this bullet never priced:
+  `previewLayout` needs a real layout resource and the module ships none — its
+  `initialLayout` is Glance's own — so it is a static XML approximation of the
+  widget, or a `previewImage` drawable, either way a new asset.
 - **Momo on a widget does not move.** `RemoteViews` cannot run the animation, so
   ~~it is a static vector drawable per mood: four assets~~ — priced before the
   character was code. Built 2026-08-25 as **zero assets**: the widget
@@ -1031,24 +1059,53 @@ widget. Before any of it is built, the price:
   were wrong and §2 records them: `CheckBoxColors` refuses only resource-backed
   providers, and the glyph is assertable after all. `docs/running.md` §4 keeps a
   by-hand check for what a JVM test cannot see.
-- **What is left of this set is the three surfaces above**, plus the rest of the
-  role list a full `GlanceTheme(colors = …)` would need. Unblocked, not built.
-- **Three of the four built hexes have no tripwire, and that is this set's debt
-  to clear.** `WidgetPalette` is a hand-copy, sanctioned by §2, and only
-  `surface` is pinned to the original: `:core:ui` publishes
-  `gawiWindowBackground` for exactly that, so `WidgetPaletteTest` checks it the
-  way `WindowBackgroundTest` checks `:app`'s XML copy. `onSurface`, `primary` and
-  `outline` have no such accessor — **retune one in `core/ui/theme/Color.kt` and
-  the app's checkboxes move while the widget's glyph does not, with every test in
-  the module still green**, because the palette test measures contrast and
-  polarity (both survive a retune) and the render test measures the widget
-  against itself. Two ways out, and the choice is this set's rather than the
-  legibility fix's: three more `gawiXxx(darkTheme)` accessors, which means
-  overriding `Color.kt`'s decision that the window background is *deliberately*
-  the only value leaving that module; or reading the roles off a composed
-  `GawiTheme` in a Robolectric test, which closes all four at once but puts
-  `compose-ui-test-junit4` — and Espresso with it — into a module that has
-  neither.
+- **What is left of this set is the three surfaces above.** All three are drawn:
+  the Momo widget and Today large's woven band on the canvas's page 3, and the
+  streak widget twice over on its "Widget set — round two" page, where two
+  directions and the three calls that decide whether its number is true are
+  waiting on a choice. None is built.
+  ~~plus the rest of the role list a full `GlanceTheme(colors = …)` would
+  need.~~ **Dropped 2026-08-29, and this half-bullet was asking for dead code.**
+  The `GlanceTheme` wrapper was *removed* from the widget on 2026-08-28 because
+  nothing under it read `GlanceTheme.colors` once every colour came from
+  `WidgetPalette`, and the `CheckboxDefaults.colors(checked, unchecked)` overload
+  does not consult a theme at all. A full role list would therefore have been
+  roles no surface draws. What replaced the idea is narrower and load-bearing:
+  `WidgetPalette` grows a role when a drawn surface needs one, and `GawiRole` in
+  `:core:ui` is where the list lives.
+- ~~**Three of the four built hexes have no tripwire, and that is this set's debt
+  to clear.**~~ **Cleared 2026-08-29, and by neither of the two routes priced
+  here.** The debt was real and is worth keeping on the record: `WidgetPalette`
+  held eight literals, of which only `surface`'s pair was pinned — by a
+  test-source-only import of `gawiWindowBackground`, the way
+  `WindowBackgroundTest` pins `:app`'s XML copy — so **retuning `onSurface`,
+  `primary` or `outline` in `core/ui/theme/Color.kt` moved the app's checkboxes
+  and left the widget's glyph where it was, with every test in the module still
+  green**, because the palette test measured contrast and polarity (both survive
+  a retune) and the render test measured the widget against itself.
+
+  The two routes priced were three more `gawiXxx(darkTheme)` accessors, or
+  reading the roles off a composed `GawiTheme` in a Robolectric test. Both guard
+  the copy. What shipped **removes** it: `:core:ui` publishes `GawiRole` and
+  `gawiRole(role, darkTheme)`, `WidgetPalette` derives every provider from them
+  and holds no hex at all, and §2 — which had claimed no such mechanism could
+  exist — is corrected there. The choice was forced by the streak widget rather
+  than made in the abstract: it needs `tertiary` as well as `primary`, so
+  guarding the copy would have meant adding two more untethered literals to the
+  three already named here.
+
+  Two things this is *not*. It does not override `Color.kt`'s decision the way
+  route one would have: both `ColorScheme`s stay `internal`, a surface inside the
+  app still reads `MaterialTheme.colorScheme`, and what leaves the module is a
+  role list rather than a scheme. And it does not put `compose-ui-test-junit4` or
+  Espresso anywhere. `WidgetPaletteTest` changed shape instead — its
+  pin-against-`gawiWindowBackground` test became a restatement of one function
+  calling another and was replaced by one that pins *which role each colour
+  draws*, since that mapping is the only thing deriving leaves open and a
+  swap of `primary` and `outline` would otherwise still be two legible schemes
+  with the right polarity. Both were mutation-checked: retuning `primary` in
+  `:core:ui` now fails four assertions in `:widget` (the glyph drops to 1.62:1),
+  and swapping the two roles fails the new mapping test alone.
 
 ### 7.5 The icon set, and the dingbats it retires
 
