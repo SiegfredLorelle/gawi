@@ -138,22 +138,39 @@ internal object BitmapText {
     }
 
     /**
-     * How much wider sp text is than the same number of dp, on this device, now.
+     * How much wider sp text is than the same number of dp, on this device, now —
+     * measured at [TEXT_SIZE_SP], the size the widget actually draws.
      *
      * **Not `configuration.fontScale`, and that difference is measurable.** Since
      * Android 14 font scaling is non-linear: at a reported `fontScale` of 2.0,
-     * 16sp resolves to 28px rather than 32, so text grows 1.75× while the setting
-     * says 2. Anything reserving dp room for sp ink has to scale by what the text
-     * actually does — reading `fontScale` over-reserves, which is safe but wrong,
-     * and any code that inverted it would under-reserve and ellipsise.
+     * 16sp resolves to 28px rather than 32, so the ink grows 1.75× while the
+     * setting says 2. Anything reserving dp room for sp ink has to scale by what
+     * the text actually does.
+     *
+     * **Probed at [TEXT_SIZE_SP] rather than at 1sp, and review caught that the
+     * difference is the whole point.** `FontScaleConverter`'s curve is defined per
+     * text size and its table starts at 8sp; below that it interpolates from the
+     * origin and is effectively linear. So a 1sp probe returns ≈`fontScale` —
+     * exactly the number this KDoc says not to read — and the first version of
+     * this function did that while claiming otherwise. Measured under
+     * Robolectric at `fontScale = 2.0`: the 1sp probe gave 2.0, and this gives
+     * 1.75 against a paint of 28.0px and ink growth of 1.74–1.8× for the widest
+     * numerals. The old value erred safe, since over-reserving a slot only
+     * ellipsises a habit name early — but it was not what it said it was.
+     *
+     * One size for every caller is deliberate: the load-bearing use is reserving
+     * room for a 16sp numeral ([StreakWidget]), and the layout gate turns on
+     * whether that numeral's unit word fits. A caption drawn at
+     * [CAPTION_SIZE_SP] has a slightly different ratio and nothing reserves dp
+     * for it, so it needs no parameter until something does.
      *
      * Floored at 1: shrinking the text does not make a widget's cells wider in
      * any way the user asked for.
      */
     internal fun textScale(context: Context): Float {
         val metrics = context.resources.displayMetrics
-        val onePx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 1f, metrics)
-        return (onePx / metrics.density).coerceAtLeast(1f)
+        val inkPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, TEXT_SIZE_SP, metrics)
+        return (inkPx / (TEXT_SIZE_SP * metrics.density)).coerceAtLeast(1f)
     }
 
     /** Ascent to descent for [paint], with no line-spacing padding: what one line of Outfit is tall. */
