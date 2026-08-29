@@ -1120,6 +1120,47 @@ widget.
 check gives: those steps start from midnight, and this section sits below them, so
 leaving it moved is how a later run passes vacuously.
 
+### The Momo widget and the large Today body — *built 2026-08-29, not yet on a launcher*
+
+Both of docs/ux/widget.md §7's surfaces. `MomoWidgetHostTest` and
+`WidgetHostTest`'s large-body case bind them to a real host, so "the provider
+binds and Glance composes it" is a machine's job; what follows is what only a
+launcher shows. Nothing below has been seen yet.
+
+- [ ] **The Today widget grows a header at four by three.** Place *Today* and
+      resize it to four cells wide and three tall (250×200dp on the canvas):
+      Momo on a teal pill at the left, the mood line beside her, and beneath the
+      line a band of thin segments — one per habit, filled where today is done.
+      Then narrow it to three cells wide, still three tall: the header goes and
+      the face sits above the rows again, the 2026-08-25 body. Then one row
+      tall: rows alone. `WidgetBodyTest` pins the two gates; only a launcher
+      shows whether its cells land on the right side of 220dp.
+- [ ] **The band is the checkboxes.** Count the segments against the rows and
+      tap a row: its segment flips with its box, on the same write. A band that
+      disagrees with the rows beneath it has been given a rule of its own, which
+      it must not have.
+- [ ] **In greyscale the band still reads.** Monochromacy on: a woven segment
+      and an outstanding one must still tell apart by lightness alone (3.78:1
+      light, 6.34:1 dark, measured). `screencap` will not show you this — see
+      the streak block above — so look at the device.
+- [ ] **TalkBack reads the large body once.** The mood line, then each row with
+      its state. Not the face and then the line, and nothing for the band.
+- [ ] **The Momo widget is offered, two by two, and says what it is.** Long-press
+      → *Widgets* → **Gawi**: three entries. The *Momo* preview on API 31+ is her
+      ground and a word with **no face** — deliberate, and widget.md §7 says
+      why; the description under the name is what names her.
+- [ ] **Her ground is the tank colour, in both schemes.** Light `#B4E9F0`, dark
+      `#0F545C`, sampled off a screenshot; the word on it in `#00353A` / `#B2E7EE`.
+      A flat colour, not the Today screen's gradient.
+- [ ] **The word follows the mood.** Complete everything → *thriving*; leave one
+      → *pottering* or *worried* as the day goes; break a streak → *regrowing*,
+      with the dimmer face. Same face as the Today screen at that moment.
+- [ ] **With no habits she is still there**, under *No habits yet*. Archive every
+      habit rather than `pm clear` to see it.
+- [ ] **TalkBack reads the sentence, not the word.** Focus the widget: *"Momo is
+      pottering about."* once, and never *"pottering"* as well.
+- [ ] **A write in the app moves all three widgets**, on the same commit.
+
 ### The reminder
 
 Built 2026-08-21 (docs/ux/reminder.md). PRD §7 makes a **physical device** the
