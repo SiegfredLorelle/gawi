@@ -896,6 +896,28 @@ out, and an unattached `AppWidgetHostView` never lays out — the `ListView` com
 back present and childless. And anything about a **launcher's own cells, theme or
 process**, which is the standard this block already holds.
 
+**Seen by eye on a launcher, 2026-08-29** — API 37 emulator, Pixel launcher, dark
+mode, both widgets placed and one daily habit. The boxes below stay unticked
+because this block's standard is that an emulator is not an OEM launcher, but
+these were watched rather than inferred and the next pass need not rediscover
+them:
+
+- The rows render, which is the half `StreakWidgetHostTest` cannot see: habit
+  name left, streak numeral right in `primary`, `as of Sat, Aug 29` pinned
+  beneath. Dark palette correct.
+- **The size gate flips on resize.** Placed at roughly 240×127dp it drew the
+  compact form — a bare `1`, no header — and dragging it taller switched it to
+  `Streaks` / `1 day`. That is `SizeMode.Exact` and `FULL_MIN_HEIGHT` doing what
+  they claim, at density 320.
+- **`1 day`, not `1 days`** — the plural, end to end, on the surface that draws
+  it.
+
+Not seen, and both need habits the device did not have: **three rows at the
+smallest size** (needs four or more habits) and **days versus weeks never looking
+alike** (needs one weekly-schedule habit beside a daily one). The second is the
+invariant the whole design turns on and is the most valuable check left in this
+block.
+
 - [ ] **It is offered, and the picker says what it is.** Long-press → *Widgets* →
       **Gawi**: two entries, *Today* and *Streaks*. On API 31+ the *Streaks*
       entry shows a description under the name and a preview of the rows; on 29
