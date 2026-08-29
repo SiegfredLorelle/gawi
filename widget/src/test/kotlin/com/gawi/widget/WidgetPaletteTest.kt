@@ -23,6 +23,11 @@ import org.robolectric.RuntimeEnvironment
  * colour is covered here even in a state no render test happens to compose, and
  * the polarity check below has nothing to do with drawing at all.
  *
+ * Grown with the streak widget on 2026-08-29: `caption`, `streakWeeks` and the
+ * two names that share a role with the checkbox glyphs. `streakWeeks` matters
+ * most — `tertiary` is the one role no surface in this module drew before, so
+ * nothing had ever measured it against the widget's own ground.
+ *
  * **Why most assertions resolve against a `Context` instead of reading a hex.**
  * Pinning these eight literals against this file's own source would only restate
  * it, and the literals are not what was wrong before 2026-08-28 — it was that the
@@ -62,9 +67,13 @@ class WidgetPaletteTest {
         Triple("onSurface", WidgetPalette.onSurface, GawiRole.OnSurface),
         Triple("glyphChecked", WidgetPalette.glyphChecked, GawiRole.Primary),
         Triple("glyphUnchecked", WidgetPalette.glyphUnchecked, GawiRole.Outline),
+        Triple("caption", WidgetPalette.caption, GawiRole.OnSurfaceVariant),
+        Triple("streakDays", WidgetPalette.streakDays, GawiRole.Primary),
+        Triple("streakWeeks", WidgetPalette.streakWeeks, GawiRole.Tertiary),
+        Triple("streakBroken", WidgetPalette.streakBroken, GawiRole.Outline),
     )
 
-    /** The three that are drawn *on* [WidgetPalette.surface] rather than being it. */
+    /** Everything drawn *on* [WidgetPalette.surface] rather than being it. */
     private val ink = roles.filterNot { it.third == GawiRole.Surface }.map { it.first to it.second }
 
     @Test
