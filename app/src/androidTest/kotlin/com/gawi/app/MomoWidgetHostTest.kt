@@ -82,14 +82,13 @@ class MomoWidgetHostTest {
      * on non-empty would return before Glance ran — the false pass
      * `StreakWidgetHostTest` already had.
      */
-    private fun isGlanceContent(line: String): Boolean = line in MOOD_STRINGS.map(::stringByName) ||
+    private fun isGlanceContent(line: String): Boolean = line in WidgetHostBinding.MOOD_STRINGS.map(::stringByName) ||
         line == stringByName("widget_no_habits") ||
         line == stringByName("widget_unavailable")
 
-    private fun stringByName(name: String): String = context.getString(context.resources.getIdentifier(name, "string", context.packageName))
+    private fun stringByName(name: String): String = WidgetHostBinding.stringByName(context, name)
 
     private companion object {
         const val TIMEOUT_SECONDS = 20L
-        val MOOD_STRINGS = listOf("widget_mood_thriving", "widget_mood_content", "widget_mood_worried", "widget_mood_regenerating")
     }
 }
