@@ -22,7 +22,7 @@ dependencies {
     // plugin that Glance's @Composable tree needs; the compose BOM it also
     // brings governs nothing here, because Glance is not in it.
     //
-    // :core:ui for THREE things, and the list is the whole rule:
+    // :core:ui for FOUR things, and the list is the whole rule:
     //
     //  1. R.font.outfit, which BitmapText rasterises because a host drops a
     //     bundled font resource (visual-identity §2).
