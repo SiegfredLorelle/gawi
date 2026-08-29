@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import javax.inject.Inject
 
 /**
@@ -34,7 +35,18 @@ import javax.inject.Inject
 @HiltViewModel
 internal class InsightsViewModel @Inject constructor(private val habits: HabitRepository) : ViewModel() {
 
-    private val period = MutableStateFlow(Period.MONTH)
+    /**
+     * The period's kind and how many of them back from today's — one value,
+     * because the two only mean something together.
+     *
+     * An offset rather than a stored date, for the reason the history grid's
+     * month is (docs/ux/insights.md §8.5): the window is recomputed from
+     * `observeReadContext`'s today on every emission, so zero keeps meaning
+     * "now" across a day rollover with nothing on this side holding a clock.
+     * Picking a different kind resets the offset — "three quarters back" has no
+     * meaning in years.
+     */
+    private val selection = MutableStateFlow(Selection(Period.MONTH, back = 0))
 
     /**
      * Which breakdown is drawn, and it is **not** a query parameter.
@@ -62,27 +74,40 @@ internal class InsightsViewModel @Inject constructor(private val habits: HabitRe
 
     /** Month first: the finest period, and what "how am I doing" usually means. */
     fun onPeriod(period: Period) {
-        this.period.value = period
+        selection.value = Selection(period, back = 0)
     }
 
     fun onBreakdown(breakdown: Breakdown) {
         this.breakdown.value = breakdown
     }
 
+    fun onEarlier() = selection.update { it.copy(back = it.back + 1) }
+
+    /** Clamped here, not only disabled on screen: a rule that lives only in a button is lost with it. */
+    fun onLater() = selection.update { it.copy(back = (it.back - 1).coerceAtLeast(0)) }
+
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun overviewFlow(): Flow<InsightsUiState> =
-        combine(habits.observeReadContext(), period) { context, period -> context to period }
-            .flatMapLatest { (context, period) ->
-                val window = period.window(context.today)
+        combine(habits.observeReadContext(), selection) { context, selection -> context to selection }
+            .flatMapLatest { (context, selection) ->
+                val period = selection.period
+                val window = period.window(context.today, selection.back)
+                // The period before, for the focus sentence: the same query over
+                // one more window, not a second kind of read.
+                val previous = period.window(context.today, selection.back + 1)
                 combine(
                     habits.observeAllHabits(),
                     habits.observeCompletionDatesByHabit(window.start, window.endInclusive),
                     habits.observeTagEffort(window.start, window.endInclusive),
+                    habits.observeTagEffort(previous.start, previous.endInclusive),
                     breakdown,
-                ) { all, completions, tagEffort, mode ->
-                    overviewOf(period, mode, context, PeriodReads(window, all, completions, tagEffort))
+                ) { all, completions, tagEffort, previousTagEffort, mode ->
+                    val reads = PeriodReads(window, all, completions, tagEffort, previousTagEffort)
+                    overviewOf(period, selection.back, mode, context, reads)
                 }
             }
+
+    private data class Selection(val period: Period, val back: Int)
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L

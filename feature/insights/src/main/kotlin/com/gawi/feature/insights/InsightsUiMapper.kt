@@ -5,7 +5,10 @@ import com.gawi.core.data.model.TagEffort
 import com.gawi.core.domain.model.HabitId
 import com.gawi.core.domain.projection.HabitState
 import com.gawi.core.domain.rate.Rates
+import com.gawi.core.domain.streak.BestRun
 import java.time.LocalDate
+import java.time.YearMonth
+import java.time.temporal.IsoFields
 import kotlin.math.roundToInt
 
 /**
@@ -18,29 +21,38 @@ import kotlin.math.roundToInt
  * completion whose `HabitCreated` has not arrived, which is unreachable before
  * Phase 2 sync and would otherwise let two numbers on one screen disagree.
  */
-internal fun overviewOf(period: Period, breakdown: Breakdown, context: ReadContext, reads: PeriodReads): InsightsUiState.Overview =
-    with(reads) {
-        InsightsUiState.Overview(
-            period = period,
-            breakdown = breakdown,
-            // The union, not the sum: two habits done on one day is one active day.
-            activeDays = completions.values.flatten().toSet().size,
-            completions = completions.values.sumOf { it.size },
-            habits = habits.toRates(window, context, completions),
-            tags = tagEffort.toShares(),
-            // The unfiltered list, which is the whole reason this is a separate
-            // field: `habits.toRates` drops the archived ones.
-            hasAnyHabit = habits.isNotEmpty(),
-        )
-    }
+internal fun overviewOf(
+    period: Period,
+    back: Int,
+    breakdown: Breakdown,
+    context: ReadContext,
+    reads: PeriodReads,
+): InsightsUiState.Overview = with(reads) {
+    InsightsUiState.Overview(
+        period = period,
+        label = period.labelOf(window),
+        canStepLater = back > 0,
+        breakdown = breakdown,
+        // The union, not the sum: two habits done on one day is one active day.
+        activeDays = completions.values.flatten().toSet().size,
+        completions = completions.values.sumOf { it.size },
+        focus = focusShift(previousTagEffort, tagEffort),
+        trend = if (period == Period.MONTH) emptyList() else trendOf(window, context.today, completions),
+        habits = habits.toRates(window, context, completions),
+        tags = tagEffort.toShares(),
+        // The unfiltered list, which is the whole reason this is a separate
+        // field: `habits.toRates` drops the archived ones.
+        hasAnyHabit = habits.isNotEmpty(),
+    )
+}
 
 /**
- * The three reads the screen is drawn from, and the window they were made over.
+ * The reads the screen is drawn from, and the window they were made over.
  *
  * They arrive from one `combine`, so they travel as one thing — and grouping
  * them says what the mapper's shape otherwise only implies: these are the same
- * period, read three ways, not three independent inputs that happen to be
- * passed together.
+ * period, read four ways, not four independent inputs that happen to be passed
+ * together.
  *
  * [window] rides along for a narrower reason than convenience. The rates are
  * measured over a window and the rows were read over a window, and those have
@@ -48,13 +60,71 @@ internal fun overviewOf(period: Period, breakdown: Breakdown, context: ReadConte
  * the reads, once per habit inside the mapper — from the same inputs, so they
  * could not actually differ. Carrying the one that was used makes that
  * structural rather than a coincidence two call sites have to keep up.
+ *
+ * [previousTagEffort] is the one read that is not over [window]: the same tag
+ * query over the period before it, which is all the focus sentence needs.
  */
 internal data class PeriodReads(
     val window: ClosedRange<LocalDate>,
     val habits: List<HabitState>,
     val completions: Map<HabitId, Set<LocalDate>>,
     val tagEffort: List<TagEffort>,
+    val previousTagEffort: List<TagEffort> = emptyList(),
 )
+
+/** The stepper's caption for [window], which is a period of this kind. */
+private fun Period.labelOf(window: ClosedRange<LocalDate>): PeriodLabelUi = when (this) {
+    Period.MONTH -> PeriodLabelUi.Month(monthName(window.start.month), window.start.year)
+    Period.QUARTER -> PeriodLabelUi.Quarter(window.start.get(IsoFields.QUARTER_OF_YEAR), window.start.year)
+    Period.YEAR -> PeriodLabelUi.Year(window.start.year)
+}
+
+/**
+ * Active days per month, oldest first, for the months of the window that have
+ * begun.
+ *
+ * **A month that has not started is not a point** — not a zero, not a gap. The
+ * history grid's rule for future days (docs/ux/insights.md §8.3), in months: a
+ * year drawn with four zeros at its end would read as a year already lost. The
+ * current month is a real point over the days it has had so far, for the same
+ * reason the rate card draws a real number for it (§8.7).
+ */
+private fun trendOf(window: ClosedRange<LocalDate>, today: LocalDate, completions: Map<HabitId, Set<LocalDate>>): List<TrendPointUi> {
+    val activeDates = completions.values.flatten().toSet()
+    return generateSequence(YearMonth.from(window.start)) { it.plusMonths(1) }
+        .takeWhile { it <= YearMonth.from(window.endInclusive) && it.atDay(1) <= today }
+        .map { month ->
+            val active = activeDates.count { YearMonth.from(it) == month && !it.isAfter(today) }
+            val elapsed = if (YearMonth.from(today) == month) today.dayOfMonth else month.lengthOfMonth()
+            TrendPointUi(monthName = monthName(month.month), activeDays = active, fill = active.toFloat() / elapsed)
+        }
+        .toList()
+}
+
+/**
+ * The sentence, or none.
+ *
+ * "Focus" is the tag with the largest total, and only a **tagged** one: untagged
+ * is what is left over, not a thing the user chose to work on. Ties break the
+ * way the bars sort — largest first, then by name — so the sentence can never
+ * name a tag the list draws second. Nothing is said when either period had no
+ * tagged completion: a habit tagged for the first time this quarter did not
+ * shift the focus from anywhere.
+ */
+private fun focusShift(previous: List<TagEffort>, current: List<TagEffort>): FocusShiftUi? {
+    val before = previous.topTag()
+    val now = current.topTag()
+    return when {
+        before == null || now == null -> null
+        before == now -> FocusShiftUi.Held(now)
+        else -> FocusShiftUi.Shifted(from = before, to = now)
+    }
+}
+
+private fun List<TagEffort>.topTag(): String? = filter { it.tag != null && it.completions > 0 }
+    .sortedWith(compareBy({ -it.completions }, { it.tag }))
+    .firstOrNull()
+    ?.tag
 
 /**
  * A row per habit, ordered as the habit list is.
@@ -75,26 +145,37 @@ private fun List<HabitState>.toRates(
     context: ReadContext,
     completions: Map<HabitId, Set<LocalDate>>,
 ): List<HabitRateUi> = filterNot { it.archived }.map { habit ->
+    val dates = completions[habit.id].orEmpty()
+    val measured = habit.measuredWindow(window)
     HabitRateUi(
         name = habit.name,
         schedule = habit.schedule.toLabelUi(),
-        percent = habit.percentOver(window, context, completions[habit.id].orEmpty()),
+        percent = measured?.let { habit.percentOver(it, context, dates) },
+        best = measured?.let { BestRun.within(dates, habit.schedule, it, context.today, context.weekStart).takeIf { run -> run > 0 } },
     )
 }
 
 /**
- * Clipped to the habit's start, and null when the period offered nothing.
+ * The window clipped to the habit's start, or null when the habit is younger
+ * than the whole period.
  *
  * The clip is what the projected creation date bought: without it a habit made
  * halfway through a quarter reads as having missed the first half, which is a
  * number that is arithmetically right and accuses the user of days that were
- * never offered.
+ * never offered. The best run is measured over the same clipped window, so the
+ * two figures on a row describe the same span.
  */
-private fun HabitState.percentOver(window: ClosedRange<LocalDate>, context: ReadContext, dates: Set<LocalDate>): Int? {
+private fun HabitState.measuredWindow(window: ClosedRange<LocalDate>): ClosedRange<LocalDate>? {
     val born = createdOn
-    if (born != null && born > window.endInclusive) return null
-    val from = if (born != null) maxOf(window.start, born) else window.start
-    val rate = Rates.completionRate(dates, schedule, from..window.endInclusive, context.today, context.weekStart)
+    return when {
+        born == null -> window
+        born > window.endInclusive -> null
+        else -> maxOf(window.start, born)..window.endInclusive
+    }
+}
+
+private fun HabitState.percentOver(window: ClosedRange<LocalDate>, context: ReadContext, dates: Set<LocalDate>): Int? {
+    val rate = Rates.completionRate(dates, schedule, window, context.today, context.weekStart)
     return rate.fraction?.let { (it * PERCENT).roundToInt() }
 }
 

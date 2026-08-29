@@ -147,7 +147,7 @@ private fun columnOf(day: DayOfWeek, weekStart: DayOfWeek): Int = (day.value - w
  * one language could label the grid in another.
  */
 @StringRes
-private fun monthName(month: Month): Int = when (month) {
+internal fun monthName(month: Month): Int = when (month) {
     Month.JANUARY -> R.string.insights_month_january
     Month.FEBRUARY -> R.string.insights_month_february
     Month.MARCH -> R.string.insights_month_march

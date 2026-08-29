@@ -1,10 +1,17 @@
 package com.gawi.feature.insights
 
 /**
- * What the Insights screen reports.
+ * What the Insights screen can report.
  *
- * Neither the period nor the breakdown is navigation — both are the screen's own
- * state, so changing either must not push a back-stack entry and Back must leave
- * the screen rather than unwind a sequence of filter changes.
+ * [onEarlier] and [onLater] step the period back through the calendar and
+ * forward again — the retrospective's one control (docs/ux/insights.md §9).
+ * The screen never says *which* period that lands on; the state holder owns
+ * the offset, as the history grid's does.
  */
-internal data class InsightsActions(val onPeriod: (Period) -> Unit, val onBreakdown: (Breakdown) -> Unit, val onBack: () -> Unit)
+internal data class InsightsActions(
+    val onPeriod: (Period) -> Unit,
+    val onBreakdown: (Breakdown) -> Unit,
+    val onEarlier: () -> Unit,
+    val onLater: () -> Unit,
+    val onBack: () -> Unit,
+)

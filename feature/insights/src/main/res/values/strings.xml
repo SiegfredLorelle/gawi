@@ -25,6 +25,44 @@
     <string name="insights_breakdown_habits">Habits</string>
     <string name="insights_breakdown_tags">Tags</string>
 
+    <!-- The stepper's caption and its two arrows — Phase 1.5's retrospective
+         (docs/ux/insights.md §9). The quarter is "Q3 2026" rather than a month
+         range because the chips already say the period is a quarter, and a
+         range would be the longest label on the row at 200% font. -->
+    <string name="insights_period_month_title">%1$s %2$d</string>
+    <string name="insights_period_quarter_title">Q%1$d %2$d</string>
+    <string name="insights_period_year_title">%d</string>
+    <string name="insights_period_earlier">Earlier period</string>
+    <string name="insights_period_later">Later period</string>
+
+    <!-- The focus sentence. The largest tagged total this period against the
+         one before; nothing is said when either had no tagged completion. Tags
+         are the user's own words, so they are dropped in as typed. -->
+    <string name="insights_focus_shifted">Focus shifted from %1$s to %2$s.</string>
+    <string name="insights_focus_held">Still mostly %1$s.</string>
+
+    <!-- The trend card: active days per month across a quarter or a year. The
+         subtitle names the denominator, as the rate card names its schedule,
+         because a count out of the days a month has had is not a completion
+         rate and must not be read as one. insights_trend_point is one
+         column's spoken form — "March, 15 active days" — since under twelve
+         columns the visible label is a bare initial. -->
+    <string name="insights_trend_title">Active days per month</string>
+    <string name="insights_trend_subtitle">Days with at least one completion</string>
+    <string name="insights_trend_point">%1$s, %2$s</string>
+
+    <!-- The best run inside the period, in the schedule's own unit, beside the
+         schedule label on an adherence row. No "worst": every habit's worst
+         run is zero, and a zero under every row would say nothing. -->
+    <plurals name="insights_best_days">
+        <item quantity="one">best %d day</item>
+        <item quantity="other">best %d days</item>
+    </plurals>
+    <plurals name="insights_best_weeks">
+        <item quantity="one">best %d week</item>
+        <item quantity="other">best %d weeks</item>
+    </plurals>
+
     <!-- The headline. Two exact numbers that need no denominator: "every habit
          done" is not answerable for a past day, because a weekly habit has no
          due day at all (§4), so this says the user turned up rather than

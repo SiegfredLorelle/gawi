@@ -16,9 +16,11 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import com.gawi.core.ui.component.GawiIconButton
 import com.gawi.core.ui.component.GawiIcons
 import com.gawi.core.ui.component.Notice
@@ -34,7 +36,9 @@ import com.gawi.core.ui.theme.GawiSpacing
  * own, reached from Today's app bar.
  *
  * One time control, at the top, scoping everything under it — not a picker per
- * card. The per-habit history screen keeps its own month steppers and is
+ * card — and, since Phase 1.5, a stepper under the chips that walks that period
+ * back through the calendar: the retrospective is this screen one period back
+ * (docs/ux/insights.md §9), not a screen of its own. The per-habit history screen keeps its own month steppers and is
  * deliberately not governed from here: a month grid can only show a month.
  *
  * No `SnackbarHostState`: nothing here writes, so there is no rejection to
@@ -86,7 +90,12 @@ private fun Overview(state: InsightsUiState.Overview, actions: InsightsActions, 
         verticalArrangement = Arrangement.spacedBy(GawiSpacing.Row),
     ) {
         PeriodPicker(state.period, actions.onPeriod)
+        PeriodStepper(state.label, state.canStepLater, actions)
         Headline(state)
+        state.focus?.let { FocusLine(it) }
+        // Only when there is something to bucket: a single month is one point,
+        // and a period that has not begun draws nothing (insights.md §9).
+        if (state.trend.isNotEmpty()) TrendCard(state.trend)
         BreakdownPicker(state.breakdown, actions.onBreakdown)
 
         when {
@@ -150,6 +159,59 @@ private fun Headline(state: InsightsUiState.Overview) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
+}
+
+/**
+ * Which calendar period the numbers describe, between the two arrows that walk
+ * it — Phase 1.5's retrospective is this row (docs/ux/insights.md §9).
+ *
+ * **The later arrow is disabled at the current period, not removed.** The
+ * history grid drops its stepper at zero and leaves a footprint; here the label
+ * sits between the two arrows and a vanishing one would shift it, so the button
+ * stays, greyed to Material's disabled alpha, with its content description
+ * kept. The clamp itself lives in the ViewModel, so a tap that got through
+ * would still do nothing.
+ */
+@Composable
+private fun PeriodStepper(label: PeriodLabelUi, canStepLater: Boolean, actions: InsightsActions) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        GawiIconButton(GawiIcons.ChevronLeft, R.string.insights_period_earlier, onClick = actions.onEarlier)
+        Text(
+            text = periodTitle(label),
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.titleSmall,
+            textAlign = TextAlign.Center,
+        )
+        GawiIconButton(GawiIcons.ChevronRight, R.string.insights_period_later, enabled = canStepLater, onClick = actions.onLater)
+    }
+}
+
+@Composable
+private fun periodTitle(label: PeriodLabelUi): String = when (label) {
+    is PeriodLabelUi.Month -> stringResource(R.string.insights_period_month_title, stringResource(label.name), label.year)
+    is PeriodLabelUi.Quarter -> stringResource(R.string.insights_period_quarter_title, label.quarter, label.year)
+    is PeriodLabelUi.Year -> stringResource(R.string.insights_period_year_title, label.year)
+}
+
+/**
+ * One sentence under the headline about where the effort moved.
+ *
+ * Body copy rather than a card: it is a remark about the two numbers above it,
+ * not a third surface, and a card would promote a comparison of two tag totals
+ * to the standing of the adherence list.
+ */
+@Composable
+private fun FocusLine(focus: FocusShiftUi) {
+    Text(
+        text = when (focus) {
+            is FocusShiftUi.Shifted -> stringResource(R.string.insights_focus_shifted, focus.from, focus.to)
+            is FocusShiftUi.Held -> stringResource(R.string.insights_focus_held, focus.tag)
+        },
+        style = MaterialTheme.typography.bodyMedium,
+    )
 }
 
 /**

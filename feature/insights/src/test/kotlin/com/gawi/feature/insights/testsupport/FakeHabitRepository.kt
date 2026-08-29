@@ -124,8 +124,14 @@ class FakeHabitRepository : HabitRepository {
 
     override fun observeTagEffort(from: LocalDate, to: LocalDate): Flow<List<TagEffort>> {
         ranges += from..to
-        return effortFailure?.let { flow<List<TagEffort>> { throw it } } ?: flowOf(tagEffort)
+        return effortFailure?.let { flow<List<TagEffort>> { throw it } } ?: flowOf(tagEffortByWindow[from..to] ?: tagEffort)
     }
+
+    /**
+     * Tag totals for one window in particular, ahead of [tagEffort] — how a test
+     * gives the previous period a different top tag from the current one.
+     */
+    val tagEffortByWindow = mutableMapOf<ClosedRange<LocalDate>, List<TagEffort>>()
 
     /** Set to fail the tag read the way the real one can. */
     var effortFailure: Throwable? = null
