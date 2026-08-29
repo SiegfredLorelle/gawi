@@ -64,6 +64,8 @@ fun InsightsRoute(onBack: () -> Unit) {
         actions = InsightsActions(
             onPeriod = viewModel::onPeriod,
             onBreakdown = viewModel::onBreakdown,
+            onEarlier = viewModel::onEarlier,
+            onLater = viewModel::onLater,
             onBack = onBack,
         ),
     )

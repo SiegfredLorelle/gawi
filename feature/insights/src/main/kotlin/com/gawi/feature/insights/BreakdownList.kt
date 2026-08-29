@@ -14,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -86,7 +87,11 @@ internal fun HabitRates(habits: List<HabitRateUi>, modifier: Modifier = Modifier
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(GawiSpacing.Line)) {
                     Text(text = habit.name, style = MaterialTheme.typography.bodySmall)
                     Text(
-                        text = scheduleText(habit.schedule),
+                        // The best run rides on the schedule line rather than
+                        // taking a third, because the unit it is counted in is
+                        // the schedule's, and the two read as one fact there:
+                        // "3× a week · best 9 weeks".
+                        text = listOfNotNull(scheduleText(habit.schedule), bestText(habit)).joinToString(SEPARATOR),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -105,6 +110,16 @@ internal fun HabitRates(habits: List<HabitRateUi>, modifier: Modifier = Modifier
             }
         }
     }
+}
+
+/**
+ * "best 9 weeks" or "best 31 days", in the unit the row's schedule is counted
+ * in, or nothing when the period held no run (docs/ux/insights.md §9).
+ */
+@Composable
+private fun bestText(habit: HabitRateUi): String? = habit.best?.let { best ->
+    val plural = if (habit.schedule.timesPerWeek == null) R.plurals.insights_best_days else R.plurals.insights_best_weeks
+    pluralStringResource(plural, best, best)
 }
 
 /**
@@ -144,3 +159,6 @@ private val TOTAL_WIDTH = 44.dp
 
 private val BAR_HEIGHT = 12.dp
 private val BAR_CORNER = 6.dp
+
+/** A middle dot between two facts on one line. */
+private const val SEPARATOR = " \u00B7 "

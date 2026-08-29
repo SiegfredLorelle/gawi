@@ -27,13 +27,24 @@ class InsightsUiMapperTest {
 
     private val context = ReadContext(today = TODAY, weekStart = DayOfWeek.MONDAY)
 
+    /** Every parameter defaulted, so a test names only the field it is about. */
+    @Suppress("LongParameterList")
     private fun overview(
         period: Period = Period.MONTH,
         breakdown: Breakdown = Breakdown.HABITS,
         habits: List<HabitState> = emptyList(),
         completions: Map<HabitId, Set<LocalDate>> = emptyMap(),
         tagEffort: List<TagEffort> = emptyList(),
-    ) = overviewOf(period, breakdown, context, PeriodReads(period.window(context.today), habits, completions, tagEffort))
+        previousTagEffort: List<TagEffort> = emptyList(),
+        back: Int = 0,
+        today: LocalDate = TODAY,
+    ) = overviewOf(
+        period,
+        back,
+        breakdown,
+        context.copy(today = today),
+        PeriodReads(period.window(today, back), habits, completions, tagEffort, previousTagEffort),
+    )
 
     /**
      * Two habits done on one day is **one** active day. A sum here would count
@@ -195,5 +206,103 @@ class InsightsUiMapperTest {
 
         assertEquals(Period.YEAR, state.period)
         assertEquals(Breakdown.TAGS, state.breakdown)
+    }
+
+    // ---- the retrospective: label, best run, trend, focus ----
+
+    @Test
+    fun `the label names the calendar period the window is`() {
+        assertEquals(PeriodLabelUi.Month(R.string.insights_month_august, 2026), overview().label)
+        assertEquals(PeriodLabelUi.Quarter(3, 2026), overview(period = Period.QUARTER).label)
+        assertEquals(PeriodLabelUi.Year(2025), overview(period = Period.YEAR, back = 1).label)
+        assertEquals(false, overview().canStepLater)
+        assertEquals(true, overview(back = 1).canStepLater)
+    }
+
+    @Test
+    fun `a row carries its best run in the schedule's unit, and none when there was none`() {
+        val read = habitState(id = habitId(1), name = "read")
+        val run = habitState(id = habitId(2), name = "run", schedule = Schedule.Weekly(1))
+        val idle = habitState(id = habitId(3), name = "idle")
+        val state = overview(
+            habits = listOf(read, run, idle),
+            completions = mapOf(
+                read.id to setOf(thisMonth(1), thisMonth(2), thisMonth(3), thisMonth(9), thisMonth(10)),
+                // Mondays 3, 10 and 17 August: three consecutive hit weeks.
+                run.id to setOf(thisMonth(3), thisMonth(10), thisMonth(17)),
+            ),
+        )
+
+        assertEquals(listOf(3, 3, null), state.habits.map { it.best })
+    }
+
+    @Test
+    fun `the best run is measured from the habit's creation, like the rate`() {
+        val born = habitState(createdOn = thisMonth(12))
+        val state = overview(habits = listOf(born), completions = mapOf(born.id to (10..14).map { thisMonth(it) }.toSet()))
+
+        assertEquals(3, state.habits.single().best)
+    }
+
+    @Test
+    fun `a month has no trend and a quarter has a point per begun month`() {
+        assertTrue(overview().trend.isEmpty())
+
+        val quarter = overview(
+            period = Period.QUARTER,
+            completions = mapOf(habitId(1) to setOf(LocalDate.parse("2026-07-01"), LocalDate.parse("2026-07-02"), thisMonth(3))),
+        )
+
+        // July, August — September has not begun and is not a point.
+        assertEquals(listOf(R.string.insights_month_july, R.string.insights_month_august), quarter.trend.map { it.monthName })
+        assertEquals(listOf(2, 1), quarter.trend.map { it.activeDays })
+        // July over its 31 days; August over the 18 it has had.
+        assertEquals(2f / 31, quarter.trend[0].fill, 1e-6f)
+        assertEquals(1f / 18, quarter.trend[1].fill, 1e-6f)
+    }
+
+    @Test
+    fun `a past year has twelve points`() {
+        val state = overview(period = Period.YEAR, back = 1)
+
+        assertEquals(12, state.trend.size)
+        assertEquals(0, state.trend.sumOf { it.activeDays })
+    }
+
+    @Test
+    fun `the focus is the top tagged total, before and after`() {
+        val shifted = overview(
+            tagEffort = listOf(TagEffort("career", 9), TagEffort("health", 4)),
+            previousTagEffort = listOf(TagEffort("health", 8), TagEffort("career", 1)),
+        )
+        assertEquals(FocusShiftUi.Shifted(from = "health", to = "career"), shifted.focus)
+
+        val held = overview(tagEffort = listOf(TagEffort("health", 4)), previousTagEffort = listOf(TagEffort("health", 8)))
+        assertEquals(FocusShiftUi.Held("health"), held.focus)
+    }
+
+    @Test
+    fun `untagged effort is never a focus, and an untagged period says nothing`() {
+        val onlyUntagged = overview(tagEffort = listOf(TagEffort(null, 40)), previousTagEffort = listOf(TagEffort("health", 8)))
+        assertEquals(null, onlyUntagged.focus)
+
+        val outnumbered = overview(
+            tagEffort = listOf(TagEffort(null, 40), TagEffort("career", 2)),
+            previousTagEffort = listOf(TagEffort(null, 50), TagEffort("career", 1)),
+        )
+        assertEquals(FocusShiftUi.Held("career"), outnumbered.focus)
+
+        assertEquals(null, overview(tagEffort = listOf(TagEffort("career", 2))).focus)
+    }
+
+    @Test
+    fun `a tie resolves the way the bars sort`() {
+        val state = overview(
+            tagEffort = listOf(TagEffort("mind", 5), TagEffort("career", 5)),
+            previousTagEffort = listOf(TagEffort("mind", 5), TagEffort("career", 5)),
+        )
+
+        assertEquals(FocusShiftUi.Held("career"), state.focus)
+        assertEquals("career", state.tags.first().name)
     }
 }

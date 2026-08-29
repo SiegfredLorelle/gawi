@@ -32,6 +32,8 @@ class InsightsViewModelTest {
     private fun insights() = InsightsViewModel(repository)
 
     private val august = thisMonth(1)..thisMonth(31)
+    private val july = LocalDate.parse("2026-07-01")..LocalDate.parse("2026-07-31")
+    private val june = LocalDate.parse("2026-06-01")..LocalDate.parse("2026-06-30")
     private val quarter = LocalDate.parse("2026-07-01")..LocalDate.parse("2026-09-30")
     private val year = LocalDate.parse("2026-01-01")..LocalDate.parse("2026-12-31")
 
@@ -64,7 +66,9 @@ class InsightsViewModelTest {
             cancelAndIgnoreRemainingEvents()
         }
 
-        assertEquals(listOf(august, august), repository.ranges)
+        // The completions and the tags over August, and the tags once more over
+        // the month before it for the focus sentence.
+        assertEquals(listOf(august, august, july), repository.ranges)
     }
 
     @Test
@@ -187,5 +191,81 @@ class InsightsViewModelTest {
 
         assertEquals(2, readsOf(LocalDate.parse("2026-11-01")..LocalDate.parse("2026-11-30")))
         assertEquals(0, readsOf(august))
+    }
+
+    // ---- the retrospective's stepper ----
+
+    @Test
+    fun `stepping back reads the earlier window and the one before it`() = runTest {
+        val viewModel = insights()
+        viewModel.uiState.test {
+            assertEquals(InsightsUiState.Loading, awaitItem())
+            repository.emitContext()
+            val now = awaitItem() as InsightsUiState.Overview
+            assertEquals(false, now.canStepLater)
+
+            viewModel.onEarlier()
+            val earlier = awaitItem() as InsightsUiState.Overview
+            assertEquals(PeriodLabelUi.Month(R.string.insights_month_july, 2026), earlier.label)
+            assertEquals(true, earlier.canStepLater)
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        // Once as August's previous period, then twice as the window itself.
+        assertEquals(3, readsOf(july))
+        assertEquals(1, readsOf(june))
+    }
+
+    @Test
+    fun `stepping later stops at the current period`() = runTest {
+        val viewModel = insights()
+        viewModel.uiState.test {
+            assertEquals(InsightsUiState.Loading, awaitItem())
+            repository.emitContext()
+            awaitItem()
+
+            viewModel.onLater()
+            expectNoEvents()
+
+            viewModel.onEarlier()
+            assertEquals(true, (awaitItem() as InsightsUiState.Overview).canStepLater)
+            viewModel.onLater()
+            assertEquals(false, (awaitItem() as InsightsUiState.Overview).canStepLater)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `picking a period returns to the current one`() = runTest {
+        val viewModel = insights()
+        viewModel.uiState.test {
+            assertEquals(InsightsUiState.Loading, awaitItem())
+            repository.emitContext()
+            awaitItem()
+
+            viewModel.onEarlier()
+            awaitItem()
+            viewModel.onPeriod(Period.QUARTER)
+            val state = awaitItem() as InsightsUiState.Overview
+            assertEquals(PeriodLabelUi.Quarter(3, 2026), state.label)
+            assertEquals(false, state.canStepLater)
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        assertEquals(2, readsOf(quarter))
+    }
+
+    @Test
+    fun `the focus sentence compares the period with the one before`() = runTest {
+        repository.tagEffort = listOf(TagEffort("career", 9), TagEffort("health", 4))
+        repository.tagEffortByWindow[july] = listOf(TagEffort("health", 8))
+
+        insights().uiState.test {
+            assertEquals(InsightsUiState.Loading, awaitItem())
+            repository.emitContext()
+
+            assertEquals(FocusShiftUi.Shifted(from = "health", to = "career"), (awaitItem() as InsightsUiState.Overview).focus)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 }

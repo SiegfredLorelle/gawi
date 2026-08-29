@@ -1,8 +1,11 @@
 package com.gawi.feature.insights
 
+import androidx.annotation.StringRes
+
 /**
  * What the Insights screen draws: one period, two numbers about it, and one
- * breakdown of it.
+ * breakdown of it — and, since Phase 1.5, the review of that period: where it
+ * sits in the calendar, how the months in it went, and where the focus moved.
  *
  * The app's only surface that reports on **every** habit at once. Everything
  * else — the Today view, habit detail, the history grid, the rate trend — is
@@ -31,6 +34,14 @@ internal sealed interface InsightsUiState {
      */
     data class Overview(
         val period: Period,
+        /** Which calendar period the screen is on, for the stepper's label. */
+        val label: PeriodLabelUi,
+        /**
+         * Whether the stepper can move forward — false on the period holding
+         * today. Carried rather than derived so the screen never learns what
+         * the offset is; it only learns whether the later arrow works.
+         */
+        val canStepLater: Boolean,
         val breakdown: Breakdown,
         /**
          * Days in the period with at least one completion.
@@ -43,6 +54,13 @@ internal sealed interface InsightsUiState {
         val activeDays: Int,
         /** Completions in the period, across every habit, archived included. */
         val completions: Int,
+        /** Where the effort moved against the period before; null when there is nothing to say. */
+        val focus: FocusShiftUi?,
+        /**
+         * Active days per month across the period, oldest first — empty for a
+         * single month, and for months that have not happened yet.
+         */
+        val trend: List<TrendPointUi>,
         val habits: List<HabitRateUi>,
         val tags: List<TagShareUi>,
         /**
@@ -64,6 +82,48 @@ internal sealed interface InsightsUiState {
 internal enum class Breakdown { HABITS, TAGS }
 
 /**
+ * The stepper's caption: which month, quarter or year the numbers describe.
+ *
+ * Resource ids and integers rather than a formatted string, like the history
+ * grid's title, so the screen composes it under its own resource configuration
+ * and no `java.time.format` locale leaks in.
+ */
+internal sealed interface PeriodLabelUi {
+    data class Month(@StringRes val name: Int, val year: Int) : PeriodLabelUi
+
+    data class Quarter(val quarter: Int, val year: Int) : PeriodLabelUi
+
+    data class Year(val year: Int) : PeriodLabelUi
+}
+
+/**
+ * One sentence about where the effort went, relative to the period before.
+ *
+ * Both compare the largest **tagged** total in each period. Untagged is the
+ * residual and never a focus: "shifted from career to Untagged" would say the
+ * user stopped caring when all they stopped doing was labelling. When either
+ * period has no tagged completion there is no sentence, not a guess.
+ */
+internal sealed interface FocusShiftUi {
+    /** The top tag changed. */
+    data class Shifted(val from: String, val to: String) : FocusShiftUi
+
+    /** The top tag is the one it was. */
+    data class Held(val tag: String) : FocusShiftUi
+}
+
+/**
+ * One month of the period's trend: days with at least one completion, and that
+ * count as a fraction of the days the month has had — [fill] is what the line is
+ * drawn from and [activeDays] is what the label says.
+ *
+ * Calendar days are the denominator because they are the only one honest for a
+ * daily and a weekly habit at once (docs/ux/insights.md §4); a per-habit rate
+ * trend over the period would be one line per habit or a dishonest average.
+ */
+internal data class TrendPointUi(@StringRes val monthName: Int, val activeDays: Int, val fill: Float)
+
+/**
  * One habit's adherence over the period.
  *
  * A row per habit rather than one averaged number, and that is a rule and not a
@@ -74,8 +134,13 @@ internal enum class Breakdown { HABITS, TAGS }
  *
  * [percent] is null when the period held nothing that had finished — a habit
  * created today, or one created after the period ended. A dash, never a zero.
+ *
+ * [best] is the longest run inside the period in the schedule's own unit, and
+ * null rather than zero when there was none: "best 0 days" under a row is the
+ * screen accusing the user, and the dash beside it already said nothing
+ * happened.
  */
-internal data class HabitRateUi(val name: String, val schedule: ScheduleLabelUi, val percent: Int?)
+internal data class HabitRateUi(val name: String, val schedule: ScheduleLabelUi, val percent: Int?, val best: Int? = null)
 
 /**
  * One tag's share of the effort.

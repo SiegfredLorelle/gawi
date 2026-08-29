@@ -75,4 +75,35 @@ class PeriodTest {
             assertEquals("$period", true, today in period.window(today))
         }
     }
+
+    // ---- stepping back, for the retrospective ----
+
+    @Test
+    fun `stepping back walks whole calendar periods`() {
+        val today = LocalDate.parse("2026-08-18")
+
+        assertEquals(LocalDate.parse("2026-07-01")..LocalDate.parse("2026-07-31"), Period.MONTH.window(today, back = 1))
+        assertEquals(LocalDate.parse("2026-04-01")..LocalDate.parse("2026-06-30"), Period.QUARTER.window(today, back = 1))
+        assertEquals(LocalDate.parse("2025-01-01")..LocalDate.parse("2025-12-31"), Period.YEAR.window(today, back = 1))
+    }
+
+    @Test
+    fun `the period before a first quarter is the last quarter of the year before`() {
+        assertEquals(
+            LocalDate.parse("2025-10-01")..LocalDate.parse("2025-12-31"),
+            Period.QUARTER.window(LocalDate.parse("2026-02-14"), back = 1),
+        )
+        assertEquals(
+            LocalDate.parse("2025-12-01")..LocalDate.parse("2025-12-31"),
+            Period.MONTH.window(LocalDate.parse("2026-01-31"), back = 1),
+        )
+    }
+
+    @Test
+    fun `back is a count of periods, wherever in the period today falls`() {
+        val q3 = LocalDate.parse("2026-01-01")..LocalDate.parse("2026-03-31")
+
+        assertEquals(q3, Period.QUARTER.window(LocalDate.parse("2026-07-01"), back = 2))
+        assertEquals(q3, Period.QUARTER.window(LocalDate.parse("2026-09-30"), back = 2))
+    }
 }

@@ -2,6 +2,8 @@ package com.gawi.feature.insights
 
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -43,11 +45,13 @@ class InsightsScreenTest {
     @Suppress("LongParameterList")
     private fun overview(
         period: Period = Period.MONTH,
+        label: PeriodLabelUi = PeriodLabelUi.Month(R.string.insights_month_august, 2026),
+        canStepLater: Boolean = false,
         breakdown: Breakdown = Breakdown.HABITS,
         activeDays: Int = 3,
         completions: Int = 7,
         habits: List<HabitRateUi> = listOf(
-            HabitRateUi("read", ScheduleLabelUi(R.string.insights_schedule_daily, null), percent = 83),
+            HabitRateUi("read", ScheduleLabelUi(R.string.insights_schedule_daily, null), percent = 83, best = 12),
             HabitRateUi("run", ScheduleLabelUi(R.string.insights_schedule_weekly, 3), percent = null),
         ),
         tags: List<TagShareUi> = listOf(
@@ -55,7 +59,9 @@ class InsightsScreenTest {
             TagShareUi(null, 12, 0.14f),
         ),
         hasAnyHabit: Boolean = true,
-    ) = InsightsUiState.Overview(period, breakdown, activeDays, completions, habits, tags, hasAnyHabit)
+        focus: FocusShiftUi? = null,
+        trend: List<TrendPointUi> = emptyList(),
+    ) = InsightsUiState.Overview(period, label, canStepLater, breakdown, activeDays, completions, focus, trend, habits, tags, hasAnyHabit)
 
     private fun render(state: InsightsUiState, actions: InsightsActions = NO_ACTIONS) {
         compose.setContent {
@@ -96,10 +102,10 @@ class InsightsScreenTest {
 
         compose.onNodeWithText("read").assertIsDisplayed()
         compose.onNodeWithText(resources.getString(R.string.insights_rate_percent, 83)).assertIsDisplayed()
-        compose.onNodeWithText(string(R.string.insights_schedule_daily)).assertIsDisplayed()
-        compose.onNodeWithText(resources.getString(R.string.insights_schedule_weekly, 3)).assertIsDisplayed()
+        compose.onNodeWithText(string(R.string.insights_schedule_daily), substring = true).assertIsDisplayed()
+        compose.onNodeWithText(resources.getString(R.string.insights_schedule_weekly, 3)).performScrollTo().assertIsDisplayed()
         // A habit with no rate draws a dash, never a zero.
-        compose.onNodeWithText(string(R.string.insights_rate_none)).assertIsDisplayed()
+        compose.onNodeWithText(string(R.string.insights_rate_none)).performScrollTo().assertIsDisplayed()
         // And no tag totals are on screen while habits are.
         compose.onAllNodesWithText("86").assertCountEquals(0)
     }
@@ -244,7 +250,97 @@ class InsightsScreenTest {
         compose.onAllNodesWithText(string(R.string.insights_period_month)).assertCountEquals(0)
     }
 
+    // ---- the retrospective ----
+
+    @Test
+    fun `the stepper names the period and its arrows report`() {
+        var earlier = 0
+        var later = 0
+        render(
+            overview(label = PeriodLabelUi.Quarter(2, 2026), canStepLater = true),
+            NO_ACTIONS.copy(onEarlier = { earlier++ }, onLater = { later++ }),
+        )
+
+        compose.onNodeWithText(resources.getString(R.string.insights_period_quarter_title, 2, 2026)).assertIsDisplayed()
+        compose.onNodeWithContentDescription(string(R.string.insights_period_earlier)).performClick()
+        compose.onNodeWithContentDescription(string(R.string.insights_period_later)).performClick()
+
+        assertEquals(1, earlier)
+        assertEquals(1, later)
+    }
+
+    @Test
+    fun `on the current period the later arrow stays, disabled`() {
+        render(overview(canStepLater = false))
+
+        compose.onNodeWithContentDescription(string(R.string.insights_period_later)).assertIsDisplayed().assertIsNotEnabled()
+        compose.onNodeWithContentDescription(string(R.string.insights_period_earlier)).assertIsEnabled()
+    }
+
+    @Test
+    fun `the focus sentence is drawn when there is one and absent when not`() {
+        render(overview(focus = FocusShiftUi.Shifted("health", "career")))
+        compose.onNodeWithText(resources.getString(R.string.insights_focus_shifted, "health", "career")).assertIsDisplayed()
+    }
+
+    @Test
+    fun `no focus, no sentence and no trend`() {
+        render(overview(focus = null, trend = emptyList()))
+
+        compose.onAllNodesWithText(resources.getString(R.string.insights_focus_held, "health")).assertCountEquals(0)
+        compose.onAllNodesWithText(string(R.string.insights_trend_title)).assertCountEquals(0)
+    }
+
+    @Test
+    fun `a quarter's trend shows three short month names, each column spoken in full`() {
+        render(
+            overview(
+                trend = listOf(
+                    TrendPointUi(R.string.insights_month_april, 17, 17f / 30),
+                    TrendPointUi(R.string.insights_month_may, 22, 22f / 31),
+                    TrendPointUi(R.string.insights_month_june, 22, 22f / 30),
+                ),
+            ),
+        )
+
+        compose.onNodeWithText(string(R.string.insights_trend_title)).assertIsDisplayed()
+        val spoken = resources.getString(
+            R.string.insights_trend_point,
+            string(R.string.insights_month_april),
+            resources.getQuantityString(R.plurals.insights_active_days, 17, 17),
+        )
+        compose.onNodeWithContentDescription(spoken).assertIsDisplayed()
+    }
+
+    @Test
+    fun `a year's trend labels its columns by initial`() {
+        val months = listOf(
+            R.string.insights_month_january,
+            R.string.insights_month_february,
+            R.string.insights_month_march,
+            R.string.insights_month_april,
+            R.string.insights_month_may,
+            R.string.insights_month_june,
+            R.string.insights_month_july,
+            R.string.insights_month_august,
+        )
+        render(overview(trend = months.map { TrendPointUi(it, 10, 0.3f) }))
+
+        // Twelve columns cannot hold "Jan": the label is the initial, and the
+        // ambiguous letters are covered by each column's spoken form.
+        compose.onAllNodesWithText("J", useUnmergedTree = true).assertCountEquals(3)
+        compose.onAllNodesWithText("Jan", useUnmergedTree = true).assertCountEquals(0)
+    }
+
+    @Test
+    fun `a row shows its best run beside its schedule, and omits it when there was none`() {
+        render(overview(breakdown = Breakdown.HABITS))
+
+        compose.onNodeWithText(resources.getQuantityString(R.plurals.insights_best_days, 12, 12), substring = true).assertIsDisplayed()
+        compose.onAllNodesWithText(resources.getQuantityString(R.plurals.insights_best_weeks, 0, 0), substring = true).assertCountEquals(0)
+    }
+
     private companion object {
-        val NO_ACTIONS = InsightsActions(onPeriod = {}, onBreakdown = {}, onBack = {})
+        val NO_ACTIONS = InsightsActions(onPeriod = {}, onBreakdown = {}, onEarlier = {}, onLater = {}, onBack = {})
     }
 }

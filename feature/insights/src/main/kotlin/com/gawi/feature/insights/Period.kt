@@ -32,19 +32,31 @@ internal enum class Period(@StringRes val label: Int) {
     YEAR(R.string.insights_period_year),
     ;
 
-    /** Inclusive at both ends, in the calendar the label names. */
-    fun window(today: LocalDate): ClosedRange<LocalDate> = when (this) {
-        MONTH -> YearMonth.from(today).let { month -> month.atDay(1)..month.atEndOfMonth() }
+    /**
+     * Inclusive at both ends, in the calendar the label names, [back] periods
+     * before the one holding [today].
+     *
+     * The retrospective's stepper (docs/ux/insights.md §9) is this one
+     * parameter: `back = 0` is the period the screen opened on and `back = 1`
+     * is the one before it, so "the previous period" — what the focus sentence
+     * compares against — is the same function asked once more rather than a
+     * second piece of date arithmetic that could drift from this one.
+     */
+    fun window(today: LocalDate, back: Int = 0): ClosedRange<LocalDate> = when (this) {
+        MONTH -> YearMonth.from(today).minusMonths(back.toLong()).let { month -> month.atDay(1)..month.atEndOfMonth() }
 
         // IsoFields rather than month / 3 arithmetic: the same field the rest of
         // java.time buckets quarters by, so a quarter here and a quarter in a
         // retrospective cannot come to disagree.
         QUARTER -> {
-            val first = LocalDate.of(today.year, quarterFirstMonth(today), 1)
+            val first = LocalDate.of(today.year, quarterFirstMonth(today), 1).minusMonths(MONTHS_PER_QUARTER * back)
             first..first.plusMonths(MONTHS_PER_QUARTER).minusDays(1)
         }
 
-        YEAR -> LocalDate.of(today.year, 1, 1)..LocalDate.of(today.year, MONTHS_PER_YEAR, LAST_DECEMBER_DAY)
+        YEAR -> {
+            val year = today.year - back
+            LocalDate.of(year, 1, 1)..LocalDate.of(year, MONTHS_PER_YEAR, LAST_DECEMBER_DAY)
+        }
     }
 
     private fun quarterFirstMonth(today: LocalDate): Int = (today.get(IsoFields.QUARTER_OF_YEAR) - 1) * MONTHS_PER_QUARTER.toInt() + 1
