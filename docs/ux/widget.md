@@ -292,7 +292,63 @@ guarded by `BIND_REMOTEVIEWS`, which only the system holds. Glance's two
 trampoline activities and three receivers, and WorkManager's own components, are
 all either `exported="false"` or guarded by `DUMP` / `BIND_JOB_SERVICE`.
 
-## 6. Still open
+## 6. The streak widget, and the two decisions it did not get to make
+
+**Built 2026-08-29**, as docs/ux/visual-identity.md §7.4's third surface. Its own
+`GlanceAppWidget`, receiver, provider xml and manifest entry — the per-widget cost
+that section prices — and almost nothing else new, because `observeToday()`
+already served it. §7.4 had priced "a read `observeToday()` does not currently
+serve"; `TodayHabit` carries a `StreakSnapshot` and its habit's `Schedule`, which
+are both halves of `StreakUi.toUi`, and `TodaySnapshot` carries the logical date.
+
+**It shows every habit, not one number, and that was the argument.** A single
+headline streak has to choose a habit, and the only ordering available compares a
+count of days against a count of weeks. `StreakUi` is a sealed type specifically
+so those two cannot be styled as the same number — so ranking by the integer
+contradicts it, and ranking by elapsed days is arithmetically fine and still
+misleading, since a weekly habit hit once a week for three weeks has not done more
+than a daily habit hit eight days running. There is no ordering here that is both
+simple and true, so the widget does not rank: query order, the same rule the Today
+widget follows, for the same reason. Both directions were drawn at true size before
+the choice.
+
+**It dates its number, and that is not decoration.** §7.1 requires it: a streak
+reaches zero with *no new event*, so it is the one value whose staleness is not
+bounded by the user doing nothing — on the one surface with no live query. The
+line carries a **date, not a clock time**. The number only changes at the day
+cutoff, so a fresh-looking `07:14` on a stale render claims a precision the value
+does not have, and would anyway be a fact about the last render rather than about
+the streak.
+
+That requirement is also what fixed the row count. At 180×110dp with the module's
+8dp padding there are 94dp to spend; a 16sp row is about 20dp, so four rows fit
+only if the "as of" line goes. It does not go — the rows scroll instead, in a
+`LazyColumn` above a pinned footer, and three are visible. A widget you scroll has
+weakened its own case for being a widget, and that is the honest cost of the
+direction rather than a defect to hide.
+
+**Read-only, deliberately.** No tap target. A widget that wrote would have to
+re-read the log first for the reason §4 spends itself on, and nothing here needs
+to write, so nothing here takes that on. Adding a tap later means adding an
+`ActionCallback` with the same re-read — not passing the drawn date.
+
+**Two costs §7.4 did not price**, both found in the building:
+
+- **`GlanceProjectionListener` names one widget.** A provider left out of it
+  still renders, and just stops following in-app writes for the life of a
+  session — indistinguishable from a widget nobody placed. It now refreshes
+  every declared provider, and `ProjectionRefreshTest` reads the receivers out of
+  the merged manifest so a third provider cannot be forgotten in one place while
+  being added in two others.
+- **`previewLayout` needs a layout, and this module ships none** — its
+  `initialLayout` is Glance's own. A Glance tree has no RemoteViews until a
+  session composes one, so the preview is a hand-built approximation, in the
+  system face rather than Outfit (the picker inflates it; there is no bitmap
+  escape there). It is the one place in this module that still reproduces the
+  palette by hand, because XML cannot read Kotlin — pinned to `:core:ui` by
+  `StreakPreviewColorsTest`, exactly the way `:app`'s window background is.
+
+## 7. Still open
 
 - ~~**A boundary refresh** (§4).~~ **Built 2026-08-21** with the reminder, as
   `RolloverWorker` (reminder.md §2). A widget on a launcher now follows the day
@@ -355,11 +411,17 @@ all either `exported="false"` or guarded by `DUMP` / `BIND_JOB_SERVICE`.
   WorkManager need `ACCESS_NETWORK_STATE` again and force the
   `tools:node="remove"` line out. `ManifestPermissionTest` is the tripwire for
   exactly that.
-- **Size variants.** The provider declares no API 31 attributes
-  (`targetCellWidth/Height`, `description`, `previewLayout`): minSdk is 29, lint
-  reports each as `UnusedAttribute`, and `warningsAsErrors` makes that a failed
-  build. Adding them means a `res/xml-v31` variant to keep in step — worth it
-  once they buy something.
+- ~~**Size variants.** The provider declares no API 31 attributes.~~ **Half
+  closed 2026-08-29.** The streak widget carries them, in a `res/xml-v31`
+  variant beside its base file (§6): `targetCellWidth/Height` so a fresh
+  placement is three cells by two rather than a guess off `minWidth`,
+  `description` so the picker says what the widget is, and `previewLayout`. The
+  Today widget still declares none, because nothing has yet asked it to — the
+  reasoning below stands for it: minSdk is 29, lint reports each attribute as
+  `UnusedAttribute`, and `warningsAsErrors` makes that a failed build. What the
+  streak widget's variant proved is the cost: the `-v31` file **replaces** the
+  base one rather than merging with it, so every attribute has to be repeated and
+  the two kept in step by hand.
 - **A habit's colour and icon are not drawn.** `HabitPalette` and
   `parseHabitColor` are `:core:ui`, which a Glance tree cannot consume (the
   theme is Compose UI). Drawing them means Glance-side colour parsing, which is

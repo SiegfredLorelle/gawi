@@ -1059,11 +1059,14 @@ widget. Before any of it is built, the price:
   were wrong and §2 records them: `CheckBoxColors` refuses only resource-backed
   providers, and the glyph is assertable after all. `docs/running.md` §4 keeps a
   by-hand check for what a JVM test cannot see.
-- **What is left of this set is the three surfaces above.** All three are drawn:
-  the Momo widget and Today large's woven band on the canvas's page 3, and the
-  streak widget twice over on its "Widget set — round two" page, where two
-  directions and the three calls that decide whether its number is true are
-  waiting on a choice. None is built.
+- **What is left of this set is the Momo widget and Today large's woven band.**
+  Both are drawn on the canvas's page 3 and neither is built. **The streak widget
+  shipped 2026-08-29**, drawn first as two directions on the canvas's "Widget set
+  — round two" page and built as the one that does not have to rank a count of
+  days against a count of weeks; docs/ux/widget.md §6 has its decisions and the
+  two costs this list had not priced — the projection listener naming only one
+  provider, and `previewLayout` needing a layout resource the module did not
+  have.
   ~~plus the rest of the role list a full `GlanceTheme(colors = …)` would
   need.~~ **Dropped 2026-08-29, and this half-bullet was asking for dead code.**
   The `GlanceTheme` wrapper was *removed* from the widget on 2026-08-28 because
