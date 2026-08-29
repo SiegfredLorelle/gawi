@@ -140,7 +140,10 @@ sealed interface over `Int` is a vocabulary it shares, while a theme is
 something it would have to *consume* — and only the last is impossible. What
 `:core:ui` publishes is therefore a role list, not the schemes — both
 `ColorScheme`s stay `internal`, and a surface inside the app still reads
-`MaterialTheme.colorScheme`. `:core:ui` exposes compose and material3 as `api`,
+`MaterialTheme.colorScheme`. The role list grew from six to nine later on
+2026-08-29 for the Momo widget and the large Today body (docs/ux/widget.md §7)
+— a ground, its ink and a fill — and the count of *things* crossing stayed at
+four, which is the distinction. `:core:ui` exposes compose and material3 as `api`,
 so nothing mechanical enforces the list; any other `com.gawi.core.ui.*` import
 in `:widget` is a defect for review to catch. `app/src/debug/` is gone: the debug-only
 activity that set the day cutoff and the reminder time over `adb` was deleted
