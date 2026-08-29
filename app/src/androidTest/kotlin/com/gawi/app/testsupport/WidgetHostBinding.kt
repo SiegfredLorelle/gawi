@@ -129,6 +129,13 @@ class WidgetHostBinding private constructor(
         const val RECEIVER = "com.gawi.widget.TodayWidgetReceiver"
         const val STREAK_RECEIVER = "com.gawi.widget.StreakWidgetReceiver"
         const val MOMO_RECEIVER = "com.gawi.widget.MomoWidgetReceiver"
+
+        /** The four mood sentences a face or a mood line can carry, by resource name. */
+        val MOOD_STRINGS = listOf("widget_mood_thriving", "widget_mood_content", "widget_mood_worried", "widget_mood_regenerating")
+
+        /** `:app` cannot name `:widget`'s R class — non-transitive R classes — but names resolve at runtime. */
+        fun stringByName(context: Context, name: String): String =
+            context.getString(context.resources.getIdentifier(name, "string", context.packageName))
         private const val HOST_ID = 0x6761
         private const val POLL_MILLIS = 250L
 

@@ -78,35 +78,38 @@ class WidgetHostTest {
     }
 
     /**
-     * The large body reaches a real host (docs/ux/widget.md §7). Told it is
-     * 250×200dp — the four-by-three placement the canvas drew — the widget must
-     * recompose past both gates and draw the mood line, which is the one string
-     * only that body emits. With no habits the widget draws the empty copy at
-     * every size, so the assertion accepts that too rather than seeding; the
-     * seeded variant is `StreakWidgetHostTest`'s job.
+     * The Today provider recomposes at the size a host reports, and past the
+     * height gate draws a mood (docs/ux/widget.md §7). Told it is 250×200dp —
+     * the four-by-three placement the canvas drew — the widget must emit a
+     * mood sentence, or the empty copy on an unseeded device.
+     *
+     * **What this does not prove, stated because the first version claimed
+     * it.** The mood sentence is the large body's drawn line *and* the
+     * face-above-rows body's content description, and this harness reads
+     * both, so it cannot tell the two tall bodies apart — only that the size
+     * was taken and the height gate passed. The width gate is pinned by
+     * `WidgetBodyTest` and `HeaderCopyTest`, and the header itself is a
+     * launcher check in docs/running.md §4.
      */
     @Test
-    fun theLargeBodyRendersWhenTheHostReportsRoom() {
+    fun theProviderRecomposesAtTheReportedSizeAndDrawsAMood() {
         val bound = widget!!
         bound.resize(LARGE_WIDTH_DP, LARGE_HEIGHT_DP)
-        val moods = MOOD_STRINGS.map(::stringByName)
-        val empty = stringByName("widget_no_habits")
+        val moods = WidgetHostBinding.MOOD_STRINGS.map { WidgetHostBinding.stringByName(context, it) }
+        val empty = WidgetHostBinding.stringByName(context, "widget_no_habits")
 
         val rendered = bound.awaitText(TIMEOUT_SECONDS) { text -> text.any { it in moods } || empty in text }
 
         assertTrue(
-            "neither a mood line nor the empty copy rendered at ${LARGE_WIDTH_DP}x$LARGE_HEIGHT_DP: $rendered",
+            "neither a mood nor the empty copy rendered at ${LARGE_WIDTH_DP}x$LARGE_HEIGHT_DP: $rendered",
             rendered.any { it in moods } || empty in rendered,
         )
         println("GAWI_WIDGET large=$rendered")
     }
 
-    private fun stringByName(name: String): String = context.getString(context.resources.getIdentifier(name, "string", context.packageName))
-
     private companion object {
         const val TIMEOUT_SECONDS = 20L
         const val LARGE_WIDTH_DP = 250
         const val LARGE_HEIGHT_DP = 200
-        val MOOD_STRINGS = listOf("widget_mood_thriving", "widget_mood_content", "widget_mood_worried", "widget_mood_regenerating")
     }
 }

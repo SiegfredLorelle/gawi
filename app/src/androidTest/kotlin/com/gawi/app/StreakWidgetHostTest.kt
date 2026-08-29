@@ -281,8 +281,7 @@ class StreakWidgetHostTest {
         line == stringByName("widget_no_habits") ||
         line == stringByName("widget_unavailable")
 
-    /** `:app` cannot name `:widget`'s R class — non-transitive R classes — but names resolve at runtime. */
-    private fun stringByName(name: String): String = context.getString(context.resources.getIdentifier(name, "string", context.packageName))
+    private fun stringByName(name: String): String = WidgetHostBinding.stringByName(context, name)
 
     private companion object {
         const val TIMEOUT_SECONDS = 20L
