@@ -78,6 +78,15 @@ internal sealed interface WidgetBodyContent {
 
     data class Rows(val rows: List<WidgetRow>, override val mood: Mood?) : WidgetBodyContent
 
+    /**
+     * The large body (docs/ux/widget.md §7): Momo on her ground beside the mood
+     * line and the woven day band, above the same rows. The mood is not
+     * nullable here — this body exists to draw it — and the band is the rows'
+     * own `completed` flags, one segment each, so it can never disagree with
+     * the checkboxes beneath it.
+     */
+    data class Large(val rows: List<WidgetRow>, override val mood: Mood) : WidgetBodyContent
+
     data class Copy(@StringRes val text: Int, override val mood: Mood? = null) : WidgetBodyContent
 
     /**
@@ -115,8 +124,13 @@ internal fun WidgetContent.body(size: DpSize): WidgetBodyContent = when (this) {
     WidgetContent.Loading -> WidgetBodyContent.Blank
 
     is WidgetContent.Ready -> {
-        val mood = state.mood.takeIf { size.height >= MOMO_MIN_HEIGHT.dp }
-        if (state.rows.isEmpty()) WidgetBodyContent.Copy(R.string.widget_no_habits, mood) else WidgetBodyContent.Rows(state.rows, mood)
+        val tall = size.height >= MOMO_MIN_HEIGHT.dp
+        val mood = state.mood.takeIf { tall }
+        when {
+            state.rows.isEmpty() -> WidgetBodyContent.Copy(R.string.widget_no_habits, mood)
+            tall && size.width >= LARGE_MIN_WIDTH.dp -> WidgetBodyContent.Large(state.rows, state.mood)
+            else -> WidgetBodyContent.Rows(state.rows, mood)
+        }
     }
 }
 
@@ -132,6 +146,23 @@ internal fun WidgetContent.body(size: DpSize): WidgetBodyContent = when (this) {
  * `res/xml-v31` variant this widget does not carry (visual-identity §7.4).
  */
 internal const val MOMO_MIN_HEIGHT = 170
+
+/**
+ * The least width, in dp, at which the large body is drawn — with the height
+ * gate above, both are needed, the way the streak widget's `FULL_MIN_WIDTH` and
+ * `FULL_MIN_HEIGHT` are.
+ *
+ * The header puts the mood line *beside* Momo rather than under her, and that
+ * costs width the face-above-rows body does not: at the provider's 180dp, 164dp
+ * of usable width less a 66dp pill and 10dp of gap leaves 88dp for the copy,
+ * and no mood line fits that in two lines of caption type — the regenerating
+ * one is 47 characters. 220 is the streak widget's threshold for the same kind
+ * of reason, and it sits between the 180dp three-cell minimum and the 250dp
+ * four-cell placement the canvas drew, so a tall-but-narrow widget keeps the
+ * face above the rows and a four-by-three one gets the header
+ * (docs/ux/widget.md §7).
+ */
+internal const val LARGE_MIN_WIDTH = 220
 
 /**
  * What TalkBack reads for the face, one line per mood, in the Today panel's

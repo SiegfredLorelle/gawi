@@ -71,10 +71,22 @@ class WidgetPaletteTest {
         Triple("streakDays", WidgetPalette.streakDays, GawiRole.Primary),
         Triple("streakWeeks", WidgetPalette.streakWeeks, GawiRole.Tertiary),
         Triple("streakBroken", WidgetPalette.streakBroken, GawiRole.Outline),
+        Triple("momoGround", WidgetPalette.momoGround, GawiRole.PrimaryContainer),
+        Triple("momoCaption", WidgetPalette.momoCaption, GawiRole.OnPrimaryContainer),
+        Triple("bandWoven", WidgetPalette.bandWoven, GawiRole.Primary),
+        Triple("bandOutstanding", WidgetPalette.bandOutstanding, GawiRole.OutlineVariant),
     )
 
-    /** Everything drawn *on* [WidgetPalette.surface] rather than being it. */
-    private val ink = roles.filterNot { it.third == GawiRole.Surface }.map { it.first to it.second }
+    /**
+     * The grounds and fills — nothing is drawn *in* them, so they owe no text
+     * contrast and they darken at night rather than lightening. Grown 2026-08-29
+     * with the two surfaces that finished visual-identity §7.4's set: Momo's
+     * ground, and the band's outstanding fill.
+     */
+    private val grounds = setOf(GawiRole.Surface, GawiRole.PrimaryContainer, GawiRole.OutlineVariant)
+
+    /** Everything drawn *on* [WidgetPalette.surface] rather than being it or another ground. */
+    private val ink = roles.filterNot { it.third in grounds || it.third == GawiRole.OnPrimaryContainer }.map { it.first to it.second }
 
     @Test
     fun `every ink is legible on the surface it is drawn on, in both schemes`() {
@@ -91,6 +103,32 @@ class WidgetPaletteTest {
         }
     }
 
+    /** The Momo widget's caption is drawn on [WidgetPalette.momoGround], not on the surface, so it is measured there. */
+    @Test
+    fun `the caption is legible on Momo's ground, in both schemes`() {
+        for (night in listOf(false, true)) {
+            val context = context(night)
+            val ratio = contrastRatio(WidgetPalette.momoCaption.getColor(context), WidgetPalette.momoGround.getColor(context))
+            assertTrue("momoCaption is $ratio:1 on momoGround with night=$night, below $MIN_CONTRAST", ratio >= MIN_CONTRAST)
+        }
+    }
+
+    /**
+     * The band's two fills tell woven from outstanding with nothing but their
+     * ground, so the pair is held to WCAG 1.4.11's 3:1 the way the history grid's
+     * two cell fills are in `GawiColorSchemeTest`. Swapping the two providers
+     * passes this and fails the polarity test below, which is the pair of checks
+     * a mutation of either needs.
+     */
+    @Test
+    fun `a woven segment and an outstanding one differ by the non-text floor`() {
+        for (night in listOf(false, true)) {
+            val context = context(night)
+            val ratio = contrastRatio(WidgetPalette.bandWoven.getColor(context), WidgetPalette.bandOutstanding.getColor(context))
+            assertTrue("the band's two fills are $ratio:1 apart with night=$night, below $NON_TEXT_CONTRAST", ratio >= NON_TEXT_CONTRAST)
+        }
+    }
+
     /**
      * The fix itself: a colour that answers the same in both configurations is a
      * pinned literal, and a pinned literal is what left the ink behind while the
@@ -98,7 +136,7 @@ class WidgetPaletteTest {
      */
     @Test
     fun `every colour answers differently in the two schemes`() {
-        for ((name, provider) in ink + ("surface" to WidgetPalette.surface)) {
+        for ((name, provider) in roles.map { it.first to it.second }) {
             assertTrue(
                 "$name resolves the same in both schemes, so it is not a scheme at all",
                 provider.getColor(context(night = false)) != provider.getColor(context(night = true)),
@@ -117,7 +155,15 @@ class WidgetPaletteTest {
         val night = WidgetPalette.surface.getColor(context(night = true))
         assertTrue("the night surface ($night) is not darker than the day one ($day)", night.luminance() < day.luminance())
 
-        for ((name, provider) in ink) {
+        // The other grounds turn the same way the surface does.
+        for ((name, provider, role) in roles.filter { it.third in grounds }) {
+            assertTrue(
+                "$name does not darken for the night scheme, so the pair is swapped",
+                provider.getColor(context(night = true)).luminance() < provider.getColor(context(night = false)).luminance(),
+            )
+        }
+
+        for ((name, provider) in ink + ("momoCaption" to WidgetPalette.momoCaption)) {
             val dayInk = provider.getColor(context(night = false))
             val nightInk = provider.getColor(context(night = true))
             assertTrue(
@@ -149,6 +195,11 @@ class WidgetPaletteTest {
                 )
             }
         }
+    }
+
+    private companion object {
+        /** WCAG 1.4.11, for two fills whose difference is the information. */
+        const val NON_TEXT_CONTRAST = 3f
     }
 
     /** The same application context, in a configuration with night mode forced either way. */

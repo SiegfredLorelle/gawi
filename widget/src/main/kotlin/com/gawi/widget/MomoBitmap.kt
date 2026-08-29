@@ -55,6 +55,14 @@ internal object MomoBitmap {
     /** Momo's height on the widget, dp. Wide enough that the face reads; short enough to leave the rows their room. */
     internal const val HEIGHT_DP = 72f
 
+    /**
+     * Her height inside the large body's pill, dp — the 66×52 pill the canvas
+     * drew, less a little air. A second constant rather than a value derived
+     * from the pill or the widget, for the reason [HEIGHT_DP] is one: the
+     * bitmap's cost must not follow a host's idea of "large".
+     */
+    internal const val PILL_HEIGHT_DP = 48f
+
     /** Width over height, from the character's design space, so nothing is squashed. */
     internal val ASPECT: Float = MomoDesignSize.width / MomoDesignSize.height
 
@@ -76,10 +84,11 @@ internal object MomoBitmap {
 }
 
 /**
- * Momo at rest, [MomoBitmap.HEIGHT_DP] tall, in [mood]'s face.
+ * Momo at rest, [heightDp] tall — [MomoBitmap.HEIGHT_DP] above the rows,
+ * [MomoBitmap.PILL_HEIGHT_DP] inside the large body's pill — in [mood]'s face.
  *
- * Remembered against the mood and the density — everything that changes the
- * pixels. Not the font scale: this is not text, and the character has a size
+ * Remembered against the mood, the height and the density — everything that
+ * changes the pixels. Not the font scale: this is not text, and the character has a size
  * rather than growing with the type (momo.md §4).
  *
  * [contentDescription] is the caller's call, because it depends on what sits
@@ -88,17 +97,17 @@ internal object MomoBitmap {
  * the copy is read once and the face is decorative (docs/ux/momo.md §4).
  */
 @Composable
-internal fun MomoImage(mood: Mood, contentDescription: String?) {
+internal fun MomoImage(mood: Mood, contentDescription: String?, heightDp: Float = MomoBitmap.HEIGHT_DP) {
     val metrics = LocalContext.current.resources.displayMetrics
-    val bitmap = remember(mood, metrics.densityDpi) {
-        val heightPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, MomoBitmap.HEIGHT_DP, metrics)
+    val bitmap = remember(mood, heightDp, metrics.densityDpi) {
+        val heightPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, heightDp, metrics)
         MomoBitmap.render(mood, heightPx.roundToInt(), metrics.densityDpi)
     } ?: return
     Image(
         provider = ImageProvider(bitmap),
         contentDescription = contentDescription,
         contentScale = ContentScale.Fit,
-        modifier = GlanceModifier.height(MomoBitmap.HEIGHT_DP.dp),
+        modifier = GlanceModifier.height(heightDp.dp),
         // No colorFilter: see MomoBitmap.
     )
 }

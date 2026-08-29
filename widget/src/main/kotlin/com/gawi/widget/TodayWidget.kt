@@ -16,19 +16,26 @@ import androidx.glance.appwidget.CheckboxDefaults
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.action.actionRunCallback
+import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.lazy.LazyColumn
 import androidx.glance.appwidget.lazy.items
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
 import androidx.glance.layout.Alignment
+import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
+import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
+import androidx.glance.layout.height
 import androidx.glance.layout.padding
+import androidx.glance.layout.size
+import androidx.glance.layout.width
 import androidx.glance.semantics.contentDescription
 import androidx.glance.semantics.semantics
 import com.gawi.core.data.repository.HabitRepository
+import com.gawi.core.domain.mascot.Mood
 import dagger.hilt.android.EntryPointAccessors
 
 /**
@@ -134,7 +141,83 @@ internal fun WidgetBody(content: WidgetContent) {
                 HabitRows(body.rows)
             }
 
+            is WidgetBodyContent.Large -> {
+                LargeHeader(body.mood, body.rows)
+                Spacer(modifier = GlanceModifier.height(HEADER_GAP.dp))
+                HabitRows(body.rows)
+            }
+
             WidgetBodyContent.Blank -> Unit
+        }
+    }
+}
+
+/**
+ * The large body's header (docs/ux/widget.md §7): Momo on her ground, and
+ * beside her the mood line over the woven day band.
+ *
+ * **One reading.** The mood line is the description and everything else here is
+ * decorative — the face carries `null`, unlike the face-above-rows body, where
+ * she is the only place the mood can be read; the band's segments carry
+ * nothing, because the rows beneath already announce each habit's state
+ * (docs/ux/momo.md §5). Describing the face too would read the same sentence
+ * twice.
+ *
+ * **The band is the rows' own flags, in the rows' own order.** One segment per
+ * habit, `bandWoven` when today's cell is ticked and `bandOutstanding` when it is
+ * not; nothing is counted, sorted or capped, so the band cannot say something
+ * the checkboxes do not. Flat `Box`es rather than a bitmap: a background colour
+ * is the one thing `RemoteViews` draws in every scheme without a raster, and it
+ * takes the same day/night provider the rest of the palette does. `cornerRadius`
+ * is API 31+ and squares below it — flat either way, which was decided.
+ *
+ * The copy is caption-sized and semibold, as the canvas drew it, and it gets the
+ * width the pill and the gap leave — [LARGE_MIN_WIDTH]'s KDoc has the arithmetic
+ * that makes two lines enough.
+ */
+@Composable
+private fun LargeHeader(mood: Mood, rows: List<WidgetRow>) {
+    val context = LocalContext.current
+    val copy = context.getString(mood.description())
+    val copyWidth = (contentWidth() - (MOMO_PILL_WIDTH + HEADER_GAP).dp).coerceAtLeast(0.dp)
+    Row(modifier = GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            modifier = GlanceModifier
+                .size(MOMO_PILL_WIDTH.dp, MOMO_PILL_HEIGHT.dp)
+                .background(WidgetPalette.momoGround)
+                .cornerRadius(MOMO_PILL_RADIUS.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            MomoImage(mood, contentDescription = null, heightDp = MomoBitmap.PILL_HEIGHT_DP)
+        }
+        Spacer(modifier = GlanceModifier.width(HEADER_GAP.dp))
+        Column(modifier = GlanceModifier.defaultWeight()) {
+            OutfitText(
+                text = copy,
+                maxWidth = copyWidth,
+                maxLines = HEADER_COPY_LINES,
+                ink = rememberOutfitInk(textSizeSp = BitmapText.CAPTION_SIZE_SP, weight = BitmapText.OUTFIT_WEIGHT_SEMIBOLD),
+                contentDescription = copy,
+            )
+            Spacer(modifier = GlanceModifier.height(BAND_GAP.dp))
+            WovenBand(rows)
+        }
+    }
+}
+
+/** The day, woven so far: one segment per habit, the rows' order, the rows' flags. Decorative. */
+@Composable
+private fun WovenBand(rows: List<WidgetRow>) {
+    Row(modifier = GlanceModifier.fillMaxWidth().height(BAND_HEIGHT.dp)) {
+        rows.forEachIndexed { index, row ->
+            if (index > 0) Spacer(modifier = GlanceModifier.width(BAND_GAP.dp))
+            Box(
+                modifier = GlanceModifier
+                    .defaultWeight()
+                    .height(BAND_HEIGHT.dp)
+                    .background(if (row.completed) WidgetPalette.bandWoven else WidgetPalette.bandOutstanding)
+                    .cornerRadius(BAND_RADIUS.dp),
+            ) {}
         }
     }
 }
@@ -226,6 +309,21 @@ internal fun contentWidth() = LocalSize.current.width - (2 * WIDGET_PADDING).dp
  */
 
 internal const val WIDGET_PADDING = 8
+
+/*
+ * The large body's geometry, in dp, as the canvas drew it at 250×200
+ * (docs/ux/widget.md §7): a 66×52 pill with a 12dp radius, 10dp to the copy,
+ * a 5dp band with 3dp gaps and 3dp radius. The pill is what LARGE_MIN_WIDTH's
+ * arithmetic subtracts.
+ */
+internal const val MOMO_PILL_WIDTH = 66
+internal const val MOMO_PILL_HEIGHT = 52
+private const val MOMO_PILL_RADIUS = 12
+internal const val HEADER_GAP = 10
+private const val HEADER_COPY_LINES = 2
+private const val BAND_HEIGHT = 5
+private const val BAND_GAP = 3
+private const val BAND_RADIUS = 3
 
 /**
  * Room reserved for the checkbox glyph beside a name, in dp. Glance's glyph is
