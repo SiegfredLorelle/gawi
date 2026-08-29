@@ -25,10 +25,14 @@ import androidx.core.graphics.createBitmap
  * translation path — the property [WidgetPalette] exists for.
  *
  * [Geometry] is px, computed by the caller from dp the way [BitmapText.render]
- * takes its width: a gap between segments, each a full-height pill. Segments
- * are `(width − (n−1)·gap) / n` wide, floored at one pixel so a very long day
- * still draws every habit rather than dropping the last ones. Tagged with the
- * density for the reason [BitmapText.render] gives.
+ * takes its width: a gap between segments, each a full-height pill. Every habit
+ * is placed from its share of the width — `index · width / n` — so the last one
+ * ends at the edge at any N, and the gap gives way before the segment does: it
+ * shrinks to nothing rather than the segment going under a pixel. The first cut
+ * floored the segment and kept the gap, which let the *advance* outrun the
+ * bitmap and clip the tail from about 48 habits — the truncation the masks
+ * were written to remove, found on the PR. Tagged with the density for the
+ * reason [BitmapText.render] gives.
  */
 internal object BandBitmap {
 
@@ -48,11 +52,16 @@ internal object BandBitmap {
         bitmap.density = geometry.densityDpi
         val canvas = Canvas(bitmap)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE }
-        val segment = ((geometry.widthPx - geometry.gapPx * (rows.size - 1)) / rows.size).coerceAtLeast(1f)
+        // Each habit's share of the width, gap included, so the last segment ends
+        // at the bitmap's edge whatever N is; the gap gives way before the segment
+        // does, down to nothing, and a segment is never under a pixel.
+        val pitch = geometry.widthPx.toFloat() / rows.size
+        val gap = geometry.gapPx.coerceIn(0f, (pitch - 1f).coerceAtLeast(0f))
+        val segment = pitch - gap
         val radius = geometry.heightPx / 2f
         rows.forEachIndexed { index, completed ->
             if (completed != woven) return@forEachIndexed
-            val left = index * (segment + geometry.gapPx)
+            val left = index * pitch
             canvas.drawRoundRect(RectF(left, 0f, left + segment, geometry.heightPx.toFloat()), radius, radius, paint)
         }
         return bitmap

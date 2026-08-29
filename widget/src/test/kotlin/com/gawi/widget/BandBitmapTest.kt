@@ -55,13 +55,34 @@ class BandBitmapTest {
         assertTrue(mask.inkedPixels() > 0)
     }
 
+    /**
+     * Narrower than the habits: 60px for 30 segments is a 2px pitch with a 1px
+     * gap and a 1px segment. Every habit is still inside — the thirtieth starts
+     * at pixel 58 — where the first cut's fixed 6px gap marched the tail off the
+     * bitmap after the tenth.
+     */
+    @Test
+    fun `a day wider than its room keeps every habit on the bitmap`() {
+        val mask = BandBitmap.render(List(30) { true }, GEOMETRY.copy(widthPx = 60), woven = true)!!
+        assertEquals(List(30) { true }, mask.centres(30))
+        // The last segment alone, at its own place: it starts inside the bitmap
+        // and nothing is drawn where the others would be.
+        val only = BandBitmap.render(List(29) { false } + true, GEOMETRY.copy(widthPx = 60), woven = true)!!
+        assertEquals(List(29) { false } + true, only.centres(30))
+    }
+
     @Test
     fun `the mask is tagged with the density it was drawn at`() {
         assertEquals(DPI, BandBitmap.render(listOf(true), GEOMETRY, woven = true)!!.density)
     }
 
+    /**
+     * Whether each of [n] segments has ink at its leading pixel — `i · width / n`
+     * is where a segment starts, whatever the gap. The centre would do for a
+     * wide band and lands in the gap when a segment is a pixel wide.
+     */
     private fun android.graphics.Bitmap.centres(n: Int): List<Boolean> = (0 until n).map { i ->
-        val x = ((i + 0.5f) * width / n).toInt()
+        val x = (i * width / n.toFloat()).toInt().coerceIn(0, width - 1)
         (0 until height).any { y -> Color.alpha(getPixel(x, y)) > 0 }
     }
 
