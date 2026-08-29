@@ -218,6 +218,26 @@ enum class GawiRole {
 
     /** An outstanding checkbox, and a broken streak. Semantic, per §4.1. */
     Outline,
+
+    /**
+     * A ground, not an ink: Momo's tank colour on a widget — the Momo widget's
+     * whole background and the pill behind her face on the large Today body
+     * (docs/ux/widget.md §7). Added 2026-08-29; the first role in this list
+     * that nothing draws text *in*.
+     */
+    PrimaryContainer,
+
+    /** The one ink drawn on [PrimaryContainer]: the Momo widget's caption. */
+    OnPrimaryContainer,
+
+    /**
+     * A fill, not an ink: an outstanding segment of the large Today body's woven
+     * day band, against [Primary] for a woven one. The same low-contrast role
+     * `RetroStrip` borders a shut cell with; here the pair it forms with
+     * [Primary] is what carries the meaning, and `GawiColorSchemeTest` holds
+     * that pair to the non-text floor.
+     */
+    OutlineVariant,
 }
 
 /**
@@ -228,12 +248,17 @@ enum class GawiRole {
  * and hand the pair to something that resolves it later (a Glance day/night
  * `ColorProvider`) or to a test comparing an XML copy against both.
  *
- * Every role listed clears WCAG 4.5:1 against [GawiRole.Surface] in the
+ * Every *ink* role listed clears WCAG 4.5:1 against [GawiRole.Surface] in the
  * matching scheme, which is what makes deriving safe for text: light 16.59,
  * 7.63, 5.56, 7.36 and 5.18; dark 14.82, 8.32, 10.44, 7.34 and 5.31, in the
- * order the entries are declared. `GawiColorSchemeTest` asserts the pairs the
+ * order the first five ink entries are declared. The three added 2026-08-29
+ * are a ground, its ink and a fill: [GawiRole.OnPrimaryContainer] clears 4.5:1
+ * on [GawiRole.PrimaryContainer] (light 10.10, dark 6.37) and
+ * [GawiRole.OutlineVariant] sits 3:1 or more from [GawiRole.Primary] (light
+ * 3.78, dark 6.34), which is the non-text floor for a pair of fills whose
+ * difference is the information. `GawiColorSchemeTest` asserts the pairs the
  * app draws and `WidgetPaletteTest` asserts these against the floor on the
- * widget's own ground, so a retune that breaks either fails a test.
+ * widget's own grounds, so a retune that breaks either fails a test.
  */
 fun gawiRole(role: GawiRole, darkTheme: Boolean): Color {
     val scheme = if (darkTheme) GawiDarkColors else GawiLightColors
@@ -244,6 +269,9 @@ fun gawiRole(role: GawiRole, darkTheme: Boolean): Color {
         GawiRole.Primary -> scheme.primary
         GawiRole.Tertiary -> scheme.tertiary
         GawiRole.Outline -> scheme.outline
+        GawiRole.PrimaryContainer -> scheme.primaryContainer
+        GawiRole.OnPrimaryContainer -> scheme.onPrimaryContainer
+        GawiRole.OutlineVariant -> scheme.outlineVariant
     }
 }
 

@@ -213,6 +213,14 @@ private fun ColorScheme.pairings(): List<Pairing> = buildList {
     // published `tertiary` had at 1.02, caught here rather than on a device.
     graphic("primary against surfaceContainerHighest", primary, surfaceContainerHighest)
 
+    // The large Today widget's woven day band (docs/ux/widget.md §7): one
+    // segment per habit, `primary` when woven and `outlineVariant` when still
+    // outstanding, with nothing drawn on either. The pair is the information,
+    // so it is held the way the grid's two fills are. This is the one place
+    // `outlineVariant` is held to anything — the KDoc above says why it is not
+    // held against `surface`, and this does not change that.
+    graphic("primary against outlineVariant", primary, outlineVariant)
+
     // The surface family. Any of these can end up under body text, so both
     // content roles are checked against all of them rather than against the one
     // surface a screen happens to use today.
