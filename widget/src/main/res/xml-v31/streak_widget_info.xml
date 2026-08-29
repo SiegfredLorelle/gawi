@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    API 31 and up. A full replacement for res/xml/streak_widget_info.xml, not an
+    overlay: every attribute the base file sets has to be repeated here, and a
+    change to one file is a change to both.
+
+    What this variant adds, and why it is worth a second file:
+
+      targetCellWidth/Height - the launcher places the widget at three by two
+      cells instead of guessing from minWidth, so the compact layout is what a
+      fresh placement gets rather than something narrower.
+
+      description - the line the widget picker shows under the name. Without it
+      the picker shows the name alone, and "Streaks" beside "Today" does not say
+      that this one dates its numbers.
+
+      previewLayout - a static approximation of the widget for the picker, since
+      a Glance tree cannot be previewed: RemoteViews for the real thing only
+      exist once a session has composed one. docs/ux/visual-identity.md 7.4 had
+      not priced this; it is the one genuinely new asset in the set.
+-->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/widget_streak_description"
+    android:initialLayout="@layout/glance_default_loading_layout"
+    android:minHeight="110dp"
+    android:minWidth="180dp"
+    android:previewLayout="@layout/streak_widget_preview"
+    android:resizeMode="horizontal|vertical"
+    android:targetCellHeight="2"
+    android:targetCellWidth="3"
+    android:updatePeriodMillis="1800000"
+    android:widgetCategory="home_screen" />

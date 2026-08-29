@@ -179,8 +179,21 @@ internal fun Mood.description(): Int = when (this) {
  */
 internal fun HabitRepository.widgetContent(): Flow<WidgetContent> = observeToday()
     .map<TodaySnapshot, WidgetContent> { WidgetContent.Ready(it.toWidgetState()) }
+    .retryThenFail(WidgetContent.Unavailable)
+
+/**
+ * The bounded retry and the terminal fallback, shared by every widget read.
+ *
+ * Shared rather than copied because the argument above is the expensive part and
+ * it is identical for both providers: a widget cannot re-subscribe for itself, so
+ * a bare `catch` would end collection for the life of the session. The *values*
+ * differ — each provider has its own "unavailable" — which is what [failure] is.
+ * Extracted 2026-08-29 with the streak widget rather than duplicated, so a change
+ * to the retry policy cannot apply to one widget and not the other.
+ */
+internal fun <T> Flow<T>.retryThenFail(failure: T): Flow<T> = this
     .retryWhen { cause, attempt -> cause !is CancellationException && attempt < READ_RETRIES && delayThenRetry() }
-    .catch { emit(WidgetContent.Unavailable) }
+    .catch { emit(failure) }
 
 /** Always true; exists so the retry predicate reads as one expression. */
 private suspend fun delayThenRetry(): Boolean {

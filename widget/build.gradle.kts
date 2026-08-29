@@ -35,16 +35,25 @@ dependencies {
     //     more untethered hexes to the three visual-identity §7.4 already
     //     named as this set's debt. Deriving removes the copy instead of
     //     guarding it; the accessor's KDoc carries the argument.
+    //  4. StreakUi and StreakSnapshot.toUi, which the streak widget maps its
+    //     rows through. Added 2026-08-29, same commit as item 3, and legal for a
+    //     different reason: StreakUi is a sealed interface over Int and Boolean
+    //     with no Compose type anywhere in it, so the barrier here was policy
+    //     rather than the compiler. Copied instead, the widget would reinvent
+    //     "days versus weeks versus broken" - and StreakUi.kt's own KDoc says
+    //     that rule has to be one rule or the two surfaces will drift, which is
+    //     exactly what this module did to the palette for two phases.
     //
-    // Nothing else may cross this edge. Note what item 3 is NOT: the theme,
+    // Nothing else may cross this edge. Note what items 3 and 4 are NOT: the theme,
     // GawiSpacing and the shared composables are androidx.compose.ui types, and
     // a Glance tree cannot consume one — a widget is RemoteViews under the
     // composition, so it has its own Column and its own GlanceModifier. "Reuse
     // the theme" is the first thing a reviewer asks here and the answer is
-    // still that it does not compile. A plain Color is not a theme, which is
-    // the distinction that makes item 3 legal and GawiTheme not. :core:ui
+    // still that it does not compile. A plain Color is not a theme, and a sealed
+    // interface over Int is not a composable, which is the distinction that
+    // makes items 3 and 4 legal and GawiTheme not. :core:ui
     // exposes compose and material3 as `api`, so the compiler will not stop a
-    // fourth import; treat any other com.gawi.core.ui.* import in this module
+    // fifth import; treat any other com.gawi.core.ui.* import in this module
     // as a defect.
     //
     // The 2026-08-28 test-source carve-out for gawiWindowBackground is gone

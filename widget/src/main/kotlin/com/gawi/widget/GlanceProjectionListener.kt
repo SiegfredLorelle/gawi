@@ -2,6 +2,7 @@ package com.gawi.widget
 
 import android.content.Context
 import android.util.Log
+import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.updateAll
 import com.gawi.core.data.projection.ProjectionListener
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -41,6 +42,14 @@ import javax.inject.Inject
  * `updateAll` resolves the placed widgets, so this is close to free when there
  * are none — which is the common case, and the reason no "is one placed?" guard
  * is worth keeping in front of it.
+ *
+ * **Every provider in this module has to be named here.** A provider left out
+ * still renders when its session starts for other reasons, so it does not look
+ * broken — it just stops following writes made in the app, for the life of that
+ * session, which is indistinguishable from a widget nobody placed. That is the
+ * cost docs/ux/visual-identity.md §7.4 forgot to price when it costed a second
+ * widget, and `ProjectionRefreshTest` is what keeps the list honest as more are
+ * added.
  */
 private const val TAG = "GlanceProjection"
 
@@ -50,7 +59,9 @@ internal class GlanceProjectionListener @Inject constructor(@ApplicationContext 
     override suspend fun onProjectionChanged() {
         withContext(Dispatchers.IO) {
             try {
-                TodayWidget().updateAll(context)
+                for (widget in refreshedWidgets()) {
+                    widget.updateAll(context)
+                }
             } catch (e: Throwable) {
                 // Rethrows cancellation and nothing else. Deliberately wider
                 // than Exception; the KDoc above says which Error did escape.
@@ -65,3 +76,15 @@ internal class GlanceProjectionListener @Inject constructor(@ApplicationContext 
         }
     }
 }
+
+/**
+ * Every `GlanceAppWidget` this module publishes, and therefore everything a
+ * committed write has to redraw.
+ *
+ * A function rather than a `val`, and fresh instances rather than shared ones,
+ * because a `GlanceAppWidget` reaches Glance's session machinery from its own
+ * constructor — the same reason `updateAll` is called off a new object at each of
+ * the three existing call sites. Exposed to tests so the list cannot silently
+ * fall behind the manifest.
+ */
+internal fun refreshedWidgets(): List<GlanceAppWidget> = listOf(TodayWidget(), StreakWidget())
