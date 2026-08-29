@@ -136,7 +136,9 @@ internal fun WidgetContent.body(size: DpSize, textScale: Float = 1f): WidgetBody
 
 /**
  * Whether [size] has the width for the large body's header once [textScale] is
- * taken into account — `BitmapText.textScale`, what the ink actually does. The
+ * taken into account — `BitmapText.textScale` *at the caption size*, what the
+ * header's ink actually does; 16sp and 12sp scale differently under Android
+ * 14's curve, so the caller probes at the size drawn here. The
  * header's copy is drawn in sp and the room is dp, so at a large font setting
  * the same 220dp holds less of the mood line; dividing asks how much room there
  * is in units of the text, the question `StreakUiState.kt`'s `fitsFullForm`

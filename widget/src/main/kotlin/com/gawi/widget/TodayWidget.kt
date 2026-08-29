@@ -139,7 +139,7 @@ internal fun WidgetBody(content: WidgetContent) {
         modifier = GlanceModifier.fillMaxSize().background(WidgetPalette.surface).padding(WIDGET_PADDING.dp),
     ) {
         val context = LocalContext.current
-        when (val body = content.body(LocalSize.current, BitmapText.textScale(context))) {
+        when (val body = content.body(LocalSize.current, BitmapText.textScale(context, BitmapText.CAPTION_SIZE_SP))) {
             is WidgetBodyContent.Copy -> {
                 body.mood?.let { MomoImage(it, contentDescription = null) }
                 val copy = context.getString(body.text)
@@ -233,7 +233,7 @@ private fun WovenBand(rows: List<WidgetRow>, width: Dp) {
     val metrics = LocalContext.current.resources.displayMetrics
     val flags = rows.map { it.completed }
     val masks = remember(flags, width, metrics.densityDpi) {
-        val widthPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, width.value, metrics).toInt()
+        val widthPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, width.value, metrics).roundToInt()
         val heightPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, BAND_HEIGHT.toFloat(), metrics).roundToInt()
         val gapPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, BAND_GAP.toFloat(), metrics)
         val geometry = BandBitmap.Geometry(widthPx, heightPx, gapPx, metrics.densityDpi)

@@ -79,8 +79,8 @@ internal class MomoWidget : GlanceAppWidget() {
  *
  * Every string is an [OutfitText] in [WidgetPalette.momoCaption], the one ink
  * measured against this ground; `MomoTextColourTest` holds it in both schemes.
- * The face is [momoFaceHeight] tall, which is her usual 72dp until the caption
- * needs the room.
+ * The face is [momoFaceHeight] tall — her usual 72dp until the caption needs
+ * the room, and absent when the no-habits copy leaves none.
  */
 @Composable
 internal fun MomoBody(content: WidgetContent) {
@@ -107,16 +107,16 @@ internal fun MomoBody(content: WidgetContent) {
                 val mood = content.state.mood
                 val sentence = context.getString(mood.description())
                 val word = context.getString(if (empty) R.string.widget_no_habits else mood.caption())
-                MomoImage(
-                    mood,
-                    contentDescription = if (empty) null else sentence,
-                    heightDp = momoFaceHeight(LocalSize.current, BitmapText.textScale(context)),
-                )
-                Spacer(modifier = GlanceModifier.height(CAPTION_GAP.dp))
+                val lines = if (empty) EMPTY_COPY_LINES else 1
+                val face = momoFaceHeight(LocalSize.current, BitmapText.textScale(context, BitmapText.CAPTION_SIZE_SP), lines)
+                if (face != null) {
+                    MomoImage(mood, contentDescription = if (empty) null else sentence, heightDp = face)
+                    Spacer(modifier = GlanceModifier.height(CAPTION_GAP.dp))
+                }
                 OutfitText(
                     text = word,
                     maxWidth = contentWidth(),
-                    maxLines = MAX_COPY_LINES,
+                    maxLines = lines,
                     ink = ink,
                     contentDescription = if (empty) word else null,
                 )
@@ -140,23 +140,34 @@ internal fun Mood.caption(): Int = when (this) {
 }
 
 /**
- * How tall the face is drawn, dp: [MomoBitmap.HEIGHT_DP] when there is room,
- * and no more than the room leaves once the padding, the gap and one caption
- * line at [textScale] are taken out. Pure, so `MomoBodyTest` pins it.
+ * How tall the face is drawn, dp, or `null` for no face: [MomoBitmap.HEIGHT_DP]
+ * when there is room, and no more than the room leaves once the padding, the
+ * gap and [captionLines] of caption type at [textScale] are taken out. Pure, so
+ * `MomoBodyTest` pins it.
  *
  * Bounded rather than constant because the provider's minimum is 110dp — 94
  * usable — and 72 + 3 + a 15dp line is 90 at the default scale, so a caption at
  * 1.3× would already push the face or the word off the tile. Shrinking is the
  * direction the cost argument in [MomoBitmap] allows: the bitmap never grows
- * with the host, it only gives way to the text. Floored at [MIN_FACE_DP] so an
- * absurd scale still leaves a face rather than a sliver; past that the word
- * ellipsises, which is the right thing to give up.
+ * with the host, it only gives way to the text.
+ *
+ * **The reservation matches what is drawn, line for line** — the PR review found
+ * the first cut reserving one line and drawing up to three. A mood word is one
+ * line and ellipsises past it, which never happens on the 110dp tile (94 − 3 −
+ * 30 leaves 61dp of face at 2×). The no-habits copy is two lines
+ * ([EMPTY_COPY_LINES]), and when those leave less than [MIN_FACE_DP] the face
+ * goes rather than a sliver of her or a clipped word — reachable only in that
+ * state on the minimum tile at a large scale, where she is decorative and the
+ * copy is what is read, so nothing is lost.
  */
-internal fun momoFaceHeight(size: DpSize, textScale: Float): Float {
-    val caption = CAPTION_LINE_DP * textScale.coerceAtLeast(1f)
+internal fun momoFaceHeight(size: DpSize, textScale: Float, captionLines: Int): Float? {
+    val caption = captionLines * CAPTION_LINE_DP * textScale.coerceAtLeast(1f)
     val room = size.height.value - 2 * WIDGET_PADDING - CAPTION_GAP - caption
-    return room.coerceIn(MIN_FACE_DP, MomoBitmap.HEIGHT_DP)
+    return room.coerceAtMost(MomoBitmap.HEIGHT_DP).takeIf { it >= MIN_FACE_DP }
 }
+
+/** The no-habits copy may take two lines; a mood word takes one. */
+internal const val EMPTY_COPY_LINES = 2
 
 /** Between the face and its word, dp — the canvas's 3px at the tile's 110dp. */
 private const val CAPTION_GAP = 3

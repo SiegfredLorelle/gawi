@@ -158,19 +158,22 @@ internal object BitmapText {
      * numerals. The old value erred safe, since over-reserving a slot only
      * ellipsises a habit name early — but it was not what it said it was.
      *
-     * One size for every caller is deliberate: the load-bearing use is reserving
-     * room for a 16sp numeral ([StreakWidget]), and the layout gate turns on
-     * whether that numeral's unit word fits. A caption drawn at
-     * [CAPTION_SIZE_SP] has a slightly different ratio and nothing reserves dp
-     * for it, so it needs no parameter until something does.
+     * [textSizeSp] is the size the caller actually draws, because the ratio is
+     * a function of it: Android 14's curve grows small text more than large, so
+     * 12sp resolves nearer 2.0× where 16sp resolves at 1.75. Until 2026-08-29
+     * one size served every caller, since the only thing reserving dp was the
+     * streak widget's 16sp numeral; the large Today body's width gate and the
+     * Momo widget's face both reserve for [CAPTION_SIZE_SP] ink now and pass
+     * it, or they would under-reserve by the gap between the two curves. Found
+     * on the PR.
      *
      * Floored at 1: shrinking the text does not make a widget's cells wider in
      * any way the user asked for.
      */
-    internal fun textScale(context: Context): Float {
+    internal fun textScale(context: Context, textSizeSp: Float = TEXT_SIZE_SP): Float {
         val metrics = context.resources.displayMetrics
-        val inkPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, TEXT_SIZE_SP, metrics)
-        return (inkPx / (TEXT_SIZE_SP * metrics.density)).coerceAtLeast(1f)
+        val inkPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, textSizeSp, metrics)
+        return (inkPx / (textSizeSp * metrics.density)).coerceAtLeast(1f)
     }
 
     /** Ascent to descent for [paint], with no line-spacing padding: what one line of Outfit is tall. */
