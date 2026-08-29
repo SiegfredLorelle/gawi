@@ -1521,25 +1521,39 @@ and an upgrade not losing anything.
 **The retrospective** (built 2026-08-29, docs/ux/insights.md §9) is the same
 screen one period back, and its owed looks are the ones no JVM test can take:
 
-- [ ] **Step back to a quarter that holds real data.** On `gawi-api30` — the
+- [x] **Step back to a quarter that holds real data.** On `gawi-api30` — the
       rootable image, so the clock can be walked (`adb root`, `settings put
       global auto_time 0`, `date @<epoch>`) — seed two quarters with a tagged
       habit each, then open Insights → Quarter → ◀. The label reads "Q2 2026",
       the headline changes, the trend has three columns with a dot centred over
       each, and ▶ is greyed only on the current quarter. Then flip to Year: the
       offset resets to now, so the label reads "2026" and ▶ is greyed.
+      **Run on `gawi-api30` 2026-08-29**: Run tagged `health` logged on 10 and
+      11 May and 3 June with the clock walked, Read re-tagged `career` today.
+      Q3 → ◀ read "Q2 2026 · 3 active days", three columns (Apr 0, May 2, Jun 1)
+      with each dot on its label, "best 2 days" on Run, ▶ live; Year reset to
+      2026 with ▶ greyed.
 - [ ] **The focus sentence flips when the top tag does.** With `health` leading
       last quarter and `career` this one: "Focus shifted from health to career."
       Re-tag the leading habit so both quarters agree: "Still mostly career."
       Remove every tag: no sentence at all, not "Untagged".
-- [ ] **200 % font scale on Year.** The eight-to-twelve trend columns are the
+      **Half run 2026-08-29**: the shifted sentence appeared on Q3 exactly as
+      written, and Q2 — whose Q1 held nothing — drew no sentence. The "still
+      mostly" and untagged flips were not exercised on a device; the mapper
+      test pins them.
+- [x] **200 % font scale on Year.** The eight-to-twelve trend columns are the
       densest row in the app: the counts stay on one line each, the initials
       under them do not collide, and the stepper label between its two arrows
       does not wrap. The initials are what bought the room, so this is the look
-      that decides whether they were enough.
-- [ ] **A row's best run reads as one line.** "Daily · best 31 days" beside the
+      that decides whether they were enough. **Run 2026-08-29** on eight
+      columns: every count and initial on one line, "2026" between its arrows,
+      the rows' "Every day · best 2 days" unwrapped. Also seen in dark.
+- [x] **A row's best run reads as one line.** "Daily · best 31 days" beside the
       percentage, and a habit made this period with no run shows the schedule
-      alone — no "best 0 days" anywhere.
+      alone — no "best 0 days" anywhere. **Run 2026-08-29**: "Every day · best
+      1 day" beside a dash on Read — the habit was created on the 29th and
+      back-filled, so the creation clip leaves one day for the run and no
+      finished day for the rate, which is the two rules agreeing.
 
 ---
 
