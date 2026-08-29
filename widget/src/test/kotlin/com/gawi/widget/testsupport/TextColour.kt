@@ -8,6 +8,7 @@ import androidx.glance.TintColorFilterParams
 import androidx.glance.testing.GlanceNodeMatcher
 import androidx.glance.testing.unit.MappedNode
 import androidx.glance.unit.ColorProvider
+import com.gawi.widget.WidgetPalette
 
 /*
  * Matchers for "is what this widget draws legible on the ground it draws it on".
@@ -27,13 +28,30 @@ import androidx.glance.unit.ColorProvider
  */
 fun Any.tint(): ColorProvider? = ((this as? EmittableImage)?.colorFilterParams as? TintColorFilterParams)?.colorProvider
 
-/** Anything drawing tinted ink, which for these widgets means any rasterised string. */
-fun anyText() = GlanceNodeMatcher<MappedNode>("draws text") { node -> node.value.emittable.tint() != null }
+/**
+ * The two tints that are not text: the woven day band's masks (`BandBitmap`),
+ * which are tinted images like a string but are fills, owe no 4.5:1 to the
+ * surface, and are held to their own pair floor in `WidgetPaletteTest`. Named
+ * here so a text count cannot be inflated by them and a text floor cannot be
+ * failed by them.
+ */
+private val bandTints get() = listOf(WidgetPalette.bandWoven, WidgetPalette.bandOutstanding)
+
+/**
+ * The tint of a rasterised string, or null for anything that is not one — Momo,
+ * and the band's masks. Identity, not equality: two day/night providers built
+ * from the same role are *equal*, so `bandWoven == streakDays`, and an `in`
+ * check here silently dropped every `primary` string from the streak tests.
+ */
+fun Any.textTint(): ColorProvider? = tint()?.takeUnless { tint -> bandTints.any { it === tint } }
+
+/** Anything drawing tinted ink as text, which for these widgets means any rasterised string. */
+fun anyText() = GlanceNodeMatcher<MappedNode>("draws text") { node -> node.value.emittable.textTint() != null }
 
 /** Ink below the WCAG floor against [background]. */
 fun illegibleText(context: Context, background: Color) =
     GlanceNodeMatcher<MappedNode>("draws text below $MIN_CONTRAST:1 against the widget background") { node ->
-        val tint = node.value.emittable.tint()
+        val tint = node.value.emittable.textTint()
         tint != null && contrastRatio(tint.getColor(context), background) < MIN_CONTRAST
     }
 

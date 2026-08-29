@@ -1,13 +1,16 @@
 package com.gawi.widget
 
 import android.content.Context
+import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.LocalContext
+import androidx.glance.LocalSize
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.provideContent
@@ -19,6 +22,7 @@ import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
+import com.gawi.core.domain.mascot.Mood
 
 /**
  * Momo alone, on her ground — the Momo widget of docs/ux/visual-identity.md
@@ -30,6 +34,12 @@ import androidx.glance.layout.padding
  * to date and nothing to tap, so neither the streak widget's "as of" line nor
  * the Today widget's re-reading callback applies.
  *
+ * **It reads what the Today widget reads.** [widgetContent] — the same flow,
+ * the same three states, the same `Mascot.mood` over the same snapshot — and
+ * this body takes what it needs from the state: the mood, and whether there are
+ * any rows. A parallel `MomoContent` type was written first and deleted on
+ * review as a copy of `WidgetContent` with two fields fewer.
+ *
  * **Her ground is `primaryContainer`, flat.** The Today screen paints the tank
  * as a gradient; a `RemoteViews` background is one colour, and flat was decided
  * anyway. The habitat's weeds and bubbles stay Today's own — nothing about them
@@ -38,8 +48,8 @@ import androidx.glance.layout.padding
  *
  * Kept current the two ways every widget here is: the content collects
  * `observeToday()`, and [GlanceProjectionListener] names this provider so a
- * committed write starts a session. `SizeMode.Exact` so the copy states know
- * their width; the face itself is a constant size.
+ * committed write starts a session. `SizeMode.Exact` so the copy knows its
+ * width and the face knows its room.
  */
 internal class MomoWidget : GlanceAppWidget() {
 
@@ -47,16 +57,16 @@ internal class MomoWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         // Built outside provideContent: Lint's FlowOperatorInvokedInComposition is fatal here.
-        val content = repositoryFrom(context).momoContent()
+        val content = repositoryFrom(context).widgetContent()
         provideContent {
-            val current by content.collectAsState(initial = MomoContent.Loading)
+            val current by content.collectAsState(initial = WidgetContent.Loading)
             MomoBody(current)
         }
     }
 }
 
 /**
- * The whole tree, off one [MomoContent]. Separated from [MomoWidget] so a test
+ * The whole tree, off one [WidgetContent]. Separated from [MomoWidget] so a test
  * can compose it with a value rather than a repository, like `WidgetBody`.
  *
  * **One reading, and it is the face's.** The face carries the full mood sentence
@@ -69,9 +79,11 @@ internal class MomoWidget : GlanceAppWidget() {
  *
  * Every string is an [OutfitText] in [WidgetPalette.momoCaption], the one ink
  * measured against this ground; `MomoTextColourTest` holds it in both schemes.
+ * The face is [momoFaceHeight] tall, which is her usual 72dp until the caption
+ * needs the room.
  */
 @Composable
-internal fun MomoBody(content: MomoContent) {
+internal fun MomoBody(content: WidgetContent) {
     Box(
         modifier = GlanceModifier.fillMaxSize().background(WidgetPalette.momoGround).padding(WIDGET_PADDING.dp),
         contentAlignment = Alignment.Center,
@@ -83,28 +95,74 @@ internal fun MomoBody(content: MomoContent) {
             weight = BitmapText.OUTFIT_WEIGHT_SEMIBOLD,
         )
         when (content) {
-            MomoContent.Loading -> Unit
+            WidgetContent.Loading -> Unit
 
-            MomoContent.Unavailable -> {
+            WidgetContent.Unavailable -> {
                 val copy = context.getString(R.string.widget_unavailable)
                 OutfitText(text = copy, maxWidth = contentWidth(), maxLines = MAX_COPY_LINES, ink = ink, contentDescription = copy)
             }
 
-            is MomoContent.Ready -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                val sentence = context.getString(content.mood.description())
-                val word = context.getString(if (content.empty) R.string.widget_no_habits else content.mood.caption())
-                MomoImage(content.mood, contentDescription = if (content.empty) null else sentence)
+            is WidgetContent.Ready -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                val empty = content.state.rows.isEmpty()
+                val mood = content.state.mood
+                val sentence = context.getString(mood.description())
+                val word = context.getString(if (empty) R.string.widget_no_habits else mood.caption())
+                MomoImage(
+                    mood,
+                    contentDescription = if (empty) null else sentence,
+                    heightDp = momoFaceHeight(LocalSize.current, BitmapText.textScale(context)),
+                )
                 Spacer(modifier = GlanceModifier.height(CAPTION_GAP.dp))
                 OutfitText(
                     text = word,
                     maxWidth = contentWidth(),
+                    maxLines = MAX_COPY_LINES,
                     ink = ink,
-                    contentDescription = if (content.empty) word else null,
+                    contentDescription = if (empty) word else null,
                 )
             }
         }
     }
 }
 
+/**
+ * The one word drawn under the face — the caption the design canvas chose
+ * 2026-08-29 over the full sentence (which clips at 110dp) and over no caption
+ * (which leaves a greyscale viewer no word). TalkBack does not read these:
+ * the face carries the full [description] once, and the word is decorative.
+ */
+@StringRes
+internal fun Mood.caption(): Int = when (this) {
+    Mood.THRIVING -> R.string.widget_momo_caption_thriving
+    Mood.CONTENT -> R.string.widget_momo_caption_content
+    Mood.WORRIED -> R.string.widget_momo_caption_worried
+    Mood.REGENERATING -> R.string.widget_momo_caption_regenerating
+}
+
+/**
+ * How tall the face is drawn, dp: [MomoBitmap.HEIGHT_DP] when there is room,
+ * and no more than the room leaves once the padding, the gap and one caption
+ * line at [textScale] are taken out. Pure, so `MomoBodyTest` pins it.
+ *
+ * Bounded rather than constant because the provider's minimum is 110dp — 94
+ * usable — and 72 + 3 + a 15dp line is 90 at the default scale, so a caption at
+ * 1.3× would already push the face or the word off the tile. Shrinking is the
+ * direction the cost argument in [MomoBitmap] allows: the bitmap never grows
+ * with the host, it only gives way to the text. Floored at [MIN_FACE_DP] so an
+ * absurd scale still leaves a face rather than a sliver; past that the word
+ * ellipsises, which is the right thing to give up.
+ */
+internal fun momoFaceHeight(size: DpSize, textScale: Float): Float {
+    val caption = CAPTION_LINE_DP * textScale.coerceAtLeast(1f)
+    val room = size.height.value - 2 * WIDGET_PADDING - CAPTION_GAP - caption
+    return room.coerceIn(MIN_FACE_DP, MomoBitmap.HEIGHT_DP)
+}
+
 /** Between the face and its word, dp — the canvas's 3px at the tile's 110dp. */
 private const val CAPTION_GAP = 3
+
+/** One line of caption type at scale 1, dp: Outfit's ascent-to-descent at 12sp is about 1.25em. */
+internal const val CAPTION_LINE_DP = 15f
+
+/** The least face worth drawing; below this the eyes are a smudge. */
+internal const val MIN_FACE_DP = 40f

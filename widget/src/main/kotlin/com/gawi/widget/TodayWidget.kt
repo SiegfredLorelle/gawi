@@ -1,12 +1,19 @@
 package com.gawi.widget
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.util.TypedValue
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.glance.ColorFilter
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
+import androidx.glance.Image
+import androidx.glance.ImageProvider
 import androidx.glance.LocalContext
 import androidx.glance.LocalSize
 import androidx.glance.action.actionParametersOf
@@ -24,6 +31,7 @@ import androidx.glance.background
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
+import androidx.glance.layout.ContentScale
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
@@ -34,9 +42,11 @@ import androidx.glance.layout.size
 import androidx.glance.layout.width
 import androidx.glance.semantics.contentDescription
 import androidx.glance.semantics.semantics
+import androidx.glance.unit.ColorProvider
 import com.gawi.core.data.repository.HabitRepository
 import com.gawi.core.domain.mascot.Mood
 import dagger.hilt.android.EntryPointAccessors
+import kotlin.math.roundToInt
 
 /**
  * Today's habits on the home screen, one tap each (PRD §4, §6.1).
@@ -129,7 +139,7 @@ internal fun WidgetBody(content: WidgetContent) {
         modifier = GlanceModifier.fillMaxSize().background(WidgetPalette.surface).padding(WIDGET_PADDING.dp),
     ) {
         val context = LocalContext.current
-        when (val body = content.body(LocalSize.current)) {
+        when (val body = content.body(LocalSize.current, BitmapText.textScale(context))) {
             is WidgetBodyContent.Copy -> {
                 body.mood?.let { MomoImage(it, contentDescription = null) }
                 val copy = context.getString(body.text)
@@ -166,14 +176,16 @@ internal fun WidgetBody(content: WidgetContent) {
  * **The band is the rows' own flags, in the rows' own order.** One segment per
  * habit, `bandWoven` when today's cell is ticked and `bandOutstanding` when it is
  * not; nothing is counted, sorted or capped, so the band cannot say something
- * the checkboxes do not. Flat `Box`es rather than a bitmap: a background colour
- * is the one thing `RemoteViews` draws in every scheme without a raster, and it
- * takes the same day/night provider the rest of the palette does. `cornerRadius`
- * is API 31+ and squares below it — flat either way, which was decided.
+ * the checkboxes do not. Two tinted masks rather than one `Box` per habit —
+ * [BandBitmap] has why: Glance caps a container at ten children, and a box per
+ * habit truncated the band at six.
  *
  * The copy is caption-sized and semibold, as the canvas drew it, and it gets the
- * width the pill and the gap leave — [LARGE_MIN_WIDTH]'s KDoc has the arithmetic
- * that makes two lines enough.
+ * width the pill and the gap leave. Three lines, not the canvas's one: at the
+ * gate that is 128dp, and the regenerating line needs three of them there —
+ * `HeaderCopyTest` measures it. [LARGE_MIN_WIDTH]'s KDoc has the arithmetic,
+ * and the gate divides by the text scale so the room is counted in units of the
+ * text that has to go in it, as the streak widget's does.
  */
 @Composable
 private fun LargeHeader(mood: Mood, rows: List<WidgetRow>) {
@@ -200,26 +212,48 @@ private fun LargeHeader(mood: Mood, rows: List<WidgetRow>) {
                 contentDescription = copy,
             )
             Spacer(modifier = GlanceModifier.height(BAND_GAP.dp))
-            WovenBand(rows)
+            WovenBand(rows, copyWidth)
         }
     }
 }
 
-/** The day, woven so far: one segment per habit, the rows' order, the rows' flags. Decorative. */
+/**
+ * The day, woven so far: one segment per habit, the rows' order, the rows'
+ * flags. Decorative — both images carry no description.
+ *
+ * Two [BandBitmap] masks in one [Box], each tinted by its own provider, so
+ * the band has no child count to hit ([BandBitmap] has the ten-child cap this
+ * replaced) and both fills still resolve through the palette. Remembered
+ * against everything that changes the pixels: the flags, the room and the
+ * density. Not the colour — the masks are white, and the tint is the free
+ * half, as with [OutfitText].
+ */
 @Composable
-private fun WovenBand(rows: List<WidgetRow>) {
-    Row(modifier = GlanceModifier.fillMaxWidth().height(BAND_HEIGHT.dp)) {
-        rows.forEachIndexed { index, row ->
-            if (index > 0) Spacer(modifier = GlanceModifier.width(BAND_GAP.dp))
-            Box(
-                modifier = GlanceModifier
-                    .defaultWeight()
-                    .height(BAND_HEIGHT.dp)
-                    .background(if (row.completed) WidgetPalette.bandWoven else WidgetPalette.bandOutstanding)
-                    .cornerRadius(BAND_RADIUS.dp),
-            ) {}
-        }
+private fun WovenBand(rows: List<WidgetRow>, width: Dp) {
+    val metrics = LocalContext.current.resources.displayMetrics
+    val flags = rows.map { it.completed }
+    val masks = remember(flags, width, metrics.densityDpi) {
+        val widthPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, width.value, metrics).toInt()
+        val heightPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, BAND_HEIGHT.toFloat(), metrics).roundToInt()
+        val gapPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, BAND_GAP.toFloat(), metrics)
+        val geometry = BandBitmap.Geometry(widthPx, heightPx, gapPx, metrics.densityDpi)
+        listOf(true, false).map { woven -> BandBitmap.render(flags, geometry, woven) }
     }
+    Box(modifier = GlanceModifier.width(width).height(BAND_HEIGHT.dp)) {
+        masks[0]?.let { BandMask(it, WidgetPalette.bandWoven, width) }
+        masks[1]?.let { BandMask(it, WidgetPalette.bandOutstanding, width) }
+    }
+}
+
+@Composable
+private fun BandMask(mask: Bitmap, tint: ColorProvider, width: Dp) {
+    Image(
+        provider = ImageProvider(mask),
+        contentDescription = null,
+        contentScale = ContentScale.Fit,
+        modifier = GlanceModifier.width(width).height(BAND_HEIGHT.dp),
+        colorFilter = ColorFilter.tint(tint),
+    )
 }
 
 /**
@@ -320,10 +354,9 @@ internal const val MOMO_PILL_WIDTH = 66
 internal const val MOMO_PILL_HEIGHT = 52
 private const val MOMO_PILL_RADIUS = 12
 internal const val HEADER_GAP = 10
-private const val HEADER_COPY_LINES = 2
-private const val BAND_HEIGHT = 5
-private const val BAND_GAP = 3
-private const val BAND_RADIUS = 3
+internal const val HEADER_COPY_LINES = 3
+internal const val BAND_HEIGHT = 5
+internal const val BAND_GAP = 3
 
 /**
  * Room reserved for the checkbox glyph beside a name, in dp. Glance's glyph is
