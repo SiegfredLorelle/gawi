@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Four colours for the widget picker's preview layout, and ONLY for it.
+    Six colours for the widget pickers' preview layouts, and ONLY for them.
 
     Nothing in the Glance tree reads these. WidgetPalette derives every colour it
     draws from :core:ui's gawiRole, so the widget itself holds no hex - see that
@@ -19,4 +19,7 @@
     <color name="widget_preview_on_surface">#FF101C1E</color>
     <color name="widget_preview_primary">#FF1F6F78</color>
     <color name="widget_preview_caption">#FF405457</color>
+    <!-- The Momo widget's preview: primaryContainer and onPrimaryContainer. -->
+    <color name="widget_preview_momo_ground">#FFB4E9F0</color>
+    <color name="widget_preview_momo_caption">#FF00353A</color>
 </resources>

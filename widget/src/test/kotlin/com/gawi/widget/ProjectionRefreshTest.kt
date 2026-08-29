@@ -49,6 +49,7 @@ class ProjectionRefreshTest {
         assertTrue("no GlanceAppWidgetReceiver found in the merged manifest", declared.isNotEmpty())
         assertTrue("TodayWidgetReceiver is not declared", declared.contains(TodayWidgetReceiver::class.java))
         assertTrue("StreakWidgetReceiver is not declared", declared.contains(StreakWidgetReceiver::class.java))
+        assertTrue("MomoWidgetReceiver is not declared", declared.contains(MomoWidgetReceiver::class.java))
     }
 
     /**

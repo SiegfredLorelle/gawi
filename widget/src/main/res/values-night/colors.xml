@@ -11,4 +11,6 @@
     <color name="widget_preview_on_surface">#FFDCEEF0</color>
     <color name="widget_preview_primary">#FF7FD4DC</color>
     <color name="widget_preview_caption">#FFA2B5B9</color>
+    <color name="widget_preview_momo_ground">#FF0F545C</color>
+    <color name="widget_preview_momo_caption">#FFB2E7EE</color>
 </resources>

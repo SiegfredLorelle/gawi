@@ -13,14 +13,16 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 
 /**
- * The widget picker's preview layout draws the same palette the widget does.
+ * The widget pickers' preview layouts draw the same palette the widgets do.
  *
  * **The one hand-copy this module still has, and why it cannot be derived.**
  * [WidgetPalette] holds no hex — every value comes from `:core:ui`'s `gawiRole`.
- * `res/layout/streak_widget_preview.xml` cannot join in: it is a real Android
- * layout that the launcher's picker inflates, and XML cannot read Kotlin. So
- * `res/values/colors.xml` reproduces four roles by hand, exactly the way `:app`'s
- * `values/colors.xml` reproduces the window background.
+ * `res/layout/streak_widget_preview.xml` and `momo_widget_preview.xml` cannot
+ * join in: each is a real Android layout that the launcher's picker inflates,
+ * and XML cannot read Kotlin. So `res/values/colors.xml` reproduces six roles by
+ * hand, exactly the way `:app`'s `values/colors.xml` reproduces the window
+ * background. `StreakPreviewColorsTest` until 2026-08-29, when the Momo
+ * widget's preview added two more colours to the same list.
  *
  * That copy is guarded the same way `:app`'s is, by `WindowBackgroundTest`:
  * compare each resource against the role it claims, in both schemes, so retuning
@@ -33,7 +35,7 @@ import org.robolectric.RuntimeEnvironment
  * the whole subject of [WidgetPalette]'s KDoc.
  */
 @RunWith(RobolectricTestRunner::class)
-class StreakPreviewColorsTest {
+class WidgetPreviewColorsTest {
 
     /** Each preview colour, and the `:core:ui` role its name claims it reproduces. */
     private val copies = listOf(
@@ -41,6 +43,8 @@ class StreakPreviewColorsTest {
         Triple("widget_preview_on_surface", R.color.widget_preview_on_surface, GawiRole.OnSurface),
         Triple("widget_preview_primary", R.color.widget_preview_primary, GawiRole.Primary),
         Triple("widget_preview_caption", R.color.widget_preview_caption, GawiRole.OnSurfaceVariant),
+        Triple("widget_preview_momo_ground", R.color.widget_preview_momo_ground, GawiRole.PrimaryContainer),
+        Triple("widget_preview_momo_caption", R.color.widget_preview_momo_caption, GawiRole.OnPrimaryContainer),
     )
 
     @Test

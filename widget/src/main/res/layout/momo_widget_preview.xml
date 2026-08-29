@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    What the widget picker shows for the Momo widget on API 31 and up.
+
+    A still approximation, for the reason streak_widget_preview.xml gives: a
+    Glance tree has no RemoteViews to preview until a session has composed one.
+    What it can show honestly is the widget's ground and the kind of word that
+    sits at its foot; what it cannot is the face. Momo is drawn by drawMomo in
+    :core:ui at render time and rasterised by the widget - there is no drawable
+    of her in this module, and a hand-drawn copy for the picker would be a fifth
+    copy of the geometry, the thing MomoBitmap exists to avoid. So the picker
+    shows her ground and her word, and the description names her.
+
+    The type is the system face, not Outfit - the only intended difference from
+    the widget, as with the streak preview. Colours come from
+    res/values/colors.xml, pinned to :core:ui by WidgetPreviewColorsTest.
+-->
+<!--
+    tools:ignore="Overdraw": nothing paints behind a picker preview but this
+    layout, the same reason the streak preview gives.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/widget_preview_momo_ground"
+    android:padding="8dp"
+    tools:ignore="Overdraw">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:text="@string/widget_preview_momo_word"
+        android:textColor="@color/widget_preview_momo_caption"
+        android:textSize="12sp"
+        android:textStyle="bold" />
+
+</FrameLayout>

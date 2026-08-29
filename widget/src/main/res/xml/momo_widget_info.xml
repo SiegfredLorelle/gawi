@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The Momo widget's base provider, for API 29 and 30. No API 31 attributes
+    here for the reason streak_widget_info.xml gives: they live in res/xml-v31,
+    which replaces this file whole and must be kept in step by hand.
+
+    minWidth/minHeight are the two-by-two cell the design canvas drew (110dp
+    square). Resizable: the face is a constant 72dp and centres, so a larger
+    placement only adds ground around her.
+
+    updatePeriodMillis matches the other two widgets; it is a backstop, not the
+    mechanism - RolloverWorker and every committed write push through
+    GlanceProjectionListener.
+-->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:initialLayout="@layout/glance_default_loading_layout"
+    android:minHeight="110dp"
+    android:minWidth="110dp"
+    android:resizeMode="horizontal|vertical"
+    android:updatePeriodMillis="1800000"
+    android:widgetCategory="home_screen" />
