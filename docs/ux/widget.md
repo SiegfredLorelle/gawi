@@ -58,7 +58,7 @@ what stops this decision being undone by an accident of what was in scope.
 
 ~~Revisit when Momo has real art (PRD OQ-4)~~ — revisited 2026-08-25, when
 she had it. **The minimal widget stands, and Momo joins it only when the host
-gives it room**: at two cells tall (170 dp and up, `WidgetUiState.kt`) her
+gives it room**: from 170 dp of height (`WidgetUiState.kt` — two cells on most launchers, three on the small-phone Pixel launcher, whose rows are 132 dp; running.md §4) her
 resting frame sits above the rows, 72 dp; one cell tall is exactly the widget
 this section describes. A mascot on the widget turned out to be the thing that
 made a larger *size* worth drawing without making a second *provider* worth
