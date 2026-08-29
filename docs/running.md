@@ -1120,12 +1120,40 @@ widget.
 check gives: those steps start from midnight, and this section sits below them, so
 leaving it moved is how a later run passes vacuously.
 
-### The Momo widget and the large Today body — *built 2026-08-29, not yet on a launcher*
+### The Momo widget and the large Today body — *launcher only*
 
 Both of docs/ux/widget.md §7's surfaces. `MomoWidgetHostTest` and
 `WidgetHostTest`'s large-body case bind them to a real host, so "the provider
 binds and Glance composes it" is a machine's job; what follows is what only a
-launcher shows. Nothing below has been seen yet.
+launcher shows.
+
+**Seen by eye on a launcher, 2026-08-29** — API 37 emulator, Pixel launcher, dark
+mode, the same four habits as the streak pass. Boxes stay unticked for this
+block's usual reason; these were watched and measured, not inferred:
+
+- **The picker offers three entries**, and the *Momo* one shows its description
+  and a preview that is the ground and the word with no face, as intended.
+  `input draganddrop` placed it; it landed two by two.
+- **The Momo widget's colours are the derivation, to the byte.** Sampled off the
+  screenshot: ground `#0F545C`, the word `#B2E7EE`, 6.37:1 — the numbers
+  `gawiRole`'s KDoc promises for `onPrimaryContainer` on `primaryContainer`.
+- **The large body renders at four by three** — Momo on the pill, *Momo is
+  pottering about.* beside her, a four-segment band, four rows. Woven segments
+  `#7FD4DC`, outstanding `#324042`, 6.34:1 apart, again the derivation exactly.
+- **The band is the checkboxes.** Tapping *Water* flipped its box and its
+  segment on the same write, and the Momo widget beside it kept its word (one
+  habit still outstanding, so still *pottering*).
+- **Three columns is 240dp on this launcher, so the header stays** — 240 is
+  over the 220 gate, and the mood line fits. **Two columns is refused**: the
+  launcher will not resize a 180dp-minimum provider below three cells, so the
+  face-above-rows body cannot be reached here at three rows tall. Like the
+  streak block's "smallest size" case, that is the launcher's cell size and
+  not the widget; a launcher with narrower cells is what shows the flip.
+- At three by two the Today widget drew rows alone (132dp is under the height
+  gate), which is the 2026-08-21 widget unchanged.
+
+Not seen: greyscale by eye (the capture cannot show it), TalkBack, the light
+scheme, and the two-column flip.
 
 - [ ] **The Today widget grows a header at four by three.** Place *Today* and
       resize it to four cells wide and three tall (250×200dp on the canvas):
