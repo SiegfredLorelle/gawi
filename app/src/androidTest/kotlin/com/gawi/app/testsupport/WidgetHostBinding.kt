@@ -22,11 +22,19 @@ import java.util.concurrent.TimeUnit
  * privilege through `appwidget grantbind`, the same shell command a developer
  * would use by hand. The receiver is named as a string because it is `internal`
  * to `:widget` and `:app` cannot reference it.
+ *
+ * Parameterised over the receiver on 2026-08-29, when a second provider arrived.
+ * The provider's resolved [AppWidgetProviderInfo] is exposed with it, because
+ * that is the only place the API 31 attributes in a `res/xml-v31` variant can be
+ * *read back* — `dumpsys appwidget` does not print them, so a `-v31` file that
+ * failed to resolve would look identical to one that worked.
  */
 class WidgetHostBinding private constructor(
     private val host: AppWidgetHost,
     private val widgetId: Int,
     private val view: AppWidgetHostView,
+    /** The provider info the framework parsed, including any `res/xml-v31` half. */
+    val info: AppWidgetProviderInfo,
 ) {
 
     /**
@@ -41,6 +49,29 @@ class WidgetHostBinding private constructor(
         var found = emptyList<String>()
         InstrumentationRegistry.getInstrumentation().runOnMainSync { found = textIn(view) }
         return found
+    }
+
+    /**
+     * Every view class in the rendered tree, innermost last.
+     *
+     * For asserting *structure* where text is not reachable. A `LazyColumn`
+     * becomes a `RemoteViews` collection, and a host view that is never attached
+     * to a window never lays out, so its adapter is never asked for item views —
+     * the rows exist in the translated tree and have no `View` to traverse. This
+     * is what lets a test tell "the collection did not translate" apart from
+     * "the collection translated and the harness cannot see into it".
+     */
+    fun viewClasses(): List<String> {
+        var found = emptyList<String>()
+        InstrumentationRegistry.getInstrumentation().runOnMainSync { found = classesIn(view) }
+        return found
+    }
+
+    private fun classesIn(v: View): List<String> = buildList {
+        add(v.javaClass.simpleName)
+        if (v is android.view.ViewGroup) {
+            for (i in 0 until v.childCount) addAll(classesIn(v.getChildAt(i)))
+        }
     }
 
     /** Waits until the rendered text satisfies [predicate], then returns it. */
@@ -84,18 +115,19 @@ class WidgetHostBinding private constructor(
 
     companion object {
         const val RECEIVER = "com.gawi.widget.TodayWidgetReceiver"
+        const val STREAK_RECEIVER = "com.gawi.widget.StreakWidgetReceiver"
         private const val HOST_ID = 0x6761
         private const val POLL_MILLIS = 250L
 
         /** Null when the provider is absent or the bind grant was refused. */
-        fun bind(context: Context): WidgetHostBinding? {
+        fun bind(context: Context, receiver: String = RECEIVER): WidgetHostBinding? {
             // Drained rather than closed: executeShellCommand returns as soon as
             // the pipe exists, so closing it early races the grant to completion
             // and the grant silently does not happen.
             shell("appwidget grantbind --package ${context.packageName} --user 0")
 
             val manager = AppWidgetManager.getInstance(context)
-            val provider = ComponentName(context.packageName, RECEIVER)
+            val provider = ComponentName(context.packageName, receiver)
             val (host, widgetId, info) = allocate(context, manager, provider) ?: return null
 
             lateinit var view: AppWidgetHostView
@@ -103,7 +135,7 @@ class WidgetHostBinding private constructor(
                 host.startListening()
                 view = host.createView(context, widgetId, info)
             }
-            return WidgetHostBinding(host, widgetId, view)
+            return WidgetHostBinding(host, widgetId, view, info)
         }
 
         /**
