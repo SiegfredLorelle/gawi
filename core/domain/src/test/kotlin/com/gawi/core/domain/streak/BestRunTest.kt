@@ -50,6 +50,12 @@ class BestRunTest {
     }
 
     @Test
+    fun `a run counts today when today is done, as the streak on Today does`() {
+        val window = LocalDate.of(2026, 8, 1)..LocalDate.of(2026, 8, 31)
+        assertEquals(1, best(setOf(today), window = window))
+    }
+
+    @Test
     fun `a weekly run is counted in hit weeks`() {
         val twice = Schedule.Weekly(2)
         // Mondays 2026-04-06, 13, 20 hit with two days each; 27 has one.

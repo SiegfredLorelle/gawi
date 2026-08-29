@@ -146,8 +146,14 @@ object Streaks {
         }
     }
 
-    /** Week-start dates that met [Schedule.Weekly.timesPerWeek], up to [today]. */
-    private fun hitWeeks(
+    /**
+     * Week-start dates that met [Schedule.Weekly.timesPerWeek], up to [today].
+     *
+     * Internal rather than private because [BestRun] judges weeks by the same
+     * rule, and "which weeks count" written twice is how the weekly best run on
+     * Insights would come to disagree with the weekly streak on Today.
+     */
+    internal fun hitWeeks(
         completedDates: Set<LocalDate>,
         schedule: Schedule.Weekly,
         today: LocalDate,
