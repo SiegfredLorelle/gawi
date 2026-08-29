@@ -17,11 +17,13 @@ tag metric when OQ-1 lands. All three are now settled by code, and §8 is the
 record of what building them decided — including the four places the reasoning
 here, and the artboard it came from, turned out to be wrong.
 
-What is *not* built is PRD §5's Phase 1.5, this module's second job. The app-wide
-screen (§8.8) borrows the first line of it — adherence per habit and per tag
-across a period — which is worth naming rather than leaving to be discovered: a
-quarterly retrospective now has a screen to grow out of rather than a blank
-module.
+~~What is *not* built is PRD §5's Phase 1.5, this module's second job.~~ **Built
+2026-08-29**, and it grew out of the app-wide screen (§8.8) exactly as this
+paragraph predicted rather than becoming a screen of its own: a stepper walks
+the period back through the calendar, and three facts joined the numbers it
+already drew. §9 is the record. What that paragraph called "the first line of
+it" — adherence per habit and per tag across a period — was already there, which
+is why the retrospective cost a stepper and three facts rather than a module.
 
 `:feature:insights` **exists as of 2026-08-24**, and it arrived the way this
 file said it had to: with its first real file. `insights` was already in
@@ -296,6 +298,16 @@ already live, never in the feature module.
 - **Whether Momo appears here.** PRD §5 puts him in the Today view, the widget
   and the reminder. This screen is not on that list and should probably stay off
   it until OQ-4 is settled.
+- **Export of a review as an image or PDF.** PRD §5's Phase 1.5 nice-to-have,
+  and the one part of that phase **not built on 2026-08-29** — recorded here as a
+  later feature rather than dropped. It needs a bitmap capture of the review
+  column and a share sheet, neither of which exists in the app yet, and nothing
+  in §9 is shaped to prevent it: the column is one `Column` with no scroll state
+  of its own to fight.
+- **A per-tag trend** — a tag's active days per month, beside §9's app-wide one.
+  Waits for OQ-1: a tag's monthly line is exactly the figure fractional
+  attribution would redefine, so drawing it before the multi-tag decision would
+  be drawing it twice.
 
 ## 8. What building it settled
 
@@ -518,3 +530,127 @@ immutable log data and every replay yields the same date — which is the proper
 architecture §5 protects. It is deliberately **not** the logical date: the cutoff
 as it was then is not recorded anywhere, so this errs one day later at most, in
 the direction that cannot manufacture a miss.
+
+## 9. Phase 1.5 — the review, and what building it settled
+
+Written 2026-08-29, after the build. PRD §5's Phase 1.5 asked for *"quarterly /
+yearly review screens: adherence per habit and per tag across the period, trend
+lines, best/worst streaks, 'focus shifted from X to Y' summaries"*, and its
+nice-to-have export. The redesign canvas's page 11 drew it first — a past
+quarter, the twelve-column year, and a decisions board — and the code is a
+transcription of those boards.
+
+### 9.1 Grow, don't fork
+
+**One screen.** A separate Review destination would have redrawn the period
+chips, the headline and the adherence list to put three facts under them. §1
+already called retrospectives this module's second job and §7 chose calendar
+periods so that the picker could be shared; this is that decision paying out.
+The retrospective is the Insights overview one period back.
+
+### 9.2 Stepping is an offset
+
+A `◀ Q2 2026 ▶` row sits under the chips. The ViewModel holds *how many periods
+back from today's*, clamped at zero, beside the period — never a stored date —
+which is §8.5's rule for the grid's month, for the same reason: the window is
+recomputed from `observeReadContext`'s today on every emission, so zero keeps
+meaning "now" across a day rollover with nothing on the screen's side holding a
+clock. `Period.window(today, back)` is the one piece of date arithmetic, and
+"the period before" — which the focus sentence needs — is the same function
+asked once more, not a second calculation that could drift from the first.
+
+**Picking a different period resets the offset.** "Three quarters back" has no
+meaning in years, and carrying the number across would land the user on 2023
+without having asked for it.
+
+**The later arrow is disabled at the current period, not removed.** The grid
+hides its stepper at zero and leaves a footprint; here the label sits between
+the two arrows and a vanishing one would shift it. Disabled at Material's alpha,
+content description kept — and the clamp is in the ViewModel too, so a tap that
+got through would still do nothing. `InsightsScreenTest` pins the disabled
+state and `InsightsViewModelTest` pins the clamp.
+
+### 9.3 Best, in the period, in the unit — and no worst
+
+`BestRun.within(dates, schedule, window, today, weekStart)` in `:core:domain`,
+beside `Streaks`: the longest consecutive run of finished units inside the
+window, in the schedule's own unit. Not `Streaks.snapshot` — that answers "how
+long is the run ending now", and a review of last quarter wants the longest run
+*that quarter*, which the current streak says nothing about once it has broken.
+
+Two clips, both deliberate. A run that began before the period counts only the
+part inside it — a 40-day run that ended on the quarter's second day was not a
+40-day quarter. And for a weekly habit only weeks the window holds **wholly**
+are judged, the line `Rates.completionRate` already draws: three of a week's
+days in the period and four out means a miss there would be the window's doing.
+The current week is not excluded for being unfinished; if it has already hit
+its target it is a hit week, as `Streaks` holds. Measured over the same
+creation-clipped window as the rate (§8.9), so the two figures on a row describe
+one span.
+
+It rides on the schedule line — *"3× a week · best 9 weeks"* — because the unit
+it is counted in is the schedule's, and null rather than zero when the period
+held no run: "best 0 days" under a row is the screen accusing the user, and the
+dash beside it already said nothing happened.
+
+**No worst.** Every habit's worst run is zero. A column of zeros carries nothing,
+so the PRD's "best/worst" is built as "best", and this is where that is decided.
+
+### 9.4 The trend measures turning up
+
+**Active days per month**, oldest first, for a quarter or a year — the
+headline's own number, bucketed. Not a per-habit rate trend over the period:
+that would be one line per habit or the averaged number §4 exists to refuse.
+Active days needs no schedule, and its denominator — the calendar days each
+month has had — is the one honest for a daily and a weekly habit at once. The
+subtitle names it, as the rate card names its schedule, because a count out of
+days is not a completion rate and must not be read as one.
+
+**A month that has not begun is not a point** — not a zero, not a gap. §8.3's
+rule for future days, in months: a year drawn with four zeros at its end would
+read as a year already lost. The current month is a real point over the days it
+has had so far, for the reason §8.7 gives about the rate card's current month.
+A single Month period has no trend; one point is not a line.
+
+**Twelve columns cannot carry twelve month names on a phone.** Under a year the
+label is the month's initial, and J, M and A each name two months — §8.4's
+weekday-letters problem, solved the same way: every column carries its own
+spoken form, *"March, 15 active days"*, so the ambiguous letters are covered by
+the thing a screen reader actually reads. Under three columns the short name is
+used and nothing is hidden. Owed a look at 200 % font on a device (running.md
+§4).
+
+The line itself is the rate card's `Sparkline`, now a shared file taking bare
+0–1 fractions: the two cards draw one series over equal label columns and a
+second copy would have been a second set of mark specs to keep in step. Fixed
+scale, gaps break the line, dots centred over their columns — §8.7's rules,
+unchanged.
+
+### 9.5 The focus rule
+
+One sentence under the headline, body copy rather than a card, because it is a
+remark about the two numbers above it and not a third surface. "Focus" is the
+tag with the largest total, compared across this period and the equal one
+before it — a second `observeTagEffort` read over the previous window, the same
+query and no new kind of read. Different: *"Focus shifted from health to
+career."* Same: *"Still mostly health."*
+
+Three rules, each pinned by `InsightsUiMapperTest`:
+
+- **Untagged never wins.** It is the absence of a focus, and "shifted from
+  career to Untagged" would say the user stopped caring when all they stopped
+  doing was labelling. Only tagged totals compete.
+- **Silence over a guess.** Either period without a tagged completion means no
+  sentence. A habit tagged for the first time this quarter did not shift the
+  focus from anywhere.
+- **Ties resolve the way the bars sort** — largest, then name — so the sentence
+  can never name a tag the list draws second.
+
+### 9.6 What it cost
+
+No migration, no new query, no new module. One domain object with nine tests,
+one shared `Sparkline`, a `TrendCard`, four new fields on `Overview`, and the
+fake repository learning to answer one window differently from another so the
+focus sentence could be tested end to end. `check-citations` caught the docs
+before the docs existed: every code comment naming this section failed lint
+until it was written, which is the order the tool is there to enforce.
