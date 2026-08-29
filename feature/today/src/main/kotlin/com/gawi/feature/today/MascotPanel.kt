@@ -21,6 +21,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
@@ -49,7 +50,18 @@ import com.gawi.core.ui.theme.GawiSpacing
  */
 @Composable
 internal fun MascotPanel(mood: Mood, remaining: Int, total: Int, motion: TodayMotion, modifier: Modifier = Modifier) {
-    val copy = stringResource(moodCopy(mood, total))
+    // For the length of a milestone run the line is the milestone's, and its
+    // changing is the announcement (momo.md §5): the node below merges the
+    // picture and the caption, so TalkBack reads the new line once and the
+    // mood line once more when it returns. A line is text, not motion, so this
+    // swap happens with animations off too — MilestoneState keeps `current`
+    // set for the same two seconds either way.
+    val milestone = motion.milestone.current
+    val copy = if (milestone == null) {
+        stringResource(moodCopy(mood, total))
+    } else {
+        pluralStringResource(milestoneCopy(milestone), milestone.count, milestone.count)
+    }
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -63,7 +75,7 @@ internal fun MascotPanel(mood: Mood, remaining: Int, total: Int, motion: TodayMo
         verticalArrangement = Arrangement.spacedBy(GawiSpacing.Gap),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Tank(mood, motion.animationsOn, motion.celebration)
+        Tank(mood, motion.animationsOn, motion.celebration, motion.milestone)
         Text(
             text = copy,
             style = MaterialTheme.typography.titleMedium,
@@ -106,7 +118,13 @@ internal fun MascotPanel(mood: Mood, remaining: Int, total: Int, motion: TodayMo
  * recomposes nothing.
  */
 @Composable
-private fun Tank(mood: Mood, animationsOn: Boolean, celebration: CelebrationState, modifier: Modifier = Modifier) {
+private fun Tank(
+    mood: Mood,
+    animationsOn: Boolean,
+    celebration: CelebrationState,
+    milestone: MilestoneState,
+    modifier: Modifier = Modifier,
+) {
     val scheme = MaterialTheme.colorScheme
     val transition = rememberMoodTransition(mood, animationsOn)
     val seconds = rememberFrameClock(animationsOn)
@@ -119,6 +137,12 @@ private fun Tank(mood: Mood, animationsOn: Boolean, celebration: CelebrationStat
     val fullWater = remember(scheme) { Brush.linearGradient(full) }
     val drainedWater = remember(scheme) { Brush.linearGradient(drained) }
     val celebrationOver by celebration.isOver
+    // The milestone owns the tank while it runs (momo.md §6): the last habit
+    // of the day is often the one crossing a rung, and two hops summed with two
+    // bursts would read as a glitch. The day-complete run finishes unseen
+    // underneath — 1400 ms inside 2000 — so the tank is at the thriving rest
+    // when the milestone ends.
+    val milestoneOver by milestone.isOver
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -144,7 +168,9 @@ private fun Tank(mood: Mood, animationsOn: Boolean, celebration: CelebrationStat
         // not the face — but the burst goes in front: its lanes rise straight
         // up behind the body, and drawn under Momo the bubbles simply vanish.
         // Checked on the emulator; the design board's layering hid them too.
-        if (!celebrationOver) {
+        if (!milestoneOver) {
+            Canvas(Modifier.fillMaxSize().testTag("milestone")) { drawMilestoneGlow(milestone.frame, MomoPalette.Highlight) }
+        } else if (!celebrationOver) {
             Canvas(Modifier.fillMaxSize().testTag("celebration")) { drawCelebrationGlow(celebration.frame, MomoPalette.Highlight) }
         }
         Momo(
@@ -153,13 +179,26 @@ private fun Tank(mood: Mood, animationsOn: Boolean, celebration: CelebrationStat
             Modifier
                 .fillMaxSize()
                 .padding(GawiSpacing.Row)
-                .offset { IntOffset(0, -celebration.frame.hop.dp.roundToPx()) },
+                .offset {
+                    val hop = if (milestoneOver) celebration.frame.hop else milestone.frame.hop
+                    IntOffset(0, -hop.dp.roundToPx())
+                },
         )
-        if (!celebrationOver) {
+        if (!milestoneOver) {
+            Canvas(Modifier.fillMaxSize()) {
+                val frame = milestone.frame
+                drawMilestoneBurst(frame, MomoPalette.Highlight)
+                drawMilestoneRing(frame)
+            }
+        } else if (!celebrationOver) {
             Canvas(Modifier.fillMaxSize()) { drawCelebrationBurst(celebration.frame, MomoPalette.Highlight) }
         }
     }
 }
+
+/** The milestone line, by the rung's unit — plurals, because it counts a noun. */
+private fun milestoneCopy(milestone: Milestone): Int =
+    if (milestone.weekly) R.plurals.today_milestone_weeks else R.plurals.today_milestone_days
 
 /** The copy for a mood — one line each, all four (today-view §4). */
 private fun moodCopy(mood: Mood, total: Int): Int = when {

@@ -49,6 +49,18 @@
          it is. -->
     <string name="today_remaining" tools:ignore="PluralsCandidate">%1$d of %2$d left today</string>
     <string name="today_remaining_none">Nothing left today</string>
+    <!-- The line the panel shows for the length of a streak-milestone
+         celebration (momo.md §6), in place of the mood line; it is the
+         announcement. A count of a noun, so real plurals like the widget's —
+         1 never occurs on either ladder, but other locales split 4, 7 and 30. -->
+    <plurals name="today_milestone_days">
+        <item quantity="one">%1$d day in a row. Momo is dazzled.</item>
+        <item quantity="other">%1$d days in a row. Momo is dazzled.</item>
+    </plurals>
+    <plurals name="today_milestone_weeks">
+        <item quantity="one">%1$d week in a row. Momo is dazzled.</item>
+        <item quantity="other">%1$d weeks in a row. Momo is dazzled.</item>
+    </plurals>
 
     <!-- The empty state's call to action, and the way to the habit list. The
          body copy has promised the first of these since the screen was built. -->
