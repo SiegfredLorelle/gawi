@@ -88,7 +88,10 @@ value. `:core:ui` now publishes `GawiRole` and `gawiRole(role, darkTheme)`, and
 one copy and the widget cannot drift from the app. Both `ColorScheme`s stay
 `internal` and a surface inside the app still reads `MaterialTheme.colorScheme`
 — what leaves the module is a role list, not the schemes. §7.4's closing bullet
-records what this cost and what it closed. The lesson is the one that keeps
+records what this cost and what it closed. The list grew from six roles to nine
+later the same day, when the Momo widget and the large Today body needed a
+ground, its ink and a fill (`PrimaryContainer`, `OnPrimaryContainer`,
+`OutlineVariant`; widget.md §7) — growth in the list, not in what crosses. The lesson is the one that keeps
 recurring here: a claim reasoned correctly from a correct reading of the library
 can still be false, and this one stood for two phases.
 
@@ -912,7 +915,7 @@ comparison, four widget surfaces and the launcher mark.
   "as of" line. This follows directly from the reasoning that settled OQ-5: a
   streak reaches zero with *no new event*, so it is the one value whose staleness
   is not bounded by the user doing nothing, on the one surface with no live
-  query. `RolloverWorker` improves the odds and bounds nothing (widget.md §7).
+  query. `RolloverWorker` improves the odds and bounds nothing (widget.md §8).
   Dating it converts a possible lie into a stale-but-true reading, which is the
   difference between this and the "demotivating lie" widget.md §2 refused.
 
@@ -1067,8 +1070,14 @@ widget. Before any of it is built, the price:
   were wrong and §2 records them: `CheckBoxColors` refuses only resource-backed
   providers, and the glyph is assertable after all. `docs/running.md` §4 keeps a
   by-hand check for what a JVM test cannot see.
-- **What is left of this set is the Momo widget and Today large's woven band.**
-  Both are drawn on the canvas's page 3 and neither is built. **The streak widget
+- ~~**What is left of this set is the Momo widget and Today large's woven band.**
+  Both are drawn on the canvas's page 3 and neither is built.~~ **Both built
+  2026-08-29, later the same day, and the set of four is closed.** The large body
+  is a third body of the Today provider gated on width as well as height, and
+  the Momo widget is the fourth provider, captioned with one word chosen on the
+  canvas's page 9 against the sentence and against nothing; docs/ux/widget.md §7
+  has both, the three roles they added to `GawiRole`, and the one asset the
+  picker cannot have (her face). **The streak widget
   shipped 2026-08-29**, drawn first as two directions on the canvas's "Widget set
   — round two" page and built as the one that does not have to rank a count of
   days against a count of weeks; docs/ux/widget.md §6 has its decisions and the

@@ -135,7 +135,8 @@ the habit, and nothing tells the panel which habit yet.
 | Surface | Ground | Motion | Status |
 |---|---|---|---|
 | Today | the tank: a 250 dp panel, water in `primaryContainer → primaryFixedDim`, drained to `surfaceContainerHighest → surfaceContainerHigh` while regenerating, with four weeds and four bubbles keeping the mood's tempo behind the character | animated | **built** — `MascotPanel.kt`, `Habitat.kt` |
-| Widget | the Today widget's own background, above the rows, only when the host gives it two cells (≥ 170 dp) | the resting frame, `MomoFrame.rest`, rasterised by `drawMomo` at 72 dp | **built** — `widget/MomoBitmap.kt` |
+| Widget | the Today widget's own background, above the rows, only when the host gives it two cells (≥ 170 dp); from 220 dp wide as well, on a flat `primaryContainer` pill beside the mood line and the woven day band ([widget.md](widget.md) §7) | the resting frame, `MomoFrame.rest`, rasterised by `drawMomo` at 72 dp, or 48 dp inside the pill | **built** — `widget/MomoBitmap.kt`, `TodayWidget.kt` |
+| Momo widget | her own 2×2 tile: flat `primaryContainer`, the tank colour without the gradient, and one word beneath her — no rows, no number ([widget.md](widget.md) §7) | the resting frame at 72 dp | **built 2026-08-29** — `widget/MomoWidget.kt` |
 | Reminder | the notification's small icon is alpha-only, so a silhouette — of the launcher mark, which is what holds at 24 dp | still | **built** — `app/res/drawable/ic_reminder.xml` |
 | Launcher | visual-identity §7.1's mark, derived from this character, on light `primaryContainer`; the woven thread as the monochrome layer | still | **built** — `app/res/mipmap-anydpi/ic_launcher.xml` |
 
@@ -248,8 +249,12 @@ desaturation, done arithmetically in `drawMomo` so a test can measure it.
   a loop, that is where §1's Lottie fallback becomes relevant.
 - ~~**The widget and reminder treatments** beyond "the still frame on their own
   ground"~~ — placement and size were decided with the build (§4): in the
-  Today widget, above the rows, size-gated. Still open from visual-identity
-  §7.4: whether a Momo-only widget or a streak widget is worth its provider.
+  Today widget, above the rows, size-gated. ~~Still open from visual-identity
+  §7.4: whether a Momo-only widget or a streak widget is worth its provider.~~
+  **Both built 2026-08-29** ([widget.md](widget.md) §6 and §7): the streak
+  widget as one row per habit, the Momo widget as her face on the tank colour
+  with one word, and the large Today body puts her on a pill beside the woven
+  day band. The habitat stays here: none of the three draws the weeds.
 - **Momo's real copy**, and the `recentlyBrokenHabits` function the
   regenerating line needs to name a habit (today-view §6).
 - **Whether Momo appears on Insights** ([insights.md](insights.md) §7).
