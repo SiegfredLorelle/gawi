@@ -912,7 +912,7 @@ comparison, four widget surfaces and the launcher mark.
   "as of" line. This follows directly from the reasoning that settled OQ-5: a
   streak reaches zero with *no new event*, so it is the one value whose staleness
   is not bounded by the user doing nothing, on the one surface with no live
-  query. `RolloverWorker` improves the odds and bounds nothing (widget.md §6).
+  query. `RolloverWorker` improves the odds and bounds nothing (widget.md §7).
   Dating it converts a possible lie into a stale-but-true reading, which is the
   difference between this and the "demotivating lie" widget.md §2 refused.
 
