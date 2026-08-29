@@ -85,6 +85,18 @@ class WidgetHostBinding private constructor(
         return text
     }
 
+    /**
+     * Tell the provider what size the host is drawing it at, in dp, the way a
+     * launcher does on placement and resize. `SizeMode.Exact` composes once per
+     * reported size, so this is how a test reaches a body gated on size — the
+     * large Today body needs 220×170 and a bound view reports nothing until told.
+     */
+    fun resize(widthDp: Int, heightDp: Int) {
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            view.updateAppWidgetSize(null, widthDp, heightDp, widthDp, heightDp)
+        }
+    }
+
     fun release() {
         // Paired with bind()'s startListening, and on the same thread. deleteHost
         // does tear the host down, so this is not a leak past the process — but
@@ -116,6 +128,7 @@ class WidgetHostBinding private constructor(
     companion object {
         const val RECEIVER = "com.gawi.widget.TodayWidgetReceiver"
         const val STREAK_RECEIVER = "com.gawi.widget.StreakWidgetReceiver"
+        const val MOMO_RECEIVER = "com.gawi.widget.MomoWidgetReceiver"
         private const val HOST_ID = 0x6761
         private const val POLL_MILLIS = 250L
 
