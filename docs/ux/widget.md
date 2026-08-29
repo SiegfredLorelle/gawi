@@ -371,16 +371,21 @@ pins both gates at both edges.
 
 **The band is the rows' own flags, and nothing else.** One segment per habit in
 the rows' order, `primary` when today's cell is ticked and `outlineVariant` when
-it is not, drawn as flat `Box`es on day/night providers rather than as a bitmap
-— a background colour is the one thing `RemoteViews` draws in every scheme
-without a raster. Nothing is counted, sorted or capped, so the band cannot say
+it is not. Nothing is counted, sorted or capped, so the band cannot say
 something the checkboxes beneath it do not; with many habits the segments thin
-rather than fold, which at thirty is a texture and still true. The pair of fills
-is held to WCAG 1.4.11's 3:1 in `GawiColorSchemeTest` and `WidgetPaletteTest`
-(light 3.78, dark 6.34), the way the history grid's two cell fills are, because
-the pair is the information. `WidgetMomoTest` asserts the segments by provider
-identity in order, so swapping the two colours is a red test rather than a
-launcher surprise.
+rather than fold, which at thirty is a texture and still true. **Drawn as two
+rasterised masks, not as a box per habit** — the first cut was a `Box` and a
+`Spacer` per segment in one `Row`, and Glance caps a container at ten children,
+so a six-habit day silently drew five segments and logged an error; review found
+it. `BandBitmap` draws the woven segments and the outstanding ones as two white
+masks, each tinted by its own day/night provider and stacked in one `Box`, so
+there is no child count and both fills still resolve through the palette's one
+translation path. The pair of fills is held to WCAG 1.4.11's 3:1 in
+`GawiColorSchemeTest` and `WidgetPaletteTest` (light 3.78, dark 6.34), the way
+the history grid's two cell fills are, because the pair is the information.
+`WidgetMomoTest` matches each mask by tint identity and reads its segments off
+the pixels, so swapping the two colours is a red test rather than a launcher
+surprise, and `BandBitmapTest` holds the geometry at thirty.
 
 **One reading, and in this body it is the mood line's.** In the face-above-rows
 body Momo carries the mood sentence because nothing else says it; in the large
@@ -388,8 +393,19 @@ body the sentence is drawn, so she is decorative and the band is decorative, and
 TalkBack reads the line once and then the rows (momo.md §5). Her height on the
 pill is a second constant, `MomoBitmap.PILL_HEIGHT_DP`, for the reason the first
 one is a constant: the bitmap's cost must not follow a host's idea of "large".
+The line gets three lines of caption type, not the canvas's one: at the gate the
+copy has 128dp and the regenerating sentence needs three of them even at the
+default scale — review measured it after the first cut allowed two — and the
+width gate divides by the text scale, as the streak widget's does, so the room
+is counted in units of the text that has to go in it (`HeaderCopyTest`).
 
-**The Momo widget is the fourth provider, and the cheapest to keep honest.**
+**The Momo widget is the fourth provider, and the cheapest to keep honest.** It
+reads what the Today widget reads — `widgetContent()`, the same three states over
+the same snapshot — and takes the mood and whether there are rows from that; a
+parallel `MomoContent` type was written first and deleted on review as a copy
+with two fields fewer. Her face is her usual 72 dp until the caption needs the
+room: at a large font scale on the 110 dp tile it gives way, down to a 40 dp
+floor, rather than pushing the word off (`momoFaceHeight`).
 Two by two, 110dp square, her ground the tank colour — `primaryContainer`, flat,
 because a `RemoteViews` background is one colour and flat was decided anyway —
 and under the resting frame **one word**: *thriving*, *pottering*, *worried*,
@@ -435,9 +451,12 @@ colours join the same hand-copied list `WidgetPreviewColorsTest` pins
 §6), `ProjectionRefreshTest`, `WidgetHostBinding`, and a `res/xml-v31` variant
 that repeats every base attribute. `MomoWidgetHostTest` binds it to a real host
 and reads the 2×2 back off `AppWidgetProviderInfo`; `WidgetHostTest` now also
-tells the Today provider it is 250×200dp and waits for the mood line, which is
-the one string only the large body emits. Neither has been placed on a launcher
-yet — docs/running.md §4 has the boxes.
+tells the Today provider it is 250×200dp and waits for a mood — which proves the
+size was taken and the height gate passed, and no more: the mood sentence is
+the large body's drawn line *and* the face-above body's description, so a host
+test cannot tell the two tall bodies apart. The width gate is a JVM matter
+(`WidgetBodyTest`, `HeaderCopyTest`) and the header a launcher one —
+docs/running.md §4 has the boxes.
 
 ## 8. Still open
 
