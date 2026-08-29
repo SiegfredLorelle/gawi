@@ -125,10 +125,16 @@ which `WidgetPalette` derives its day/night `ColorProvider`s from instead of
 holding hexes of its own; and `StreakUi` with `StreakSnapshot.toUi`, which the
 streak widget maps its rows through rather than reinventing "days versus weeks
 versus broken" — a rule `StreakUi.kt` says has to be one rule or the surfaces
-drift. Nothing else crosses — a Glance tree is `RemoteViews` under the composition, so it
-cannot consume a Compose UI theme or a shared composable, and `GawiTheme`,
-`GawiSpacing` and every `androidx.compose.ui` type would fail to compile
-against it. **The third and fourth items are the line that distinction draws,
+drift. Nothing else crosses — a Glance tree is `RemoteViews` under the
+composition, so it cannot **consume** a Compose UI theme or a shared composable:
+`GawiTheme`, `GawiSpacing` and every `@Composable` in `:core:ui` are written
+against `androidx.compose.ui`'s runtime and would not compile against a Glance
+tree. ~~and every `androidx.compose.ui` type would fail to compile against
+it~~ — **overstated, and corrected 2026-08-29 on review.** The *value* types in
+`androidx.compose.ui.unit` cross freely and always did: Glance's own API is built
+on them, so `GlanceModifier.width(Dp)` and `LocalSize: DpSize` are how a widget
+reads its own size, and `WidgetUiState.kt` has imported `DpSize` since the Momo
+gate. The line is theme-and-composable versus value, not package name. **The third and fourth items are the line that distinction draws,
 not a loosening of it:** a plain `Color` is a value the widget reproduces and a
 sealed interface over `Int` is a vocabulary it shares, while a theme is
 something it would have to *consume* — and only the last is impossible. What
