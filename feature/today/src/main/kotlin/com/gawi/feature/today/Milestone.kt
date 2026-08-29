@@ -67,8 +67,14 @@ private fun StreakUi.liveCount(): Int? = when (this) {
 
 /** The count this streak hands on to [next]: zero from nothing or a break, its own when the unit matches, null across units. */
 private fun StreakUi.countBefore(next: StreakUi): Int? = when (this) {
-    StreakUi.None, is StreakUi.Broken -> 0
+    StreakUi.None -> 0
+
+    // A break remembers its unit too: a daily habit's break handing on to a
+    // weekly count is the schedule edit the KDoc above rules out.
+    is StreakUi.Broken -> if (weekly == (next is StreakUi.Weeks)) 0 else null
+
     is StreakUi.Days -> if (next is StreakUi.Days) count else null
+
     is StreakUi.Weeks -> if (next is StreakUi.Weeks) count else null
 }
 
