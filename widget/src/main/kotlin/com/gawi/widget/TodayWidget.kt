@@ -230,6 +230,11 @@ private fun LargeHeader(mood: Mood, rows: List<WidgetRow>) {
  * The day, woven so far: one segment per habit, the rows' order, the rows'
  * flags. Decorative — both images carry no description.
  *
+ * "The rows' order" holds left-to-right only — under an RTL host the rows
+ * mirror and this band does not (docs/ux/widget.md §8). Said here as well as on
+ * [BandBitmap] because this is the composable that emits the band, so it is the
+ * doc a reader lands on first.
+ *
  * Two [BandBitmap] masks in one [Box], each tinted by its own provider, so
  * the band has no child count to hit ([BandBitmap] has the ten-child cap this
  * replaced) and both fills still resolve through the palette. Remembered

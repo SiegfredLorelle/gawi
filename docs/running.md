@@ -997,8 +997,9 @@ above — the launcher, not the habits, is what this pass lacked.
 resource cannot reach a widget (measured 2026-08-24, docs/ux/visual-identity.md
 §2), so each name is rasterised in our process and tinted by the host. Until
 then this paragraph said the platform sans was "not a bug to file" and that no
-check was owed; the reversal owes four, all on a launcher because that is where
-the bitmaps are drawn and tinted:
+check was owed; the reversal owed four, all on a launcher because that is where
+the bitmaps are drawn and tinted. The list below has grown to six — the widget
+palette added two on 2026-08-28 — and **one is still open**, the first:
 
 - [ ] **It is Outfit.** Against the launcher's own clock and labels, the
       names' `a` and `o` are geometric and the `t` has no tail — the same test
@@ -1081,8 +1082,15 @@ the bitmaps are drawn and tinted:
       | | LTR | RTL |
       |---|---|---|
       | row 1's checkbox | 49–113 (flush left) | 437–501 (flush right) |
-      | Momo's pill | 49–181 | 372–497 |
+      | Momo's face bitmap | 52–177 | 372–497 |
       | the mood line | 201–473 | 77–349 |
+
+      Read the middle row as the `ImageView`, not the pill `FrameLayout` around
+      it (49–181 in LTR) — review caught the first version of this table quoting
+      the container on one side and its child on the other, which made the pill
+      look 7 px short of a mirror when it was not. Mirroring 52–177 about the
+      content span gives 373–498 against a measured 372–497, so all three rows
+      mirror to within a pixel.
 
       A clean mirror. קריאה shapes and reads right-to-left, from the platform's
       Hebrew face — Outfit's `cmap` has no Hebrew — and it still shapes
@@ -1119,16 +1127,21 @@ the bitmaps are drawn and tinted:
       review caught exactly that in the first cut, and none of the checks above
       would have, because they all run at the default size.
       **Run 2026-08-30 on `Small_Phone` (API 37) in both directions**, `wm
-      density 400` and `wm density 260` against its 320 default. Both scale by
-      exactly the density ratio, which is the whole claim: at 400 (×1.25) the
-      checkbox went 64 → 80 px and the *Read* bitmap 75 × 40 → 91 × 50; at 260
-      (×0.8125) the checkbox went 64 → 52 px and the bitmap 75 × 40 → 60 × 33.
-      The name and the glyph therefore keep their proportion, and both stay
-      crisp — the letterforms have clean antialiased edges at 400, which is
-      where a twice-scaled bitmap would have shown as blur. Expect the *body* to
-      change underneath: at 400 the widget is about 151 dp tall and draws rows
-      alone, at 260 it is tall enough for the header again, so this check is
-      about the row, not about which body appears.
+      density 400` and `wm density 260` against its 320 default. At 400 (×1.25)
+      the checkbox went 64 → 80 px and the *Read* bitmap 75 × 40 → 91 × 50; at
+      260 (×0.8125) the checkbox went 64 → 52 px and the bitmap 75 × 40 → 60 ×
+      33. The checkbox and the bitmap's *height* land on the ratio exactly; its
+      **width** runs about 3 % short of it (91 against the 93.75 the ratio
+      predicts, 60 against 60.9) — an earlier draft of this said "exactly" of
+      both and review caught it. That 3 % is not the failure this box is for,
+      and the arithmetic is what says so: a bitmap drawn at one density and
+      scaled again by the host is out by the *square* of the ratio, 56 % at
+      1.25, not 3 %. The name and the glyph therefore keep their proportion, and
+      both stay crisp — the letterforms have clean antialiased edges at 400,
+      which is where a twice-scaled bitmap would have shown as blur. Expect the
+      *body* to change underneath: at 400 the widget is about 151 dp tall and
+      draws rows alone, at 260 it is tall enough for the header again, so this
+      check is about the row, not about which body appears.
 
 Known and expected, not a bug — but **much narrower since 2026-08-21**: a widget
 left on the launcher across the day cutoff is now refreshed by a scheduled wake
@@ -1896,6 +1909,19 @@ launcher masks and scales them differently, which is what is left.
       *Style* → **Minimal**, against *Default*, and it needs an explicit
       **Apply**. Same monochrome layer underneath, so the item's expectation is
       unchanged; only the path to it moved.
+
+      **What ships is three warps and one weft, and the drawable expects to draw
+      four elements plus that weft** — noticed by review off the back of this
+      run, not by the eye. `ic_launcher_monochrome.xml`'s first path carries a
+      fourth subpath, `M54,45 V63`, commented as "the short weft under the
+      centre one". It is *vertical* at x = 54, so it lies wholly inside the
+      centre warp `M54,28 V80` at the same 9-unit stroke and paints nothing; a
+      weft would be horizontal. So this box's expectation is met by an icon that
+      is one element shy of what its own file describes, and the two readings —
+      dead subpath to delete, or a short weft mis-transcribed from the canvas —
+      need the artboard to tell apart. `LauncherIconTest` cannot see it either
+      way: it inspects `<path>` elements for colour and stroke width and never
+      looks inside `pathData`.
 
 ### Accessibility — *device only, and the layer no test reaches*
 

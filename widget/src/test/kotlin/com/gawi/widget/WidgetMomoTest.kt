@@ -107,7 +107,9 @@ class WidgetMomoTest {
         }
 
     /**
-     * The band is the rows' flags, one segment each, in the rows' order: two
+     * The band is the rows' flags, one segment each, in the rows' order — which
+     * this asserts left-to-right, the only direction it runs in; the band does
+     * not mirror under RTL (docs/ux/widget.md §8). Two
      * masks in the tree, the woven one tinted [WidgetPalette.bandWoven] and the
      * outstanding one [WidgetPalette.bandOutstanding], matched by identity so a
      * swap of the two turns this red — and each mask's ink lands where its
