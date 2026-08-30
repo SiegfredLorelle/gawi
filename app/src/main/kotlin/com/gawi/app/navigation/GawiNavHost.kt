@@ -16,7 +16,7 @@ import com.gawi.feature.settings.SettingsRoute
 import com.gawi.feature.today.TodayRoute
 
 /**
- * The graph. Seven destinations, and every navigation decision the app makes.
+ * The graph. Eight destinations, and every navigation decision the app makes.
  *
  * Each feature module exposes Route composables that take plain lambdas, so
  * what a screen reports is what happened to it — "the user wants to add a
