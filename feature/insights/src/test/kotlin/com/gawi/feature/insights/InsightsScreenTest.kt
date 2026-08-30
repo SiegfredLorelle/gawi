@@ -48,6 +48,7 @@ class InsightsScreenTest {
         period: Period = Period.MONTH,
         label: PeriodLabelUi = PeriodLabelUi.Month(R.string.insights_month_august, 2026),
         canStepLater: Boolean = false,
+        canStepEarlier: Boolean = true,
         breakdown: Breakdown = Breakdown.HABITS,
         activeDays: Int = 3,
         completions: Int = 7,
@@ -62,7 +63,9 @@ class InsightsScreenTest {
         hasAnyHabit: Boolean = true,
         focus: FocusShiftUi? = null,
         trend: List<TrendPointUi> = emptyList(),
-    ) = InsightsUiState.Overview(period, label, canStepLater, breakdown, activeDays, completions, focus, trend, habits, tags, hasAnyHabit)
+    ) = InsightsUiState.Overview(
+        period, label, canStepLater, canStepEarlier, breakdown, activeDays, completions, focus, trend, habits, tags, hasAnyHabit,
+    )
 
     private fun render(state: InsightsUiState, actions: InsightsActions = NO_ACTIONS) {
         compose.setContent {
@@ -282,6 +285,18 @@ class InsightsScreenTest {
     fun `the focus sentence is drawn when there is one and absent when not`() {
         render(overview(focus = FocusShiftUi.Shifted("health", "career")))
         compose.onNodeWithText(resources.getString(R.string.insights_focus_shifted, "health", "career")).assertIsDisplayed()
+    }
+
+    @Test
+    fun `the current period's sentence hedges`() {
+        render(overview(focus = FocusShiftUi.SoFar("career")))
+        compose.onNodeWithText(resources.getString(R.string.insights_focus_so_far, "career")).assertIsDisplayed()
+    }
+
+    @Test
+    fun `at the oldest habit the earlier arrow stays, disabled`() {
+        render(overview(canStepEarlier = false))
+        compose.onNodeWithContentDescription(string(R.string.insights_period_earlier)).assertIsDisplayed().assertIsNotEnabled()
     }
 
     @Test

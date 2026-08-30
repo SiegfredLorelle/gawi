@@ -43,6 +43,14 @@ internal sealed interface InsightsUiState {
          * the offset is; it only learns whether the later arrow works.
          */
         val canStepLater: Boolean,
+        /**
+         * Whether the stepper can move back — false once the period starts at
+         * or before the oldest habit's creation, or when there is no habit.
+         * Walking further would re-read three flows to draw nothing. A habit
+         * whose creation date is unknown (projected before `createdOn` existed)
+         * keeps the arrow live: unknown is not "nothing before here".
+         */
+        val canStepEarlier: Boolean,
         val breakdown: Breakdown,
         /**
          * Days in the period with at least one completion.
@@ -98,19 +106,29 @@ internal sealed interface PeriodLabelUi {
 }
 
 /**
- * One sentence about where the effort went, relative to the period before.
+ * One sentence about where the effort went.
  *
- * Both compare the largest **tagged** total in each period. Untagged is the
- * residual and never a focus: "shifted from career to Untagged" would say the
- * user stopped caring when all they stopped doing was labelling. When either
- * period has no tagged completion there is no sentence, not a guess.
+ * "Focus" is the largest **tagged** total. Untagged is the residual and never a
+ * focus: "shifted from career to Untagged" would say the user stopped caring
+ * when all they stopped doing was labelling. When the period has no tagged
+ * completion there is no sentence, not a guess.
+ *
+ * [Shifted] and [Held] compare a period with the one before it and are spoken
+ * only for a **complete** period. The current one is still being lived: on 1
+ * July a single completion is the whole of "this quarter", and letting it
+ * announce a quarter-scale shift would be the claim the trend card refuses when
+ * it declines to draw one point as a line. So the current period gets [SoFar],
+ * which names the leading tag and claims nothing about movement.
  */
 internal sealed interface FocusShiftUi {
-    /** The top tag changed. */
+    /** The top tag changed against the period before. */
     data class Shifted(val from: String, val to: String) : FocusShiftUi
 
     /** The top tag is the one it was. */
     data class Held(val tag: String) : FocusShiftUi
+
+    /** The current, unfinished period's leading tag — no comparison made. */
+    data class SoFar(val tag: String) : FocusShiftUi
 }
 
 /**
@@ -144,6 +162,11 @@ internal data class TrendPointUi(@StringRes val monthName: Int, @StringRes val m
  * counts today when today is done, as the streak on Today does, while a rate
  * counts only finished units. Two rules, both honest, and this is where they
  * meet.
+ *
+ * `StreakUi` carries two states this row can never hold, `None` and `Broken`;
+ * they are Today's. The type is reused for its unit split all the same, because
+ * a third streak type that differed from it only by lacking those two would be
+ * the drift the shared one exists to stop. `bestText` names the dead branch.
  */
 internal data class HabitRateUi(val name: String, val schedule: ScheduleLabelUi, val percent: Int?, val best: StreakUi? = null)
 

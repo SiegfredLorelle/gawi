@@ -36,11 +36,14 @@
     <string name="insights_period_earlier">Earlier period</string>
     <string name="insights_period_later">Later period</string>
 
-    <!-- The focus sentence. The largest tagged total this period against the
-         one before; nothing is said when either had no tagged completion. Tags
+    <!-- The focus sentence. For a complete period, the largest tagged total
+         against the one before; nothing is said when either had no tagged
+         completion. The current, unfinished period names its leader and claims
+         no movement — a partial figure is not compared with a whole one. Tags
          are the user's own words, so they are dropped in as typed. -->
     <string name="insights_focus_shifted">Focus shifted from %1$s to %2$s.</string>
     <string name="insights_focus_held">Still mostly %1$s.</string>
+    <string name="insights_focus_so_far">So far, mostly %1$s.</string>
 
     <!-- The trend card: active days per month across a quarter or a year. The
          subtitle names the denominator, as the rate card names its schedule,

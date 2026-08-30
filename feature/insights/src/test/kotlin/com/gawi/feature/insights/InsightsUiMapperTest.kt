@@ -289,34 +289,89 @@ class InsightsUiMapperTest {
     }
 
     @Test
-    fun `the focus is the top tagged total, before and after`() {
+    fun `a complete period's focus is the top tagged total, before and after`() {
         val shifted = overview(
+            back = 1,
             tagEffort = listOf(TagEffort("career", 9), TagEffort("health", 4)),
             previousTagEffort = listOf(TagEffort("health", 8), TagEffort("career", 1)),
         )
         assertEquals(FocusShiftUi.Shifted(from = "health", to = "career"), shifted.focus)
 
-        val held = overview(tagEffort = listOf(TagEffort("health", 4)), previousTagEffort = listOf(TagEffort("health", 8)))
+        val held = overview(back = 1, tagEffort = listOf(TagEffort("health", 4)), previousTagEffort = listOf(TagEffort("health", 8)))
         assertEquals(FocusShiftUi.Held("health"), held.focus)
     }
 
     @Test
+    fun `the current period names its leader and claims no shift`() {
+        val state = overview(
+            tagEffort = listOf(TagEffort("career", 1)),
+            previousTagEffort = listOf(TagEffort("health", 80)),
+        )
+
+        assertEquals(FocusShiftUi.SoFar("career"), state.focus)
+        assertEquals(null, overview(tagEffort = listOf(TagEffort(null, 3)), previousTagEffort = listOf(TagEffort("health", 8))).focus)
+    }
+
+    @Test
+    fun `stepping back stops at the oldest habit, and never starts without one`() {
+        val old = habitState(id = habitId(1), createdOn = LocalDate.parse("2026-03-10"))
+        val unknown = habitState(id = habitId(2), createdOn = null)
+
+        assertEquals(false, overview().canStepEarlier)
+        assertEquals(true, overview(habits = listOf(old)).canStepEarlier)
+        // Q1 2026 starts before 10 March: nothing lies earlier.
+        assertEquals(false, overview(period = Period.QUARTER, back = 2, habits = listOf(old)).canStepEarlier)
+        assertEquals(true, overview(period = Period.QUARTER, back = 2, habits = listOf(old, unknown)).canStepEarlier)
+    }
+
+    @Test
+    fun `a month that has not begun but holds a completion is a point, so the trend still sums`() {
+        val state = overview(
+            period = Period.QUARTER,
+            completions = mapOf(habitId(1) to setOf(thisMonth(3), LocalDate.parse("2026-09-05"))),
+        )
+
+        assertEquals(
+            listOf(R.string.insights_month_july, R.string.insights_month_august, R.string.insights_month_september),
+            state.trend.map {
+                it.monthName
+            },
+        )
+        assertEquals(state.activeDays, state.trend.sumOf { it.activeDays })
+        assertEquals(1f / 30, state.trend.last().fill, 1e-6f)
+    }
+
+    @Test
+    fun `the current month's fill is capped at one`() {
+        val state = overview(
+            period = Period.QUARTER,
+            today = LocalDate.parse("2026-08-02"),
+            completions = mapOf(habitId(1) to (1..10).map { thisMonth(it) }.toSet()),
+        )
+
+        assertEquals(1f, state.trend.last().fill)
+        assertEquals(10, state.trend.last().activeDays)
+    }
+
+    @Test
     fun `untagged effort is never a focus, and an untagged period says nothing`() {
-        val onlyUntagged = overview(tagEffort = listOf(TagEffort(null, 40)), previousTagEffort = listOf(TagEffort("health", 8)))
+        val onlyUntagged = overview(back = 1, tagEffort = listOf(TagEffort(null, 40)), previousTagEffort = listOf(TagEffort("health", 8)))
         assertEquals(null, onlyUntagged.focus)
 
         val outnumbered = overview(
+            back = 1,
             tagEffort = listOf(TagEffort(null, 40), TagEffort("career", 2)),
             previousTagEffort = listOf(TagEffort(null, 50), TagEffort("career", 1)),
         )
         assertEquals(FocusShiftUi.Held("career"), outnumbered.focus)
 
-        assertEquals(null, overview(tagEffort = listOf(TagEffort("career", 2))).focus)
+        assertEquals(null, overview(back = 1, tagEffort = listOf(TagEffort("career", 2)), previousTagEffort = emptyList()).focus)
     }
 
     @Test
     fun `a tie resolves the way the bars sort`() {
         val state = overview(
+            back = 1,
             tagEffort = listOf(TagEffort("mind", 5), TagEffort("career", 5)),
             previousTagEffort = listOf(TagEffort("mind", 5), TagEffort("career", 5)),
         )

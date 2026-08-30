@@ -197,6 +197,7 @@ class InsightsViewModelTest {
 
     @Test
     fun `stepping back reads the earlier window and the one before it`() = runTest {
+        repository.allHabits = listOf(habitState(id = habitId(1), name = "read"))
         val viewModel = insights()
         viewModel.uiState.test {
             assertEquals(InsightsUiState.Loading, awaitItem())
@@ -218,6 +219,7 @@ class InsightsViewModelTest {
 
     @Test
     fun `stepping later stops at the current period`() = runTest {
+        repository.allHabits = listOf(habitState(id = habitId(1), name = "read"))
         val viewModel = insights()
         viewModel.uiState.test {
             assertEquals(InsightsUiState.Loading, awaitItem())
@@ -237,6 +239,7 @@ class InsightsViewModelTest {
 
     @Test
     fun `picking a period returns to the current one`() = runTest {
+        repository.allHabits = listOf(habitState(id = habitId(1), name = "read"))
         val viewModel = insights()
         viewModel.uiState.test {
             assertEquals(InsightsUiState.Loading, awaitItem())
@@ -256,16 +259,45 @@ class InsightsViewModelTest {
     }
 
     @Test
-    fun `the focus sentence compares the period with the one before`() = runTest {
+    fun `the focus sentence hedges the current period and compares a complete one`() = runTest {
+        repository.allHabits = listOf(habitState(id = habitId(1), name = "read"))
         repository.tagEffort = listOf(TagEffort("career", 9), TagEffort("health", 4))
-        repository.tagEffortByWindow[july] = listOf(TagEffort("health", 8))
+        repository.tagEffortByWindow[june] = listOf(TagEffort("health", 8))
 
-        insights().uiState.test {
+        val viewModel = insights()
+        viewModel.uiState.test {
             assertEquals(InsightsUiState.Loading, awaitItem())
             repository.emitContext()
+            assertEquals(FocusShiftUi.SoFar("career"), (awaitItem() as InsightsUiState.Overview).focus)
 
+            viewModel.onEarlier()
+            // July's own totals are the default fixture; June's are health.
             assertEquals(FocusShiftUi.Shifted(from = "health", to = "career"), (awaitItem() as InsightsUiState.Overview).focus)
             cancelAndIgnoreRemainingEvents()
         }
+    }
+
+    @Test
+    fun `stepping back stops once nothing earlier can hold a habit`() = runTest {
+        repository.allHabits = listOf(habitState(id = habitId(1), name = "read", createdOn = LocalDate.parse("2026-07-20")))
+
+        val viewModel = insights()
+        viewModel.uiState.test {
+            assertEquals(InsightsUiState.Loading, awaitItem())
+            repository.emitContext()
+            assertEquals(true, (awaitItem() as InsightsUiState.Overview).canStepEarlier)
+
+            viewModel.onEarlier()
+            val july = awaitItem() as InsightsUiState.Overview
+            assertEquals(false, july.canStepEarlier)
+
+            viewModel.onEarlier()
+            expectNoEvents()
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        // June was read once, as July's previous period for the sentence — never
+        // as a window of its own.
+        assertEquals(1, readsOf(june))
     }
 }
