@@ -88,7 +88,7 @@ internal fun SettingsScreen(
 }
 
 /**
- * The rows, in their two sections, and whichever dialog one of them has opened.
+ * The rows, in their four groups, and whichever dialog one of them has opened.
  *
  * Scrollable because the rows with their explanations already outrun a short
  * screen at a large font scale, and there is nothing here to virtualise.
@@ -123,6 +123,7 @@ private fun SettingsList(state: SettingsUiState.Settings, actions: SettingsActio
         if (!device.notificationsAllowed) ReminderBlocked(actions.onEnableNotifications)
         AppearanceSection(state.theme) { openDialog = SettingsDialog.Theme }
         DataSection(state.dataTask, state.exportRecency, actions)
+        AboutSection(state.version, actions.onOpenLicences)
     }
 
     SettingsDialogs(

@@ -42,7 +42,7 @@ import java.time.LocalDate
  * conventions, without a device to set it on.
  */
 @Composable
-fun SettingsRoute(onBack: () -> Unit) {
+fun SettingsRoute(onBack: () -> Unit, onOpenLicences: () -> Unit) {
     val viewModel: SettingsViewModel = hiltViewModel()
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -147,6 +147,7 @@ fun SettingsRoute(onBack: () -> Unit) {
                     context.openNotificationSettings()
                 }
             },
+            onOpenLicences = onOpenLicences,
             onBack = onBack,
         ),
         snackbarHostState = snackbarHostState,

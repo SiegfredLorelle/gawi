@@ -779,6 +779,39 @@ class SettingsScreenTest {
 
     private fun string(id: Int): String = resources.getString(id)
 
+    // ---- About (docs/ux/settings.md §9) ----
+
+    /** A fourth header, after Data: the two rows under it are not settings. */
+    @Test
+    fun about_isItsOwnSectionAfterData() {
+        render(STORED)
+
+        compose.onNodeWithText(string(R.string.settings_about_header)).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(string(R.string.settings_version_label)).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(string(R.string.settings_licences_label)).performScrollTo().assertIsDisplayed()
+    }
+
+    /** The version is the row's help line and the row is not a target. */
+    @Test
+    fun version_isShownInTheHelpLine_andDoesNotTap() {
+        render(STORED)
+
+        compose.onNodeWithText("1.2.3").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(string(R.string.settings_version_label)).performScrollTo().assertIsNotEnabled()
+    }
+
+    /** The Licences row reports; it does not navigate, because it cannot. */
+    @Test
+    fun licences_reportsTheTap() {
+        val opened = mutableListOf<Unit>()
+        render(STORED, NO_ACTIONS.copy(onOpenLicences = { opened += Unit }))
+
+        compose.onNodeWithText(string(R.string.settings_licences_label)).performScrollTo().performClick()
+
+        assertEquals(1, opened.size)
+        compose.onNodeWithText(string(R.string.settings_licences_help)).performScrollTo().assertIsDisplayed()
+    }
+
     private companion object {
         /** Deliberately none of the defaults, so a default cannot pass as this. */
         val STORED = SettingsUiState.Settings(
@@ -786,6 +819,7 @@ class SettingsScreenTest {
             weekStart = DayOfWeek.SUNDAY,
             reminderTime = LocalTime.of(22, 30),
             theme = ThemeMode.DARK,
+            version = "1.2.3",
         )
 
         val NO_ACTIONS = SettingsActions(
@@ -797,6 +831,7 @@ class SettingsScreenTest {
             onExportCompletions = {},
             onImport = {},
             onEnableNotifications = {},
+            onOpenLicences = {},
             onBack = {},
         )
     }

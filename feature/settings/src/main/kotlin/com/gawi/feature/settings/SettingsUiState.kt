@@ -55,6 +55,11 @@ internal sealed interface SettingsUiState {
         val weekStart: DayOfWeek,
         val reminderTime: LocalTime,
         val theme: ThemeMode,
+        /**
+         * The build's `versionName`, for the About section. Not a setting: it
+         * is drawn in the row's help line, never the value line (docs/ux/settings.md §9).
+         */
+        val version: String,
         val dataTask: DataTask = DataTask.Idle,
         val exportRecency: ExportRecency = ExportRecency.NothingYet,
     ) : SettingsUiState

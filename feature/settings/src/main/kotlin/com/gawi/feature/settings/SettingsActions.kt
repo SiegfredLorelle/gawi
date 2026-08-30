@@ -74,5 +74,6 @@ internal data class SettingsActions(
      * exempts it from `LongParameterList` entirely, per the measurement above.
      */
     val onEnableNotifications: () -> Unit,
+    val onOpenLicences: () -> Unit,
     val onBack: () -> Unit,
 )

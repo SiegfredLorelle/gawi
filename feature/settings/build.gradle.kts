@@ -6,6 +6,18 @@ plugins {
 
 android {
     namespace = "com.gawi.feature.settings"
+
+    // The third-party licence texts, packaged as assets straight from the
+    // repository's licenses/ directory rather than copied into src/. Assets
+    // rather than res/raw because a resource name cannot carry uppercase
+    // letters, and the drawable headers in :core:ui point at these files by
+    // their upstream names (docs/ux/settings.md §9). The Licences screen reads
+    // them back through AssetManager.
+    sourceSets {
+        getByName("main") {
+            assets.srcDir(rootProject.file("licenses"))
+        }
+    }
 }
 
 dependencies {
