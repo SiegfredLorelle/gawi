@@ -491,23 +491,28 @@ docs/running.md §4 has the boxes.
   reminder time moves, so a cutoff edit re-schedules the boundary refresh along
   with it — reminder.md §2. The gap that remains is the interval *between* the
   edit and the next wake, which is the same best-effort caveat as above.
-- **The band does not mirror under an RTL host** (§7, running.md §4, found
-  2026-08-30). The rows mirror and the band keeps its left-to-right order, so it
-  reads backwards against the checkboxes it repeats. The fix is small, and the
-  form matters: mirror each segment about the centre, `left = widthPx - index *
-  pitch - segment`, **not** `widthPx - (index + 1) * pitch`. The tempting second
-  one is off by a whole `gap` — it strands a gap-wide strip at the far edge and
-  pushes the first segment flush against the near one, which is the edge
-  behaviour the 48-habit fix above was written to get right and which no
-  `BandBitmapTest` case would catch. The *input* is the harder question, though,
-  rather than the arithmetic: Glance composes in **our** process, so the
-  direction available to it is the app's, and a per-app locale can differ from
-  the launcher's. That
-  is the same limitation §2 of visual-identity.md already records for the text
-  bitmaps, so matching it is consistent rather than a new compromise; under a
-  system RTL locale, which is the case that matters, the two agree. Left open
-  rather than fixed in passing because it is a behaviour change to `:widget`
-  with a test owed — `BandBitmapTest` can pin it without a launcher.
+- ~~**The band does not mirror under an RTL host** (§7, running.md §4, found
+  2026-08-30).~~ **Fixed the same day.** The rows mirrored and the band kept its
+  left-to-right order, so it read backwards against the checkboxes it repeats.
+  `BandBitmap.render` now takes a `mirrored` flag and places a mirrored segment
+  at `left = widthPx - index * pitch - segment` — **not** `widthPx - (index + 1)
+  * pitch`, which this bullet warned about and which is off by a whole `gap`: it
+  strands a gap-wide strip at the far edge and pushes the first segment flush
+  against the near one, undoing the edge behaviour the 48-habit fix above was
+  written to get right. Both forms reverse the reading order, so a test that only
+  reads segment order cannot separate them; `BandBitmapTest` pins the two edge
+  columns as well, and both of its new cases were checked against the wrong
+  arithmetic and against a `mirrored` that does nothing.
+
+  **The input is what this bullet called the harder question, and it is answered
+  by matching §2 rather than by solving it.** `WovenBand` reads the app's
+  configuration, because Glance composes in **our** process and the launcher's
+  own direction is not reachable from here — so a per-app locale can still
+  differ from the launcher's, exactly the limitation §2 of visual-identity.md
+  records for the text bitmaps. Under a system RTL locale, which is the case
+  that matters and the case running.md §4 measures, the two agree. The direction
+  also joins the band's `remember` keys, or a direction change within one
+  session's lifetime would redraw everything except the band.
 - **`glance-appwidget-testing` was declined, and then taken when its own
   condition came true.** PR review first suggested it for pinning what the
   widget draws, and it was not taken: `Message` resolves its copy through

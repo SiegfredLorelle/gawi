@@ -1097,9 +1097,10 @@ palette added two on 2026-08-28 — and **one is still open**, the first:
       correctly *in the LTR pass too*, which is `FIRSTSTRONG_LTR` doing its job
       on the paragraph while the run itself stays RTL.
 
-      **The band does not mirror, and that is this run's finding** — it is the
-      band's own box under *The Momo widget and the large Today body*, not this
-      one, and it is recorded there.
+      **The band not mirroring was this run's finding, and it was fixed the same
+      day** — it is the band's own box under *The Momo widget and the large Today
+      body*, not this one, and both the finding and its re-run are recorded
+      there.
 
       **How to set the locale, because two obvious routes are dead ends.** The
       emulator's `-prop persist.sys.locale=he-IL` is silently ignored, and a
@@ -1247,7 +1248,7 @@ scheme, and the two-column flip.
       and the floor, and two rows is 132dp — so this box needs a launcher with
       other cells. `WidgetBodyTest` pins the two gates; only a launcher shows
       which side of them its cells land on.
-- [ ] **The band is the checkboxes.** Count the segments against the rows and
+- [x] **The band is the checkboxes.** Count the segments against the rows and
       tap a row: its segment flips with its box, on the same write. A band that
       disagrees with the rows beneath it has been given a rule of its own, which
       it must not have.
@@ -1263,13 +1264,36 @@ scheme, and the two-column flip.
       right-to-left reader finishes rather than where they start, and the band
       reads backwards against the rows it is supposed to be repeating.
 
-      `BandBitmap.render` has no layout direction to consult: it places every
-      segment at `left = index * pitch`, unconditionally, so index 0 is at the
+      `BandBitmap.render` had no layout direction to consult: it placed every
+      segment at `left = index * pitch`, unconditionally, so index 0 was at the
       bitmap's left edge in both directions. That is the whole mechanism, and it
-      is why no test caught it — the geometry is correct, it is the *reading*
-      that is wrong. Distinct from the `BitmapText` side, which does settle
-      direction, via `FIRSTSTRONG_LTR`. The box stays unticked until the band
-      mirrors; [ux/widget.md](ux/widget.md) §8 carries it as open work.
+      is why no test caught it — the geometry was correct, it was the *reading*
+      that was wrong. Distinct from the `BitmapText` side, which does settle
+      direction, via `FIRSTSTRONG_LTR`.
+
+      **Re-run 2026-08-30 after the fix, same emulator, and it passes in both
+      directions.** `WovenBand` now reads the app's configuration and
+      `BandBitmap.render` mirrors on it; [ux/widget.md](ux/widget.md) §8 has the
+      arithmetic and the caveat that survives. Sampled off `screencap` at the
+      band's own `uiautomator` node — `[49,283][349,293]` under RTL,
+      `[201,283][501,293]` under LTR, the same node on both sides — with four
+      habits, all outstanding, and the first row tapped:
+
+      - **LTR**: woven `#7FD4DC` at x 202–268, the band's left end, with the
+        three outstanding `#324042` running rightwards. Matches the pre-fix LTR
+        reading of x 201–269, so nothing moved on this side.
+      - **RTL**: woven `#7FD4DC` at x 281–347, the band's **right** end, beside
+        the same row's glyph at x 437–501. Before the fix it was x 49–117. The
+        gap now falls at the near (left) edge, x 49–54, which is the half of the
+        arithmetic the wrong form gets backwards.
+      - **The tap still flips both together** in RTL: tapping the first row
+        returned its right-end segment to `#324042` on the same write.
+
+      **Two notes on the recipe above**, which was followed as written. Move up
+      now raises a *Change system language to …?* confirmation on this level, so
+      it is two taps rather than one. And `am get-config` is the check that
+      matters — `getprop persist.sys.locale` still read `en-US` after the
+      handle's menu and before the confirmation, so it lags the thing being set.
 - [ ] **In greyscale the band still reads.** Monochromacy on: a woven segment
       and an outstanding one must still tell apart by lightness alone (3.78:1
       light, 6.34:1 dark, measured). `screencap` will not show you this — see
