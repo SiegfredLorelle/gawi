@@ -43,14 +43,33 @@ class LicencesViewModelTest {
         }
     }
 
-    /** Layout, not editing: the reflow moves line breaks and touches nothing else — on the files that ship. */
+    /**
+     * Layout, not editing, on the files that ship: the word sequence, the
+     * paragraph count and the rule count are the three things the reflow
+     * promises not to touch (docs/ux/settings.md §9). Tokens rather than a
+     * whitespace-stripped string, because stripping would let two words merge
+     * or a paragraph break vanish unnoticed.
+     */
     @Test
     fun `the reflowed notices are the files, word for word`() {
         val assets = RuntimeEnvironment.getApplication().assets
         LicenceNotice.entries.forEach { notice ->
             val raw = assets.open(notice.file).use { it.reader().readText() }
-            assertEquals(notice.file, raw.filterNot { it.isWhitespace() }, reflowNotice(raw).filterNot { it.isWhitespace() })
+            val reflowed = reflowNotice(raw)
+
+            assertEquals(notice.file, raw.words(), reflowed.words())
+            assertEquals(notice.file, raw.trimEnd().split(PARAGRAPH_BREAK).size, reflowed.split("\n\n").size)
+            assertEquals(notice.file, raw.rules(), reflowed.rules())
         }
+    }
+
+    private fun String.words(): List<String> = split(WHITESPACE).filter { it.isNotEmpty() }
+
+    private fun String.rules(): Int = lines().count { line -> line.length >= 3 && line.all { it == '-' } }
+
+    private companion object {
+        val WHITESPACE = Regex("\\s+")
+        val PARAGRAPH_BREAK = Regex("\\n\\s*\\n")
     }
 
     /** Both or neither: one unreadable file takes the screen to Unavailable. */
