@@ -257,6 +257,18 @@ class AppNavigationTest {
         awaitText(string(TodayR.string.today_empty_title)).assertIsDisplayed()
     }
 
+    /** Settings leads to Licences, and its back button returns to Settings. */
+    @Test
+    fun licencesOpensFromSettingsAndReturns() {
+        awaitDescribed(string(TodayR.string.today_settings)).performClick()
+        awaitText(string(SettingsR.string.settings_licences_label)).performScrollTo().performClick()
+
+        awaitText(string(SettingsR.string.settings_notice_outfit)).assertIsDisplayed()
+
+        awaitDescribed(string(SettingsR.string.settings_back)).performClick()
+        awaitText(string(SettingsR.string.settings_title)).assertIsDisplayed()
+    }
+
     private companion object {
         /**
          * Generous on purpose. The first wait in each test covers building the
