@@ -1890,6 +1890,22 @@ Not in CI, and not automatable: TalkBack cannot be driven from the instrumented
 source set, and §8's line that CI runs unit tests only is unaffected by this
 block.
 
+### The About section and the Licences screen
+
+Built 2026-08-30 (docs/ux/settings.md §9). The JVM tests prove the two notices
+are packaged and rendered; what only a device can show is how the section reads.
+
+- [ ] Settings scrolls to a fourth header, **About**, below Data. The Version row
+      shows the build's `versionName` in its small grey line, has no primary
+      middle line, and does nothing when tapped.
+- [ ] **Licences** opens a screen titled Licences with two headings, Outfit then
+      Lucide, each with a one-line role and the full notice text under it. Both
+      texts scroll; the OFL runs to its section 5 and the Lucide notice to its
+      MIT block. Back returns to Settings at the same scroll position.
+- [ ] TalkBack: the Version row is read as one item with no "double-tap to
+      activate"; each heading on the Licences screen is a stop of its own.
+      *Not yet checked — no TalkBack on either emulator image.*
+
 ### The day-rollover refresh
 
 Also built 2026-08-21, and the same mechanism (docs/ux/reminder.md §2). This is

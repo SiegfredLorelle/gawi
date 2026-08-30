@@ -606,7 +606,9 @@ one (docs/ux/insights.md §8.6) — so the directory the font needs already exis
 And **the OFL text cannot ship beside the file.** `res/font/` accepts font files
 and XML families only, and a resource filename cannot carry uppercase letters,
 so an `OFL.txt` in there is a build error rather than good citizenship. The
-licence needs a home outside `res/`.
+licence needs a home outside `res/` — and has one: `licenses/Outfit-OFL.txt`,
+which `:feature:settings` packages as an asset under that exact name and shows
+on the Licences screen (docs/ux/settings.md §9, built 2026-08-30).
 
 The rejected alternative is worth writing down because it looks cheaper and is
 not. Downloadable fonts through the Google Fonts provider keep the APK smaller,
@@ -1155,9 +1157,11 @@ vendoring costs here; `material-icons-extended` was the alternative that
 from Feather and are **additionally MIT** (Cole Bemis). Upstream's notice carries
 both texts and the derived-from list, so it is vendored verbatim as
 `licenses/Lucide-ISC.txt` and nothing here had to adjudicate which clause
-governs. Each drawable's header says which licence is its own. **This does not
-close the licences release gate**: nothing packages `licenses/` and there is
-still no about screen, exactly as §5 left it for the font.
+governs. Each drawable's header says which licence is its own. ~~This does not
+close the licences release gate: nothing packages `licenses/` and there is
+still no about screen.~~ **Closed 2026-08-30**: `:feature:settings` packages
+`licenses/` as assets, filenames intact, and its Licences screen shows both
+notices verbatim (docs/ux/settings.md §9).
 
 | Icon | Replaces | Where |
 |---|---|---|
