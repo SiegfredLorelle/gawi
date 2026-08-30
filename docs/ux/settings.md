@@ -826,8 +826,10 @@ more a few words before its end and left an orphan on the next — "worldwide",
 "creation" — which read as damage on the first device look. `reflowNotice`
 joins the line breaks inside a paragraph into spaces and keeps the blank lines
 and the OFL's dashed rules, so the words are the file's own and only the layout
-is the phone's. It is unit-tested for exactly that: strip whitespace from both
-and they are equal.
+is the phone's. It is unit-tested for exactly that, on the two files that ship:
+the word sequence, the paragraph count and the rule count are equal before and
+after — tokens rather than a whitespace-stripped string, which a review pointed
+out would let two words merge unnoticed.
 
 **No links, no buttons.** The URLs are in the texts already, and nothing else in
 this app hands off to a browser. The notices are there to be present, at
