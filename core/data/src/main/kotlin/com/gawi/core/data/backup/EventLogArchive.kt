@@ -14,14 +14,16 @@ import java.nio.charset.CharacterCodingException
 import javax.inject.Inject
 
 /**
- * The app's own version name, stamped on an export for provenance.
+ * The app's own version name: stamped on an export for provenance, and shown on
+ * the Settings screen's About section (docs/ux/settings.md §9) — public for the
+ * second reader rather than read from `PackageManager` twice.
  *
  * A data class rather than a value class: Kotlin mangles a function returning
  * one, and Hilt cannot name the result — `@Provides fun appVersion(): AppVersion`
  * fails KSP with "not a valid name: appVersion-iXto3as". A wrapper type at all,
  * rather than a bare `String`, so the graph has one unambiguous binding for it.
  */
-internal data class AppVersion(val value: String)
+data class AppVersion(val value: String)
 
 /**
  * The content of an export, and what to do with one — [EventArchive] minus the
