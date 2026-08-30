@@ -157,7 +157,7 @@ completion-rate trend and is reached from habit detail; `Destination.Insights` i
 a **top-level** destination holding the tag distribution and a per-habit
 adherence list over one period, reached from a third action in Today's app bar.
 That second screen is the app's only report on every habit at once, and it is
-where PRD §5's Phase 1.5 retrospective grew from on 2026-08-29 (a stepper and three facts, no new destination). It gets its own module rather than a corner of
+where PRD §5's Phase 1.5 retrospective grew from — a stepper and three facts, no new destination, on 2026-08-29. It gets its own module rather than a corner of
 `:feature:habits`, which is worth recording because the heatmap is *per habit*
 and reached from habit detail, so the corner looks right. Two things say
 otherwise. The navigation rule below makes "reached from habit detail" free: a

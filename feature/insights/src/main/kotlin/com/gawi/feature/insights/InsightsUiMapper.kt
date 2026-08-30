@@ -38,10 +38,11 @@ internal fun overviewOf(
         period = period,
         label = period.labelOf(window),
         canStepLater = back > 0,
+        canStepEarlier = habits.canStepEarlierThan(window),
         breakdown = breakdown,
         activeDays = activeDates.size,
         completions = completions.values.sumOf { it.size },
-        focus = focusShift(previousTagEffort, tagEffort),
+        focus = focusOf(previousTagEffort, tagEffort, complete = back > 0),
         trend = trendOf(window, context.today, activeDates),
         habits = habits.toRates(window, context, completions),
         tags = tagEffort.toShares(),
@@ -74,8 +75,19 @@ internal data class PeriodReads(
     val habits: List<HabitState>,
     val completions: Map<HabitId, Set<LocalDate>>,
     val tagEffort: List<TagEffort>,
-    val previousTagEffort: List<TagEffort> = emptyList(),
+    val previousTagEffort: List<TagEffort>,
 )
+
+/**
+ * Whether a period before [window] could hold anything: false with no habit, or
+ * once the window already starts at or before the oldest known creation. A
+ * habit with no `createdOn` keeps the arrow live — unknown is not "nothing".
+ */
+private fun List<HabitState>.canStepEarlierThan(window: ClosedRange<LocalDate>): Boolean {
+    if (isEmpty()) return false
+    val known = mapNotNull { it.createdOn }
+    return known.size < size || window.start > known.min()
+}
 
 /** The stepper's caption for [window], which is a period of this kind. */
 private fun Period.labelOf(window: ClosedRange<LocalDate>): PeriodLabelUi = when (this) {
@@ -86,58 +98,43 @@ private fun Period.labelOf(window: ClosedRange<LocalDate>): PeriodLabelUi = when
 
 /**
  * Active days per month, oldest first, for the months of the window that have
- * begun — or nothing, when fewer than two have.
+ * begun or that hold a completion — or nothing, when fewer than two qualify.
  *
- * **A month that has not started is not a point** — not a zero, not a gap. The
- * history grid's rule for future days (docs/ux/insights.md §8.3), in months: a
- * year drawn with four zeros at its end would read as a year already lost. The
- * current month is a real point over the days it has had so far.
+ * **An empty month that has not started is not a point** — not a zero, not a
+ * gap. The history grid's rule for future days (docs/ux/insights.md §8.3), in
+ * months: a year drawn with four zeros at its end would read as a year already
+ * lost. The current month is a real point over the days it has had so far.
+ *
+ * **A month that holds a completion is a point even if it has not begun.** The
+ * dates are counted as the headline counts them, with no clip at today, so the
+ * two are one figure at two resolutions and must sum; a future-dated completion
+ * (a fast clock, an import) is therefore in both. Dropping its month would put
+ * it in the headline and in no column — the off-by-one the first cut had from
+ * the other direction. It is a `filter`, not a `takeWhile`, so a month with data
+ * behind an empty un-begun one survives too.
  *
  * **One point is not a line.** A Month period always has one; a quarter in its
  * first month and a year in January have one too, so the rule is the count of
  * points rather than the kind of period.
  *
- * The dates are counted as the headline counts them, with no clip at today: the
- * two are one figure at two resolutions and must sum. A future-dated completion
- * (a fast clock, an import) is in both or in neither.
+ * [TrendPointUi.fill] is bounded here, where its meaning is known, rather than
+ * left to the sparkline's clamp: the current month's count is unclipped while
+ * its denominator is the days elapsed, so ten imported completions on the 2nd
+ * would otherwise be 5.0 drawn silently as a perfect month.
  */
 private fun trendOf(window: ClosedRange<LocalDate>, today: LocalDate, activeDates: Set<LocalDate>): List<TrendPointUi> {
     val byMonth = activeDates.groupingBy { YearMonth.from(it) }.eachCount()
     val points = generateSequence(YearMonth.from(window.start)) { it.plusMonths(1) }
-        .takeWhile { it <= YearMonth.from(window.endInclusive) && it.atDay(1) <= today }
+        .takeWhile { it <= YearMonth.from(window.endInclusive) }
+        .filter { it.atDay(1) <= today || it in byMonth }
         .map { month ->
             val active = byMonth[month] ?: 0
             val elapsed = if (YearMonth.from(today) == month) today.dayOfMonth else month.lengthOfMonth()
-            TrendPointUi(monthName(month.month), monthInitial(month.month), active, fill = active.toFloat() / elapsed)
+            TrendPointUi(monthName(month.month), monthInitial(month.month), active, fill = (active.toFloat() / elapsed).coerceAtMost(1f))
         }
         .toList()
     return if (points.size > 1) points else emptyList()
 }
-
-/**
- * The sentence, or none.
- *
- * "Focus" is the tag with the largest total, and only a **tagged** one: untagged
- * is what is left over, not a thing the user chose to work on. Ties break the
- * way the bars sort — largest first, then by name — so the sentence can never
- * name a tag the list draws second. Nothing is said when either period had no
- * tagged completion: a habit tagged for the first time this quarter did not
- * shift the focus from anywhere.
- */
-private fun focusShift(previous: List<TagEffort>, current: List<TagEffort>): FocusShiftUi? {
-    val before = previous.topTag()
-    val now = current.topTag()
-    return when {
-        before == null || now == null -> null
-        before == now -> FocusShiftUi.Held(now)
-        else -> FocusShiftUi.Shifted(from = before, to = now)
-    }
-}
-
-private fun List<TagEffort>.topTag(): String? = filter { it.tag != null && it.completions > 0 }
-    .sortedWith(compareBy({ -it.completions }, { it.tag }))
-    .firstOrNull()
-    ?.tag
 
 /**
  * A row per habit, ordered as the habit list is.

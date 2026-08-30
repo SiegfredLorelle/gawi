@@ -1532,7 +1532,10 @@ screen one period back, and its owed looks are the ones no JVM test can take:
       11 May and 3 June with the clock walked, Read re-tagged `career` today.
       Q3 → ◀ read "Q2 2026 · 3 active days", three columns (Apr 0, May 2, Jun 1)
       with each dot on its label, "best 2 days" on Run, ▶ live; Year reset to
-      2026 with ▶ greyed.
+      2026 with ▶ greyed. **Second pass, after the PR review**: Q3 read "So
+      far, mostly career." and Q2 — whose Q1 held nothing — no sentence; ◀ was
+      already greyed on Q2, since Q2 starts before Run's 10 May creation and
+      nothing earlier can hold a habit, and a further tap did not move.
 - [ ] **The focus sentence flips when the top tag does.** With `health` leading
       last quarter and `career` this one: "Focus shifted from health to career."
       Re-tag the leading habit so both quarters agree: "Still mostly career."
@@ -1553,7 +1556,9 @@ screen one period back, and its owed looks are the ones no JVM test can take:
       alone — no "best 0 days" anywhere. **Run 2026-08-29**: "Every day · best
       1 day" beside a dash on Read — the habit was created on the 29th and
       back-filled, so the creation clip leaves one day for the run and no
-      finished day for the rate, which is the two rules agreeing.
+      finished day for the rate, which is the two rules agreeing. The no-run
+      half was seen on the same pass: on Q3, Run — created in May, not yet done
+      this quarter — read "Every day" alone beside "0%", no "best" anywhere.
 
 ---
 

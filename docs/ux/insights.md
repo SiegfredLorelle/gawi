@@ -576,6 +576,15 @@ content description kept — and the clamp is in the ViewModel too, so a tap tha
 got through would still do nothing. `InsightsScreenTest` pins the disabled
 state and `InsightsViewModelTest` pins the clamp.
 
+**The earlier arrow has a floor too**, raised by the PR review: the first cut
+walked back without end, each tap re-subscribing three flows to draw a period
+older than every habit. It now disables once the period starts at or before the
+oldest habit's creation — `HabitState.createdOn`, §8.9's field, already in the
+mapper's hands — and with no habit at all. A habit whose creation date is unknown
+(projected before that field existed) keeps the arrow live, because unknown is
+not "nothing before here". The ViewModel guards on the state it has shown, the
+same way it clamps the other direction.
+
 ### 9.3 Best, in the period, in the unit — and no worst
 
 `BestRun.within(dates, schedule, window, today, weekStart)` in `:core:domain`,
@@ -598,6 +607,11 @@ It rides on the schedule line — *"3× a week · best 9 weeks"* — because the
 it is counted in is the schedule's, carried as `StreakUi.Days` or `.Weeks` so the
 row cannot pick the wrong plural, and null rather than zero when the period held
 no run: "best 0 days" under a row is the screen accusing the user.
+
+`StreakUi` carries two states the row can never hold — `None` and `Broken` are
+Today's — and is reused all the same, because its job here is the unit split and
+a third streak type differing only by lacking two states would be the drift the
+shared one exists to stop. `bestText` names the dead branch.
 
 **A best run can stand beside a dash**, and the first device look showed exactly
 that: a habit created and completed today reads *"Every day · best 1 day —"*.
@@ -653,6 +667,14 @@ which makes Month a case of it rather than the exception.
 set of dates and clipped by neither, so they always sum. A future-dated
 completion — a fast clock, an import — is in both or in neither; the first cut
 clipped the trend at today and not the headline, and the two could differ by one.
+The PR review found the same gap one resolution up: dropping months that have
+not begun also dropped a future-dated completion's whole month. **A month that
+holds a completion is a point even if it has not begun** — only an *empty*
+un-begun month is nothing — and the selection is a filter rather than a cut, so
+a month with data behind an empty one survives. The same review found the
+current month's fill could exceed one (an unclipped count over the days elapsed)
+and be clamped silently by the sparkline into a perfect month; the mapper bounds
+it now, where the meaning is known.
 
 **Twelve columns cannot carry twelve month names on a phone.** Under a year the
 label is the month's initial, and J, M and A each name two months — §8.4's
@@ -679,12 +701,22 @@ unchanged.
 
 One sentence under the headline, body copy rather than a card, because it is a
 remark about the two numbers above it and not a third surface. "Focus" is the
-tag with the largest total, compared across this period and the equal one
-before it — a second `observeTagEffort` read over the previous window, the same
-query and no new kind of read. Different: *"Focus shifted from health to
-career."* Same: *"Still mostly health."*
+tag with the largest total. For a **complete** period — one stepped back to — it
+is compared with the equal period before it, a second `observeTagEffort` read
+over the previous window, the same query and no new kind of read. Different:
+*"Focus shifted from health to career."* Same: *"Still mostly health."*
 
-Three rules, each pinned by `InsightsUiMapperTest`:
+**The current period is not compared.** The PR review caught what the first cut
+missed: at the current period the two sides are not equal — a partial figure
+against a whole one — and on 1 July a single tagged completion was the whole of
+"this quarter" and would have announced a quarter-scale shift. The trend card
+already refused the analogous claim (one point is not a line); the sentence now
+does too. The current period reads *"So far, mostly career."* — it names the
+leader and claims nothing about movement. Chosen over silence, which would have
+emptied the default view, and over a half-elapsed threshold, which would have
+been a number nobody could defend.
+
+Four rules, each pinned by `InsightsUiMapperTest`:
 
 - **Untagged never wins.** It is the absence of a focus, and "shifted from
   career to Untagged" would say the user stopped caring when all they stopped
@@ -694,10 +726,11 @@ Three rules, each pinned by `InsightsUiMapperTest`:
   focus from anywhere.
 - **Ties resolve the way the bars sort** — largest, then name — so the sentence
   can never name a tag the list draws second.
+- **Only a complete period is compared.** The current one hedges.
 
 ### 9.6 What it cost
 
-No migration, no new query, no new module. One domain object with nine tests,
+No migration, no new query, no new module. One domain object with eleven tests,
 one shared `Sparkline`, a `TrendCard`, four new fields on `Overview`, and the
 fake repository learning to answer one window differently from another so the
 focus sentence could be tested end to end. `check-citations` caught the docs

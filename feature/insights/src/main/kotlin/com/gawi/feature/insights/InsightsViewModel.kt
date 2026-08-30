@@ -81,7 +81,16 @@ internal class InsightsViewModel @Inject constructor(private val habits: HabitRe
         this.breakdown.value = breakdown
     }
 
-    fun onEarlier() = selection.update { it.copy(back = it.back + 1) }
+    /**
+     * Guarded on the state already shown, as [onLater] is on the offset: once
+     * the screen says there is nothing earlier, a tap that got through the
+     * disabled arrow still does nothing rather than re-reading three flows
+     * for an empty period.
+     */
+    fun onEarlier() {
+        if ((uiState.value as? InsightsUiState.Overview)?.canStepEarlier == false) return
+        selection.update { it.copy(back = it.back + 1) }
+    }
 
     /** Clamped here, not only disabled on screen: a rule that lives only in a button is lost with it. */
     fun onLater() = selection.update { it.copy(back = (it.back - 1).coerceAtLeast(0)) }

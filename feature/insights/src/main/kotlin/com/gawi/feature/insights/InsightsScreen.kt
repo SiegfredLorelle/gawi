@@ -90,7 +90,7 @@ private fun Overview(state: InsightsUiState.Overview, actions: InsightsActions, 
         verticalArrangement = Arrangement.spacedBy(GawiSpacing.Row),
     ) {
         PeriodPicker(state.period, actions.onPeriod)
-        PeriodStepper(state.label, state.canStepLater, actions)
+        PeriodStepper(state.label, state.canStepEarlier, state.canStepLater, actions)
         Headline(state)
         state.focus?.let { FocusLine(it) }
         // Only when there is something to bucket: a single month is one point,
@@ -165,6 +165,8 @@ private fun Headline(state: InsightsUiState.Overview) {
  * Which calendar period the numbers describe, between the two arrows that walk
  * it — Phase 1.5's retrospective is this row (docs/ux/insights.md §9).
  *
+ * **Both arrows disable rather than vanish** — later at the current period,
+ * earlier once the period starts at or before the oldest habit's creation.
  * **The later arrow is disabled at the current period, not removed.** The
  * history grid drops its stepper at zero and leaves a footprint; here the label
  * sits between the two arrows and a vanishing one would shift it, so the button
@@ -173,12 +175,12 @@ private fun Headline(state: InsightsUiState.Overview) {
  * would still do nothing.
  */
 @Composable
-private fun PeriodStepper(label: PeriodLabelUi, canStepLater: Boolean, actions: InsightsActions) {
+private fun PeriodStepper(label: PeriodLabelUi, canStepEarlier: Boolean, canStepLater: Boolean, actions: InsightsActions) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        GawiIconButton(GawiIcons.ChevronLeft, R.string.insights_period_earlier, onClick = actions.onEarlier)
+        GawiIconButton(GawiIcons.ChevronLeft, R.string.insights_period_earlier, enabled = canStepEarlier, onClick = actions.onEarlier)
         Text(
             text = periodTitle(label),
             modifier = Modifier.weight(1f),
@@ -209,6 +211,7 @@ private fun FocusLine(focus: FocusShiftUi) {
         text = when (focus) {
             is FocusShiftUi.Shifted -> stringResource(R.string.insights_focus_shifted, focus.from, focus.to)
             is FocusShiftUi.Held -> stringResource(R.string.insights_focus_held, focus.tag)
+            is FocusShiftUi.SoFar -> stringResource(R.string.insights_focus_so_far, focus.tag)
         },
         style = MaterialTheme.typography.bodyMedium,
     )
