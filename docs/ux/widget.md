@@ -371,14 +371,16 @@ pins both gates at both edges.
 
 **The band is the rows' own flags, and nothing else.** One segment per habit in
 the rows' order, `primary` when today's cell is ticked and `outlineVariant` when
-it is not. **"In the rows' order" is true of the data and false of the drawing
-under RTL**, measured on a launcher on 2026-08-30 (running.md §4): the rows
-mirror with the host and the band does not, so a right-to-left reader meets the
+it is not. **"In the rows' order" was true of the data and false of the drawing
+under RTL until 2026-08-30**, measured on a launcher (running.md §4): the rows
+mirrored with the host and the band did not, so a right-to-left reader met the
 first habit's segment at the end of the band instead of the start. `BandBitmap`
-takes no layout direction and places each segment at `left = index * pitch`, so
-index 0 is at the bitmap's left edge whichever way the host reads — the geometry
-is right and only the reading is wrong, which is why every test passes. §8
-carries it as open work. Nothing is counted, sorted or capped, so the band
+took no layout direction and placed each segment at `left = index * pitch`, so
+index 0 sat at the bitmap's left edge whichever way the host read — the geometry
+was right and only the reading was wrong, which is why every test passed. It now
+takes a `mirrored` flag that `WovenBand` resolves from the app's configuration;
+§8 has the arithmetic, the test that discriminates it, and the one case the flag
+makes worse rather than better. Nothing is counted, sorted or capped, so the band
 cannot say something the checkboxes beneath it do not; with many habits the
 segments thin rather than fold, which at thirty is a texture and still true.
 **Drawn as two rasterised masks, not as a box per habit** — the first cut was a
@@ -507,12 +509,22 @@ docs/running.md §4 has the boxes.
   **The input is what this bullet called the harder question, and it is answered
   by matching §2 rather than by solving it.** `WovenBand` reads the app's
   configuration, because Glance composes in **our** process and the launcher's
-  own direction is not reachable from here — so a per-app locale can still
-  differ from the launcher's, exactly the limitation §2 of visual-identity.md
-  records for the text bitmaps. Under a system RTL locale, which is the case
-  that matters and the case running.md §4 measures, the two agree. The direction
-  also joins the band's `remember` keys, or a direction change within one
-  session's lifetime would redraw everything except the band.
+  own direction is not reachable from here. Under a system RTL locale, which is
+  the case that matters and the case running.md §4 measures, the two agree. The
+  direction also joins the band's `remember` keys, or a direction change within
+  one session's lifetime would redraw everything except the band.
+
+  **Where they disagree the flag makes the picture worse, not better, and that
+  is a real cost rather than the same one §2 records.** §2's caveat is a
+  *fallback* — a name with no strong character lays out LTR — which leaves a
+  drawing that was never right either way. This is an inversion: a host that
+  inflates its `RemoteViews` left-to-right while our configuration reads RTL now
+  mirrors the band **alone**, so a picture that used to agree with the rows
+  disagrees with them. Not reachable today — the app declares no `localeConfig`
+  and offers no in-app language, so the app's direction and the system's cannot
+  come apart, and a host that ignores the system direction would have to be
+  built to. Worth stating because the pre-2026-08-30 failure was one-way and
+  this one is not.
 - **`glance-appwidget-testing` was declined, and then taken when its own
   condition came true.** PR review first suggested it for pinning what the
   widget draws, and it was not taken: `Message` resolves its copy through

@@ -6,6 +6,7 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.ResourceFont
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.sp
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
@@ -79,8 +80,9 @@ class GawiTypographyTest {
             val ours = role(GawiTypography)
             val theirs = role(stock)
             // One equality rather than a field list. `inOutfit()` is exactly
-            // `copy(fontFamily = Outfit)`, so this is the whole claim, and it
-            // covers the fields a hand-written list forgets — `platformStyle`
+            // `copy(fontFamily = Outfit, letterSpacing = <zeroed if positive>)`,
+            // and the tracking is reproduced below, so this is still the whole
+            // claim: it covers the fields a hand-written list forgets — `platformStyle`
             // and `lineHeightStyle` above all, which are what someone reaches
             // for when tuning a new face's vertical rhythm — plus any field
             // Compose adds later. An earlier version pinned four of about a
@@ -106,7 +108,10 @@ class GawiTypographyTest {
         val stock = Typography()
         roles.forEach { (name, role) ->
             val tracking = role(GawiTypography).letterSpacing
-            assertTrue("$name still tracks positive, at $tracking", tracking.value <= 0f)
+            // `value` is NaN when unspecified, and NaN fails every comparison —
+            // so spell out the same rule `inOutfit()`'s guard encodes, or this
+            // goes red on exactly the role production handles correctly.
+            assertTrue("$name still tracks positive, at $tracking", !tracking.isSpecified || tracking.value <= 0f)
         }
         assertEquals(stock.displayLarge.letterSpacing, GawiTypography.displayLarge.letterSpacing)
         assertTrue("displayLarge is meant to be the negative one", stock.displayLarge.letterSpacing.value < 0f)

@@ -234,11 +234,12 @@ private fun LargeHeader(mood: Mood, rows: List<WidgetRow>) {
  * **"The rows' order" is read in the host's direction, and this is where the
  * direction is resolved.** [BandBitmap] is pure and takes it as a flag; the
  * value is the app's configuration, because Glance composes in our process and
- * the launcher's own is not reachable from here. A per-app locale can therefore
- * disagree with the launcher — the caveat docs/ux/visual-identity.md §2 already
- * carries for the text bitmaps — while a system RTL locale, the case that
- * matters, agrees. Said here as well as on [BandBitmap] because this is the
- * composable that emits the band, so it is the doc a reader lands on first.
+ * the launcher's own is not reachable from here. Under a system RTL locale, the
+ * case that matters, the two agree; where they could not, the flag would mirror
+ * the band alone and invert a picture that had been right, which [BandBitmap]
+ * and docs/ux/widget.md §8 both state rather than file under §2's milder
+ * fallback. Said here as well as on [BandBitmap] because this is the composable
+ * that emits the band, so it is the doc a reader lands on first.
  *
  * Two [BandBitmap] masks in one [Box], each tinted by its own provider, so
  * the band has no child count to hit ([BandBitmap] has the ten-child cap this
