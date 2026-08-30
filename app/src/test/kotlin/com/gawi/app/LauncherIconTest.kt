@@ -172,6 +172,30 @@ class LauncherIconTest {
         assertEquals(3, body.getAttribute("android:pathData").count { it == 'M' })
     }
 
+    /**
+     * The thread is three vertical warps crossed by one horizontal weft, which
+     * is the picture `docs/running.md` §4 confirms on a launcher and the comment
+     * above each path claims. Asserted inside `pathData`, which nothing else
+     * here reads: until 2026-08-30 the warp path carried a fourth subpath,
+     * `M54,45 V63`, commented as a short weft but *vertical* at x = 54 and so
+     * wholly inside the centre warp at the same stroke width — it painted
+     * nothing, and every other case in this file passed over it. Deleted once
+     * the artboard confirmed three warps. A subpath that draws inside another is
+     * more than this can see; a weft that is not horizontal is not.
+     */
+    @Test
+    fun `the thread is three warps crossed by one weft`() {
+        val (warps, weft) = paths(MONOCHROME).also { assertEquals("the thread is two paths", 2, it.size) }
+        val warpData = warps.getAttribute("android:pathData")
+        assertEquals("three warps: '$warpData'", 3, warpData.count { it == 'M' })
+        assertTrue("a warp runs horizontally: '$warpData'", !warpData.contains("H"))
+        assertTrue("a warp does not run vertically: '$warpData'", warpData.contains("V"))
+        val weftData = weft.getAttribute("android:pathData")
+        assertEquals("one weft: '$weftData'", 1, weftData.count { it == 'M' })
+        assertTrue("the weft does not run horizontally: '$weftData'", weftData.contains("H"))
+        assertTrue("the weft runs vertically: '$weftData'", !weftData.contains("V"))
+    }
+
     /** The paths stay the canvas's; the safe-zone correction is a group scale about the centre, so it can be read back. */
     @Test
     fun `both launcher layers are scaled into the 66dp safe zone`() {

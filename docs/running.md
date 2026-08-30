@@ -1934,18 +1934,25 @@ launcher masks and scales them differently, which is what is left.
       **Apply**. Same monochrome layer underneath, so the item's expectation is
       unchanged; only the path to it moved.
 
-      **What ships is three warps and one weft, and the drawable expects to draw
+      **What ships is three warps and one weft, and the drawable expected to draw
       four elements plus that weft** — noticed by review off the back of this
-      run, not by the eye. `ic_launcher_monochrome.xml`'s first path carries a
+      run, not by the eye. `ic_launcher_monochrome.xml`'s first path carried a
       fourth subpath, `M54,45 V63`, commented as "the short weft under the
-      centre one". It is *vertical* at x = 54, so it lies wholly inside the
-      centre warp `M54,28 V80` at the same 9-unit stroke and paints nothing; a
-      weft would be horizontal. So this box's expectation is met by an icon that
-      is one element shy of what its own file describes, and the two readings —
-      dead subpath to delete, or a short weft mis-transcribed from the canvas —
-      need the artboard to tell apart. `LauncherIconTest` cannot see it either
-      way: it inspects `<path>` elements for colour and stroke width and never
-      looks inside `pathData`.
+      centre one". It is *vertical* at x = 54, so it lay wholly inside the
+      centre warp `M54,28 V80` at the same 9-unit stroke and painted nothing; a
+      weft would be horizontal. So this box's expectation was met by an icon one
+      element shy of what its own file described, and the two readings — dead
+      subpath to delete, or a short weft mis-transcribed from the canvas — needed
+      the artboard to tell apart.
+
+      **Resolved 2026-08-30 against the artboard: three warps and one weft, so
+      the subpath was dead and is deleted.** Nothing rendered changes, which is
+      why this tick stands without a re-run — the file now describes what it
+      already drew. `LauncherIconTest` could not see it either way, because it
+      inspected `<path>` elements for colour and stroke width and never looked
+      inside `pathData`; it now has one case that does, asserting three vertical
+      warps and one horizontal weft. A subpath hidden inside another is still
+      more than a test can see, but a weft that is not horizontal is not.
 
 ### Accessibility — *device only, and the layer no test reaches*
 
