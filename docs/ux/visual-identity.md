@@ -730,14 +730,38 @@ Three things the code decided that this section had not:
   look like a choice rather than a gap. Covering all fifteen invents no sizes,
   which is what the "anything not in that table does not need a value" rule was
   actually guarding against.
-- **Only the face changed. Every size, line height and letter spacing is still
-  Material's**, and `GawiTypographyTest` asserts that against a fresh
-  `Typography()` rather than trusting the claim. The sizes are the one part of
-  this already validated on a device, across four feature modules since Phase 0;
-  moving the face and the scale in one change would make any regression
-  unattributable to either. `letterSpacing` is the likeliest thing to want next —
-  Material's is tuned for Roboto and Outfit is wider — and that is a change to
-  make while looking at a screen.
+- **The face changed, and since 2026-08-30 one metric has too: positive tracking
+  is zeroed.** Every size and line height is still Material's, and
+  `GawiTypographyTest` asserts that against a fresh `Typography()` rather than
+  trusting the claim — the deviation is stated inside the comparison and again on
+  its own, so the equality cannot quietly widen. The sizes stay untouched for the
+  reason this bullet has always given: they are the one part already validated on
+  a device, across four feature modules since Phase 0, and moving the face and
+  the scale together would make any regression unattributable to either.
+- **What `letterSpacing` was measured at, and why zero.** This bullet used to say
+  the change was one to make while looking at a screen; four builds were compared
+  on a device. Material's own figures were probed rather than remembered, and
+  positive tracking sits only on the roles at 16sp and under — `bodyLarge`,
+  `labelMedium`, `labelSmall` 0.5, `bodySmall` 0.4, `titleMedium`, `bodyMedium`
+  0.2, `titleSmall`, `labelLarge` 0.1. Everything at 22sp and over is already 0
+  except `displayLarge` at −0.2 (not −0.25). What zeroing the positive half is
+  worth was measured by installing two builds of the same commit on an API 37
+  emulator at density 320 and font scale 1.0 and reading the same Settings nodes
+  back from `uiautomator dump` on each: *Notifications are off, so this reminder
+  will not arrive.* goes 656px → 634px — and 656 was the container's full width,
+  so that line had been flush against its bounds — *Day is nearly over at* 313 →
+  292, *Week starts on* 226 → 212, *Day starts at* 200 → 187, *Appearance* 157 →
+  154, and the app bar's *Settings* unchanged at 155, which is the roles at 22sp
+  and over keeping Material's values. **No wrapped paragraph lost a line**: all
+  three on that screen keep their height across the two builds, so the gain is
+  horizontal slack rather than reflow, at least at this width and scale. Nothing
+  was *added* to the roles at or below zero — negative tracking buys a few px on
+  a heading and nothing at all on the streak numeral, since a one-glyph string
+  has no gaps to track. **The argument that settled it is §2's other surface**:
+  `BitmapText` never sets `Paint.letterSpacing`, so the widget has drawn at 0em
+  since it was built, at the same nominal 16sp this scale calls `bodyLarge`. The
+  two claimed to match and did not; zeroing closes a divergence rather than
+  opening one, and `BitmapTextTest` now pins the widget's half of it.
 - **Four weight entries, all pointing at the same file, and the `wght` axis
   named explicitly on each.** Two of those decisions were corrected by review
   and by measurement after the first version of this bullet, so both are stated

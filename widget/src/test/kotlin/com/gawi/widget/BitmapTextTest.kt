@@ -180,6 +180,19 @@ class BitmapTextTest {
         assertEquals(Color.WHITE, paint.color)
     }
 
+    /**
+     * The one metric this side shares with the app by *not* setting it. Both
+     * draw at 0em since 2026-08-30, when `Type.kt` zeroed Material's positive
+     * tracking; before that the widget was already at 0em and the app was not,
+     * at the same nominal 16sp. Pinned because the way to reopen that gap is to
+     * copy a Material figure into [BitmapText.outfitPaint], which reads like a
+     * fix.
+     */
+    @Test
+    fun `the paint tracks at zero, the way the app's scale now does`() {
+        assertEquals(0f, BitmapText.outfitPaint(context).paint.letterSpacing, 0f)
+    }
+
     private val density: Int get() = context.resources.displayMetrics.densityDpi
 
     private fun render(text: String): Bitmap = BitmapText.render(text, BitmapText.outfitPaint(context).paint, WIDE, density)!!

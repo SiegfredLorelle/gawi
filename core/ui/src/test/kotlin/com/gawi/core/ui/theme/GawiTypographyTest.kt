@@ -6,6 +6,7 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.ResourceFont
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.sp
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
@@ -13,7 +14,7 @@ import org.junit.Test
 import java.io.File
 
 /**
- * The type scale is Outfit, on every role, and it is *only* the face.
+ * The type scale is Outfit, on every role, and Material's metrics but one.
  *
  * Two different mistakes are pinned here and they fail differently.
  *
@@ -24,13 +25,20 @@ import java.io.File
  * default renders in Roboto silently — it looks like a design choice rather than
  * a gap. Iterating all fifteen is what makes that non-silent.
  *
- * **A scale retuned while the KDoc still claims it was not.** Type.kt says only
- * the face changed and that the metrics are Material's untouched, on the
- * reasoning that the sizes are the one part already validated on a device.
- * That is a claim about the code, so it is asserted against a fresh
- * `Typography()` rather than trusted. Tuning `letterSpacing` for Outfit is a
- * likely next change and a legitimate one — this test is what makes it a
- * deliberate edit with its KDoc updated, instead of a quiet drift.
+ * **A scale retuned while the KDoc still claims it was not.** Type.kt makes a
+ * claim about the code — the sizes and line heights are Material's untouched,
+ * and exactly one metric is not — so it is asserted against a fresh
+ * `Typography()` rather than trusted.
+ *
+ * This test previously said tuning `letterSpacing` was "a likely next change",
+ * and that it existed to make such a change a deliberate edit with its KDoc
+ * updated rather than a quiet drift. That is what happened on 2026-08-30: the
+ * positive tracking went to zero, measured on a device, and this test went red
+ * by design and was rewritten alongside Type.kt's KDoc and
+ * docs/ux/visual-identity.md §5. The deviation is now stated twice on purpose —
+ * once inside the equality below, so every *other* field stays pinned by one
+ * comparison, and once on its own, so the intent is legible without unpicking
+ * what the equality allows.
  */
 class GawiTypographyTest {
 
@@ -65,7 +73,7 @@ class GawiTypographyTest {
     }
 
     @Test
-    fun `only the face changed - every metric is still Material's`() {
+    fun `only the face and the tracking changed - every other metric is Material's`() {
         val stock = Typography()
         roles.forEach { (name, role) ->
             val ours = role(GawiTypography)
@@ -77,8 +85,33 @@ class GawiTypographyTest {
             // for when tuning a new face's vertical rhythm — plus any field
             // Compose adds later. An earlier version pinned four of about a
             // dozen and still called itself "every metric".
-            assertEquals("$name is not Material's metrics in Outfit", theirs.copy(fontFamily = Outfit), ours)
+            val tracking = if (theirs.letterSpacing.value > 0f) 0.sp else theirs.letterSpacing
+            assertEquals(
+                "$name is not Material's metrics in Outfit at zeroed tracking",
+                theirs.copy(fontFamily = Outfit, letterSpacing = tracking),
+                ours,
+            )
         }
+    }
+
+    /**
+     * The deviation stated outright, because the equality above only says the
+     * tracking is *whatever this rule produces* — it would pass just as happily
+     * if the rule stopped applying. Material's positive tracking is drawn for
+     * Roboto and Outfit is wider; nothing was added to the roles already at zero
+     * or below, so `displayLarge` keeps its negative value untouched.
+     */
+    @Test
+    fun `no role tracks positive, and the one negative role is left alone`() {
+        val stock = Typography()
+        roles.forEach { (name, role) ->
+            val tracking = role(GawiTypography).letterSpacing
+            assertTrue("$name still tracks positive, at $tracking", tracking.value <= 0f)
+        }
+        assertEquals(stock.displayLarge.letterSpacing, GawiTypography.displayLarge.letterSpacing)
+        assertTrue("displayLarge is meant to be the negative one", stock.displayLarge.letterSpacing.value < 0f)
+        // The rule has to have done something, or it is pinning a coincidence.
+        assertTrue("Material tracks nothing positive; this rule is a no-op", roles.any { (_, r) -> r(stock).letterSpacing.value > 0f })
     }
 
     /**

@@ -6,6 +6,8 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.isSpecified
+import androidx.compose.ui.unit.sp
 import com.gawi.core.ui.R
 
 /**
@@ -146,19 +148,62 @@ private fun outfitAt(weight: FontWeight): Font = Font(
 
 private val Default = Typography()
 
-private fun TextStyle.inOutfit(): TextStyle = copy(fontFamily = Outfit)
+/**
+ * Material's role in [Outfit], with any positive tracking taken to zero — the
+ * one metric this app does not take from Material, and [GawiTypography]'s KDoc
+ * has why. The guard is `isSpecified` rather than `coerceAtMost(0.sp)` because
+ * `TextUnit.coerceAtMost` requires both units to be the same type and would
+ * throw on an unspecified role if Compose ever ships one.
+ */
+private fun TextStyle.inOutfit(): TextStyle = copy(
+    fontFamily = Outfit,
+    letterSpacing = if (letterSpacing.isSpecified && letterSpacing.value > 0f) 0.sp else letterSpacing,
+)
 
 /**
  * The app's type: Material's scale, drawn in [Outfit].
  *
- * **Only the face changes here, and that is deliberate rather than unfinished.**
- * Every size, line height and letter spacing is Material's baseline, untouched.
- * The sizes are the ones all four feature modules have been drawing at since
- * Phase 0, so they are the only part of this already validated on a device;
- * changing the face and the scale in one commit would make any regression
- * unattributable to either. `letterSpacing` is the value most likely to want
- * tuning next — Material's is tuned for Roboto, and Outfit is wider — and that
- * is a change to make while looking at a screen, not while writing this file.
+ * **The face, and one metric: positive tracking goes to zero.** Every size and
+ * line height is still Material's baseline, untouched, for the reason this
+ * paragraph has always given — the sizes are the part all four feature modules
+ * have been drawing at since Phase 0, so they are the only part already
+ * validated on a device, and moving the face and the scale together would make
+ * any regression unattributable to either.
+ *
+ * `letterSpacing` is the exception this KDoc predicted, and it asked for the
+ * change to be made while looking at a screen; it was, on 2026-08-30, against
+ * candidates that kept, halved and zeroed it. Material's own values were probed
+ * rather than remembered, and positive tracking sits only on roles at 16sp and
+ * under — `bodyLarge`, `labelMedium` and `labelSmall` at 0.5, `bodySmall` 0.4,
+ * `titleMedium` and `bodyMedium` 0.2, `titleSmall` and `labelLarge` 0.1. Every
+ * role at 22sp and over is already 0 except `displayLarge`, which is −0.2 (not
+ * −0.25), and those are left exactly as they are.
+ *
+ * **What it is worth, measured.** Material's tracking is drawn for Roboto and
+ * Outfit is the wider face, so the correction is downward either way; the
+ * question was how far. Two builds of the same commit were installed on an API
+ * 37 emulator at density 320 and font scale 1.0, and the same Settings nodes
+ * read back from `uiautomator dump` on each — the same node on both sides, not a
+ * container against its child. *Notifications are off, so this reminder will not
+ * arrive.* goes 656px → 634px, and 656 was the container's full width, so that
+ * line had been sitting flush against its bounds and now has 22px of slack.
+ * *Day is nearly over at* goes 313 → 292, *Week starts on* 226 → 212, *Day
+ * starts at* 200 → 187, *Appearance* 157 → 154. The app bar's *Settings* is
+ * unchanged at 155, which is the ≥22sp roles keeping Material's values.
+ *
+ * **What did not happen, recorded because it was expected to.** No wrapped
+ * paragraph on that screen lost a line: all three keep their height across the
+ * two builds. The gain is horizontal slack, not reflow, at least at this scale
+ * and width. Halving rather than zeroing would be the same move at half the
+ * distance. Nothing was *added* to the roles already at zero or below: negative
+ * tracking buys a few px on a heading and nothing at all on the streak numeral,
+ * because a one-glyph string has no gaps to track.
+ *
+ * **The argument that settled it is the widget.** `BitmapText` never sets
+ * `Paint.letterSpacing`, so `:widget` has been drawing at 0em since it was
+ * built, at the same nominal 16sp this module calls `bodyLarge`. The two
+ * surfaces claimed to match and did not. Zeroing here closes a divergence that
+ * already existed rather than opening one.
  *
  * **The family is set on all fifteen roles, though §5 names ten.** The ten in
  * §5's table are the roles this app actually draws, and that list is what makes
