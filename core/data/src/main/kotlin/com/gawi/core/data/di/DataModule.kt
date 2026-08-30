@@ -74,9 +74,11 @@ internal object DataModule {
 
     /**
      * Stamped on an export so that a file which will not import can be traced
-     * to what wrote it. Nothing in the app reads it back — provenance for a
-     * human holding a broken backup, and the only thing there is to go on when
-     * `allowBackup` is off and that file is the only copy.
+     * to what wrote it — provenance for a human holding a broken backup, and the
+     * only thing there is to go on when `allowBackup` is off and that file is
+     * the only copy. The Settings screen's About section shows the same value
+     * (docs/ux/settings.md §9), so the app does read it back now; nothing
+     * *decides* on it.
      */
     @Provides
     @Singleton
