@@ -53,7 +53,7 @@ jobs:
       # needs a pinned JDK, and without dependency caching every run pays a
       # cold multi-minute build. The Android SDK itself needs no step —
       # ubuntu-latest ships it with licenses accepted.
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: 17
