@@ -780,7 +780,9 @@ reads label, then the version at `bodySmall` where the explanation would go. It
 is a `StaticRow`, not a `SettingRow` that cannot be tapped: a disabled control
 is announced as one, "disabled", which promises an action that does not exist,
 and this is text. The first cut used `RowActivity.Blocked` and a review caught
-the difference. The value comes from the
+the difference; the second cut forgot that `clickable` was what had merged the
+row into one TalkBack stop, and a review caught that too, so `StaticRow` merges
+its descendants itself and the test asserts on the merged node. The value comes from the
 `AppVersion` binding `:core:data` already fills to stamp exports, widened from
 `internal` rather than read from `PackageManager` a second time.
 

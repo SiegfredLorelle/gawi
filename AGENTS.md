@@ -97,7 +97,12 @@ Full guide with examples: `.github/COMMIT_CONVENTION.md`
   have been their third copy, rather than after it was.
 - **Versions live only in `gradle/libs.versions.toml`.** Convention plugins
   in `build-logic/` own build configuration; module build files only apply
-  `gawi.*` plugin ids and declare dependencies.
+  `gawi.*` plugin ids and declare dependencies. **One recorded exception**:
+  `:feature:settings` names the repository's `licenses/` directory as an
+  assets source set in its own build file, because a convention plugin for one
+  module's one directory is heavier than the thing it configures
+  (docs/architecture.md §10, docs/ux/settings.md §9). Do not copy it as
+  precedent; a second one is the signal to write the plugin.
 - **AGP 9 has built-in Kotlin**: never apply `org.jetbrains.kotlin.android`,
   never use kapt (KSP only).
 - **Never edit by hand**: `gradle/wrapper/`, `gradlew`, `gradlew.bat`.
