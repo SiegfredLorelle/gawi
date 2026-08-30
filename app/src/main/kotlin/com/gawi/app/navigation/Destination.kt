@@ -43,9 +43,21 @@ internal sealed interface Destination {
     @Serializable
     data object Insights : Destination
 
-    /** The three device-local preferences (PRD §5, architecture §2). */
+    /**
+     * The device-local preferences (PRD §5, architecture §2) — three that count
+     * days plus the theme — and the rows under them that are not settings:
+     * export, import, and the About section that leads to [Licences].
+     */
     @Serializable
     data object Settings : Destination
+
+    /**
+     * The third-party notices, verbatim (docs/ux/settings.md §9). Reached only
+     * from [Settings]; `:feature:settings` holds the screen and this decides
+     * that the About row leads to it.
+     */
+    @Serializable
+    data object Licences : Destination
 
     /**
      * The editor. A null [habitId] creates; anything else edits that habit.

@@ -11,6 +11,7 @@ import com.gawi.feature.habits.HabitEditorRoute
 import com.gawi.feature.habits.HabitListRoute
 import com.gawi.feature.insights.HistoryRoute
 import com.gawi.feature.insights.InsightsRoute
+import com.gawi.feature.settings.LicencesRoute
 import com.gawi.feature.settings.SettingsRoute
 import com.gawi.feature.today.TodayRoute
 
@@ -90,7 +91,10 @@ internal fun GawiNavHost(navController: NavHostController = rememberNavControlle
         }
 
         composable<Destination.Settings> {
-            SettingsRoute(onBack = ::back)
+            SettingsRoute(onBack = ::back, onOpenLicences = { go(Destination.Licences) })
+        }
+        composable<Destination.Licences> {
+            LicencesRoute(onBack = ::back)
         }
 
         composable<Destination.HabitEditor> { entry ->
