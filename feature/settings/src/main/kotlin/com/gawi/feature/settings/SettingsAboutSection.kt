@@ -9,6 +9,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
 import com.gawi.core.ui.theme.GawiSpacing
 
 /**
@@ -41,11 +42,17 @@ internal fun AboutSection(version: String, onOpenLicences: () -> Unit) {
 /**
  * A row that says something and does nothing: [SettingRow]'s label and help
  * lines at the same padding, with no click target and no value line.
+ *
+ * Merges its descendants, which `clickable` did for [SettingRow] for free:
+ * without it TalkBack lands on the label and the version as two stops.
  */
 @Composable
 private fun StaticRow(label: String, help: String) {
     Column(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = GawiSpacing.Row, vertical = GawiSpacing.Gap),
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics(mergeDescendants = true) {}
+            .padding(horizontal = GawiSpacing.Row, vertical = GawiSpacing.Gap),
         verticalArrangement = Arrangement.spacedBy(GawiSpacing.Line),
     ) {
         Text(text = label, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)

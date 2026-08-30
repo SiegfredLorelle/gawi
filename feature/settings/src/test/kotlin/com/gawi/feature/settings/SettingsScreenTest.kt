@@ -10,6 +10,8 @@ import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.getBoundsInRoot
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -787,9 +789,13 @@ class SettingsScreenTest {
     fun about_isItsOwnSectionAfterData() {
         render(STORED)
 
-        compose.onNodeWithText(string(R.string.settings_about_header)).performScrollTo().assertIsDisplayed()
+        val about = compose.onNodeWithText(string(R.string.settings_about_header)).performScrollTo().assertIsDisplayed()
         compose.onNodeWithText(string(R.string.settings_version_label)).performScrollTo().assertIsDisplayed()
         compose.onNodeWithText(string(R.string.settings_licences_label)).performScrollTo().assertIsDisplayed()
+
+        // Last on the screen (docs/ux/settings.md §9): below the Data header.
+        val data = compose.onNodeWithText(string(R.string.settings_data_header))
+        assertTrue(about.getBoundsInRoot().top > data.getBoundsInRoot().top)
     }
 
     /** The version is the row's help line and the row is not a target. */
@@ -797,8 +803,12 @@ class SettingsScreenTest {
     fun version_isShownInTheHelpLine_andDoesNotTap() {
         render(STORED)
 
-        compose.onNodeWithText("1.2.3").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText(string(R.string.settings_version_label)).performScrollTo().assertHasNoClickAction()
+        // One merged node carrying both strings: TalkBack reads the row as one
+        // stop. onNodeWithText alone would find the unmerged label either way.
+        compose.onNode(hasText(string(R.string.settings_version_label)) and hasText("1.2.3"))
+            .performScrollTo()
+            .assertIsDisplayed()
+            .assertHasNoClickAction()
     }
 
     /** The Licences row reports; it does not navigate, because it cannot. */

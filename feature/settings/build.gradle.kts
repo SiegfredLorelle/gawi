@@ -15,7 +15,8 @@ android {
     // them back through AssetManager.
     //
     // Build configuration in a module file, which architecture.md §9 reserves
-    // for build-logic: recorded there as the one exception, because a
+    // for build-logic. Recorded as the one exception in AGENTS.md and in
+    // architecture.md §10's "where a new file goes" table, because a
     // convention plugin for a single module's single directory would be the
     // heavier way to say the same thing. The whole directory ships, with no
     // allow-list — the directory IS the list; anything put in licenses/ is a
