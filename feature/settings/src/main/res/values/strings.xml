@@ -153,4 +153,29 @@
     <string name="settings_error_import_unreadable">That is not a Gawi export, or it is damaged. Nothing was changed.</string>
     <string name="settings_error_import_newer">That export came from a newer version of Gawi. Update the app and try again — the file is fine.</string>
     <string name="settings_error_import">That import did not finish. Nothing was changed.</string>
+
+    <!-- About. Two rows that are not settings, under a header of their own
+         for the reason Appearance and Data have theirs (docs/ux/settings.md
+         §9). The version is the Version row's HELP line: the primary middle
+         line means "this is what it is set to", and a version is not set to
+         anything. The Licences help line names what is credited so a reader
+         who never taps still knows. -->
+    <string name="settings_about_header">About</string>
+    <string name="settings_version_label">Version</string>
+    <string name="settings_licences_label">Licences</string>
+    <string name="settings_licences_help">Outfit and Lucide, and the notices they ask for.</string>
+
+    <!-- The Licences screen. Each notice is a heading, a one-line role in grey
+         and then the licence text verbatim from licenses/ — OFL §2 and ISC both
+         require the notice itself, not a description of it. The role says what
+         the thing IS, because a name alone tells a reader nothing. -->
+    <string name="settings_licences_title">Licences</string>
+    <string name="settings_notice_outfit">Outfit</string>
+    <string name="settings_notice_outfit_role">The typeface. Bundled unmodified, under the SIL Open Font License 1.1.</string>
+    <string name="settings_notice_lucide">Lucide</string>
+    <string name="settings_notice_lucide_role">The icons. ISC, with Feather\'s MIT notice for the ones derived from it.</string>
+    <!-- One of the two files did not read. Both or neither: a screen with one
+         notice on it would be quietly claiming the other was not owed. -->
+    <string name="settings_licences_unavailable_title">Can\'t show the licences</string>
+    <string name="settings_licences_unavailable_body">Something went wrong reading them. Close the app and open it again to retry.</string>
 </resources>

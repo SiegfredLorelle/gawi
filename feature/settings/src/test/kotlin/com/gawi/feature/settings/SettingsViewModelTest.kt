@@ -1,6 +1,7 @@
 package com.gawi.feature.settings
 
 import app.cash.turbine.test
+import com.gawi.core.data.backup.AppVersion
 import com.gawi.core.data.settings.ThemeMode
 import com.gawi.core.data.settings.UserSettings
 import com.gawi.feature.settings.testsupport.FakeCompletionCsvArchive
@@ -34,7 +35,7 @@ class SettingsViewModelTest {
     // by lazy, not a field initialiser. JUnit runs field initialisers before it
     // applies rules, so an eager ViewModel would bind viewModelScope to the real
     // main dispatcher before MainDispatcherRule installs the test one.
-    private val viewModel by lazy { SettingsViewModel(settings, FakeEventArchive(), FakeCompletionCsvArchive()) }
+    private val viewModel by lazy { SettingsViewModel(settings, FakeEventArchive(), FakeCompletionCsvArchive(), AppVersion("1.2.3")) }
 
     @Test
     fun `it starts loading, before the store has answered`() = runTest {
@@ -57,7 +58,7 @@ class SettingsViewModelTest {
             )
 
             assertEquals(
-                SettingsUiState.Settings(LocalTime.of(3, 0), DayOfWeek.SUNDAY, LocalTime.of(22, 30), ThemeMode.SYSTEM),
+                SettingsUiState.Settings(LocalTime.of(3, 0), DayOfWeek.SUNDAY, LocalTime.of(22, 30), ThemeMode.SYSTEM, "1.2.3"),
                 awaitItem(),
             )
             cancelAndIgnoreRemainingEvents()

@@ -30,31 +30,31 @@ class SettingsUiMapperTest {
             reminderTime = LocalTime.of(22, 15),
         )
 
-        val state = settings.toUiState()
+        val state = settings.toUiState(version = "1.2.3")
 
         assertEquals(
-            SettingsUiState.Settings(LocalTime.of(3, 30), DayOfWeek.SUNDAY, LocalTime.of(22, 15), ThemeMode.SYSTEM),
+            SettingsUiState.Settings(LocalTime.of(3, 30), DayOfWeek.SUNDAY, LocalTime.of(22, 15), ThemeMode.SYSTEM, "1.2.3"),
             state,
         )
     }
 
     @Test
     fun `the state carries the recency it was given`() {
-        val state = UserSettings().toUiState(exportRecency = ExportRecency.DaysAgo(34)) as SettingsUiState.Settings
+        val state = UserSettings().toUiState(version = "1.2.3", exportRecency = ExportRecency.DaysAgo(34)) as SettingsUiState.Settings
 
         assertEquals(ExportRecency.DaysAgo(34), state.exportRecency)
     }
 
     @Test
     fun `the state defaults to saying nothing about exports`() {
-        val state = UserSettings().toUiState() as SettingsUiState.Settings
+        val state = UserSettings().toUiState(version = "1.2.3") as SettingsUiState.Settings
 
         assertEquals(ExportRecency.NothingYet, state.exportRecency)
     }
 
     @Test
     fun `the defaults are the PRD's own`() {
-        val state = UserSettings().toUiState() as SettingsUiState.Settings
+        val state = UserSettings().toUiState(version = "1.2.3") as SettingsUiState.Settings
 
         assertEquals(LocalTime.MIDNIGHT, state.dayCutoff)
         assertEquals(DayOfWeek.MONDAY, state.weekStart)

@@ -4,6 +4,7 @@ import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.gawi.core.data.backup.AppVersion
 import com.gawi.core.data.backup.CompletionCsvArchive
 import com.gawi.core.data.backup.EventArchive
 import com.gawi.core.data.backup.ExportStatus
@@ -48,6 +49,7 @@ internal class SettingsViewModel @Inject constructor(
     private val settings: SettingsSource,
     private val archive: EventArchive,
     private val completions: CompletionCsvArchive,
+    private val appVersion: AppVersion,
 ) : ViewModel() {
 
     /**
@@ -62,7 +64,7 @@ internal class SettingsViewModel @Inject constructor(
 
     val uiState: StateFlow<SettingsUiState> =
         combine(settings.observe(), exportStatus(), dataTask) { stored, status, task ->
-            stored.toUiState(task, recencyOf(status))
+            stored.toUiState(appVersion.value, task, recencyOf(status))
         }.catch { cause ->
             // Not the unreadable-file case, which observe() absorbs into
             // defaults on purpose. Reaching here means something that is not IO

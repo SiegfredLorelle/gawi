@@ -2,6 +2,7 @@ package com.gawi.feature.settings
 
 import android.net.Uri
 import app.cash.turbine.test
+import com.gawi.core.data.backup.AppVersion
 import com.gawi.core.data.backup.ExportStatus
 import com.gawi.core.data.backup.ImportResult
 import com.gawi.core.data.settings.ThemeMode
@@ -47,7 +48,7 @@ class SettingsDataViewModelTest {
 
     // by lazy, for the reason SettingsViewModelTest records: JUnit runs field
     // initialisers before it applies rules.
-    private val viewModel by lazy { SettingsViewModel(settings, archive, csv) }
+    private val viewModel by lazy { SettingsViewModel(settings, archive, csv, AppVersion("1.2.3")) }
 
     @Test
     fun `an export writes to the uri the picker returned`() = runTest {
@@ -356,6 +357,7 @@ class SettingsDataViewModelTest {
                     DayOfWeek.SUNDAY,
                     LocalTime.of(21, 0),
                     ThemeMode.SYSTEM,
+                    "1.2.3",
                     exportRecency = ExportRecency.Never,
                 ),
                 state,

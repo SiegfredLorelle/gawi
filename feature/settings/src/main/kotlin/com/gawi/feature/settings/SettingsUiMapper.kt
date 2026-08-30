@@ -25,6 +25,7 @@ import java.util.Locale
  * before either existed.
  */
 internal fun UserSettings.toUiState(
+    version: String,
     dataTask: DataTask = DataTask.Idle,
     exportRecency: ExportRecency = ExportRecency.NothingYet,
 ): SettingsUiState = SettingsUiState.Settings(
@@ -32,6 +33,7 @@ internal fun UserSettings.toUiState(
     weekStart = weekStart,
     reminderTime = reminderTime,
     theme = theme,
+    version = version,
     dataTask = dataTask,
     exportRecency = exportRecency,
 )
