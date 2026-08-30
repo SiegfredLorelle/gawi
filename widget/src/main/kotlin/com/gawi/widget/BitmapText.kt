@@ -127,6 +127,13 @@ internal object BitmapText {
      * scale**, which is the whole point and also a trap for any caller that
      * reserves room for the result in dp: the ink scales and the dp does not.
      * [StreakWidget] scales its slots to match.
+     *
+     * **`letterSpacing` is left at `Paint`'s 0em default, and since 2026-08-30
+     * that is the app's value too** — `Type.kt` zeroes Material's positive
+     * tracking, and its KDoc has the measurement. This side has always drawn at
+     * 0em; for a phase the two surfaces claimed to match at the same nominal
+     * 16sp and did not. Setting a Material figure here would reopen that, so the
+     * omission is deliberate and `BitmapTextTest` pins it.
      */
     internal fun outfitPaint(context: Context, textSizeSp: Float = TEXT_SIZE_SP, weight: Int = OUTFIT_WEIGHT_NORMAL): OutfitPaint {
         val paint = TextPaint(Paint.ANTI_ALIAS_FLAG or Paint.SUBPIXEL_TEXT_FLAG)
