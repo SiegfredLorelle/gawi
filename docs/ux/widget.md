@@ -378,24 +378,24 @@ first habit's segment at the end of the band instead of the start. `BandBitmap`
 takes no layout direction and places each segment at `left = index * pitch`, so
 index 0 is at the bitmap's left edge whichever way the host reads — the geometry
 is right and only the reading is wrong, which is why every test passes. §8
-carries it as open work. Nothing is counted, sorted or capped, so the band cannot say
-something the checkboxes beneath it do not; with many habits the segments thin
-rather than fold, which at thirty is a texture and still true. **Drawn as two
-rasterised masks, not as a box per habit** — the first cut was a `Box` and a
-`Spacer` per segment in one `Row`, and Glance caps a container at ten children,
-so a six-habit day silently drew five segments and logged an error; review found
-it. `BandBitmap` draws the woven segments and the outstanding ones as two white
-masks, each tinted by its own day/night provider and stacked in one `Box`, so
-there is no child count and both fills still resolve through the palette's one
-translation path. The pair of fills is held to WCAG 1.4.11's 3:1 in
-`GawiColorSchemeTest` and `WidgetPaletteTest` (light 3.78, dark 6.34), the way
-the history grid's two cell fills are, because the pair is the information.
-`WidgetMomoTest` matches each mask by tint identity and reads its segments off
-the pixels, so swapping the two colours is a red test rather than a launcher
-surprise, and `BandBitmapTest` holds the geometry at thirty — including thirty
-in 60px, where the gap gives way to nothing and every habit still ends on the
-bitmap; the PR review found the first mask placing segments by a fixed gap,
-which walked the tail off the edge from about 48 habits.
+carries it as open work. Nothing is counted, sorted or capped, so the band
+cannot say something the checkboxes beneath it do not; with many habits the
+segments thin rather than fold, which at thirty is a texture and still true.
+**Drawn as two rasterised masks, not as a box per habit** — the first cut was a
+`Box` and a `Spacer` per segment in one `Row`, and Glance caps a container at
+ten children, so a six-habit day silently drew five segments and logged an
+error; review found it. `BandBitmap` draws the woven segments and the
+outstanding ones as two white masks, each tinted by its own day/night provider
+and stacked in one `Box`, so there is no child count and both fills still
+resolve through the palette's one translation path. The pair of fills is held to
+WCAG 1.4.11's 3:1 in `GawiColorSchemeTest` and `WidgetPaletteTest` (light 3.78,
+dark 6.34), the way the history grid's two cell fills are, because the pair is
+the information. `WidgetMomoTest` matches each mask by tint identity and reads
+its segments off the pixels, so swapping the two colours is a red test rather
+than a launcher surprise, and `BandBitmapTest` holds the geometry at thirty —
+including thirty in 60px, where the gap gives way to nothing and every habit
+still ends on the bitmap; the PR review found the first mask placing segments by
+a fixed gap, which walked the tail off the edge from about 48 habits.
 
 **One reading, and in this body it is the mood line's.** In the face-above-rows
 body Momo carries the mood sentence because nothing else says it; in the large
@@ -493,11 +493,16 @@ docs/running.md §4 has the boxes.
   edit and the next wake, which is the same best-effort caveat as above.
 - **The band does not mirror under an RTL host** (§7, running.md §4, found
   2026-08-30). The rows mirror and the band keeps its left-to-right order, so it
-  reads backwards against the checkboxes it repeats. The fix is small —
-  `BandBitmap.render` placing index 0 at the far edge when the direction is RTL,
-  or the caller mirroring the mask — but the *input* is the question rather than
-  the arithmetic: Glance composes in **our** process, so the direction available
-  to it is the app's, and a per-app locale can differ from the launcher's. That
+  reads backwards against the checkboxes it repeats. The fix is small, and the
+  form matters: mirror each segment about the centre, `left = widthPx - index *
+  pitch - segment`, **not** `widthPx - (index + 1) * pitch`. The tempting second
+  one is off by a whole `gap` — it strands a gap-wide strip at the far edge and
+  pushes the first segment flush against the near one, which is the edge
+  behaviour the 48-habit fix above was written to get right and which no
+  `BandBitmapTest` case would catch. The *input* is the harder question, though,
+  rather than the arithmetic: Glance composes in **our** process, so the
+  direction available to it is the app's, and a per-app locale can differ from
+  the launcher's. That
   is the same limitation §2 of visual-identity.md already records for the text
   bitmaps, so matching it is consistent rather than a new compromise; under a
   system RTL locale, which is the case that matters, the two agree. Left open
