@@ -3,6 +3,7 @@ package com.gawi.widget
 import android.content.Context
 import android.graphics.Bitmap
 import android.util.TypedValue
+import android.view.View
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -180,14 +181,14 @@ internal fun WidgetBody(content: WidgetContent) {
  * [BandBitmap] has why: Glance caps a container at ten children, and a box per
  * habit truncated the band at six.
  *
- * **"In the rows' own order" is a claim about the list, and under RTL it stops
- * being true of the picture.** Measured on a launcher on 2026-08-30
- * (docs/running.md §4): with a Hebrew system locale the rows mirror — the glyph
- * moves to the right edge — and the band does not, so the first habit's segment
- * ends up where a right-to-left reader stops rather than where they start.
- * [BandBitmap] takes no layout direction, and that is the whole mechanism. Open
- * work in docs/ux/widget.md §8; stated here because the sentence above is the
- * one that reads as covering it.
+ * **"In the rows' own order" is a claim about the picture as well as the list,
+ * and holds in either direction since 2026-08-30.** It did not before: with a
+ * Hebrew system locale the rows mirrored — the glyph moves to the right edge —
+ * and the band did not, so the first habit's segment landed where a
+ * right-to-left reader stops rather than where they start (measured on a
+ * launcher, docs/running.md §4). [WovenBand] now reads the direction and
+ * [BandBitmap] mirrors on it. Stated here because the sentence above is the one
+ * that reads as covering it.
  *
  * The copy is caption-sized and semibold, as the canvas drew it, and it gets the
  * width the pill and the gap leave. Three lines, not the canvas's one: at the
@@ -230,28 +231,34 @@ private fun LargeHeader(mood: Mood, rows: List<WidgetRow>) {
  * The day, woven so far: one segment per habit, the rows' order, the rows'
  * flags. Decorative — both images carry no description.
  *
- * "The rows' order" holds left-to-right only — under an RTL host the rows
- * mirror and this band does not (docs/ux/widget.md §8). Said here as well as on
- * [BandBitmap] because this is the composable that emits the band, so it is the
- * doc a reader lands on first.
+ * **"The rows' order" is read in the host's direction, and this is where the
+ * direction is resolved.** [BandBitmap] is pure and takes it as a flag; the
+ * value is the app's configuration, because Glance composes in our process and
+ * the launcher's own is not reachable from here. A per-app locale can therefore
+ * disagree with the launcher — the caveat docs/ux/visual-identity.md §2 already
+ * carries for the text bitmaps — while a system RTL locale, the case that
+ * matters, agrees. Said here as well as on [BandBitmap] because this is the
+ * composable that emits the band, so it is the doc a reader lands on first.
  *
  * Two [BandBitmap] masks in one [Box], each tinted by its own provider, so
  * the band has no child count to hit ([BandBitmap] has the ten-child cap this
  * replaced) and both fills still resolve through the palette. Remembered
- * against everything that changes the pixels: the flags, the room and the
- * density. Not the colour — the masks are white, and the tint is the free
- * half, as with [OutfitText].
+ * against everything that changes the pixels: the flags, the room, the density
+ * and the direction. Not the colour — the masks are white, and the tint is the
+ * free half, as with [OutfitText].
  */
 @Composable
 private fun WovenBand(rows: List<WidgetRow>, width: Dp) {
-    val metrics = LocalContext.current.resources.displayMetrics
+    val resources = LocalContext.current.resources
+    val metrics = resources.displayMetrics
+    val mirrored = resources.configuration.layoutDirection == View.LAYOUT_DIRECTION_RTL
     val flags = rows.map { it.completed }
-    val masks = remember(flags, width, metrics.densityDpi) {
+    val masks = remember(flags, width, metrics.densityDpi, mirrored) {
         val widthPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, width.value, metrics).roundToInt()
         val heightPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, BAND_HEIGHT.toFloat(), metrics).roundToInt()
         val gapPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, BAND_GAP.toFloat(), metrics)
         val geometry = BandBitmap.Geometry(widthPx, heightPx, gapPx, metrics.densityDpi)
-        listOf(true, false).map { woven -> BandBitmap.render(flags, geometry, woven) }
+        listOf(true, false).map { woven -> BandBitmap.render(flags, geometry, woven, mirrored) }
     }
     Box(modifier = GlanceModifier.width(width).height(BAND_HEIGHT.dp)) {
         masks[0]?.let { BandMask(it, WidgetPalette.bandWoven, width) }

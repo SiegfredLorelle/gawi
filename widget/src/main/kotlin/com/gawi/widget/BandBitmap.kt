@@ -24,14 +24,29 @@ import androidx.core.graphics.createBitmap
  * band, and every colour still resolves through the palette's single
  * translation path — the property [WidgetPalette] exists for.
  *
- * **No layout direction reaches here, and under RTL that shows.** Segments are
- * placed from the left at any N, so index 0 is at the bitmap's left edge whether
- * the host reads left-to-right or right-to-left — while the `Row` around the
- * band *is* mirrored by the host. Seen on a launcher on 2026-08-30
- * (docs/running.md §4) and open in docs/ux/widget.md §8. The geometry below is
- * correct in both directions; it is the reading order that is not, which is why
- * `BandBitmapTest` is green. Unlike [BitmapText], which settles direction for
- * itself through `FIRSTSTRONG_LTR`, this object has nothing to settle it with.
+ * **Direction is the caller's to resolve, and `mirrored` is where it arrives.**
+ * Until 2026-08-30 nothing carried it: segments were placed from the left at any
+ * N, so index 0 sat at the bitmap's left edge whether the host read one way or
+ * the other — while the `Row` around the band *is* mirrored by the host. Seen on
+ * a launcher (docs/running.md §4): the first row's glyph at the right edge with
+ * its woven segment at the left, the band reading backwards against the rows it
+ * repeats. `BandBitmapTest` stayed green throughout, because the geometry was
+ * right and only the reading order was wrong.
+ *
+ * Mirroring is about the bitmap's centre — each segment keeps its width and its
+ * place in the pitch, so `left = widthPx - index · pitch - segment`. **Not**
+ * `widthPx - (index + 1) · pitch`, which is off by a whole `gap`: it ends index 0
+ * at `widthPx - gap` rather than flush, and puts the last segment flush against
+ * the near edge, undoing the edge behaviour the 48-habit fix below was written
+ * to get right.
+ *
+ * What the flag cannot fix is where it comes from. Glance composes in **our**
+ * process, so the only direction available is the app's, and a per-app locale can
+ * differ from the launcher's — the same limitation docs/ux/visual-identity.md §2
+ * records for the text bitmaps, so this matches it rather than adding one. Under
+ * a system RTL locale, which is the case that matters, the two agree. Distinct
+ * from [BitmapText], which settles direction from the text itself through
+ * `FIRSTSTRONG_LTR` and so needs nothing passed in.
  *
  * [Geometry] is px, computed by the caller from dp the way [BitmapText.render]
  * takes its width: a gap between segments, each a full-height pill. Every habit
@@ -52,8 +67,12 @@ internal object BandBitmap {
      * The mask for the segments whose `completed` flag equals [woven], white on
      * transparent; `null` when nothing would be drawn — no rows, no room, or no
      * segment in that state — so the caller emits no image at all for it.
+     *
+     * [mirrored] places the first habit at the right edge instead of the left,
+     * for an RTL host; the KDoc above has where it comes from and why the
+     * arithmetic is the form it is.
      */
-    internal fun render(rows: List<Boolean>, geometry: Geometry, woven: Boolean): Bitmap? {
+    internal fun render(rows: List<Boolean>, geometry: Geometry, woven: Boolean, mirrored: Boolean): Bitmap? {
         val nothingToDraw = rows.none { it == woven }
         val noRoom = geometry.widthPx <= 0 || geometry.heightPx <= 0
         if (nothingToDraw || noRoom) return null
@@ -70,7 +89,7 @@ internal object BandBitmap {
         val radius = geometry.heightPx / 2f
         rows.forEachIndexed { index, completed ->
             if (completed != woven) return@forEachIndexed
-            val left = index * pitch
+            val left = if (mirrored) geometry.widthPx - index * pitch - segment else index * pitch
             canvas.drawRoundRect(RectF(left, 0f, left + segment, geometry.heightPx.toFloat()), radius, radius, paint)
         }
         return bitmap
