@@ -24,6 +24,15 @@ import androidx.core.graphics.createBitmap
  * band, and every colour still resolves through the palette's single
  * translation path — the property [WidgetPalette] exists for.
  *
+ * **No layout direction reaches here, and under RTL that shows.** Segments are
+ * placed from the left at any N, so index 0 is at the bitmap's left edge whether
+ * the host reads left-to-right or right-to-left — while the `Row` around the
+ * band *is* mirrored by the host. Seen on a launcher on 2026-08-30
+ * (docs/running.md §4) and open in docs/ux/widget.md §8. The geometry below is
+ * correct in both directions; it is the reading order that is not, which is why
+ * `BandBitmapTest` is green. Unlike [BitmapText], which settles direction for
+ * itself through `FIRSTSTRONG_LTR`, this object has nothing to settle it with.
+ *
  * [Geometry] is px, computed by the caller from dp the way [BitmapText.render]
  * takes its width: a gap between segments, each a full-height pill. Every habit
  * is placed from its share of the width — `index · width / n` — so the last one

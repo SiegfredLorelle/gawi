@@ -371,7 +371,14 @@ pins both gates at both edges.
 
 **The band is the rows' own flags, and nothing else.** One segment per habit in
 the rows' order, `primary` when today's cell is ticked and `outlineVariant` when
-it is not. Nothing is counted, sorted or capped, so the band cannot say
+it is not. **"In the rows' order" is true of the data and false of the drawing
+under RTL**, measured on a launcher on 2026-08-30 (running.md §4): the rows
+mirror with the host and the band does not, so a right-to-left reader meets the
+first habit's segment at the end of the band instead of the start. `BandBitmap`
+takes no layout direction and places each segment at `left = index * pitch`, so
+index 0 is at the bitmap's left edge whichever way the host reads — the geometry
+is right and only the reading is wrong, which is why every test passes. §8
+carries it as open work. Nothing is counted, sorted or capped, so the band cannot say
 something the checkboxes beneath it do not; with many habits the segments thin
 rather than fold, which at thirty is a texture and still true. **Drawn as two
 rasterised masks, not as a box per habit** — the first cut was a `Box` and a
@@ -484,6 +491,18 @@ docs/running.md §4 has the boxes.
   reminder time moves, so a cutoff edit re-schedules the boundary refresh along
   with it — reminder.md §2. The gap that remains is the interval *between* the
   edit and the next wake, which is the same best-effort caveat as above.
+- **The band does not mirror under an RTL host** (§7, running.md §4, found
+  2026-08-30). The rows mirror and the band keeps its left-to-right order, so it
+  reads backwards against the checkboxes it repeats. The fix is small —
+  `BandBitmap.render` placing index 0 at the far edge when the direction is RTL,
+  or the caller mirroring the mask — but the *input* is the question rather than
+  the arithmetic: Glance composes in **our** process, so the direction available
+  to it is the app's, and a per-app locale can differ from the launcher's. That
+  is the same limitation §2 of visual-identity.md already records for the text
+  bitmaps, so matching it is consistent rather than a new compromise; under a
+  system RTL locale, which is the case that matters, the two agree. Left open
+  rather than fixed in passing because it is a behaviour change to `:widget`
+  with a test owed — `BandBitmapTest` can pin it without a launcher.
 - **`glance-appwidget-testing` was declined, and then taken when its own
   condition came true.** PR review first suggested it for pinning what the
   widget draws, and it was not taken: `Message` resolves its copy through
