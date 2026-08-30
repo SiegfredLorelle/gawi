@@ -41,12 +41,15 @@ import androidx.core.graphics.createBitmap
  * to get right.
  *
  * What the flag cannot fix is where it comes from. Glance composes in **our**
- * process, so the only direction available is the app's, and a per-app locale can
- * differ from the launcher's — the same limitation docs/ux/visual-identity.md §2
- * records for the text bitmaps, so this matches it rather than adding one. Under
- * a system RTL locale, which is the case that matters, the two agree. Distinct
- * from [BitmapText], which settles direction from the text itself through
- * `FIRSTSTRONG_LTR` and so needs nothing passed in.
+ * process, so the only direction available is the app's, and it can in principle
+ * differ from the host's. Under a system RTL locale, the case that matters, the
+ * two agree. Where they do not, this is worse than the §2 caveat it resembles
+ * rather than the same: a name with no strong character laying out LTR is a
+ * *fallback*, while a host that inflates LTR under an RTL configuration would
+ * mirror this band **alone** and invert a picture that had been right. Not
+ * reachable today — no `localeConfig`, no in-app language — and docs/ux/widget.md
+ * §8 carries it. Distinct from [BitmapText], which settles direction from the
+ * text itself through `FIRSTSTRONG_LTR` and so needs nothing passed in.
  *
  * [Geometry] is px, computed by the caller from dp the way [BitmapText.render]
  * takes its width: a gap between segments, each a full-height pill. Every habit
