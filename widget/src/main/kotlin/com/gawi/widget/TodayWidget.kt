@@ -180,6 +180,15 @@ internal fun WidgetBody(content: WidgetContent) {
  * [BandBitmap] has why: Glance caps a container at ten children, and a box per
  * habit truncated the band at six.
  *
+ * **"In the rows' own order" is a claim about the list, and under RTL it stops
+ * being true of the picture.** Measured on a launcher on 2026-08-30
+ * (docs/running.md §4): with a Hebrew system locale the rows mirror — the glyph
+ * moves to the right edge — and the band does not, so the first habit's segment
+ * ends up where a right-to-left reader stops rather than where they start.
+ * [BandBitmap] takes no layout direction, and that is the whole mechanism. Open
+ * work in docs/ux/widget.md §8; stated here because the sentence above is the
+ * one that reads as covering it.
+ *
  * The copy is caption-sized and semibold, as the canvas drew it, and it gets the
  * width the pill and the gap leave. Three lines, not the canvas's one: at the
  * gate that is 128dp, and the regenerating line needs three of them there —
