@@ -43,6 +43,16 @@ class LicencesViewModelTest {
         }
     }
 
+    /** Layout, not editing: the reflow moves line breaks and touches nothing else — on the files that ship. */
+    @Test
+    fun `the reflowed notices are the files, word for word`() {
+        val assets = RuntimeEnvironment.getApplication().assets
+        LicenceNotice.entries.forEach { notice ->
+            val raw = assets.open(notice.file).use { it.reader().readText() }
+            assertEquals(notice.file, raw.filterNot { it.isWhitespace() }, reflowNotice(raw).filterNot { it.isWhitespace() })
+        }
+    }
+
     /** Both or neither: one unreadable file takes the screen to Unavailable. */
     @Test
     fun `a notice that does not read makes the screen unavailable`() = runTest {
