@@ -6,6 +6,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -19,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import com.gawi.core.data.backup.ImportResult
 import com.gawi.core.data.settings.ThemeMode
 import com.gawi.core.ui.theme.GawiTheme
+import com.gawi.feature.settings.testsupport.string
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -49,10 +51,11 @@ class SettingsScreenTest {
     @get:Rule
     val compose = createComposeRule()
 
+    private val resources = RuntimeEnvironment.getApplication().resources
+
     // Robolectric's own accessor rather than ApplicationProvider, which would be
     // androidx.test:core — a different library, reached only transitively
     // through ui-test-junit4 and carrying no catalog entry to bump.
-    private val resources = RuntimeEnvironment.getApplication().resources
 
     /**
      * The one that matters most, and the one worth mutation-checking.
@@ -777,8 +780,6 @@ class SettingsScreenTest {
         }
     }
 
-    private fun string(id: Int): String = resources.getString(id)
-
     // ---- About (docs/ux/settings.md §9) ----
 
     /** A fourth header, after Data: the two rows under it are not settings. */
@@ -797,7 +798,7 @@ class SettingsScreenTest {
         render(STORED)
 
         compose.onNodeWithText("1.2.3").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText(string(R.string.settings_version_label)).performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithText(string(R.string.settings_version_label)).performScrollTo().assertHasNoClickAction()
     }
 
     /** The Licences row reports; it does not navigate, because it cannot. */

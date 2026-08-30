@@ -25,7 +25,7 @@ class LicencesViewModelTest {
     /** The two notices are in the APK, under their upstream names, verbatim. */
     @Test
     fun `the packaged notices read back, both of them, in order`() = runTest {
-        val viewModel = LicencesViewModel(RuntimeEnvironment.getApplication())
+        val viewModel = LicencesViewModel(AssetNoticeSource(RuntimeEnvironment.getApplication()))
 
         viewModel.uiState.test {
             var state = awaitItem()
@@ -47,16 +47,17 @@ class LicencesViewModelTest {
     @Test
     fun `a notice that does not read makes the screen unavailable`() = runTest {
         val viewModel = LicencesViewModel(
-            NoticeOpener { file ->
-                if (file == LicenceNotice.Lucide.file) throw IOException("gone") else "text".byteInputStream()
-            },
+            NoticeSource { file -> if (file == LicenceNotice.Lucide.file) throw IOException("gone") else "text" },
         )
 
-        viewModel.uiState.test {
-            var state = awaitItem()
-            if (state == LicencesUiState.Loading) state = awaitItem()
-            assertEquals(LicencesUiState.Unavailable, state)
-            cancelAndIgnoreRemainingEvents()
-        }
+        assertEquals(LicencesUiState.Unavailable, viewModel.uiState.value)
+    }
+
+    /** `AssetManager.open` succeeds on a zero-byte file; a heading over nothing is not a notice. */
+    @Test
+    fun `an empty notice makes the screen unavailable too`() = runTest {
+        val viewModel = LicencesViewModel(NoticeSource { file -> if (file == LicenceNotice.Outfit.file) "" else "text" })
+
+        assertEquals(LicencesUiState.Unavailable, viewModel.uiState.value)
     }
 }

@@ -13,6 +13,13 @@ android {
     // letters, and the drawable headers in :core:ui point at these files by
     // their upstream names (docs/ux/settings.md §9). The Licences screen reads
     // them back through AssetManager.
+    //
+    // Build configuration in a module file, which architecture.md §9 reserves
+    // for build-logic: recorded there as the one exception, because a
+    // convention plugin for a single module's single directory would be the
+    // heavier way to say the same thing. The whole directory ships, with no
+    // allow-list — the directory IS the list; anything put in licenses/ is a
+    // notice this app owes, and LicenceNotice is where it then gets a name.
     sourceSets {
         getByName("main") {
             assets.srcDir(rootProject.file("licenses"))
