@@ -777,8 +777,10 @@ last on the screen, where a reader who wants a preference never has to pass them
 the `titleMedium` primary middle line means *this is what it is set to*, and a
 version is a record of what the app is, not a choice anyone made. So the row
 reads label, then the version at `bodySmall` where the explanation would go. It
-does not tap — `RowActivity.Blocked`, the same greyed label the Data rows wear
-while busy — because there is nothing a tap could do. The value comes from the
+is a `StaticRow`, not a `SettingRow` that cannot be tapped: a disabled control
+is announced as one, "disabled", which promises an action that does not exist,
+and this is text. The first cut used `RowActivity.Blocked` and a review caught
+the difference. The value comes from the
 `AppVersion` binding `:core:data` already fills to stamp exports, widened from
 `internal` rather than read from `PackageManager` a second time.
 
@@ -800,11 +802,21 @@ notice and nothing to drift: the text a user reads is the text the repo carries.
 **Two entries, listed by hand.** The screen names Outfit and Lucide explicitly
 rather than scanning the assets directory. A third bundled thing is a deliberate
 edit to that list, with a role sentence written for it, not a file that appears
-on the screen with no explanation of what it is for. The screen reads both files
+on the screen with no explanation of what it is for. The directory itself ships
+whole, with no allow-list, and that is the same decision from the other side:
+anything in `licenses/` is a notice this app owes, so it belongs in the APK
+whether or not a name has been written for it yet. The screen reads both files
 off the main thread and shows nothing until it has them; a file that fails to
-read shows the `Notice` this module already draws for unreadable settings, since
-a licences screen with one notice on it would be quietly claiming the other was
-not owed.
+read — or reads empty, which `AssetManager.open` does not refuse — shows the
+`Notice` this module already draws for unreadable settings, since a licences
+screen with one notice on it would be quietly claiming the other was not owed.
+
+**The version rides in `SettingsUiState.Settings`**, threaded through the mapper
+like everything else the screen draws, rather than handed to the section by a
+side door. It costs every state constructor in the tests one more literal, which
+a review counted; what it buys is the rule this module has kept since §5 — the
+screen draws the state and nothing but the state, so a test that renders a state
+sees the whole screen.
 
 **Reflowed, not edited.** Both files are hard-wrapped at about 72 columns for a
 terminal, and drawn as-is at `bodySmall` on a phone every source line broke once

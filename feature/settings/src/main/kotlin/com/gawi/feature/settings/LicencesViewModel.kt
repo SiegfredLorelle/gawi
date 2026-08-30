@@ -13,29 +13,42 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.IOException
-import java.io.InputStream
 import javax.inject.Inject
 
-/** Opens one packaged notice by its file name. The seam a test substitutes. */
-internal fun interface NoticeOpener {
+/**
+ * Reads one packaged notice by its file name. The seam a test substitutes, and
+ * the place the dispatcher lives — as the archives in `:core:data` own theirs —
+ * so the ViewModel stays dispatcher-free and its tests run on the virtual clock.
+ */
+internal fun interface NoticeSource {
     @Throws(IOException::class)
-    fun open(file: String): InputStream
+    suspend fun read(file: String): String
+}
+
+/** The assets the module packages from `licenses/` (docs/ux/settings.md §9). */
+internal class AssetNoticeSource(private val context: Context) : NoticeSource {
+    override suspend fun read(file: String): String = withContext(Dispatchers.IO) {
+        context.assets.open(file).use { it.reader().readText() }
+    }
 }
 
 /**
  * Reads the two notices once and holds them.
  *
- * The primary constructor takes the opener so a test can hand it a file that is
- * missing or unreadable; Hilt uses the secondary one, which reads the assets
- * the module packages from `licenses/` (docs/ux/settings.md §9). The
- * Robolectric test constructs it that way too, against the real assets — which
- * is the test that proves the packaging, not just the screen.
+ * The primary constructor takes the source so a test can hand it a file that is
+ * missing, unreadable or empty; Hilt uses the secondary one. The Robolectric
+ * test constructs it that way too, against the real assets — which is the test
+ * that proves the packaging, not just the screen.
+ *
+ * An empty file is a failure, not a notice. `AssetManager.open` succeeds on a
+ * zero-byte asset, and a heading with nothing under it would be quietly
+ * claiming the licence had been shown.
  */
 @HiltViewModel
-internal class LicencesViewModel internal constructor(private val opener: NoticeOpener) : ViewModel() {
+internal class LicencesViewModel internal constructor(private val source: NoticeSource) : ViewModel() {
 
     @Inject
-    constructor(@ApplicationContext context: Context) : this(NoticeOpener(context.assets::open))
+    constructor(@ApplicationContext context: Context) : this(AssetNoticeSource(context))
 
     private val state = MutableStateFlow<LicencesUiState>(LicencesUiState.Loading)
     val uiState: StateFlow<LicencesUiState> = state.asStateFlow()
@@ -43,7 +56,7 @@ internal class LicencesViewModel internal constructor(private val opener: Notice
     init {
         viewModelScope.launch {
             state.value = try {
-                LicencesUiState.Ready(withContext(Dispatchers.IO) { readAll() })
+                LicencesUiState.Ready(readAll())
             } catch (cause: IOException) {
                 Log.e(TAG, "a licence notice did not read", cause)
                 LicencesUiState.Unavailable
@@ -51,8 +64,10 @@ internal class LicencesViewModel internal constructor(private val opener: Notice
         }
     }
 
-    private fun readAll(): List<NoticeUi> = LicenceNotice.entries.map { notice ->
-        NoticeUi(notice, reflowNotice(opener.open(notice.file).use { it.reader().readText() }))
+    private suspend fun readAll(): List<NoticeUi> = LicenceNotice.entries.map { notice ->
+        val text = source.read(notice.file)
+        if (text.isBlank()) throw IOException("${notice.file} is empty")
+        NoticeUi(notice, reflowNotice(text))
     }
 
     private companion object {

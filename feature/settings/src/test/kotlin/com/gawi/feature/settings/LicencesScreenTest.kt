@@ -10,22 +10,18 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import com.gawi.core.ui.theme.GawiTheme
+import com.gawi.feature.settings.testsupport.string
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
 
 @RunWith(RobolectricTestRunner::class)
 class LicencesScreenTest {
 
     @get:Rule
     val compose = createComposeRule()
-
-    private val resources = RuntimeEnvironment.getApplication().resources
-
-    private fun string(id: Int): String = resources.getString(id)
 
     private fun render(state: LicencesUiState, onBack: () -> Unit = {}) {
         compose.setContent { GawiTheme { LicencesScreen(state, onBack) } }
@@ -60,6 +56,7 @@ class LicencesScreenTest {
         render(LicencesUiState.Loading)
 
         compose.onNodeWithText(string(R.string.settings_notice_outfit)).assertDoesNotExist()
+        compose.onNodeWithText(string(R.string.settings_licences_unavailable_title)).assertDoesNotExist()
         compose.onNodeWithText(string(R.string.settings_licences_title)).assertIsDisplayed()
     }
 

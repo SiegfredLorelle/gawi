@@ -35,6 +35,8 @@ class LicenceNoticeTest {
     fun `nothing but line breaks changes`() {
         val text = "ISC License\n\nCopyright (c) 2026 Lucide Icons and Contributors\n\nPermission to use,\ncopy.\n"
 
-        assertEquals(text.replace("\n", "").replace(" ", ""), reflowNotice(text).replace("\n", "").replace(" ", ""))
+        // Every line break becomes a space or stays a line break, so mapping
+        // both to spaces must leave the two texts identical, word for word.
+        assertEquals(text.trimEnd().replace("\n", " "), reflowNotice(text).replace("\n", " "))
     }
 }
