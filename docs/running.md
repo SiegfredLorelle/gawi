@@ -1044,11 +1044,24 @@ the bitmaps are drawn and tinted:
       with the widget placed and the app not running, and the ground, the name
       and the glyph all move together within about two seconds — 16.59:1 and
       5.18:1 in light, 14.82:1 and 5.31:1 in dark.
-- [ ] **200 % font scale.** Rows grow; a long name ellipsises inside the row
+- [x] **200 % font scale.** Rows grow; a long name ellipsises inside the row
       rather than under the widget's edge; nothing clips vertically. The change
       lands at the next render, not on the spot — complete a habit in the app
       to force one. (Glance recomposes on locale, not on configuration.)
-- [ ] **An RTL *system* locale** — Settings → System → Languages, Hebrew or
+      **Run 2026-08-30 on `Small_Phone` (API 37), Pixel launcher, the Today
+      widget at four by three.** The name bitmap for *Read* grew 75 × 40 px to
+      130 × 71 px — the text is close to the 2× asked for; the *row* grew only
+      64 → 71 px, because a row's height is the checkbox's floor until the text
+      passes it. A 37-character name ellipsised to *Read a long …* with its
+      bitmap ending at x = 469, against the rows' content edge at 501 and the
+      widget's own edge at 517 — inside the row, and the full string is still
+      the row's `contentDescription`. Nothing is lost vertically: the rows are
+      a `ListView`, so the fourth row sits below the fold and **scrolls** into
+      view rather than clipping, which is worth knowing before reading a
+      part-drawn last row as a defect. One thing a re-run should expect: at
+      200 % the body drops to the face-above-rows form, so the header, the mood
+      line and the band are not on screen to judge here.
+- [x] **An RTL *system* locale** — Settings → System → Languages, Hebrew or
       Arabic first. Not a per-app locale, and not the developer toggle: measured
       on 2026-08-25 on the API 37 emulator, `cmd locale set-app-locales` flips
       our app and leaves the widget as it was, because the launcher inflates the
@@ -1057,7 +1070,47 @@ the bitmaps are drawn and tinted:
       What to see: the glyph sits on the right, and a Hebrew or Arabic name is
       shaped and read right-to-left. `BitmapTextTest` proves the glyphs land on
       the canvas; only a launcher shows whether the row mirrors around them.
-- [ ] **A non-default Display size** — Settings → Display → Display size, Large
+
+      **Run 2026-08-30 on `Small_Phone` (API 37), Pixel launcher, Hebrew first
+      and a habit named קריאה.** Both halves hold, and the launcher itself went
+      Hebrew with them (`יום א׳, 30 באוג׳`, *חנות Play*), which is the evidence
+      that this was the host's own configuration and not ours. Measured off the
+      accessibility tree, same widget and same data in both directions, the
+      content spanning x 49–501 either way:
+
+      | | LTR | RTL |
+      |---|---|---|
+      | row 1's checkbox | 49–113 (flush left) | 437–501 (flush right) |
+      | Momo's pill | 49–181 | 372–497 |
+      | the mood line | 201–473 | 77–349 |
+
+      A clean mirror. קריאה shapes and reads right-to-left, from the platform's
+      Hebrew face — Outfit's `cmap` has no Hebrew — and it still shapes
+      correctly *in the LTR pass too*, which is `FIRSTSTRONG_LTR` doing its job
+      on the paragraph while the run itself stays RTL.
+
+      **The band does not mirror, and that is this run's finding** — it is the
+      band's own box under *The Momo widget and the large Today body*, not this
+      one, and it is recorded there.
+
+      **How to set the locale, because two obvious routes are dead ends.** The
+      emulator's `-prop persist.sys.locale=he-IL` is silently ignored, and a
+      Play Store image (`Small_Phone` is `google_apis_playstore`) refuses
+      `adb root`, so there is no `setprop` either. It has to be the Settings UI
+      — and on API 37 the language **search** crashes Settings outright
+      (`LocalePickerBaseListPreferenceController.getSortedSuggestedLocaleFromSearchList`,
+      NPE), so scroll instead. The list sorts by native name, which puts every
+      RTL script in one clump just above the CJK tail: fling to the bottom, then
+      step back up and עברית is about thirteen screens short of it. Adding a
+      language does **not** switch to it — tap the row's drag handle (its
+      `content-desc` is *Edit system language list, …*) for a **Move up** menu,
+      then confirm. **Hebrew has been left installed as the second preferred
+      language on this AVD on purpose**, so a re-run is only that handle and
+      *Move up*. Read it back three ways before believing it —
+      `getprop persist.sys.locale`, `settings get system system_locales`, and
+      `am get-config`, which is the one that actually proves direction: it reads
+      `…he-rIL,en-rUS-ldrtl…` against `…en-rUS-ldltr…`.
+- [x] **A non-default Display size** — Settings → Display → Display size, Large
       then Small (or `wm density 400` on the emulator, `wm density reset` after),
       then complete a habit so the widget re-renders. The name must be as crisp
       as the checkbox glyph and keep its proportion to it. A blurry, oversized
@@ -1065,6 +1118,17 @@ the bitmaps are drawn and tinted:
       rather than the one it was drawn at, and the host has scaled it twice —
       review caught exactly that in the first cut, and none of the checks above
       would have, because they all run at the default size.
+      **Run 2026-08-30 on `Small_Phone` (API 37) in both directions**, `wm
+      density 400` and `wm density 260` against its 320 default. Both scale by
+      exactly the density ratio, which is the whole claim: at 400 (×1.25) the
+      checkbox went 64 → 80 px and the *Read* bitmap 75 × 40 → 91 × 50; at 260
+      (×0.8125) the checkbox went 64 → 52 px and the bitmap 75 × 40 → 60 × 33.
+      The name and the glyph therefore keep their proportion, and both stay
+      crisp — the letterforms have clean antialiased edges at 400, which is
+      where a twice-scaled bitmap would have shown as blur. Expect the *body* to
+      change underneath: at 400 the widget is about 151 dp tall and draws rows
+      alone, at 260 it is tall enough for the header again, so this check is
+      about the row, not about which body appears.
 
 Known and expected, not a bug — but **much narrower since 2026-08-21**: a widget
 left on the launcher across the day cutoff is now refreshed by a scheduled wake
@@ -1174,6 +1238,25 @@ scheme, and the two-column flip.
       tap a row: its segment flips with its box, on the same write. A band that
       disagrees with the rows beneath it has been given a rule of its own, which
       it must not have.
+
+      **Run 2026-08-30 on `Small_Phone` (API 37) in both layout directions, and
+      the second one fails.** In LTR it is exactly right: four habits, four
+      segments, and tapping the *first* row lit the *first* segment — woven
+      `#7FD4DC` sampled at x 201–269, the band's left end, with the three
+      outstanding `#324042` running rightwards. Under a Hebrew system locale the
+      rows mirror and the band does not. The same first row now has its glyph at
+      x 437–501, flush **right**, while its woven segment is still at x 49–117,
+      the band's **left** end — so the band's first segment sits where a
+      right-to-left reader finishes rather than where they start, and the band
+      reads backwards against the rows it is supposed to be repeating.
+
+      `BandBitmap.render` has no layout direction to consult: it places every
+      segment at `left = index * pitch`, unconditionally, so index 0 is at the
+      bitmap's left edge in both directions. That is the whole mechanism, and it
+      is why no test caught it — the geometry is correct, it is the *reading*
+      that is wrong. Distinct from the `BitmapText` side, which does settle
+      direction, via `FIRSTSTRONG_LTR`. The box stays unticked until the band
+      mirrors; [ux/widget.md](ux/widget.md) §8 carries it as open work.
 - [ ] **In greyscale the band still reads.** Monochromacy on: a woven segment
       and an outstanding one must still tell apart by lightness alone (3.78:1
       light, 6.34:1 dark, measured). `screencap` will not show you this — see
@@ -1775,17 +1858,44 @@ Built 2026-08-25 ([visual-identity.md](ux/visual-identity.md) §7.1, §8).
 `LauncherIconTest` proves the three layers exist, draw and are wired; every
 launcher masks and scales them differently, which is what is left.
 
-- [ ] **In the app drawer and on the home screen.** Momo's mark — face and two
+- [x] **In the app drawer and on the home screen.** Momo's mark — face and two
       fronds a side on teal — under whatever mask the launcher uses (circle,
       squircle, rounded square). Nothing that carries meaning is clipped; a
       sliver of the lower fronds may be, by design.
-- [ ] **Small.** Drop it in a folder and look at it at the drawer's smallest
+      **Run 2026-08-30 on `Small_Phone` (API 37), Pixel launcher, under three
+      masks rather than one** — Wallpaper & style → Icons → **Shape** offers
+      Circle, Square, 4-sided cookie, 7-sided cookie and Arch, so the mask is a
+      setting here rather than something to hunt a launcher for. Checked Circle
+      (the default), Square and Arch, which is the most aggressive of the five:
+      face, both eyes, mouth and all four frond lobes sit inside the mask in
+      every one, and **nothing was clipped at all** — not even the sliver of
+      lower fronds this item allows for. The ground sampled `#B4E9F0` off the
+      drawer icon, which is `Color.kt`'s light `primaryContainer` exactly, the
+      value `LauncherIconTest` pins.
+- [x] **Small.** Drop it in a folder and look at it at the drawer's smallest
       size: the eyes and mouth still read as a face. That was the canvas's
       test for two fronds over three.
-- [ ] **Themed, API 33+.** Wallpaper & style → *Themed icons* on. The icon
+      **Run 2026-08-30 on `Small_Phone` (API 37)**, in a two-item dock folder.
+      The preview draws the mark at about 42 × 42 px — 21 dp at this device's
+      320 dpi, under half the 48 dp it gets in the drawer — and it still reads:
+      two eyes and the mouth are separately legible and the fronds are still two
+      lobes a side rather than a pink smudge. So the canvas's two-over-three
+      call survives the smallest size the launcher draws. A note for whoever
+      re-runs it: `input draganddrop` makes the folder only over a *short* hop
+      between two dock icons; over a longer one the launcher displaces the
+      target or flips the page instead, and chained `input motionevent` with a
+      dwell does not merge at all.
+- [x] **Themed, API 33+.** Wallpaper & style → *Themed icons* on. The icon
       becomes the woven thread — three warps and a weft — in the system tint,
       not a tinted face. Below API 33 the coloured icon stays; there is nothing
       to check there.
+      **Run 2026-08-30 on `Small_Phone` (API 37)**, and correct: three warps
+      crossed by one weft, drawn in the system tint on the themed ring, with no
+      trace of the face. **The setting is not called *Themed icons* any more**
+      on this level — it is Wallpaper & style → Home screen → **Icons** →
+      *Style* → **Minimal**, against *Default*, and it needs an explicit
+      **Apply**. Same monochrome layer underneath, so the item's expectation is
+      unchanged; only the path to it moved.
 
 ### Accessibility — *device only, and the layer no test reaches*
 
