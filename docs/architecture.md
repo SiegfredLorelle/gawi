@@ -45,7 +45,7 @@ Now-in-Android convention: Gradle version catalog
 | `:feature:today` | Today view (app home screen, Momo's habitat) |
 | `:feature:habits` | Create/edit/archive habit, habit detail |
 | `:feature:insights` | Per-habit heatmap and completion-rate trends, tag effort distribution, and Phase 1.5's retrospective — **all three Phase 1 surfaces and the retrospective are built**; the review is the app-wide screen stepped back through the calendar, not a screen of its own |
-| `:feature:settings` | Day boundary, week start, reminder time, the app's theme, export and import, the 30-day export nudge |
+| `:feature:settings` | Day boundary, week start, reminder time, the app's theme, export and import, the 30-day export nudge; the About section and the Licences screen (docs/ux/settings.md §9) — its second screen, reached only through `:app` |
 | `:widget` | Glance home-screen widget |
 
 Dependency rule: `feature → core`, `widget → core`, `app → everything`,
@@ -818,7 +818,7 @@ twenty-five files, which would be a sign the feature itself should split.
 | `config/robolectric/robolectric.properties` | **The Robolectric SDK level, for every module.** Attached to each Android module's unit-test resources by `build-logic/src/main/kotlin/gawi/KotlinAndroid.kt` |
 | `scripts/` | Repo-local tooling. `check-citations.sh` is a check and `make lint` runs it (§9); `convert-lucide.py` is a generator for :core:ui's icon drawables, run by hand and deliberately not wired into `make` — it needs the network and regenerates checked-in files, which is not what a lint target should do |
 | `docs/` | `prd.md` what and why, this file how, `running.md` on a device, `ux/` per-screen decisions, `stacks/kotlin-android.md` the template wiring |
-| `licenses/` | Third-party licence texts for bundled assets. Outside `res/`, which takes font files and XML families only — and a resource filename cannot carry uppercase letters, so `OFL.txt` there is a build error rather than good citizenship |
+| `licenses/` | Third-party licence texts for bundled assets. Outside `res/`, which takes font files and XML families only — and a resource filename cannot carry uppercase letters, so `OFL.txt` there is a build error rather than good citizenship. `:feature:settings` declares this directory as an assets source set, so the APK carries each file under its own name and the Licences screen reads it from there (docs/ux/settings.md §9) |
 
 The Robolectric line is the one most easily missed: a module inherits that SDK
 pin without declaring anything at all, which is exactly how a comment in

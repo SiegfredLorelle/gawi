@@ -760,3 +760,65 @@ rather than off the write.
   a middle line and a pair of booleans, and there is now one of them with five
   call sites (§6). The glyph button was untouched and still five when that was
   written; it is `:core:ui`'s `GawiIconButton` now, per the top of this bullet.
+
+## 9. About: the rows that are not settings either
+
+**Built 2026-08-30**, and it closes the licences release gate that
+visual-identity.md §5 and §7.5 left open: nothing packaged `licenses/` and
+there was no screen to show it on. Canvas page 12 "About" has the boards.
+
+**A fourth section, not two more rows.** §7 gave Appearance its own header
+because it is a different *kind* of thing from the three rows that count days,
+and §6 gave Data one for rows that are not settings at all. Version and Licences
+are not settings either, so the same rule puts them under a header of their own,
+last on the screen, where a reader who wants a preference never has to pass them.
+
+**The version sits in the help line, not the value line.** §6's argument stands:
+the `titleMedium` primary middle line means *this is what it is set to*, and a
+version is a record of what the app is, not a choice anyone made. So the row
+reads label, then the version at `bodySmall` where the explanation would go. It
+does not tap — `RowActivity.Blocked`, the same greyed label the Data rows wear
+while busy — because there is nothing a tap could do. The value comes from the
+`AppVersion` binding `:core:data` already fills to stamp exports, widened from
+`internal` rather than read from `PackageManager` a second time.
+
+**Licences opens a screen.** Two full notices are too long for a row and too long
+for a dialog. The help line names what is credited — Outfit and Lucide — so a
+reader who never taps still knows the answer. The screen is a second Route in
+this module, `LicencesRoute(onBack)`, on the precedent insights.md §8 set for
+History: a feature module may hold two screens, and only `:app` decides that one
+leads to the other.
+
+**The texts ship as assets, not `res/raw`.** A resource name cannot carry
+uppercase letters (visual-identity.md §5), so `Outfit-OFL.txt` would have to be
+renamed, and every drawable header that points at `licenses/Lucide-ISC.txt`
+would then point at a file the APK does not contain under that name. `assets/`
+keeps the filename. And the module's assets source set points at the repository's
+`licenses/` directory rather than holding a copy, so there is one file per
+notice and nothing to drift: the text a user reads is the text the repo carries.
+
+**Two entries, listed by hand.** The screen names Outfit and Lucide explicitly
+rather than scanning the assets directory. A third bundled thing is a deliberate
+edit to that list, with a role sentence written for it, not a file that appears
+on the screen with no explanation of what it is for. The screen reads both files
+off the main thread and shows nothing until it has them; a file that fails to
+read shows the `Notice` this module already draws for unreadable settings, since
+a licences screen with one notice on it would be quietly claiming the other was
+not owed.
+
+**Reflowed, not edited.** Both files are hard-wrapped at about 72 columns for a
+terminal, and drawn as-is at `bodySmall` on a phone every source line broke once
+more a few words before its end and left an orphan on the next — "worldwide",
+"creation" — which read as damage on the first device look. `reflowNotice`
+joins the line breaks inside a paragraph into spaces and keeps the blank lines
+and the OFL's dashed rules, so the words are the file's own and only the layout
+is the phone's. It is unit-tested for exactly that: strip whitespace from both
+and they are equal.
+
+**No links, no buttons.** The URLs are in the texts already, and nothing else in
+this app hands off to a browser. The notices are there to be present, at
+`bodySmall`, under a `titleMedium` heading and a one-line grey role so the two
+are findable while scrolling — not to be read like a settings row.
+
+**Still owed on a device**: TalkBack over the two headings and the non-tappable
+Version row (docs/running.md §4).
