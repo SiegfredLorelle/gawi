@@ -2,6 +2,7 @@ package com.gawi.core.domain.mascot
 
 import com.gawi.core.domain.model.Schedule
 import com.gawi.core.domain.streak.StreakSnapshot
+import com.gawi.core.domain.testsupport.habitId
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.time.DayOfWeek
@@ -20,10 +21,10 @@ class MascotMoodTest {
     private val evening = LocalTime.of(21, 30)
 
     private fun daily(completedToday: Boolean, streak: StreakSnapshot = StreakSnapshot.NONE, archived: Boolean = false) =
-        HabitMoodState(Schedule.Daily, archived, completedToday, completionsThisWeek = 0, streak)
+        HabitMoodState(habitId(1), Schedule.Daily, archived, completedToday, completionsThisWeek = 0, streak)
 
     private fun weekly(timesPerWeek: Int, completionsThisWeek: Int = 0, streak: StreakSnapshot = StreakSnapshot.NONE) =
-        HabitMoodState(Schedule.Weekly(timesPerWeek), archived = false, completedToday = false, completionsThisWeek, streak)
+        HabitMoodState(habitId(2), Schedule.Weekly(timesPerWeek), archived = false, completedToday = false, completionsThisWeek, streak)
 
     private fun brokeOn(day: LocalDate) = StreakSnapshot(current = 0, previous = 4, brokenOn = day)
 

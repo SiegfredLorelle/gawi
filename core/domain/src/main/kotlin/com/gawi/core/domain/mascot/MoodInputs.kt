@@ -1,5 +1,6 @@
 package com.gawi.core.domain.mascot
 
+import com.gawi.core.domain.model.HabitId
 import com.gawi.core.domain.model.Schedule
 import com.gawi.core.domain.streak.StreakSnapshot
 import java.time.DayOfWeek
@@ -10,6 +11,12 @@ import java.time.LocalTime
 /**
  * One habit, as the mood rules need to see it: what it is due to do, whether
  * that is done, and whether its streak just broke.
+ *
+ * [id] is here because [Mascot.recentlyBrokenHabits] answers *which* habits
+ * rather than how many, and a rule that returns habits has to be able to name
+ * them. It is deliberately the only identity this type carries: the copy that
+ * names a habit needs its name, and resolving an id to a name is the caller's
+ * job — this module has no business holding display text.
  *
  * docs/ux/today-view.md §4 describes the mood as a function of "the projected
  * state", which was written before the read model existed. Taking that
@@ -37,6 +44,7 @@ import java.time.LocalTime
  * now-or-never threshold by a day without failing a domain test.
  */
 data class HabitMoodState(
+    val id: HabitId,
     val schedule: Schedule,
     val archived: Boolean,
     val completedToday: Boolean,

@@ -1,5 +1,6 @@
 package com.gawi.core.domain.mascot
 
+import com.gawi.core.domain.model.HabitId
 import com.gawi.core.domain.model.Schedule
 import com.gawi.core.domain.streak.StreakSnapshot
 import com.gawi.core.domain.time.reminderOn
@@ -86,6 +87,37 @@ object Mascot {
             else -> Mood.CONTENT
         }
     }
+
+    /**
+     * Which live habits are inside [REGENERATING_WINDOW_DAYS], most recently broken
+     * first — today-view §6's `recentlyBrokenHabits`, for the copy that has to name
+     * a habit rather than describe a face.
+     *
+     * Ids rather than a wider [Mood]: one type should not have to carry both "which
+     * drawing" and "which habit", and a mood is a bare label forever ([Mood]). What
+     * a name looks like is the caller's business; this module holds no display text.
+     *
+     * **The ordering is the rule, not an implementation detail.** The line names one
+     * habit, so which one is first decides what the user reads: most recently broken,
+     * because the line is about the thing that just happened rather than the worst
+     * thing that ever did — [Mood.REGENERATING] never scolds. `sortedByDescending` is
+     * stable, so two habits broken on the same day keep the caller's own order and the
+     * answer cannot flicker between two equally recent breaks.
+     *
+     * **Answers without consulting the mood.** [Mood.THRIVING] outranks
+     * [Mood.REGENERATING], so a finished day returns a non-empty list with nothing to
+     * draw. Which habit is this function's question; whether to say so at all is the
+     * panel's.
+     *
+     * Shares [recentlyBroken] with [mood] and deliberately shares nothing else. [mood]
+     * asks `any`, which short-circuits, and routing it through this list would make the
+     * precedence table depend on an ordering rule it has no use for.
+     */
+    fun recentlyBrokenHabits(inputs: MoodInputs): List<HabitId> = inputs.habits
+        .filterNot { it.archived }
+        .filter { recentlyBroken(it.streak, inputs.today) }
+        .sortedByDescending { it.streak.brokenOn }
+        .map { it.id }
 
     /**
      * Whether [habit] is due today and not yet satisfied — today-view §4's `outstanding`.

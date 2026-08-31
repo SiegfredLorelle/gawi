@@ -2,6 +2,7 @@ package com.gawi.core.domain.mascot
 
 import com.gawi.core.domain.model.Schedule
 import com.gawi.core.domain.streak.StreakSnapshot
+import com.gawi.core.domain.testsupport.habitId
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.time.DayOfWeek
@@ -18,6 +19,7 @@ class NearBoundaryTest {
 
     private val today = LocalDate.parse("2026-08-17")
     private val outstanding = HabitMoodState(
+        habitId(1),
         Schedule.Daily,
         archived = false,
         completedToday = false,
