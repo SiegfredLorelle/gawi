@@ -1904,6 +1904,8 @@ the one sequence that only plays while the frame loop runs.
       restores the title. The face is the current mood's — the drained
       regenerating one, which is what made it obvious the mood really reaches
       it — and the swap is a crossfade, caught half-done in one screenshot.
+      Re-checked after the review widened the gap between face and count from
+      2 dp to 12 dp, since that is the axis a full bar runs out of room on.
 
       **Read the box below before trusting this tick.** It was seen at
       `wm size 720x820`, not at the AVD's own 720x1280, for the reason that box
@@ -1929,6 +1931,15 @@ the one sequence that only plays while the frame loop runs.
       panel's live region only. `chip_isNotASecondLiveRegion` asserts the
       property that would cause a double read, but only a screen reader can say
       what is actually spoken — and neither emulator image here has one.
+
+      **What *was* checked, 2026-08-31, and how:** `uiautomator dump` reads the
+      same node description a screen reader consumes, and on API 37 the chip's
+      is `"Momo is regrowing a gill. Pick Read back up. 3 of 4 left today"` —
+      the mood and the full count, in one node. That is worth doing before
+      trusting any chip description, because the first build's said only the
+      mood: a node with a `contentDescription` has its `text` ignored, so the
+      drawn count was silently unspoken and every test still passed. What the
+      dump cannot answer is the double-read, which needs the real thing.
 
 ### The launcher icon
 
