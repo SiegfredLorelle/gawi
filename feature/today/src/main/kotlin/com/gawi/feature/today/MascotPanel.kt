@@ -30,6 +30,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.gawi.core.domain.mascot.Mood
@@ -119,10 +120,15 @@ internal fun MascotPanel(mascot: MascotUi, motion: TodayMotion, modifier: Modifi
  * copy is a polite one already and is only scrolled off rather than gone, so a
  * second here would have TalkBack read the mood twice after every tick.
  *
- * The count is its own shorter wording rather than the panel's sentence: the bar
- * has no room for "3 of 8 left today" beside three action icons at a large font
- * scale, and the mood line merged in above it supplies the context that the
- * short form drops.
+ * **What is shown and what is spoken are different strings, and the description
+ * has to carry both facts.** The bar has no room for "3 of 8 left today" beside
+ * three action icons, so the label is the short form — but a node with a
+ * `contentDescription` has its `text` ignored by TalkBack, so a description of
+ * the mood alone would silently drop the count from the announcement and leave
+ * the chip saying less than the panel it replaced. It is built from the panel's
+ * own two lines for that reason, and `chip_speaksTheCountItShows` is the
+ * assertion that keeps it: reading the label back proves nothing, because the
+ * label is exactly the part a screen reader does not read.
  *
  * One consequence for tests: this draws a second [Momo], carrying the same
  * `momo:<mood>` tag the tank does, so a tag query made while the chip is up
@@ -130,23 +136,20 @@ internal fun MascotPanel(mascot: MascotUi, motion: TodayMotion, modifier: Modifi
  */
 @Composable
 internal fun TodayChip(mascot: MascotUi, modifier: Modifier = Modifier) {
-    val line = moodLine(mascot)
+    // The panel's own two lines, joined: the face has no description of its own
+    // and the label is not read, so this one string is the whole announcement.
+    val spoken = listOfNotNull(moodLine(mascot), remainingLine(mascot)).joinToString(" ")
     Row(
         modifier = modifier
             .testTag(CHIP_TAG)
-            .semantics(mergeDescendants = true) {},
+            .semantics(mergeDescendants = true) { contentDescription = spoken },
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(GawiSpacing.Line),
+        horizontalArrangement = Arrangement.spacedBy(GawiSpacing.Gap),
     ) {
-        // The face is described and the count is left to speak for itself —
-        // the widget's lesson (docs/ux/widget.md §5) from both sides at once: a
-        // nameless picture beside a line that names it, or the same words twice.
-        Box(Modifier.size(ChipFace).semantics { contentDescription = line }) {
-            // Sized by the Box: a Canvas with no size of its own measures 0 x 0,
-            // and a test that only asked whether the node existed would pass on
-            // an empty chip.
-            Momo(mascot.mood, animated = false)
-        }
+        // Sized by the Box: a Canvas with no size of its own measures 0 x 0,
+        // and a test that only asked whether the node existed would pass on
+        // an empty chip.
+        Box(Modifier.size(ChipFace)) { Momo(mascot.mood, animated = false) }
         Text(
             text = if (mascot.remaining == 0) {
                 stringResource(R.string.today_chip_remaining_none)
@@ -155,6 +158,11 @@ internal fun TodayChip(mascot: MascotUi, modifier: Modifier = Modifier) {
             },
             style = MaterialTheme.typography.titleMedium,
             maxLines = 1,
+            // Ellipsis rather than the default clip. today-view §1's own
+            // measurement puts the chip's first appearance at nine habits, so a
+            // two-digit count is the ordinary case here, not the edge one, and
+            // clipping would cut it mid-glyph.
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }

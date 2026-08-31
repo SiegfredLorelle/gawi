@@ -20,6 +20,7 @@ import com.gawi.core.domain.mascot.Mood
 import com.gawi.core.domain.model.HabitId
 import com.gawi.core.ui.streak.StreakUi
 import com.gawi.core.ui.theme.GawiTheme
+import com.gawi.feature.today.testsupport.habitId
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -375,9 +376,31 @@ class TodayScreenTest {
         scrollPastTheTank()
 
         compose.onNodeWithText(resources.getString(R.string.today_chip_remaining, LONG.remaining)).assertIsDisplayed()
-        compose.onNodeWithContentDescription(string(R.string.today_mood_worried)).assertIsDisplayed()
         compose.onNodeWithText(resources.getString(R.string.today_remaining, LONG.remaining, LONG.rows.size))
             .assertDoesNotExist()
+    }
+
+    /**
+     * What the chip *says* is not what the chip shows, and the count has to
+     * survive the difference.
+     *
+     * A node carrying a `contentDescription` has its `text` ignored by TalkBack.
+     * The chip has both — the short label is drawn, the sentence is spoken — so
+     * a description naming only the mood would drop the count from the
+     * announcement while every visible-text assertion above stayed green. That
+     * is the bug this pins, and it is not one a label assertion can see: the
+     * label is exactly the part a screen reader does not read.
+     */
+    @Test
+    fun chip_speaksTheCountItShows() {
+        compose.setContent {
+            GawiTheme { TodayScreen(LONG, NO_ACTIONS, SnackbarHostState()) }
+        }
+        scrollPastTheTank()
+
+        val spoken = string(R.string.today_mood_worried) +
+            " " + resources.getString(R.string.today_remaining, LONG.remaining, LONG.rows.size)
+        compose.onNodeWithContentDescription(spoken).assertIsDisplayed()
     }
 
     /**
@@ -665,7 +688,7 @@ class TodayScreenTest {
          */
         val LONG = TodayUiState.Habits(
             rows = List(8) { n ->
-                WALK.copy(id = HabitId("00000000-0000-7000-8000-%012d".format(n + 10)), name = "habit $n")
+                WALK.copy(id = habitId(n + 10), name = "habit $n")
             },
             mood = Mood.WORRIED,
             remaining = 3,

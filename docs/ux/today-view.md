@@ -268,6 +268,17 @@ Small decisions that were easier to make once drawn:
   is only scrolled off rather than gone, so a second would have TalkBack read the
   mood twice after every tick. That is asserted structurally — no emulator image
   here has TalkBack — and the by-hand check is owed in `docs/running.md` §4.
+
+  **A review caught the chip saying less than it showed, and the shape of the
+  miss is worth keeping.** A node carrying a `contentDescription` has its `text`
+  ignored by a screen reader. The chip has both — a short drawn label, a spoken
+  sentence — and the first build described only the mood, so the count was drawn
+  and never announced. Every test passed, because they all read the label back,
+  and the label is exactly the part TalkBack does not read. The description is
+  now built from the panel's own two lines, and `chip_speaksTheCountItShows`
+  pins it. The general form, worth carrying past this chip: where a node's shown
+  and spoken strings differ on purpose, asserting the shown one proves nothing
+  about the other.
 - ~~**The `regenerating` copy has nowhere to come from yet.** §3 says it
   "names the habit and offers the repair", but the mood is a bare label —
   it names an artboard, not a habit — and `HabitMoodState` deliberately
