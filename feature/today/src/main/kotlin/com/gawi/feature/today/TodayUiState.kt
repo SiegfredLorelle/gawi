@@ -45,8 +45,40 @@ internal sealed interface TodayUiState {
         val remaining: Int,
         /** The date a tap writes to: the one these rows were queried for. */
         val logicalDate: LocalDate,
+        /**
+         * The habit the regenerating line names, or null when there is no line
+         * to name one in.
+         *
+         * The name rather than the `HabitId` `Mascot.recentlyBrokenHabits`
+         * returns: resolving one to the other is a decision, and this file's
+         * contract is that the screen works nothing out for itself.
+         *
+         * **Null unless [mood] is `REGENERATING`.** `THRIVING` outranks it, so a
+         * finished day has a live break with nothing to say about it — and that
+         * is exactly the case a nullable field makes assertable.
+         */
+        val regeneratingHabit: String?,
     ) : TodayUiState
 }
+
+/**
+ * What Momo's surfaces say about right now — the panel's copy, and the app-bar
+ * chip that carries the same two facts once the panel has scrolled away
+ * (docs/ux/today-view.md §1).
+ *
+ * A model rather than four more parameters, for the reason [HabitRowUi] gives:
+ * `MascotPanel` was already at five and detekt's `LongParameterList` fires at
+ * six. It is built at the call site rather than carried on [TodayUiState]
+ * because [TodayUiState.Empty] has no rows to count and would carry two zeroes.
+ */
+internal data class MascotUi(
+    val mood: Mood,
+    /** Outstanding right now, by §4's rule — not simply "not ticked". */
+    val remaining: Int,
+    val total: Int,
+    /** [TodayUiState.Habits.regeneratingHabit]; always null when [total] is 0. */
+    val regeneratingHabit: String?,
+)
 
 /**
  * One row. A model rather than eight parameters, so the row composable stays

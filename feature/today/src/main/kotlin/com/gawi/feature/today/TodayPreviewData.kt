@@ -98,6 +98,7 @@ private val PREVIEW_STATE = TodayUiState.Habits(
     mood = Mood.WORRIED,
     remaining = OUTSTANDING_COUNT,
     logicalDate = LocalDate.parse("2026-08-17"),
+    regeneratingHabit = null,
 )
 
 /** Inert: a preview has nowhere to navigate and nothing to write. */
