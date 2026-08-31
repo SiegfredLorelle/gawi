@@ -57,6 +57,11 @@ class TodayMoodTest {
         store.repository.observeToday().test {
             val snapshot = awaitItem()
             val expected = HabitMoodState(
+                // The id the create returned, so this pins the mapping rather
+                // than whatever id the row happens to be carrying: the mood
+                // rules ignore it, but `recentlyBrokenHabits` returns it and a
+                // line that names the wrong habit would be silent here.
+                id = habit,
                 schedule = Schedule.Weekly(3),
                 archived = false,
                 completedToday = true,

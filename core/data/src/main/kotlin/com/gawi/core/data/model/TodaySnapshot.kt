@@ -69,6 +69,7 @@ data class TodaySnapshot(
  * neither, and `TodayMoodTest` pins it.
  */
 fun TodayHabit.toMoodState(): HabitMoodState = HabitMoodState(
+    id = habit.id,
     schedule = habit.schedule,
     archived = habit.archived,
     completedToday = completedToday,
