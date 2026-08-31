@@ -1888,6 +1888,33 @@ the one sequence that only plays while the frame loop runs.
       announce the mood's line once — "Momo is pottering about." followed by
       the remaining count — and never "image" or "unlabelled". If the tank and
       the caption land as two stops, the merge has been lost.
+- [ ] **The regenerating line names a habit** (2026-08-31, today-view §6).
+      Break exactly one streak — a habit completed the day before yesterday and
+      skipped yesterday — and leave something outstanding so the mood is not
+      thriving. The line should read "Momo is regrowing a gill. Pick *that
+      habit* back up", with the habit's own name in it, not "the thread". Then
+      break a second one today and check the line moves to the newer break:
+      most recently broken is the rule, and the only way to see it is with two.
+      `TodayUiMapperTest` pins which name reaches the state and `TodayScreenTest`
+      pins that the panel draws it; what neither can see is whether a real habit
+      name reads as a sentence at the length users actually pick.
+- [ ] **The app-bar chip** (2026-08-31, today-view §1). Scroll the list until
+      the tank is off the top: the title "Today" gives way to a small face and
+      a short count, and scrolling back restores it. Check the face is the
+      current mood's, and that the swap reads as a crossfade rather than a pop.
+      Needs enough habits to scroll — four is not always enough on a large
+      screen.
+- [ ] **The chip at 200 % font scale.** The chip, the three action icons and
+      nothing else on one bar, with the count not truncated to an ellipsis.
+      This is the case the chip replaces the title *for*, so it is the one that
+      would justify undoing that decision.
+- [ ] **TalkBack does not read the mood twice.** With the chip up, swipe
+      through the bar and then back into the list. The chip announces the mood
+      and its count once as one stop; the panel announces once when reached.
+      Tick a habit while the chip is up: the announcement should come from the
+      panel's live region only. `chip_isNotASecondLiveRegion` asserts the
+      property that would cause a double read, but only a screen reader can say
+      what is actually spoken — and neither emulator image here has one.
 
 ### The launcher icon
 
