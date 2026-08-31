@@ -4,11 +4,13 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -24,6 +26,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
@@ -89,25 +92,70 @@ internal fun MascotPanel(mascot: MascotUi, motion: TodayMotion, modifier: Modifi
             style = MaterialTheme.typography.titleMedium,
             textAlign = TextAlign.Center,
         )
-        // Nothing at all to say when there is nothing to do yet. "Nothing left
-        // today" under an empty list reads as an achievement, which is the exact
-        // reading today-view §4's rule 0 exists to prevent — the mood line
-        // above already speaks for this state, and the empty copy below it
-        // says the rest.
-        if (mascot.total > 0) {
+        remainingLine(mascot)?.let { line ->
             Text(
-                text = if (mascot.remaining == 0) {
-                    stringResource(R.string.today_remaining_none)
-                } else {
-                    // Counted by today-view §4's rule rather than by unticked
-                    // rows, so a weekly habit with its target still reachable
-                    // is not counted here.
-                    stringResource(R.string.today_remaining, mascot.remaining, mascot.total)
-                },
+                text = line,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+    }
+}
+
+/**
+ * today-view §1's app-bar chip: the mood and the remaining count, once the tank
+ * has scrolled away.
+ *
+ * §1 accepted that Momo leaves the screen on a long list and named this chip as
+ * the mitigation, "deliberately small". Small is what it is — a face and a short
+ * count, replacing the title rather than joining it, because at a large font
+ * scale a title, a chip and three action icons do not fit across one bar.
+ *
+ * The face is drawn with animations off whatever the system setting says. At
+ * [ChipFace] the idle motion is invisible, and a frame clock running behind a
+ * scrolling list is the one cost this chip could impose and has no need to.
+ *
+ * **One semantics node, and deliberately not a live region.** [MascotPanel]'s
+ * copy is a polite one already and is only scrolled off rather than gone, so a
+ * second here would have TalkBack read the mood twice after every tick.
+ *
+ * The count is its own shorter wording rather than the panel's sentence: the bar
+ * has no room for "3 of 8 left today" beside three action icons at a large font
+ * scale, and the mood line merged in above it supplies the context that the
+ * short form drops.
+ *
+ * One consequence for tests: this draws a second [Momo], carrying the same
+ * `momo:<mood>` tag the tank does, so a tag query made while the chip is up
+ * matches two nodes rather than one.
+ */
+@Composable
+internal fun TodayChip(mascot: MascotUi, modifier: Modifier = Modifier) {
+    val line = moodLine(mascot)
+    Row(
+        modifier = modifier
+            .testTag(CHIP_TAG)
+            .semantics(mergeDescendants = true) {},
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(GawiSpacing.Line),
+    ) {
+        // The face is described and the count is left to speak for itself —
+        // the widget's lesson (docs/ux/widget.md §5) from both sides at once: a
+        // nameless picture beside a line that names it, or the same words twice.
+        Box(Modifier.size(ChipFace).semantics { contentDescription = line }) {
+            // Sized by the Box: a Canvas with no size of its own measures 0 x 0,
+            // and a test that only asked whether the node existed would pass on
+            // an empty chip.
+            Momo(mascot.mood, animated = false)
+        }
+        Text(
+            text = if (mascot.remaining == 0) {
+                stringResource(R.string.today_chip_remaining_none)
+            } else {
+                stringResource(R.string.today_chip_remaining, mascot.remaining)
+            },
+            style = MaterialTheme.typography.titleMedium,
+            maxLines = 1,
+        )
     }
 }
 
@@ -239,6 +287,25 @@ private fun moodLine(mascot: MascotUi): String {
     }
 }
 
+/**
+ * The remaining count as a sentence, or null when there is nothing to count.
+ *
+ * Null rather than an empty string for the reason the panel used to spell out
+ * inline: "Nothing left today" under an empty list reads as an achievement,
+ * which is exactly the reading today-view §4's rule 0 exists to prevent. The
+ * mood line already speaks for that state.
+ *
+ * Shared with [TodayChip] so the chip speaks the same count the panel shows,
+ * counted by today-view §4's rule rather than by unticked rows — a weekly habit
+ * with its target still reachable is not in it.
+ */
+@Composable
+private fun remainingLine(mascot: MascotUi): String? = when {
+    mascot.total == 0 -> null
+    mascot.remaining == 0 -> stringResource(R.string.today_remaining_none)
+    else -> stringResource(R.string.today_remaining, mascot.remaining, mascot.total)
+}
+
 /** The unnamed line for a mood — one each, all four (today-view §4). */
 private fun moodCopy(mood: Mood): Int = when (mood) {
     Mood.THRIVING -> R.string.today_mood_happy
@@ -254,3 +321,8 @@ private fun moodCopy(mood: Mood): Int = when (mood) {
  */
 private val TankHeight = 250.dp
 private val TankCorner = 20.dp
+
+/** The chip's face. Small enough to sit on one line of the app bar beside a count. */
+private val ChipFace = 28.dp
+
+internal const val CHIP_TAG = "today-chip"

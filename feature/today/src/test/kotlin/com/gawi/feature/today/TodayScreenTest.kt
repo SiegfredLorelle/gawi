@@ -2,6 +2,9 @@ package com.gawi.feature.today
 
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
@@ -11,6 +14,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performScrollToNode
 import com.gawi.core.domain.mascot.Mood
 import com.gawi.core.domain.model.HabitId
@@ -327,6 +331,74 @@ class TodayScreenTest {
 
     private fun string(id: Int): String = resources.getString(id)
 
+    /** Scroll the list far enough that item 0 — the tank — is off the top. */
+    private fun scrollPastTheTank() {
+        compose.onNode(hasScrollAction()).performScrollToIndex(LONG.rows.size)
+        compose.waitForIdle()
+    }
+
+    /**
+     * today-view §1's chip: absent while Momo is on screen, present once he is
+     * not, and it takes the title's place rather than crowding in beside it.
+     *
+     * Both halves in one test on purpose. A chip that is always there and a chip
+     * that is never there are indistinguishable from either assertion alone.
+     */
+    @Test
+    fun chip_replacesTheTitleOnceTheTankHasScrolledAway() {
+        compose.setContent {
+            GawiTheme { TodayScreen(LONG, NO_ACTIONS, SnackbarHostState()) }
+        }
+
+        compose.onNodeWithText(string(R.string.today_title)).assertIsDisplayed()
+        compose.onNodeWithTag(CHIP_TAG).assertDoesNotExist()
+
+        scrollPastTheTank()
+
+        compose.onNodeWithTag(CHIP_TAG).assertIsDisplayed()
+        compose.onNodeWithText(string(R.string.today_title)).assertDoesNotExist()
+    }
+
+    /**
+     * What the chip carries: §1 says the mood and the remaining count, and both
+     * have to survive being merged into one node.
+     *
+     * The count is the chip's own short wording, not the panel's sentence — the
+     * bar has no room for that one. Asserting the panel's string here would pass
+     * on a chip that had quietly grown too wide to fit.
+     */
+    @Test
+    fun chip_carriesTheMoodAndTheRemainingCount() {
+        compose.setContent {
+            GawiTheme { TodayScreen(LONG, NO_ACTIONS, SnackbarHostState()) }
+        }
+        scrollPastTheTank()
+
+        compose.onNodeWithText(resources.getString(R.string.today_chip_remaining, LONG.remaining)).assertIsDisplayed()
+        compose.onNodeWithContentDescription(string(R.string.today_mood_worried)).assertIsDisplayed()
+        compose.onNodeWithText(resources.getString(R.string.today_remaining, LONG.remaining, LONG.rows.size))
+            .assertDoesNotExist()
+    }
+
+    /**
+     * The chip is not a second live region.
+     *
+     * MascotPanel's copy already is one and is only scrolled off rather than
+     * gone, so a live region here would have TalkBack read the mood twice after
+     * every tick. Structural rather than spoken: there is no TalkBack on this
+     * image, so this asserts the property that would cause it. The by-hand check
+     * is owed in docs/running.md §4.
+     */
+    @Test
+    fun chip_isNotASecondLiveRegion() {
+        compose.setContent {
+            GawiTheme { TodayScreen(LONG, NO_ACTIONS, SnackbarHostState()) }
+        }
+        scrollPastTheTank()
+
+        compose.onNodeWithTag(CHIP_TAG).assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.LiveRegion))
+    }
+
     /**
      * Mood.REGENERATING's promise, drawn: the line names the habit.
      *
@@ -583,6 +655,22 @@ class TodayScreenTest {
             remaining = 2,
             logicalDate = LOGICAL_DATE,
             regeneratingHabit = WALK.name,
+        )
+
+        /**
+         * Enough rows that the list really scrolls on Robolectric's 470 dp
+         * screen. The chip appears only once item 0 — the 250 dp tank — is off
+         * the top, and a list that fits has nothing to scroll past: the tests
+         * below would then assert the chip's absence twice and call it a pass.
+         */
+        val LONG = TodayUiState.Habits(
+            rows = List(8) { n ->
+                WALK.copy(id = HabitId("00000000-0000-7000-8000-%012d".format(n + 10)), name = "habit $n")
+            },
+            mood = Mood.WORRIED,
+            remaining = 3,
+            logicalDate = LOGICAL_DATE,
+            regeneratingHabit = null,
         )
 
         /** Habits present and none outstanding — READ is the completed one. */
