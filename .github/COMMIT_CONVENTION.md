@@ -58,10 +58,12 @@ Long URLs cannot be wrapped, so the footer has no length limit. Put
 **`style` and `refactor` both mean *no behaviour change*, and a change to what
 the app renders is a behaviour change however small the diff.** Retuning a type
 scale, moving a colour, changing a size — those are `fix` or `feat`, not
-`style`, even when the edit is one line and touches no logic. The `commit-msg`
-hook checks the type against the enum and nothing else, so it cannot catch
-this; a reviewer did, on `style(ui): zero outfit's positive tracking`, which
-shifted every text metric in the app.
+`style`, even when the edit is one line and touches no logic. Nothing
+mechanical catches a wrong choice here: the rules above are all checkable from
+the message alone, but whether the type *fits* the diff is not, so commitlint
+can only confirm the type is one of the eleven. A reviewer caught it on
+`style(ui): zero outfit's positive tracking`, one line of Kotlin that shifted
+every text metric in the app.
 
 ## Examples
 
