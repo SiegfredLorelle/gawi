@@ -295,9 +295,28 @@ already live, never in the feature module.
   convenience is that the screen turned out to want more than the tag bars: the
   question it answers is "how am I doing overall", which nothing in the app
   answered, and the tag distribution is one breakdown of it. §8.8 has the screen.
-- **Whether Momo appears here.** PRD §5 puts him in the Today view, the widget
+- ~~**Whether Momo appears here.** PRD §5 puts him in the Today view, the widget
   and the reminder. This screen is not on that list and should probably stay off
-  it until OQ-4 is settled.
+  it until OQ-4 is settled.~~ **Settled 2026-08-31: he stays off.**
+
+  **The condition this bullet named was met** — OQ-4 was settled and built on
+  2026-08-25 ([momo.md](momo.md)) — and the answer is still no, which is why this
+  is struck rather than rewritten with a new gate. Nobody should re-open it on
+  the grounds that the art style now exists.
+
+  The reason is not taste, it is that there is no mood to draw. `Mascot.mood` is
+  a function of *today* — what is outstanding, what broke in the last three days,
+  whether the reminder hour has passed — and this screen's whole subject is a
+  chosen period that is usually not today. A Momo here would need a second rule
+  answering "how do you feel about a quarter", and inventing one to justify a
+  drawing is the wrong way round. [today-view](today-view.md) §4's `nearBoundary`
+  makes the mismatch plain: on the app-wide screen with Year selected, it would
+  still be thresholding against tonight.
+
+  The softer reason is the one the bullet already gave, and it survives: PRD §5
+  puts Momo where the user is *acting* — the Today view, the widget, the
+  reminder. Insights is where they are reading. §9.3's best-not-worst rule is how
+  this screen carries the same warmth without a face doing it.
 - **Export of a review as an image or PDF.** PRD §5's Phase 1.5 nice-to-have,
   and the one part of that phase **not built on 2026-08-29** — recorded here as a
   later feature rather than dropped. It needs a bitmap capture of the review

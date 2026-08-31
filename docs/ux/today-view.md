@@ -5,17 +5,22 @@ Companion to [the PRD](../prd.md) §3.5 and §5, and to
 doubles as Momo's habitat; this document fixes *where*, so Phase 1 mascot
 work is an addition rather than a rebuild of the home screen.
 
-**Status:** decided 2026-08-19; partly built 2026-08-20. `:core:ui` and
-`:feature:today` now exist and the screen is live. What is built is the
-list — §5's rows, and §3's slot holding the Phase 0 indicator. What is
-**deferred** is §1's *behaviour*: the panel does not yet collapse into an
-app-bar chip on scroll, so the list scrolls under nothing and the
-remaining count sits in the panel rather than in the chip. That is a
-deferral, not a reversal — §1 is still the decision, and the slot is
-already the right size in the right place, so adding the collapse moves
-one composable. The list came first deliberately: the data path beneath
-it had never run on a device, and a scroll animation and a mood state
-machine on the same unproven screen is the wrong thing to debug first.
+**Status:** decided 2026-08-19; built out over 2026-08-20 to 2026-08-31.
+`:core:ui` and `:feature:today` exist, the screen is live, and §1 is now
+built rather than deferred. The list came first deliberately: the data
+path beneath it had never run on a device, and a scroll animation and a
+mood state machine on the same unproven screen is the wrong thing to
+debug first. It has since run on four.
+
+**§1 landed in a shape §1 did not describe, and the difference is
+deliberate.** The panel is not a fixed header above the list; it is the
+list's first item, and it scrolls away with everything else. A 250 dp
+tank ([momo.md](momo.md) §4) above an unscrollable column puts the
+button, or the second row, below the fold on a small screen or at a
+large font scale. What survived intact is the chip: once the panel has
+scrolled off, the app bar carries the mood and the remaining count in
+the title's place. The decision — Momo in a bounded box, rows on plain
+surface, a chip as the mitigation — is unchanged; only "fixed" is.
 
 Sketch boards (11 low-fi artboards, 2026-08-19): the "Today sketch (archive)"
 page of the Gawi Redesign canvas, where they were folded in on 2026-08-25 when
@@ -46,10 +51,16 @@ Accepted cost: Momo is off-screen while you scroll a long list — arguably
 the moment the mascot is meant to matter. The collapsed chip is the
 mitigation, and it is deliberately small. This used to name the 30-day trial
 as the thing that would show the mascot going unnoticed; the trial was waived
-(PRD §5, 2026-08-23). The occasion is now **Phase 1's real mascot**, which is
-the first build on which this cost is even measurable — the placeholder is three
-static faces, and nobody would notice *those* going unnoticed. Revisit *this*
-line then, before revisiting the decision.
+(PRD §5, 2026-08-23). The occasion was then **Phase 1's real mascot**, the first
+build on which this cost is measurable at all — the placeholder was three static
+faces, and nobody would notice *those* going unnoticed.
+
+**Both halves exist since 2026-08-31**, so what the chip mitigates is at last a
+real thing: a 250 dp animated tank leaves the screen after one flick, and what
+replaces it is a face small enough for the app bar and a count. That is a fair
+trade rather than a good one, and the honest reading is that this is still an
+accepted cost — the chip keeps the mood *reachable*, not present. Revisit it
+against a device look, not against this paragraph.
 
 ## 2. Rejected, and why
 
@@ -233,9 +244,17 @@ Small decisions that were easier to make once drawn:
   milestone line for the run, and §5's streak badge sits on a pill of its
   container role and swells — the day/week distinction holds on the pill as
   it does on the number.
-- §1's collapse into an app-bar chip, and the chip itself. See the status
-  note above.
-- **The `regenerating` copy has nowhere to come from yet.** §3 says it
+- ~~§1's collapse into an app-bar chip, and the chip itself. See the status
+  note above.~~ **Built 2026-08-31.** The panel keeps its place as the list's
+  first item — the status note says why that is not a reversal — and the chip
+  appears once it has scrolled off, carrying a small face and a short count in
+  the title's place. It replaces the title rather than joining it, because a
+  title, a chip and three action icons do not fit across one bar at a large font
+  scale. It is **not** a second live region: the panel's copy already is one and
+  is only scrolled off rather than gone, so a second would have TalkBack read the
+  mood twice after every tick. That is asserted structurally — no emulator image
+  here has TalkBack — and the by-hand check is owed in `docs/running.md` §4.
+- ~~**The `regenerating` copy has nowhere to come from yet.** §3 says it
   "names the habit and offers the repair", but the mood is a bare label —
   it names an artboard, not a habit — and `HabitMoodState` deliberately
   carries no habit identity. Both halves are missing, and the input is the
@@ -243,9 +262,24 @@ Small decisions that were easier to make once drawn:
   `Mascot.mood`, something like `recentlyBrokenHabits(inputs)` returning
   the ids, rather than a wider `Mood`: one type should not have to carry
   both "which drawing" and "which habit". Recorded because two review
-  rounds have now rediscovered it.
+  rounds have now rediscovered it.~~ **Built 2026-08-31, in exactly that
+  shape** — the paragraph was written as a prescription and was followed
+  line for line, down to the ids. `HabitMoodState` gained the one field it
+  needed.
+
+  What the prescription did not settle was **which** habit, once more than
+  one sits inside the window. The line names one, so the ordering *is* the
+  copy: most recently broken first, ties keeping the user's own habit
+  order. Most recent rather than the largest lost streak, because naming
+  the biggest loss is a way of scolding, and §3 says this state must never
+  do that. The mood still gates it — `thriving` outranks `regenerating`,
+  so a finished day holds a live break with nothing to say about it.
 - Momo's own copy. Every line the panel shows is placeholder, chosen to
-  make the three Phase 0 states distinguishable rather than to be read.
+  make the three Phase 0 states distinguishable rather than to be read —
+  with one exception since 2026-08-31, the regenerating line, which now
+  says the one thing §3 actually specified about it.
 - ~~**`regenerating` is currently invisible.**~~ Visible since 2026-08-25: its
-  own face, its own line ([momo.md](momo.md) §3). The half of this that was
-  the copy gap above is still open — the line does not name the habit.
+  own face, its own line ([momo.md](momo.md) §3). ~~The half of this that was
+  the copy gap above is still open — the line does not name the habit.~~ It
+  names it, since 2026-08-31. The unnamed line stays as the fallback for a
+  break whose row the screen no longer holds.
