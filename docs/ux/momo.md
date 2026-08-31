@@ -280,8 +280,26 @@ desaturation, done arithmetically in `drawMomo` so a test can measure it.
   widget as one row per habit, the Momo widget as her face on the tank colour
   with one word, and the large Today body puts her on a pill beside the woven
   day band. The habitat stays here: none of the three draws the weeds.
-- **Momo's real copy**, and the `recentlyBrokenHabits` function the
-  regenerating line needs to name a habit (today-view §6).
-- **Whether Momo appears on Insights** ([insights.md](insights.md) §7).
-- **The collapse into an app-bar chip** on scroll (today-view §1), which the
-  250 dp tank makes more pressing, not less.
+- **Momo's real copy.** Every line but one is still placeholder. ~~And the
+  `recentlyBrokenHabits` function the regenerating line needs to name a
+  habit (today-view §6).~~ **Built 2026-08-31**: `Mascot.recentlyBrokenHabits`
+  returns the ids of the habits inside the three-day window, most recently
+  broken first, and the regenerating line names the first of them — §3's
+  "names the habit and offers the repair", which until now named an artboard.
+  Ids rather than a wider `Mood`, for the reason today-view §6 gave: one type
+  should not carry both which drawing and which habit. The ordering is the
+  product decision in it — most recently broken, because the line is about what
+  just happened rather than the worst thing that ever did, which is the same
+  reason this state never scolds.
+- ~~**Whether Momo appears on Insights** ([insights.md](insights.md) §7).~~
+  **Settled 2026-08-31: he does not.** That section has the reasoning; the short
+  form is that `Mascot.mood` is a function of today and Insights' subject is a
+  chosen period, so there is no mood to draw without inventing a second rule.
+- ~~**The collapse into an app-bar chip** on scroll (today-view §1), which the
+  250 dp tank makes more pressing, not less.~~ **Built 2026-08-31**: once the
+  tank scrolls off, the app bar carries a small face and the remaining count in
+  the title's place. The tank made it pressing exactly as this line predicted —
+  250 dp leaves the screen quickly — and the chip is the mitigation §1 always
+  named, deliberately small. It draws the face with animations off: at that size
+  the idle motion is invisible and a frame clock behind a scrolling list is a
+  cost with nothing to show for it.
