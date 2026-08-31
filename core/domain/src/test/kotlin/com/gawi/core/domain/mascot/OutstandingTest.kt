@@ -2,6 +2,7 @@ package com.gawi.core.domain.mascot
 
 import com.gawi.core.domain.model.Schedule
 import com.gawi.core.domain.streak.StreakSnapshot
+import com.gawi.core.domain.testsupport.habitId
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -21,9 +22,10 @@ class OutstandingTest {
     private fun day(offset: Long) = monday.plusDays(offset)
 
     private fun daily(completedToday: Boolean) =
-        HabitMoodState(Schedule.Daily, archived = false, completedToday, completionsThisWeek = 0, StreakSnapshot.NONE)
+        HabitMoodState(habitId(1), Schedule.Daily, archived = false, completedToday, completionsThisWeek = 0, StreakSnapshot.NONE)
 
     private fun weekly(timesPerWeek: Int, done: Int = 0, completedToday: Boolean = false) = HabitMoodState(
+        habitId(2),
         Schedule.Weekly(timesPerWeek),
         archived = false,
         completedToday = completedToday,
