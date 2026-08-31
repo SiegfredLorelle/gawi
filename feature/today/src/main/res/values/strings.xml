@@ -34,14 +34,16 @@
     <string name="today_streak_broken_glyph">\u2702</string>
 
     <!-- One line per mood (today-view §4), read as the panel's description
-         beside the drawn face. The regenerating line is the fourth face's
-         first words and is placeholder like the rest: §4 says it "names the
-         habit and offers the repair", and nothing tells the panel which habit
-         yet (today-view §6). -->
+         beside the drawn face. Placeholder wording still — §4's per-mood copy
+         is not designed — with one exception: the regenerating line names the
+         habit, which is the half of it §4 did specify ("names the habit and
+         offers the repair"). The unnamed form stays as the fallback for a
+         break whose row the screen no longer holds. -->
     <string name="today_mood_happy">All done. Momo is thriving.</string>
     <string name="today_mood_neutral">Momo is pottering about.</string>
     <string name="today_mood_worried">Momo is getting worried.</string>
     <string name="today_mood_regenerating">Momo is regrowing a gill. Pick the thread back up.</string>
+    <string name="today_mood_regenerating_named">Momo is regrowing a gill. Pick %1$s back up.</string>
     <string name="today_mood_empty">Momo is waiting for a habit.</string>
     <!-- An x-of-y ratio rather than a count of a noun, so there is no singular
          form to write. All of this panel's copy is placeholder either way —

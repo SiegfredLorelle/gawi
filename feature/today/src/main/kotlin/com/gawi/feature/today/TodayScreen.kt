@@ -90,7 +90,7 @@ internal fun TodayScreen(state: TodayUiState, actions: TodayActions, snackbarHos
                         .padding(insets)
                         .verticalScroll(rememberScrollState()),
                 ) {
-                    MascotPanel(mood = state.mood, remaining = 0, total = 0, motion = motion)
+                    MascotPanel(MascotUi(state.mood, remaining = 0, total = 0, regeneratingHabit = null), motion)
                     EmptyToday(onAddHabit = actions.onAddHabit, modifier = Modifier.fillMaxWidth())
                 }
             }
@@ -113,12 +113,13 @@ private fun HabitList(state: TodayUiState.Habits, onToggle: (HabitId, Boolean, L
     // still shows and the scale is simply 1.
     val pulsing = motion.milestone.pulsing
     val pulse: () -> Float = if (motion.animationsOn) ({ motion.milestone.badgeScale }) else ({ 1f })
+    val mascot = MascotUi(state.mood, state.remaining, total = state.rows.size, regeneratingHabit = state.regeneratingHabit)
     LazyColumn(modifier) {
         // The habitat is the first item, not a header outside the list: §1 keeps
         // habit rows on plain surface, so row contrast is never a function of the
         // mood, and scrolling Momo away is §1's accepted cost.
         item(key = "mascot") {
-            MascotPanel(mood = state.mood, remaining = state.remaining, total = state.rows.size, motion = motion)
+            MascotPanel(mascot, motion)
         }
         items(state.rows, key = { it.id.value }) { row ->
             HabitRow(

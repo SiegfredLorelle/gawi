@@ -328,6 +328,25 @@ class TodayScreenTest {
     private fun string(id: Int): String = resources.getString(id)
 
     /**
+     * Mood.REGENERATING's promise, drawn: the line names the habit.
+     *
+     * Through the screen rather than the mapper because the mapper can only say
+     * which name reached the state. Whether the panel puts it in the sentence —
+     * or quietly keeps using the unnamed line, which would compile and pass
+     * every mapper assertion — is what only a render can see. The absence is
+     * asserted alongside the presence for that reason.
+     */
+    @Test
+    fun regenerating_namesTheHabitInTheLine() {
+        compose.setContent {
+            GawiTheme { TodayScreen(REGENERATING, NO_ACTIONS, SnackbarHostState()) }
+        }
+
+        compose.onNodeWithText(resources.getString(R.string.today_mood_regenerating_named, WALK.name)).assertIsDisplayed()
+        compose.onNodeWithText(string(R.string.today_mood_regenerating)).assertDoesNotExist()
+    }
+
+    /**
      * All four faces, each with its own line — the today-view §4 mapping is no longer
      * three-to-four. The tag proves the mood reached the drawing and the copy
      * proves the line beside it agrees; a screen test cannot see pixels
@@ -550,6 +569,20 @@ class TodayScreenTest {
             mood = Mood.CONTENT,
             remaining = 1,
             logicalDate = LOGICAL_DATE,
+            regeneratingHabit = null,
+        )
+
+        /**
+         * A live break inside the window, with the habit the line should name.
+         * WALK rather than READ so a test asserting the name cannot pass on the
+         * first row by accident.
+         */
+        val REGENERATING = TodayUiState.Habits(
+            rows = listOf(READ, WALK),
+            mood = Mood.REGENERATING,
+            remaining = 2,
+            logicalDate = LOGICAL_DATE,
+            regeneratingHabit = WALK.name,
         )
 
         /** Habits present and none outstanding — READ is the completed one. */
@@ -558,6 +591,7 @@ class TodayScreenTest {
             mood = Mood.THRIVING,
             remaining = 0,
             logicalDate = LOGICAL_DATE,
+            regeneratingHabit = null,
         )
     }
 }

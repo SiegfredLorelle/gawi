@@ -11,12 +11,15 @@ import com.gawi.feature.today.testsupport.todaySnapshot
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
+import java.time.LocalDate
 
 /** docs/ux/today-view.md §5's display rules, asserted without a device. */
 class TodayUiMapperTest {
 
     private val daily = Schedule.Daily
     private val weekly = Schedule.Weekly(3)
+
+    private fun brokeOn(day: LocalDate) = StreakSnapshot(current = 0, previous = 4, brokenOn = day)
 
     @Test
     fun `an unfinished day still shows its live streak`() {
@@ -99,5 +102,48 @@ class TodayUiMapperTest {
     fun `the state carries the date its rows were queried for`() {
         val state = todaySnapshot(habits = listOf(todayHabit())).toUiState() as TodayUiState.Habits
         assertEquals(TODAY, state.logicalDate)
+    }
+
+    @Test
+    fun `the regenerating line names the most recently broken habit`() {
+        // Two live breaks inside the window. Which one the line names is the
+        // ordering rule in Mascot.recentlyBrokenHabits, and this is where it
+        // becomes a name a person reads.
+        val state = todaySnapshot(
+            habits = listOf(
+                todayHabit(id = habitId(1), name = "read", streak = brokeOn(TODAY.minusDays(2))),
+                todayHabit(id = habitId(2), name = "walk", streak = brokeOn(TODAY)),
+            ),
+        ).toUiState() as TodayUiState.Habits
+
+        assertEquals(Mood.REGENERATING, state.mood)
+        assertEquals("walk", state.regeneratingHabit)
+    }
+
+    @Test
+    fun `a finished day names nobody, because thriving outranks regenerating`() {
+        // The break is still live and Mascot.recentlyBrokenHabits still returns
+        // it — the mood is what decides there is no line to name it in. Without
+        // the gate this would read "Pick read back up" on a day already done.
+        val state = todaySnapshot(
+            habits = listOf(todayHabit(completedToday = true, streak = brokeOn(TODAY))),
+        ).toUiState() as TodayUiState.Habits
+
+        assertEquals(Mood.THRIVING, state.mood)
+        assertNull(state.regeneratingHabit)
+    }
+
+    @Test
+    fun `an archived habit's break never becomes the name`() {
+        // The rule drops archived habits, so the name has to come from the
+        // habit that is actually on screen.
+        val state = todaySnapshot(
+            habits = listOf(
+                todayHabit(id = habitId(1), name = "old", archived = true, streak = brokeOn(TODAY)),
+                todayHabit(id = habitId(2), name = "walk", streak = brokeOn(TODAY.minusDays(1))),
+            ),
+        ).toUiState() as TodayUiState.Habits
+
+        assertEquals("walk", state.regeneratingHabit)
     }
 }

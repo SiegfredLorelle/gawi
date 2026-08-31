@@ -4,6 +4,8 @@ import com.gawi.core.data.model.TodayHabit
 import com.gawi.core.data.model.TodaySnapshot
 import com.gawi.core.data.model.toMoodState
 import com.gawi.core.domain.mascot.Mascot
+import com.gawi.core.domain.mascot.Mood
+import com.gawi.core.domain.mascot.MoodInputs
 import com.gawi.core.domain.model.Schedule
 import com.gawi.core.ui.streak.toUi
 import com.gawi.core.ui.theme.parseHabitColor
@@ -18,7 +20,10 @@ import com.gawi.core.ui.theme.parseHabitColor
  * a screenshot; a function gets them wrong in a test.
  */
 internal fun TodaySnapshot.toUiState(): TodayUiState {
-    val mood = Mascot.mood(moodInputs())
+    // Mapped once and shared: both rules read it, and building it twice would
+    // be two mappings of the same rows for one screen.
+    val inputs = moodInputs()
+    val mood = Mascot.mood(inputs)
     // Filtered once, at the top, so the rows, the count and the face cannot
     // disagree. Mascot.mood drops archived habits itself; doing it here too is
     // what makes that agreement this function's property rather than
@@ -31,7 +36,27 @@ internal fun TodaySnapshot.toUiState(): TodayUiState {
         mood = mood,
         remaining = live.count { Mascot.isOutstanding(it.toMoodState(), today, weekStart) },
         logicalDate = today,
+        regeneratingHabit = if (mood == Mood.REGENERATING) regeneratingHabitName(inputs, live) else null,
     )
+}
+
+/**
+ * The name the regenerating line uses: the most recently broken habit's
+ * (docs/ux/today-view.md §6), resolved here rather than in the composable
+ * because which habit is a decision and this file is where decisions are
+ * asserted without a device.
+ *
+ * Gated on the mood by the caller, not here. `Mascot.recentlyBrokenHabits`
+ * answers whether anything broke; whether that is worth saying is the
+ * precedence table's answer, and it already gave it.
+ *
+ * Null when the id names no live row. Unreachable — the rule drops archived
+ * habits exactly as the caller does — and cheaper than the alternative, which is a
+ * lookup that throws on a screen.
+ */
+private fun regeneratingHabitName(inputs: MoodInputs, live: List<TodayHabit>): String? {
+    val id = Mascot.recentlyBrokenHabits(inputs).firstOrNull() ?: return null
+    return live.firstOrNull { it.habit.id == id }?.habit?.name
 }
 
 internal fun TodayHabit.toRowUi(): HabitRowUi = HabitRowUi(

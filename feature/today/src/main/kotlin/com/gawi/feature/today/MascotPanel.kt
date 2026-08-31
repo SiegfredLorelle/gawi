@@ -51,7 +51,7 @@ import com.gawi.core.ui.theme.GawiSpacing
  * into an app-bar chip on scroll — not the slot.
  */
 @Composable
-internal fun MascotPanel(mood: Mood, remaining: Int, total: Int, motion: TodayMotion, modifier: Modifier = Modifier) {
+internal fun MascotPanel(mascot: MascotUi, motion: TodayMotion, modifier: Modifier = Modifier) {
     // For the length of a milestone run the line is the milestone's, and its
     // changing is the announcement (momo.md §5): the node below merges the
     // picture and the caption and is a polite live region, so TalkBack reads
@@ -61,7 +61,7 @@ internal fun MascotPanel(mood: Mood, remaining: Int, total: Int, motion: TodayMo
     // seconds either way.
     val milestone = motion.milestone.current
     val copy = if (milestone == null) {
-        stringResource(moodCopy(mood, total))
+        moodLine(mascot)
     } else {
         pluralStringResource(milestoneCopy(milestone), milestone.count, milestone.count)
     }
@@ -83,7 +83,7 @@ internal fun MascotPanel(mood: Mood, remaining: Int, total: Int, motion: TodayMo
         verticalArrangement = Arrangement.spacedBy(GawiSpacing.Gap),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Tank(mood, motion.animationsOn, motion.celebration, motion.milestone)
+        Tank(mascot.mood, motion.animationsOn, motion.celebration, motion.milestone)
         Text(
             text = copy,
             style = MaterialTheme.typography.titleMedium,
@@ -94,15 +94,15 @@ internal fun MascotPanel(mood: Mood, remaining: Int, total: Int, motion: TodayMo
         // reading today-view §4's rule 0 exists to prevent — the mood line
         // above already speaks for this state, and the empty copy below it
         // says the rest.
-        if (total > 0) {
+        if (mascot.total > 0) {
             Text(
-                text = if (remaining == 0) {
+                text = if (mascot.remaining == 0) {
                     stringResource(R.string.today_remaining_none)
                 } else {
                     // Counted by today-view §4's rule rather than by unticked
                     // rows, so a weekly habit with its target still reachable
                     // is not counted here.
-                    stringResource(R.string.today_remaining, remaining, total)
+                    stringResource(R.string.today_remaining, mascot.remaining, mascot.total)
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -208,21 +208,43 @@ private fun Tank(
 private fun milestoneCopy(milestone: Milestone): Int =
     if (milestone.weekly) R.plurals.today_milestone_weeks else R.plurals.today_milestone_days
 
-/** The copy for a mood — one line each, all four (today-view §4). */
-private fun moodCopy(mood: Mood, total: Int): Int = when {
-    // The empty case gets its own line rather than sharing content's.
-    // today-view §4's rule 0 makes a habitless first run `content`
-    // deliberately, so the mood is right and "Momo is pottering about" would
-    // still be the wrong thing to say to someone who has not added anything
-    // yet.
-    total == 0 -> R.string.today_mood_empty
+/**
+ * The panel's line — one per mood (today-view §4), and for regenerating the one
+ * that names the habit.
+ *
+ * The name is [MascotUi.regeneratingHabit] rather than anything worked out here:
+ * which habit a break belongs to is a decision, and `TodayUiMapper` is where
+ * this module's decisions are asserted without a device. The mood is not
+ * re-tested for it either — the mapper sets the field only for
+ * [Mood.REGENERATING], so a non-null name *is* that state.
+ */
+@Composable
+private fun moodLine(mascot: MascotUi): String {
+    val named = mascot.regeneratingHabit
+    return when {
+        // The empty case gets its own line rather than sharing content's.
+        // today-view §4's rule 0 makes a habitless first run `content`
+        // deliberately, so the mood is right and "Momo is pottering about" would
+        // still be the wrong thing to say to someone who has not added anything
+        // yet.
+        mascot.total == 0 -> stringResource(R.string.today_mood_empty)
 
-    else -> when (mood) {
-        Mood.THRIVING -> R.string.today_mood_happy
-        Mood.CONTENT -> R.string.today_mood_neutral
-        Mood.WORRIED -> R.string.today_mood_worried
-        Mood.REGENERATING -> R.string.today_mood_regenerating
+        // Mood.REGENERATING's whole promise: the copy names the habit and offers
+        // the repair, and it never scolds. The unnamed line below is the
+        // fallback for a break whose row the screen no longer holds, not a
+        // second phrasing anyone picks.
+        named != null -> stringResource(R.string.today_mood_regenerating_named, named)
+
+        else -> stringResource(moodCopy(mascot.mood))
     }
+}
+
+/** The unnamed line for a mood — one each, all four (today-view §4). */
+private fun moodCopy(mood: Mood): Int = when (mood) {
+    Mood.THRIVING -> R.string.today_mood_happy
+    Mood.CONTENT -> R.string.today_mood_neutral
+    Mood.WORRIED -> R.string.today_mood_worried
+    Mood.REGENERATING -> R.string.today_mood_regenerating
 }
 
 /**
