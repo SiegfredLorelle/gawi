@@ -62,6 +62,20 @@ trade rather than a good one, and the honest reading is that this is still an
 accepted cost — the chip keeps the mood *reachable*, not present. Revisit it
 against a device look, not against this paragraph.
 
+**Open, found on the device the day it was built:** the chip's trigger is "the
+panel has left the viewport entirely", and on a short list it never fires. On a
+720×1280 screen at 320 dpi the list viewport is 1056 px, the panel is 628 px and
+a row is 128 px, so the list can only scroll the panel fully off once there are
+**nine habits**; with four it scrolls to a sliver of tank and stops, and the bar
+still says "Today". There are two readings and they have not been chosen
+between. One: this is correct, because the chip exists for the long list this
+section's accepted cost is about, and with four habits Momo has not really gone.
+Two: the sliver is the worst of both and the trigger should fire when the panel
+is *mostly* gone rather than wholly, which is one threshold and no new state.
+Recorded rather than fixed, because it changes when the chip appears for every
+user and that is a design call, not a bug fix. `docs/running.md` §4 carries the
+measurement as an unticked box.
+
 ## 2. Rejected, and why
 
 **A — ambient tank.** The whole screen is the habitat; habit cards float

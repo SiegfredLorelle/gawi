@@ -1889,25 +1889,39 @@ the one sequence that only plays while the frame loop runs.
       the remaining count — and never "image" or "unlabelled". If the tank and
       the caption land as two stops, the merge has been lost.
 - [ ] **The regenerating line names a habit** (2026-08-31, today-view §6).
-      Break exactly one streak — a habit completed the day before yesterday and
-      skipped yesterday — and leave something outstanding so the mood is not
-      thriving. The line should read "Momo is regrowing a gill. Pick *that
-      habit* back up", with the habit's own name in it, not "the thread". Then
-      break a second one today and check the line moves to the newer break:
-      most recently broken is the rule, and the only way to see it is with two.
-      `TodayUiMapperTest` pins which name reaches the state and `TodayScreenTest`
-      pins that the panel draws it; what neither can see is whether a real habit
-      name reads as a sentence at the length users actually pick.
-- [ ] **The app-bar chip** (2026-08-31, today-view §1). Scroll the list until
-      the tank is off the top: the title "Today" gives way to a small face and
-      a short count, and scrolling back restores it. Check the face is the
-      current mood's, and that the swap reads as a crossfade rather than a pop.
-      Needs enough habits to scroll — four is not always enough on a large
-      screen.
-- [ ] **The chip at 200 % font scale.** The chip, the three action icons and
-      nothing else on one bar, with the count not truncated to an ellipsis.
-      This is the case the chip replaces the title *for*, so it is the one that
-      would justify undoing that decision.
+      **Half seen 2026-08-31** and the box stays open for the other half. With
+      three streaks broken on the same day the line read "Momo is regrowing a
+      gill. Pick Read back up" — a real name, in the sentence, at API 37. That
+      is the tie case, where the rule is "keep the user's own order", and it
+      cannot be told apart from the ordering rule. **Still owed:** break one
+      streak, then break a second a day later, and check the line moves to the
+      newer break. Most recently broken is the rule and two breaks *on different
+      days* are the only way to see it. `TodayUiMapperTest` pins which name
+      reaches the state and `TodayScreenTest` pins that the panel draws it;
+      neither can see whether a long habit name still reads as a sentence.
+- [x] **The app-bar chip** (2026-08-31, today-view §1). Seen on API 37: the
+      title "Today" gives way to Momo's face and "4 left", and scrolling back
+      restores the title. The face is the current mood's — the drained
+      regenerating one, which is what made it obvious the mood really reaches
+      it — and the swap is a crossfade, caught half-done in one screenshot.
+
+      **Read the box below before trusting this tick.** It was seen at
+      `wm size 720x820`, not at the AVD's own 720x1280, for the reason that box
+      gives.
+- [ ] **The chip on a full-height screen with a realistic habit count.** The
+      trigger is `firstVisibleItemIndex > 0` — the panel has to leave the
+      viewport *entirely* — and a short list cannot scroll that far. Measured
+      on this AVD at 720x1280 / 320 dpi: the list viewport is 1056 px, the
+      panel is 628 px and a row is 128 px, so the chip needs **nine habits**
+      before it can appear at all. With four, the panel scrolls to a sliver and
+      stops, and the title never changes. Whether that is right — the chip is
+      for long lists, and with four habits Momo never really leaves — or
+      whether the trigger should fire on "mostly gone" instead, is open in
+      today-view §1.
+- [x] **The chip at 200 % font scale** (2026-08-31). The face, "4 left" and all
+      three action icons on one bar, nothing truncated. This is the case the
+      chip replaces the title *for*, so it is the one that would have justified
+      undoing that decision, and it did not. Same short-screen caveat as above.
 - [ ] **TalkBack does not read the mood twice.** With the chip up, swipe
       through the bar and then back into the list. The chip announces the mood
       and its count once as one stop; the panel announces once when reached.
