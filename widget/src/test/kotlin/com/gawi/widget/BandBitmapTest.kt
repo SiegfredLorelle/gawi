@@ -78,6 +78,13 @@ class BandBitmapTest {
      * x 437-501, flush right. Mirrored, the two read the same way again — and
      * the whole picture is the LTR one reflected, column for column, which is
      * the claim the `- segment` form makes and the strongest way to state it.
+     *
+     * The column-for-column half is exact only because every coordinate is
+     * integral at [WIDTH] 400 over four habits, so Skia rasterises the two
+     * round-rects symmetrically. Raised on the PR as a stronger claim than the
+     * fix needs, and kept because it passes and it states the claim best; if a
+     * fractional pitch ever makes it flake, the case below carries the claim on
+     * two columns instead.
      */
     @Test
     fun `the band mirrors under an rtl host`() {
