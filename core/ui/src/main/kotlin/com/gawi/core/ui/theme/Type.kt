@@ -171,10 +171,12 @@ private fun TextStyle.inOutfit(): TextStyle = copy(
  * any regression unattributable to either.
  *
  * `letterSpacing` is the exception this KDoc predicted, and it asked for the
- * change to be made while looking at a screen; it was, on 2026-08-30, against
- * candidates that kept, halved and zeroed it. Material's own values were probed
- * rather than remembered, and positive tracking sits only on roles at 16sp and
- * under — `bodyLarge`, `labelMedium` and `labelSmall` at 0.5, `bodySmall` 0.4,
+ * change to be made while looking at a screen; it was, on 2026-08-30. Three
+ * candidates were weighed — keep, halve, zero — and the two that decide it were
+ * built and compared; halving was settled on the numbers below rather than
+ * installed. Material's own values were probed rather than remembered, and
+ * positive tracking sits only on roles at 16sp and under —
+ * `bodyLarge`, `labelMedium` and `labelSmall` at 0.5, `bodySmall` 0.4,
  * `titleMedium` and `bodyMedium` 0.2, `titleSmall` and `labelLarge` 0.1. Every
  * role at 22sp and over is already 0 except `displayLarge`, which is −0.2 (not
  * −0.25), and those are left exactly as they are.

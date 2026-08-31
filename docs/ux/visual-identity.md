@@ -739,9 +739,10 @@ Three things the code decided that this section had not:
   a device, across four feature modules since Phase 0, and moving the face and
   the scale together would make any regression unattributable to either.
 - **What `letterSpacing` was measured at, and why zero.** This bullet used to say
-  the change was one to make while looking at a screen; four builds were compared
-  on a device. Material's own figures were probed rather than remembered, and
-  positive tracking sits only on the roles at 16sp and under — `bodyLarge`,
+  the change was one to make while looking at a screen, and it was: three
+  candidates were weighed — keep, halve, zero — and the two that decide it were
+  compared as builds. Material's own figures were probed rather than remembered,
+  and positive tracking sits only on the roles at 16sp and under — `bodyLarge`,
   `labelMedium`, `labelSmall` 0.5, `bodySmall` 0.4, `titleMedium`, `bodyMedium`
   0.2, `titleSmall`, `labelLarge` 0.1. Everything at 22sp and over is already 0
   except `displayLarge` at −0.2 (not −0.25). What zeroing the positive half is
