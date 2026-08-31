@@ -55,6 +55,14 @@ Long URLs cannot be wrapped, so the footer has no length limit. Put
 | `chore` | Anything else |
 | `revert` | Reverting a previous commit |
 
+**`style` and `refactor` both mean *no behaviour change*, and a change to what
+the app renders is a behaviour change however small the diff.** Retuning a type
+scale, moving a colour, changing a size — those are `fix` or `feat`, not
+`style`, even when the edit is one line and touches no logic. The `commit-msg`
+hook checks the type against the enum and nothing else, so it cannot catch
+this; a reviewer did, on `style(ui): zero outfit's positive tracking`, which
+shifted every text metric in the app.
+
 ## Examples
 
 Passing:
