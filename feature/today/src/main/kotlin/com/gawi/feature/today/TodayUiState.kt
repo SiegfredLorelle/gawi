@@ -104,3 +104,13 @@ internal data class HabitRowUi(
 
 /** A weekly habit's progress through its own week. */
 internal data class WeekProgress(val done: Int, val target: Int)
+
+/**
+ * The mascot's view of this state, for the panel and for §1's chip.
+ *
+ * A function rather than a field so `total = rows.size` has one definition. The
+ * two surfaces are built in different places — the panel inside the list, the
+ * chip in the app bar above it — and a count worked out twice is a count that
+ * can disagree with itself mid-scroll.
+ */
+internal fun TodayUiState.Habits.mascot(): MascotUi = MascotUi(mood, remaining, total = rows.size, regeneratingHabit = regeneratingHabit)

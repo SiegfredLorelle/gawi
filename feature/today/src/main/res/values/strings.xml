@@ -51,6 +51,13 @@
          it is. -->
     <string name="today_remaining" tools:ignore="PluralsCandidate">%1$d of %2$d left today</string>
     <string name="today_remaining_none">Nothing left today</string>
+
+    <!-- The app-bar chip's count (today-view §1), deliberately shorter than the
+         panel's line above: the chip replaces the title beside three action
+         icons, and the full sentence does not fit there at a large font scale.
+         What TalkBack speaks is the panel's line, not these — see TodayChip. -->
+    <string name="today_chip_remaining" tools:ignore="PluralsCandidate">%1$d left</string>
+    <string name="today_chip_remaining_none">All done</string>
     <!-- The line the panel shows for the length of a streak-milestone
          celebration (momo.md §6), in place of the mood line; it is the
          announcement. A count of a noun, so real plurals like the widget's —

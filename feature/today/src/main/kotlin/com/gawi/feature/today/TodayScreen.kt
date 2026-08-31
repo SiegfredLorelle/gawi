@@ -1,5 +1,7 @@
 package com.gawi.feature.today
 
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -7,7 +9,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -18,6 +22,9 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -25,25 +32,54 @@ import com.gawi.core.domain.model.HabitId
 import com.gawi.core.ui.component.GawiIconButton
 import com.gawi.core.ui.component.GawiIcons
 import com.gawi.core.ui.component.Notice
+import com.gawi.core.ui.component.rememberAnimationsEnabled
 import java.time.LocalDate
 
 /**
  * The Today view, stateless.
  *
- * A plain list on purpose. docs/ux/today-view.md §1 fixes a fixed-height Momo
- * panel that collapses into an app-bar chip on scroll; that is deferred until
- * the data path underneath this has run on a device, because a scroll animation
- * and a mood state machine on the same unproven screen is the wrong thing to
- * debug first.
+ * A plain list on purpose. docs/ux/today-view.md §1's panel scrolls with the
+ * list rather than sitting above it as a fixed header — see the comment on the
+ * Habits branch for why — and §1's chip is the part that survived: once the tank
+ * has scrolled off, the app bar carries the mood and the remaining count in its
+ * place. That was deferred until the data path underneath this had run on a
+ * device, because a scroll animation and a mood state machine on the same
+ * unproven screen is the wrong thing to debug first. It has, on four.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun TodayScreen(state: TodayUiState, actions: TodayActions, snackbarHostState: SnackbarHostState, modifier: Modifier = Modifier) {
+    // Hoisted out of the list so the app bar can read it. The chip is the only
+    // reason this is up here; nothing else on the screen asks where the list is.
+    val listState = rememberLazyListState()
+    val mascot = (state as? TodayUiState.Habits)?.mascot()
+    // The mascot is always item 0, so "scrolled past it" is this and nothing
+    // more. derivedStateOf so the bar recomposes when the answer changes rather
+    // than on every frame of a scroll that does not change it.
+    val chipVisible by remember { derivedStateOf { listState.firstVisibleItemIndex > 0 } }
+    val animationsOn by rememberAnimationsEnabled()
     Scaffold(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.today_title)) },
+                // The chip replaces the title rather than joining it: at a large
+                // font scale a title, a chip and three action icons do not fit
+                // across one bar, and the title is the part that says least once
+                // you are already looking at the list.
+                //
+                // Crossfaded on the boolean, not on the chip's own contents. A
+                // MascotUi here would fade the whole chip out and back in every
+                // time the count changed — a tick, mid-scroll, reading as a
+                // flicker rather than as a number going down.
+                title = {
+                    Crossfade(
+                        targetState = chipVisible && mascot != null,
+                        animationSpec = tween(if (animationsOn) CHIP_FADE_MILLIS else 0),
+                        label = "todayTitle",
+                    ) { showChip ->
+                        if (showChip && mascot != null) TodayChip(mascot) else Text(stringResource(R.string.today_title))
+                    }
+                },
                 // The three ways off this screen. Deliberately no FAB as well:
                 // Today is for ticking habits off, and an affordance competing
                 // with the rows would crowd the one thing PRD §6.1 wants to
@@ -95,13 +131,18 @@ internal fun TodayScreen(state: TodayUiState, actions: TodayActions, snackbarHos
                 }
             }
 
-            is TodayUiState.Habits -> HabitList(state, actions.onToggle, Modifier.fillMaxSize().padding(insets))
+            is TodayUiState.Habits -> HabitList(state, listState, actions.onToggle, Modifier.fillMaxSize().padding(insets))
         }
     }
 }
 
 @Composable
-private fun HabitList(state: TodayUiState.Habits, onToggle: (HabitId, Boolean, LocalDate) -> Unit, modifier: Modifier = Modifier) {
+private fun HabitList(
+    state: TodayUiState.Habits,
+    listState: LazyListState,
+    onToggle: (HabitId, Boolean, LocalDate) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     // The gate and the celebration live here, above the list, because the
     // mascot item below is disposed when it scrolls off and the celebration's
     // memory of the last mood has to outlive that (rememberCelebration).
@@ -113,13 +154,12 @@ private fun HabitList(state: TodayUiState.Habits, onToggle: (HabitId, Boolean, L
     // still shows and the scale is simply 1.
     val pulsing = motion.milestone.pulsing
     val pulse: () -> Float = if (motion.animationsOn) ({ motion.milestone.badgeScale }) else ({ 1f })
-    val mascot = MascotUi(state.mood, state.remaining, total = state.rows.size, regeneratingHabit = state.regeneratingHabit)
-    LazyColumn(modifier) {
+    LazyColumn(modifier, state = listState) {
         // The habitat is the first item, not a header outside the list: §1 keeps
         // habit rows on plain surface, so row contrast is never a function of the
         // mood, and scrolling Momo away is §1's accepted cost.
         item(key = "mascot") {
-            MascotPanel(mascot, motion)
+            MascotPanel(state.mascot(), motion)
         }
         items(state.rows, key = { it.id.value }) { row ->
             HabitRow(
@@ -182,3 +222,6 @@ private fun EmptyToday(onAddHabit: () -> Unit, modifier: Modifier = Modifier) {
  * not a tofu box, which a vector cannot draw, but whether the strokes read at
  * a glance and hold their colour in both themes.
  */
+
+/** Long enough to read as a swap rather than a pop, short enough not to lag the scroll. */
+private const val CHIP_FADE_MILLIS = 180
