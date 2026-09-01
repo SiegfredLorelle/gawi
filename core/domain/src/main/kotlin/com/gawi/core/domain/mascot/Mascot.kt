@@ -97,6 +97,21 @@ object Mascot {
      * drawing" and "which habit", and a mood is a bare label forever ([Mood]). What
      * a name looks like is the caller's business; this module holds no display text.
      *
+     * **A habit already done today is never named**, because the line offers a
+     * repair and there is nothing to repair today. Only a weekly habit can reach
+     * that filter: a daily one completed today has a positive `current` and so a
+     * null `brokenOn` ([com.gawi.core.domain.streak.Streaks]), which
+     * [recentlyBroken] already rejects. A weekly one is different — a completion
+     * short of the week's target leaves the streak at zero with `brokenOn` set, so
+     * without this the line would say "pick X back up" directly above X's own
+     * ticked row, and say nothing about the habit actually left undone.
+     *
+     * The filter is here rather than in [mood]: the streak *is* broken, so the face
+     * is right to be [Mood.REGENERATING] and today-view §4's table is unchanged.
+     * What the tick removes is only this habit's claim on the sentence. So this can
+     * return an empty list while the mood is [Mood.REGENERATING], and that is the
+     * one path on which the caller has no name to use.
+     *
      * **The ordering is the rule, not an implementation detail.** The line names one
      * habit, so which one is first decides what the user reads: most recently broken,
      * because the line is about the thing that just happened rather than the worst
@@ -126,6 +141,7 @@ object Mascot {
      */
     fun recentlyBrokenHabits(inputs: MoodInputs): List<HabitId> = inputs.habits
         .filterNot { it.archived }
+        .filterNot { it.completedToday }
         .filter { recentlyBroken(it.streak, inputs.today) }
         // Non-null past that filter, which is what makes a nullable sort key safe
         // here: recentlyBroken is false for a null brokenOn.

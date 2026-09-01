@@ -20,8 +20,12 @@ import com.gawi.core.ui.theme.parseHabitColor
  * a screenshot; a function gets them wrong in a test.
  */
 internal fun TodaySnapshot.toUiState(): TodayUiState {
-    // Mapped once and shared: both rules read it, and building it twice would
-    // be two mappings of the same rows for one screen.
+    // Built once and shared by both rules, rather than calling moodInputs()
+    // twice. Not a claim that the rows are mapped only once — `remaining` below
+    // still maps per row, deliberately: TodaySnapshot.toMoodState is public
+    // precisely so the count is taken from the rows it counts, rather than by
+    // indexing a parallel list that goes silently wrong the first time either
+    // side is filtered.
     val inputs = moodInputs()
     val mood = Mascot.mood(inputs)
     // Filtered once, at the top, so the rows, the count and the face cannot
@@ -50,14 +54,17 @@ internal fun TodaySnapshot.toUiState(): TodayUiState {
  * answers whether anything broke; whether that is worth saying is the
  * precedence table's answer, and it already gave it.
  *
- * Null when nothing broke, or when the id names no live row. Neither is
- * reachable from the one call site: it runs only under the mood gate, and a mood
- * of `REGENERATING` means the rule found a break, while the id always resolves
- * because the rule drops archived habits with the same filter over the same list
- * that produced the rows. Returned rather than thrown anyway, because a lookup
- * that throws does it on a screen, and because that makes
- * `today_mood_regenerating` a default the panel can still fall back to rather
- * than a branch that cannot compile away.
+ * **Null is reachable, and it is the whole reason the unnamed line still
+ * exists.** `Mascot.mood` reads a broken streak as `REGENERATING` whether or not
+ * the habit has been ticked today, but `Mascot.recentlyBrokenHabits` will not
+ * name a habit already done — so a weekly habit ticked short of its target gives
+ * a regenerating mood with nothing to name, and the panel falls back to
+ * `today_mood_regenerating`.
+ *
+ * The other null path — an id naming no live row — stays unreachable, because
+ * the rule drops archived habits with the same filter over the same list that
+ * produced the rows. Returned rather than thrown either way: a lookup that
+ * throws does it on a screen.
  */
 private fun regeneratingHabitName(inputs: MoodInputs, live: List<TodayHabit>): String? {
     val id = Mascot.recentlyBrokenHabits(inputs).firstOrNull() ?: return null
