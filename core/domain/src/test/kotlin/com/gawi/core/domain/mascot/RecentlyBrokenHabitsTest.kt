@@ -97,11 +97,49 @@ class RecentlyBrokenHabitsTest {
     }
 
     @Test
+    fun `a weekly habit ticked today is not named, though its streak is still broken`() {
+        // The one case where completedToday and a live brokenOn coexist. A weekly
+        // habit whose completion falls short of the week's target keeps a zero
+        // streak, so without the filter the line would read "pick this back up"
+        // directly above the row the user has just ticked.
+        //
+        // The mood is still REGENERATING — the streak really is broken and the
+        // face is right — so this is the path where the caller is handed a
+        // regenerating mood and no name to put in the sentence.
+        val ticked = habit(
+            1,
+            brokenOn = today,
+            completedToday = true,
+            schedule = Schedule.Weekly(timesPerWeek = 3),
+        )
+        val outstandingDaily = habit(2, brokenOn = null)
+
+        assertEquals(Mood.REGENERATING, Mascot.mood(inputsOf(ticked, outstandingDaily)))
+        assertEquals(emptyList<HabitId>(), brokenIn(ticked, outstandingDaily))
+    }
+
+    @Test
+    fun `a daily habit cannot reach that filter, because a tick nulls its brokenOn`() {
+        // Stated as a test so the narrowness of the rule above is checked rather
+        // than asserted in prose: Streaks gives a daily habit completed today a
+        // positive current and therefore no brokenOn, so recentlyBroken already
+        // rejects it and the completedToday filter never sees a daily habit.
+        assertEquals(emptyList<HabitId>(), brokenIn(habit(1, brokenOn = null, completedToday = true)))
+    }
+
+    @Test
     fun `a finished day still lists its breaks, because the mood decides whether to say so`() {
         // Mood.THRIVING outranks Mood.REGENERATING, so this list is non-empty
         // with nothing to draw. Which habit is this function's question; whether
         // to name one at all is the panel's.
-        val finished = habit(1, brokenOn = today, completedToday = true)
+        //
+        // A weekly habit on the first day of its week, with a broken streak and
+        // its target still reachable: nothing is outstanding, so the day reads
+        // finished, and the habit is still a live break. This used to be written
+        // with a daily habit ticked today, which Streaks cannot actually produce
+        // — a tick gives a daily habit a positive current and so a null brokenOn.
+        // The completedToday filter is what exposed the fixture as impossible.
+        val finished = habit(1, brokenOn = today, schedule = Schedule.Weekly(timesPerWeek = 3))
         assertEquals(Mood.THRIVING, Mascot.mood(inputsOf(finished)))
         assertEquals(listOf(habitId(1)), brokenIn(finished))
     }

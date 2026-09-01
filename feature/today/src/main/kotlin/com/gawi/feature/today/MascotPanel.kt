@@ -151,9 +151,11 @@ internal fun MascotPanel(mascot: MascotUi, motion: TodayMotion, modifier: Modifi
  * spoken — a gap older than this chip, since the panel was already disposed by
  * then. Open in today-view §6.
  *
- * One consequence for tests: this draws a second [Momo], carrying the same
- * `momo:<mood>` tag the tank does, so a tag query made while the chip is up
- * matches two nodes rather than one.
+ * One note for tests: this draws its own [Momo], carrying the same `momo:<mood>`
+ * tag the tank does. A query while the chip is up still matches exactly one
+ * node, because the tank's panel is disposed by then — an earlier version of
+ * this line claimed two, on the same mistake the live-region paragraph above
+ * corrects.
  */
 @Composable
 internal fun TodayChip(mascot: MascotUi, modifier: Modifier = Modifier) {
@@ -308,10 +310,9 @@ private fun moodLine(mascot: MascotUi): String {
         mascot.total == 0 -> stringResource(R.string.today_mood_empty)
 
         // Mood.REGENERATING's whole promise: the copy names the habit and offers
-        // the repair, and it never scolds. The unnamed line below is not a
-        // second phrasing anyone picks, and not a fallback the mapper can reach
-        // either — it is the exhaustive when's regenerating arm. strings.xml
-        // says why it is kept.
+        // the repair, and it never scolds. The unnamed line below is what shows
+        // when the mood is regenerating and no habit can be named — see
+        // Mascot.recentlyBrokenHabits, which will not name one already ticked.
         named != null -> stringResource(R.string.today_mood_regenerating_named, named)
 
         else -> stringResource(moodCopy(mascot.mood))

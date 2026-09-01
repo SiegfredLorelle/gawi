@@ -332,9 +332,12 @@ Small decisions that were easier to make once drawn:
 - ~~**`regenerating` is currently invisible.**~~ Visible since 2026-08-25: its
   own face, its own line ([momo.md](momo.md) §3). ~~The half of this that was
   the copy gap above is still open — the line does not name the habit.~~ It
-  names it, since 2026-08-31. The unnamed line is kept, but a review was right
-  that calling it a fallback overstated it: the mapper cannot select it, because
-  a regenerating mood means a break exists and its id always names a live row —
-  the rule and the row list are one filter over one set of habits. It survives as
-  the exhaustive `when`'s regenerating arm, reached only by a hand-built state in
-  a test.
+  names it, since 2026-08-31. The unnamed line is kept, and a second review round
+  found the state it belongs to. **A habit already ticked today is never named** —
+  the line offers a repair, and there is nothing to repair today. Only a weekly
+  habit can be both ticked and broken: a completion short of the week's target
+  leaves the streak at zero with `brokenOn` set, and without the rule the line
+  read "pick X back up" directly above X's own ticked row while the habit actually
+  left undone went unmentioned. The mood is untouched by this — the streak really
+  is broken and §4's table is unchanged — so a regenerating face with no habit to
+  name is exactly when the unnamed line shows.

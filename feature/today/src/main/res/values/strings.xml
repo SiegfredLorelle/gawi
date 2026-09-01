@@ -37,12 +37,10 @@
          beside the drawn face. Placeholder wording still — §4's per-mood copy
          is not designed — with one exception: the regenerating line names the
          habit, which is the half of it §4 did specify ("names the habit and
-         offers the repair"). The unnamed form is not a fallback the mapper can
-         reach: whenever the mood is regenerating there is a broken habit, and
-         its id always names a live row, because the rule and the row list are
-         the same filter over the same habits. It stays as the regenerating arm
-         of an exhaustive when — a defensive default, reached today only by a
-         hand-built MascotUi in a test. -->
+         offers the repair"). The unnamed form is what shows when the mood is
+         regenerating but no habit can be named — a weekly habit ticked today
+         but short of its target keeps a broken streak, and the line will not
+         ask for a repair the user has already made. -->
     <string name="today_mood_happy">All done. Momo is thriving.</string>
     <string name="today_mood_neutral">Momo is pottering about.</string>
     <string name="today_mood_worried">Momo is getting worried.</string>

@@ -134,6 +134,53 @@ class TodayUiMapperTest {
     }
 
     @Test
+    fun `a weekly habit ticked today leaves the mood regenerating with no name`() {
+        // The path that makes the unnamed line reachable. The streak is broken,
+        // so the face is regenerating; the habit has been ticked today, so the
+        // line will not ask for it back. Nothing else is broken, so there is no
+        // second candidate and the panel falls through to the unnamed copy.
+        val state = todaySnapshot(
+            habits = listOf(
+                todayHabit(
+                    id = habitId(1),
+                    name = "stretch",
+                    schedule = Schedule.Weekly(3),
+                    completedToday = true,
+                    weekCount = 1,
+                    streak = brokeOn(TODAY),
+                ),
+                todayHabit(id = habitId(2), name = "read"),
+            ),
+        ).toUiState() as TodayUiState.Habits
+
+        assertEquals(Mood.REGENERATING, state.mood)
+        assertNull(state.regeneratingHabit)
+    }
+
+    @Test
+    fun `a habit ticked today never takes the name from one still undone`() {
+        // The defect this rule exists for: without it the first id belongs to
+        // the ticked weekly habit and the line reads "pick stretch back up"
+        // above stretch's own ticked row, while the broken habit still waiting
+        // goes unmentioned.
+        val state = todaySnapshot(
+            habits = listOf(
+                todayHabit(
+                    id = habitId(1),
+                    name = "stretch",
+                    schedule = Schedule.Weekly(3),
+                    completedToday = true,
+                    weekCount = 1,
+                    streak = brokeOn(TODAY),
+                ),
+                todayHabit(id = habitId(2), name = "read", streak = brokeOn(TODAY.minusDays(1))),
+            ),
+        ).toUiState() as TodayUiState.Habits
+
+        assertEquals("read", state.regeneratingHabit)
+    }
+
+    @Test
     fun `an archived habit's break never becomes the name`() {
         // The rule drops archived habits, so the name has to come from the
         // habit that is actually on screen.
