@@ -476,14 +476,21 @@ class TodayScreenTest {
         state.value = longWith(StreakUi.Days(7))
         settle()
 
-        compose.onNodeWithText(quantity(R.plurals.today_milestone_days, 7)).assertIsDisplayed()
+        compose.onNodeWithText(quantity(R.plurals.today_chip_milestone_days, 7)).assertIsDisplayed()
         compose.onNodeWithText(resources.getString(R.string.today_chip_remaining, LONG.remaining)).assertDoesNotExist()
+        // The panel's sentence must not be what the bar draws. Drawing it here
+        // truncated to "7 days in a row. Mom…" on a device at font scale 1.0,
+        // and every assertion above stayed green, because a text assertion
+        // passes on a node that draws its string clipped. This is the half of
+        // that a test can hold: not that the short form fits, but that the long
+        // form is not the one being drawn.
+        compose.onNodeWithText(quantity(R.plurals.today_milestone_days, 7)).assertDoesNotExist()
 
         compose.mainClock.advanceTimeBy(MilestoneFrame.MILLIS + 100L)
         settle()
 
         compose.onNodeWithText(resources.getString(R.string.today_chip_remaining, LONG.remaining)).assertIsDisplayed()
-        compose.onNodeWithText(quantity(R.plurals.today_milestone_days, 7)).assertDoesNotExist()
+        compose.onNodeWithText(quantity(R.plurals.today_chip_milestone_days, 7)).assertDoesNotExist()
     }
 
     /**

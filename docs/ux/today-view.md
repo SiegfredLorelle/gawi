@@ -316,6 +316,19 @@ Small decisions that were easier to make once drawn:
   drawn string cannot cover the spoken one, and each fails on a mutation the
   other survives.
 
+  **The drawn line is a shorter string than the spoken one, and that is a
+  device's finding rather than a design preference.** The first build reused the
+  panel's sentence, and on the bar it truncated to "7 days in a row. Mom…" at
+  font scale 1.0 — not at 200 %, where this section had expected the pressure.
+  So the chip has its own plural, the way it already has its own count string:
+  "7 days!" drawn, the panel's full sentence spoken. Worth keeping because of
+  *how* it escaped: a Compose assertion that a string is present passes on a
+  node drawing it clipped, so no JVM test at any font scale could have seen it,
+  and the JVM tests were green throughout. The general form, beside §6's other
+  shown-versus-spoken lesson: a test can prove a string is *there* and say
+  nothing about whether it is legible. [running.md](../running.md) §4 carries
+  the measurement.
+
   The complication recorded here — that the `Empty` branch built its own motion
   with different arguments and `Loading` and `Unavailable` built none — was
   settled by making the mood **nullable** rather than by giving the states

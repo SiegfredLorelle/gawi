@@ -1924,20 +1924,36 @@ the one sequence that only plays while the frame loop runs.
       three action icons on one bar, nothing truncated. This is the case the
       chip replaces the title *for*, so it is the one that would have justified
       undoing that decision, and it did not. Same short-screen caveat as above.
-- [ ] **The milestone line in the chip** (2026-09-01, today-view §1 and §6).
-      Cross a rung with the list scrolled far enough down that the chip is up:
-      the count gives way to "7 days" for about two seconds and then comes
-      back on its own. Two things only a device can say. Whether the line fits
-      the bar beside three action icons at 200 % font scale — it is longer than
-      the count it replaces, `maxLines = 1` with an ellipsis, so this is the
-      case that would truncate. And whether a label that changes and changes
-      back reads as information rather than as a glitch, which no assertion can
-      judge.
+- [x] **The milestone line in the chip** (2026-09-01, today-view §1 and §6).
+      Done on the AVD at its own 720x1280, font scale 1.0, with ten habits — the
+      four real ones plus six seeded — one of them holding a six-day run so a
+      tick crossed the seven-day rung. Recorded with `screenrecord` rather than
+      screenshotted, because the line holds for two seconds and a screencap
+      round-trip is most of that: the frames show "9 left", then the milestone
+      line for ~2 s, then "8 left". The row's badge swelled to a `7` on its pill
+      at the same time, so the two treatments agree.
 
-      Blocked on the same hardware as the box above, and on the same count: a
-      rung has to be crossed *while* the chip is up, so it needs nine habits on
-      a full-height screen, one of them a tick away from seven days.
-      `chip_carriesTheMilestoneLine` pins the swap and the return on the JVM.
+      **This is the box that earned its place.** The first build drew the
+      *panel's* line here — "7 days in a row. Momo is dazzled." — and on the bar
+      it truncated to "7 days in a row. Mom…", crowding the first action icon, at
+      font scale 1.0 rather than only at 200 %. Every JVM assertion was green,
+      and would stay green: a Compose text assertion passes on a node that draws
+      its string clipped, so no test at any font scale could have caught this.
+      The fix is a chip-length plural of its own
+      (`today_chip_milestone_days`, "7 days!"), which is what
+      `today_chip_remaining` already does for the count; re-checked on the device
+      after, and it now fits with room before the icons.
+
+      **The spoken half, by `uiautomator dump` mid-run**, which reads the node a
+      screen reader consumes: `"7 days in a row. Momo is dazzled. 8 of 10 left
+      today"` — the panel's full sentence *and* the count, while the drawn label
+      is the short form. That divergence is deliberate and is the thing to
+      re-check if either string is ever touched. Still not *announced*: the node
+      is not a live region, which is the box below.
+
+      Seeded habits and the tick were removed afterwards by restoring the
+      database file pulled before any of it, so the four real habits and their
+      history are untouched — verified by event counts and `integrity_check`.
 - [ ] **TalkBack: the chip is one stop, and a tick under it is silent.** The
       first version of this box asked for something that cannot happen — "the
       announcement should come from the panel's live region only" — when the
