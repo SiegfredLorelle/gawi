@@ -144,12 +144,28 @@ internal fun MascotPanel(mascot: MascotUi, motion: TodayMotion, modifier: Modifi
  * the assertion that keeps it: reading the label back proves nothing, because
  * the label is exactly the part a screen reader does not read.
  *
- * **It does not carry the milestone line.** The panel swaps that in for the
- * length of a celebration and momo.md §6 makes the swap the announcement, but
- * the milestone lives on `TodayMotion`, which `HabitList` owns one level below
- * the app bar. So a rung crossed while scrolled down is neither drawn nor
- * spoken — a gap older than this chip, since the panel was already disposed by
- * then. Open in today-view §6.
+ * **It carries the milestone line, and the line replaces the count rather than
+ * joining it.** The panel swaps its mood line for the milestone's for the length
+ * of a celebration and momo.md §6 makes the swap the announcement; this does the
+ * same to the one string it has room for. Until 2026-09-01 it could not: the
+ * milestone lived on `TodayMotion`, which `HabitList` owned one level *below*
+ * the app bar, so a rung crossed while scrolled down was neither drawn nor
+ * spoken. `rememberTodayMotion` now sits above the `Scaffold` for this reason
+ * and says so. Replacing rather than joining because the width this bar does
+ * not have is the same width the mood line was already denied — and because the
+ * panel's own treatment of the line is a swap, not an addition.
+ *
+ * The **spoken** half of that swap is not the drawn one: the description takes
+ * the milestone line in the *mood line's* place and keeps the count, which is
+ * the shape the panel has during a run — a milestone copy line with the
+ * remaining line still under it. A description that narrowed to the line alone
+ * would drop the count from the announcement, which is the defect the paragraph
+ * above records, arrived at from the other direction.
+ *
+ * What is still open in today-view §6 is the *announcing*, not the carrying: a
+ * description change on a non-live node is not spoken, so a rung crossed while
+ * the chip is up is now drawn but still silent. That is the live-region question
+ * above, and it needs a device with TalkBack rather than another decision here.
  *
  * One note for tests: this draws its own [Momo], carrying the same `momo:<mood>`
  * tag the tank does. A query while the chip is up still matches exactly one
@@ -158,11 +174,15 @@ internal fun MascotPanel(mascot: MascotUi, motion: TodayMotion, modifier: Modifi
  * corrects.
  */
 @Composable
-internal fun TodayChip(mascot: MascotUi, modifier: Modifier = Modifier) {
-    // The panel's mood line and its count, joined: the face has no description of
-    // its own and the label is not read, so this one string is the whole
-    // announcement. Deliberately not the panel's *milestone* line — see the KDoc.
-    val spoken = listOfNotNull(moodLine(mascot), remainingLine(mascot)).joinToString(" ")
+internal fun TodayChip(mascot: MascotUi, milestone: Milestone?, modifier: Modifier = Modifier) {
+    val milestoneLine = milestone?.let { pluralStringResource(milestoneCopy(it), it.count, it.count) }
+    // The panel's own first line and its count, joined: the face has no
+    // description of its own and the label is not read, so this one string is
+    // the whole announcement. The milestone line takes the mood line's place
+    // here, not the count's — the drawn label gives up its count for the run
+    // because it has room for one string; the description has room for both and
+    // dropping the count from what is spoken is the very defect above.
+    val spoken = listOfNotNull(milestoneLine ?: moodLine(mascot), remainingLine(mascot)).joinToString(" ")
     Row(
         modifier = modifier
             .testTag(CHIP_TAG)
@@ -175,7 +195,11 @@ internal fun TodayChip(mascot: MascotUi, modifier: Modifier = Modifier) {
         // an empty chip.
         Box(Modifier.size(ChipFace)) { Momo(mascot.mood, animated = false) }
         Text(
-            text = if (mascot.remaining == 0) {
+            // The milestone owns the label while it runs, the way it owns the
+            // tank and the panel's line. MilestoneState keeps `current` set for
+            // the same two seconds with animations off, so the swap happens
+            // either way — a line is text, not motion.
+            text = milestoneLine ?: if (mascot.remaining == 0) {
                 stringResource(R.string.today_chip_remaining_none)
             } else {
                 stringResource(R.string.today_chip_remaining, mascot.remaining)

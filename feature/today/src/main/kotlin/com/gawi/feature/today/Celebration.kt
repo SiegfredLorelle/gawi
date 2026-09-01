@@ -166,11 +166,21 @@ internal class CelebrationState {
  * re-run with the same mood is a no-op — `celebrates(mood, mood)` is false
  * and `previous` is already set — so the key costs nothing and the capture is
  * never stale.
+ *
+ * **A null [mood] is a screen with no mood yet — `Loading` and `Unavailable` —
+ * and is not seen at all.** This state is remembered above the branch that
+ * chooses between them, so it outlives the change from one to another, and the
+ * guard is what keeps that from mattering: `celebrates` fires only against a
+ * non-null `previous`, so feeding a stand-in mood while loading would seed
+ * `previous` and turn the first real thriving into a party for something that
+ * happened before the app opened — the one case the paragraph above says never
+ * fires. Skipping the sighting leaves `previous` null until there is a real
+ * mood, which is exactly the cold start the guard is for.
  */
 @Composable
-internal fun rememberCelebration(mood: Mood, animationsOn: Boolean): CelebrationState {
+internal fun rememberCelebration(mood: Mood?, animationsOn: Boolean): CelebrationState {
     val state = remember { CelebrationState() }
-    LaunchedEffect(mood, animationsOn) { state.see(mood, animationsOn) }
+    LaunchedEffect(mood, animationsOn) { if (mood != null) state.see(mood, animationsOn) }
     return state
 }
 
@@ -183,9 +193,22 @@ internal fun rememberCelebration(mood: Mood, animationsOn: Boolean): Celebration
  */
 internal class TodayMotion(val animationsOn: Boolean, val celebration: CelebrationState, val milestone: MilestoneState)
 
-/** The screen's [TodayMotion] for [mood] and [rows]; remember it above any list that scrolls the tank. */
+/**
+ * The screen's [TodayMotion] for [mood] and [rows].
+ *
+ * Remember it above the `Scaffold`, not merely above the list: the app-bar chip
+ * reads `milestone.current` to carry the milestone line (today-view §1), and the
+ * bar is the list's sibling rather than its parent, so a motion owned by the
+ * list is invisible to it. Above the `Scaffold` it is above both.
+ *
+ * [mood] is nullable because the states without one — `Loading`, `Unavailable` —
+ * are branches *under* this, and [rememberCelebration] explains what the null
+ * protects. [rows] is empty for the same states, which needs no guard of its
+ * own: `milestoneCrossed` treats a first sighting as no crossing, so an empty
+ * list leaves `seen` empty and is indistinguishable from a fresh state.
+ */
 @Composable
-internal fun rememberTodayMotion(mood: Mood, rows: List<HabitRowUi>): TodayMotion {
+internal fun rememberTodayMotion(mood: Mood?, rows: List<HabitRowUi>): TodayMotion {
     val animationsOn by rememberAnimationsEnabled()
     val celebration = rememberCelebration(mood, animationsOn)
     val milestone = rememberMilestone(rows, animationsOn)

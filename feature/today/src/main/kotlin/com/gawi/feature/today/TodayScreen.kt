@@ -32,7 +32,6 @@ import com.gawi.core.domain.model.HabitId
 import com.gawi.core.ui.component.GawiIconButton
 import com.gawi.core.ui.component.GawiIcons
 import com.gawi.core.ui.component.Notice
-import com.gawi.core.ui.component.rememberAnimationsEnabled
 import java.time.LocalDate
 
 /**
@@ -57,7 +56,18 @@ internal fun TodayScreen(state: TodayUiState, actions: TodayActions, snackbarHos
     // more. derivedStateOf so the bar recomposes when the answer changes rather
     // than on every frame of a scroll that does not change it.
     val chipVisible by remember { derivedStateOf { listState.firstVisibleItemIndex > 0 } }
-    val animationsOn by rememberAnimationsEnabled()
+    // Hoisted for the same reason as the list state, and one level higher than
+    // it used to sit. The celebration's memory has to outlive the mascot item,
+    // which is why it was never in the tank; it has to outlive the *branch* as
+    // well, because the chip in the bar above reads the milestone from it and
+    // the bar is the list's sibling. `Loading` and `Unavailable` have no mood —
+    // rememberCelebration says why the null matters rather than a stand-in.
+    val mood = when (state) {
+        is TodayUiState.Habits -> state.mood
+        is TodayUiState.Empty -> state.mood
+        TodayUiState.Loading, TodayUiState.Unavailable -> null
+    }
+    val motion = rememberTodayMotion(mood, (state as? TodayUiState.Habits)?.rows ?: emptyList())
     Scaffold(
         modifier = modifier,
         topBar = {
@@ -74,10 +84,14 @@ internal fun TodayScreen(state: TodayUiState, actions: TodayActions, snackbarHos
                 title = {
                     Crossfade(
                         targetState = chipVisible && mascot != null,
-                        animationSpec = tween(if (animationsOn) CHIP_FADE_MILLIS else 0),
+                        animationSpec = tween(if (motion.animationsOn) CHIP_FADE_MILLIS else 0),
                         label = "todayTitle",
                     ) { showChip ->
-                        if (showChip && mascot != null) TodayChip(mascot) else Text(stringResource(R.string.today_title))
+                        if (showChip && mascot != null) {
+                            TodayChip(mascot, motion.milestone.current)
+                        } else {
+                            Text(stringResource(R.string.today_title))
+                        }
                     }
                 },
                 // The three ways off this screen. Deliberately no FAB as well:
@@ -119,7 +133,6 @@ internal fun TodayScreen(state: TodayUiState, actions: TodayActions, snackbarHos
             // already accepted Momo leaving the screen on a long list; the
             // collapse into an app-bar chip is what is still deferred.
             is TodayUiState.Empty -> {
-                val motion = rememberTodayMotion(state.mood, emptyList())
                 Column(
                     Modifier
                         .fillMaxSize()
@@ -131,7 +144,8 @@ internal fun TodayScreen(state: TodayUiState, actions: TodayActions, snackbarHos
                 }
             }
 
-            is TodayUiState.Habits -> HabitList(state, listState, actions.onToggle, Modifier.fillMaxSize().padding(insets))
+            is TodayUiState.Habits ->
+                HabitList(state, motion, listState, actions.onToggle, Modifier.fillMaxSize().padding(insets))
         }
     }
 }
@@ -139,14 +153,11 @@ internal fun TodayScreen(state: TodayUiState, actions: TodayActions, snackbarHos
 @Composable
 private fun HabitList(
     state: TodayUiState.Habits,
+    motion: TodayMotion,
     listState: LazyListState,
     onToggle: (HabitId, Boolean, LocalDate) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // The gate and the celebration live here, above the list, because the
-    // mascot item below is disposed when it scrolls off and the celebration's
-    // memory of the last mood has to outlive that (rememberCelebration).
-    val motion = rememberTodayMotion(state.mood, state.rows)
     // Read in composition: it changes twice per milestone, so only the rows
     // that crossed recompose; the per-frame scale is read inside a layer
     // lambda in StreakBadge and recomposes nothing — and reads the badge's

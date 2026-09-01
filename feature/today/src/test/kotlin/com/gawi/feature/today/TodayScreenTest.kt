@@ -448,6 +448,74 @@ class TodayScreenTest {
     }
 
     /**
+     * today-view §6's gap, closed: a rung crossed while scrolled down is drawn
+     * in the chip.
+     *
+     * The line replaces the count for the run rather than joining it — the bar
+     * has room for one string — so the count's absence is asserted alongside the
+     * line's presence. Asserting only the line would pass on a chip that had
+     * grown to carry both and overflowed the bar.
+     *
+     * The return trip is the other half. `MilestoneState` keeps `current` set for
+     * the same two seconds with animations off as with them on, so the label must
+     * come back on its own; a swap that never reverted would leave the chip
+     * permanently claiming a milestone and still pass the first two assertions.
+     */
+    @Test
+    fun chip_carriesTheMilestoneLine() {
+        val state = mutableStateOf(longWith(StreakUi.Days(6)))
+        compose.setContent {
+            GawiTheme { TodayScreen(state.value, NO_ACTIONS, SnackbarHostState()) }
+        }
+        // Scrolled before the clock is held: performScrollToIndex needs to settle,
+        // and it cannot while nothing advances time.
+        scrollPastTheTank()
+        compose.onNodeWithText(resources.getString(R.string.today_chip_remaining, LONG.remaining)).assertIsDisplayed()
+
+        compose.mainClock.autoAdvance = false
+        state.value = longWith(StreakUi.Days(7))
+        settle()
+
+        compose.onNodeWithText(quantity(R.plurals.today_milestone_days, 7)).assertIsDisplayed()
+        compose.onNodeWithText(resources.getString(R.string.today_chip_remaining, LONG.remaining)).assertDoesNotExist()
+
+        compose.mainClock.advanceTimeBy(MilestoneFrame.MILLIS + 100L)
+        settle()
+
+        compose.onNodeWithText(resources.getString(R.string.today_chip_remaining, LONG.remaining)).assertIsDisplayed()
+        compose.onNodeWithText(quantity(R.plurals.today_milestone_days, 7)).assertDoesNotExist()
+    }
+
+    /**
+     * The milestone line is spoken as well as drawn, and the count survives it.
+     *
+     * A separate test from [chip_carriesTheMilestoneLine] rather than one more
+     * assertion on it, for the reason today-view §6 records against this very
+     * chip: a node with a `contentDescription` has its `text` ignored by a
+     * screen reader, so
+     * the label and the description are two independent strings and asserting
+     * one proves nothing about the other. The label gives up the count for the
+     * run; the description has room for both and keeps it, which is the shape
+     * the panel has during a run.
+     */
+    @Test
+    fun chip_speaksTheMilestoneLine() {
+        val state = mutableStateOf(longWith(StreakUi.Days(6)))
+        compose.setContent {
+            GawiTheme { TodayScreen(state.value, NO_ACTIONS, SnackbarHostState()) }
+        }
+        scrollPastTheTank()
+
+        compose.mainClock.autoAdvance = false
+        state.value = longWith(StreakUi.Days(7))
+        settle()
+
+        val spoken = quantity(R.plurals.today_milestone_days, 7) +
+            " " + resources.getString(R.string.today_remaining, LONG.remaining, LONG.rows.size)
+        compose.onNodeWithContentDescription(spoken).assertIsDisplayed()
+    }
+
+    /**
      * Mood.REGENERATING's promise, drawn: the line names the habit.
      *
      * Through the screen rather than the mapper because the mapper can only say
@@ -518,8 +586,8 @@ class TodayScreenTest {
 
     /**
      * Finishing the day with animations off is not celebrated — a celebration
-     * is motion, and the resting thriving frame already says thriving (momo.md
-     * §6). The on path is a frame loop no Robolectric composition can wait out,
+     * is motion, and the resting thriving frame already says thriving
+     * (momo.md §6). The on path is a frame loop no Robolectric composition can wait out,
      * so it is the emulator's to check (running.md §4); the trigger itself is
      * `CelebrationFrameTest`'s.
      */
@@ -720,6 +788,18 @@ class TodayScreenTest {
             logicalDate = LOGICAL_DATE,
             regeneratingHabit = null,
         )
+
+        /**
+         * [LONG] with its first row carrying [streak], so a rung can be crossed
+         * while the chip is up — the list stays the same length, so
+         * `scrollPastTheTank` still scrolls past it.
+         *
+         * The first row rather than a middle one because the row itself is off
+         * screen by then: what the chip shows must not depend on the crossing
+         * row being drawn.
+         */
+        fun longWith(streak: StreakUi): TodayUiState.Habits =
+            LONG.copy(rows = listOf(LONG.rows.first().copy(streak = streak)) + LONG.rows.drop(1))
 
         /** Habits present and none outstanding — READ is the completed one. */
         val ALL_DONE = TodayUiState.Habits(
