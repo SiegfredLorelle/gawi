@@ -1924,13 +1924,24 @@ the one sequence that only plays while the frame loop runs.
       three action icons on one bar, nothing truncated. This is the case the
       chip replaces the title *for*, so it is the one that would have justified
       undoing that decision, and it did not. Same short-screen caveat as above.
-- [ ] **TalkBack does not read the mood twice.** With the chip up, swipe
-      through the bar and then back into the list. The chip announces the mood
-      and its count once as one stop; the panel announces once when reached.
-      Tick a habit while the chip is up: the announcement should come from the
-      panel's live region only. `chip_isNotASecondLiveRegion` asserts the
-      property that would cause a double read, but only a screen reader can say
-      what is actually spoken — and neither emulator image here has one.
+- [ ] **TalkBack: the chip is one stop, and a tick under it is silent.** The
+      first version of this box asked for something that cannot happen — "the
+      announcement should come from the panel's live region only" — when the
+      panel is a list item and is disposed the moment the chip appears. A
+      by-hand pass would have "succeeded" without checking anything. What to
+      check instead:
+
+      Swipe onto the chip with the list scrolled down: **one** stop, announcing
+      the mood and the count together, never a bare "image" or two stops for the
+      face and the label. Scroll back to the top and swipe into the panel: it
+      announces once when reached. Then tick a habit while the chip is up — the
+      only thing that should speak is **the row's own checkbox**, because the
+      chip is not a live region and the panel is not composed. Silence from the
+      chip is the expected result here, not a failure; today-view §1 says why it
+      is accepted and leaves making it a live region open. This is the check
+      that would settle that, so run it before deciding.
+      `chip_isNotALiveRegion` pins the property on the JVM, but only a screen
+      reader can say what is spoken, and neither emulator image here has one.
 
       **What *was* checked, 2026-08-31, and how:** `uiautomator dump` reads the
       same node description a screen reader consumes, and on API 37 the chip's
