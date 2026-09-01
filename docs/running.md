@@ -1924,6 +1924,20 @@ the one sequence that only plays while the frame loop runs.
       three action icons on one bar, nothing truncated. This is the case the
       chip replaces the title *for*, so it is the one that would have justified
       undoing that decision, and it did not. Same short-screen caveat as above.
+- [ ] **The milestone line in the chip** (2026-09-01, today-view §1 and §6).
+      Cross a rung with the list scrolled far enough down that the chip is up:
+      the count gives way to "7 days" for about two seconds and then comes
+      back on its own. Two things only a device can say. Whether the line fits
+      the bar beside three action icons at 200 % font scale — it is longer than
+      the count it replaces, `maxLines = 1` with an ellipsis, so this is the
+      case that would truncate. And whether a label that changes and changes
+      back reads as information rather than as a glitch, which no assertion can
+      judge.
+
+      Blocked on the same hardware as the box above, and on the same count: a
+      rung has to be crossed *while* the chip is up, so it needs nine habits on
+      a full-height screen, one of them a tick away from seven days.
+      `chip_carriesTheMilestoneLine` pins the swap and the return on the JVM.
 - [ ] **TalkBack: the chip is one stop, and a tick under it is silent.** The
       first version of this box asked for something that cannot happen — "the
       announcement should come from the panel's live region only" — when the
@@ -1951,6 +1965,14 @@ the one sequence that only plays while the frame loop runs.
       mood: a node with a `contentDescription` has its `text` ignored, so the
       drawn count was silently unspoken and every test still passed. What the
       dump cannot answer is the double-read, which needs the real thing.
+
+      **Since 2026-09-01 there is a second description to dump**: during a
+      milestone run the chip's is the milestone line followed by the count, the
+      mood line dropping out. Worth reading mid-run for the same reason as
+      above — the drawn label and the spoken sentence are different strings
+      here, and only one of them is the one TalkBack reads. It is still not
+      *announced*, because the node is not a live region; that is the decision
+      this box exists to settle.
 
 ### The launcher icon
 

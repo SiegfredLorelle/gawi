@@ -295,16 +295,42 @@ Small decisions that were easier to make once drawn:
   this chip: where a node's shown and spoken strings differ on purpose,
   asserting the shown one proves nothing about the other.
 
-  **Still open: the chip does not carry the milestone line.** The panel swaps
-  that in for the length of a celebration and [momo.md](momo.md) §6 makes the
-  swap the announcement, but the milestone lives on `TodayMotion`, which
-  `HabitList` owns one level below the app bar — so a rung crossed while
-  scrolled down is neither drawn nor spoken. Older than the chip: the panel was
-  already disposed by then, so nothing was drawn there either. Closing it means
-  hoisting `rememberTodayMotion` above the `LazyColumn` so the app bar can read
-  `motion.milestone`, which is more than a chip line's worth of change — the
-  `Empty` branch builds its own motion with different arguments, and `Loading`
-  and `Unavailable` build none.
+  ~~**Still open: the chip does not carry the milestone line.**~~ **Drawn since
+  2026-09-01; the announcing is what is left.** The panel swaps that line in for
+  the length of a celebration and [momo.md](momo.md) §6 makes the swap the
+  announcement, but the milestone lived on `TodayMotion`, which `HabitList`
+  owned one level below the app bar — so a rung crossed while scrolled down was
+  neither drawn nor spoken. Older than the chip: the panel was already disposed
+  by then, so nothing was drawn there either.
+
+  `rememberTodayMotion` now sits above the `Scaffold` rather than above the
+  `LazyColumn`, which is the distinction that mattered: the bar is the list's
+  *sibling*, so above the list would still have been out of its reach. The chip
+  takes the milestone line **in place of its count** for the run — the same
+  swap the panel makes, and for the same reason the mood line never sat beside
+  the count here, which is that the bar has room for one string. Its
+  description takes the line in the *mood line's* place instead and keeps the
+  count, so what is spoken never narrows to less than the panel would have
+  said. `chip_carriesTheMilestoneLine` and `chip_speaksTheMilestoneLine` are
+  separate tests on purpose: the paragraph above is exactly why asserting the
+  drawn string cannot cover the spoken one, and each fails on a mutation the
+  other survives.
+
+  The complication recorded here — that the `Empty` branch built its own motion
+  with different arguments and `Loading` and `Unavailable` built none — was
+  settled by making the mood **nullable** rather than by giving the states
+  without one a stand-in. That is load-bearing, not tidiness: one motion now
+  outlives the change from one branch to another, and `celebrates` fires only
+  against a non-null `previous`, so a stand-in mood during `Loading` would turn
+  the first real thriving into a party for a day that was already over when the
+  app opened. `CelebrationGuardTest` pins it, with the animations gate passed
+  `true` as a parameter — under [running.md](../running.md) §4's animations-off
+  rule a celebration cannot be observed at all, so that test lives outside
+  `TodayScreenTest` and carries a deliberate control.
+
+  **Still open: it is drawn but not spoken.** A description change on a non-live
+  node is not announced, so this is the live-region question above rather than a
+  second gap, and it needs a device with TalkBack rather than another decision.
 - ~~**The `regenerating` copy has nowhere to come from yet.** §3 says it
   "names the habit and offers the repair", but the mood is a bare label —
   it names an artboard, not a habit — and `HabitMoodState` deliberately
