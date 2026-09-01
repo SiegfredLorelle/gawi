@@ -404,16 +404,23 @@ class TodayScreenTest {
     }
 
     /**
-     * The chip is not a second live region.
+     * The chip is not a live region, and that is a choice rather than an
+     * oversight.
      *
-     * MascotPanel's copy already is one and is only scrolled off rather than
-     * gone, so a live region here would have TalkBack read the mood twice after
-     * every tick. Structural rather than spoken: there is no TalkBack on this
-     * image, so this asserts the property that would cause it. The by-hand check
-     * is owed in docs/running.md §4.
+     * Not to avoid a double read — there is none to avoid. MascotPanel is a
+     * LazyColumn item and is disposed once the chip is up, which
+     * [chip_carriesTheMoodAndTheRemainingCount] demonstrates by asserting the
+     * panel's own count no longer exists. The two never speak over each other
+     * because they are never both there.
+     *
+     * What this pins is the resulting silence: a tick made while the chip is up
+     * changes only this description, and a description change on a non-live node
+     * is not announced. TodayChip's KDoc gives the three reasons that is
+     * accepted. Structural rather than spoken, because no image here has
+     * TalkBack; the by-hand check is owed in docs/running.md §4.
      */
     @Test
-    fun chip_isNotASecondLiveRegion() {
+    fun chip_isNotALiveRegion() {
         compose.setContent {
             GawiTheme { TodayScreen(LONG, NO_ACTIONS, SnackbarHostState()) }
         }
