@@ -24,25 +24,32 @@ class RecentlyBrokenHabitsTest {
     // A Monday, matching the other mascot tests so the dates read the same way.
     private val today = LocalDate.parse("2026-08-17")
 
-    private fun habit(n: Int, brokenOn: LocalDate?, archived: Boolean = false, completedToday: Boolean = false) = HabitMoodState(
+    private fun habit(
+        n: Int,
+        brokenOn: LocalDate?,
+        archived: Boolean = false,
+        completedToday: Boolean = false,
+        schedule: Schedule = Schedule.Daily,
+    ) = HabitMoodState(
         id = habitId(n),
-        schedule = Schedule.Daily,
+        schedule = schedule,
         archived = archived,
         completedToday = completedToday,
         completionsThisWeek = 0,
         streak = if (brokenOn == null) StreakSnapshot.NONE else StreakSnapshot(0, previous = 4, brokenOn = brokenOn),
     )
 
-    private fun inputsOf(vararg habits: HabitMoodState) = MoodInputs(
+    private fun inputsOf(vararg habits: HabitMoodState, on: LocalDate = today) = MoodInputs(
         habits = habits.toList(),
-        today = today,
-        now = LocalDateTime.of(today, LocalTime.of(9, 0)),
+        today = on,
+        now = LocalDateTime.of(on, LocalTime.of(9, 0)),
         reminderTime = LocalTime.of(21, 0),
         dayCutoff = LocalTime.MIDNIGHT,
         weekStart = DayOfWeek.MONDAY,
     )
 
-    private fun brokenIn(vararg habits: HabitMoodState): List<HabitId> = Mascot.recentlyBrokenHabits(inputsOf(*habits))
+    private fun brokenIn(vararg habits: HabitMoodState, on: LocalDate = today): List<HabitId> =
+        Mascot.recentlyBrokenHabits(inputsOf(*habits, on = on))
 
     @Test
     fun `nothing broken is an empty list, not a habit with no break`() {
@@ -97,5 +104,25 @@ class RecentlyBrokenHabitsTest {
         val finished = habit(1, brokenOn = today, completedToday = true)
         assertEquals(Mood.THRIVING, Mascot.mood(inputsOf(finished)))
         assertEquals(listOf(habitId(1)), brokenIn(finished))
+    }
+
+    @Test
+    fun `a weekly break is dated from its week start, so a later daily break outranks it`() {
+        // The sort key is not one unit: StreakSnapshot.brokenOn is a date for a
+        // daily habit and a week start for a weekly one. Every other case in this
+        // file is Daily, so this is the one that says what happens when they mix.
+        //
+        // Wednesday. The weekly habit's streak zeroed at the top of this week and
+        // is dated Monday; the daily habit broke today. Momo names the daily one,
+        // and that is right rather than merely what the code does — the weekly
+        // break became visible on the Monday, so it is the older news of the two.
+        // A review read this the other way round, which is why it is written out.
+        val wednesday = LocalDate.parse("2026-08-19")
+        val mondayOfThatWeek = LocalDate.parse("2026-08-17")
+        val weekly = habit(1, brokenOn = mondayOfThatWeek, schedule = Schedule.Weekly(timesPerWeek = 3))
+        val daily = habit(2, brokenOn = wednesday)
+
+        // Weekly first on the way in, so input order cannot be what produces the answer.
+        assertEquals(listOf(habitId(2), habitId(1)), brokenIn(weekly, daily, on = wednesday))
     }
 }

@@ -104,6 +104,17 @@ object Mascot {
      * stable, so two habits broken on the same day keep the caller's own order and the
      * answer cannot flicker between two equally recent breaks.
      *
+     * **What the key means, because it is not one unit.**
+     * [com.gawi.core.domain.streak.StreakSnapshot.brokenOn] is the day the break
+     * *became visible*, in the schedule's own unit — a date for a daily habit, the
+     * week start for a weekly one — the same mismatch [REGENERATING_WINDOW_DAYS]
+     * records for the window. So a weekly habit whose streak zeroed this week is dated
+     * its Monday and sorts below a daily habit that broke on the Wednesday. **That is
+     * correct rather than a defect**: the weekly break did become visible on the
+     * Monday, so it is the older news of the two. Written down because a review read
+     * it the other way round, and the mixed-schedule case in `RecentlyBrokenHabitsTest`
+     * is what pins it.
+     *
      * **Answers without consulting the mood.** [Mood.THRIVING] outranks
      * [Mood.REGENERATING], so a finished day returns a non-empty list with nothing to
      * draw. Which habit is this function's question; whether to say so at all is the
@@ -116,6 +127,8 @@ object Mascot {
     fun recentlyBrokenHabits(inputs: MoodInputs): List<HabitId> = inputs.habits
         .filterNot { it.archived }
         .filter { recentlyBroken(it.streak, inputs.today) }
+        // Non-null past that filter, which is what makes a nullable sort key safe
+        // here: recentlyBroken is false for a null brokenOn.
         .sortedByDescending { it.streak.brokenOn }
         .map { it.id }
 
