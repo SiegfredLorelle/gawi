@@ -116,9 +116,23 @@ internal fun MascotPanel(mascot: MascotUi, motion: TodayMotion, modifier: Modifi
  * [ChipFace] the idle motion is invisible, and a frame clock running behind a
  * scrolling list is the one cost this chip could impose and has no need to.
  *
- * **One semantics node, and deliberately not a live region.** [MascotPanel]'s
- * copy is a polite one already and is only scrolled off rather than gone, so a
- * second here would have TalkBack read the mood twice after every tick.
+ * **One semantics node, and deliberately not a live region — but not for the
+ * reason it first appeared.** [MascotPanel] is a `LazyColumn` item, so once the
+ * chip is up the panel is *disposed*, not merely off-screen: `HabitList` says so
+ * where it hoists the motion state, and `chip_carriesTheMoodAndTheRemainingCount`
+ * proves it, since its `assertDoesNotExist` could not pass on a panel that was
+ * still composed. The two nodes never coexist, so there was never a double read
+ * to avoid.
+ *
+ * What that leaves is a silence, and it is chosen rather than inherited: a tick
+ * made while the chip is up changes this description, and a plain description
+ * change on a non-live node is not announced. Three reasons to keep it that way.
+ * The row's own checkbox announces its state change, so the tick is not
+ * feedback-free. A live region fires when its node *appears* as well as when it
+ * changes, so every scroll past the tank would speak the whole sentence — a poor
+ * trade for a surface §1 calls "deliberately small". And no emulator image here
+ * has TalkBack, so a live region would be shipped unheard. `chip_isNotALiveRegion`
+ * pins the choice; today-view §1 keeps it open for a device that can verify it.
  *
  * **What is shown and what is spoken are different strings, and the description
  * has to carry both facts.** The bar has no room for "3 of 8 left today" beside
@@ -126,9 +140,16 @@ internal fun MascotPanel(mascot: MascotUi, motion: TodayMotion, modifier: Modifi
  * `contentDescription` has its `text` ignored by TalkBack, so a description of
  * the mood alone would silently drop the count from the announcement and leave
  * the chip saying less than the panel it replaced. It is built from the panel's
- * own two lines for that reason, and `chip_speaksTheCountItShows` is the
- * assertion that keeps it: reading the label back proves nothing, because the
- * label is exactly the part a screen reader does not read.
+ * own mood line and count for that reason, and `chip_speaksTheCountItShows` is
+ * the assertion that keeps it: reading the label back proves nothing, because
+ * the label is exactly the part a screen reader does not read.
+ *
+ * **It does not carry the milestone line.** The panel swaps that in for the
+ * length of a celebration and momo.md §6 makes the swap the announcement, but
+ * the milestone lives on `TodayMotion`, which `HabitList` owns one level below
+ * the app bar. So a rung crossed while scrolled down is neither drawn nor
+ * spoken — a gap older than this chip, since the panel was already disposed by
+ * then. Open in today-view §6.
  *
  * One consequence for tests: this draws a second [Momo], carrying the same
  * `momo:<mood>` tag the tank does, so a tag query made while the chip is up
@@ -136,8 +157,9 @@ internal fun MascotPanel(mascot: MascotUi, motion: TodayMotion, modifier: Modifi
  */
 @Composable
 internal fun TodayChip(mascot: MascotUi, modifier: Modifier = Modifier) {
-    // The panel's own two lines, joined: the face has no description of its own
-    // and the label is not read, so this one string is the whole announcement.
+    // The panel's mood line and its count, joined: the face has no description of
+    // its own and the label is not read, so this one string is the whole
+    // announcement. Deliberately not the panel's *milestone* line — see the KDoc.
     val spoken = listOfNotNull(moodLine(mascot), remainingLine(mascot)).joinToString(" ")
     Row(
         modifier = modifier
@@ -286,9 +308,10 @@ private fun moodLine(mascot: MascotUi): String {
         mascot.total == 0 -> stringResource(R.string.today_mood_empty)
 
         // Mood.REGENERATING's whole promise: the copy names the habit and offers
-        // the repair, and it never scolds. The unnamed line below is the
-        // fallback for a break whose row the screen no longer holds, not a
-        // second phrasing anyone picks.
+        // the repair, and it never scolds. The unnamed line below is not a
+        // second phrasing anyone picks, and not a fallback the mapper can reach
+        // either — it is the exhaustive when's regenerating arm. strings.xml
+        // says why it is kept.
         named != null -> stringResource(R.string.today_mood_regenerating_named, named)
 
         else -> stringResource(moodCopy(mascot.mood))

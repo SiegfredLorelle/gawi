@@ -50,9 +50,14 @@ internal fun TodaySnapshot.toUiState(): TodayUiState {
  * answers whether anything broke; whether that is worth saying is the
  * precedence table's answer, and it already gave it.
  *
- * Null when the id names no live row. Unreachable — the rule drops archived
- * habits exactly as the caller does — and cheaper than the alternative, which is a
- * lookup that throws on a screen.
+ * Null when nothing broke, or when the id names no live row. Neither is
+ * reachable from the one call site: it runs only under the mood gate, and a mood
+ * of `REGENERATING` means the rule found a break, while the id always resolves
+ * because the rule drops archived habits with the same filter over the same list
+ * that produced the rows. Returned rather than thrown anyway, because a lookup
+ * that throws does it on a screen, and because that makes
+ * `today_mood_regenerating` a default the panel can still fall back to rather
+ * than a branch that cannot compile away.
  */
 private fun regeneratingHabitName(inputs: MoodInputs, live: List<TodayHabit>): String? {
     val id = Mascot.recentlyBrokenHabits(inputs).firstOrNull() ?: return null
