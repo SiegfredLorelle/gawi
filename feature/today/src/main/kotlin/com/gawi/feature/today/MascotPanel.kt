@@ -155,12 +155,21 @@ internal fun MascotPanel(mascot: MascotUi, motion: TodayMotion, modifier: Modifi
  * not have is the same width the mood line was already denied — and because the
  * panel's own treatment of the line is a swap, not an addition.
  *
- * The **spoken** half of that swap is not the drawn one: the description takes
- * the milestone line in the *mood line's* place and keeps the count, which is
- * the shape the panel has during a run — a milestone copy line with the
- * remaining line still under it. A description that narrowed to the line alone
- * would drop the count from the announcement, which is the defect the paragraph
- * above records, arrived at from the other direction.
+ * The **spoken** half of that swap is not the drawn one, and here the two are
+ * different *strings* rather than the same one in different slots. The label is
+ * [chipMilestoneCopy]'s short form — "7 days!" — because the panel's sentence,
+ * drawn here, truncated to "7 days in a row. Mom…" on a 720 dp screen at font
+ * scale 1.0. The description keeps the panel's long form, in the *mood line's*
+ * place, with the count still riding along; a description narrowed to the short
+ * label would drop both the sentence and the count from the announcement, which
+ * is the defect the paragraph above records, arrived at from the other side.
+ *
+ * That truncation is worth dwelling on, because **no test could see it**: a
+ * Compose assertion that a string is present passes on a node drawing it
+ * clipped, so `chip_carriesTheMilestoneLine` was green on a chip nobody could
+ * read. It took ticking a rung on a device. What a test *can* hold is the
+ * negative, and that test now also asserts the panel's sentence is absent from
+ * the bar.
  *
  * What is still open in today-view §6 is the *announcing*, not the carrying: a
  * description change on a non-live node is not spoken, so a rung crossed while
@@ -175,14 +184,18 @@ internal fun MascotPanel(mascot: MascotUi, motion: TodayMotion, modifier: Modifi
  */
 @Composable
 internal fun TodayChip(mascot: MascotUi, milestone: Milestone?, modifier: Modifier = Modifier) {
-    val milestoneLine = milestone?.let { pluralStringResource(milestoneCopy(it), it.count, it.count) }
+    // Two strings for one milestone, drawn and spoken, for the same reason the
+    // count has two: the label is what fits the bar, the description is what is
+    // read. chipMilestoneCopy says what the device found out about sharing one.
+    val milestoneLabel = milestone?.let { pluralStringResource(chipMilestoneCopy(it), it.count, it.count) }
+    val milestoneSpoken = milestone?.let { pluralStringResource(milestoneCopy(it), it.count, it.count) }
     // The panel's own first line and its count, joined: the face has no
     // description of its own and the label is not read, so this one string is
     // the whole announcement. The milestone line takes the mood line's place
     // here, not the count's — the drawn label gives up its count for the run
     // because it has room for one string; the description has room for both and
     // dropping the count from what is spoken is the very defect above.
-    val spoken = listOfNotNull(milestoneLine ?: moodLine(mascot), remainingLine(mascot)).joinToString(" ")
+    val spoken = listOfNotNull(milestoneSpoken ?: moodLine(mascot), remainingLine(mascot)).joinToString(" ")
     Row(
         modifier = modifier
             .testTag(CHIP_TAG)
@@ -199,7 +212,7 @@ internal fun TodayChip(mascot: MascotUi, milestone: Milestone?, modifier: Modifi
             // tank and the panel's line. MilestoneState keeps `current` set for
             // the same two seconds with animations off, so the swap happens
             // either way — a line is text, not motion.
-            text = milestoneLine ?: if (mascot.remaining == 0) {
+            text = milestoneLabel ?: if (mascot.remaining == 0) {
                 stringResource(R.string.today_chip_remaining_none)
             } else {
                 stringResource(R.string.today_chip_remaining, mascot.remaining)
@@ -311,6 +324,19 @@ private fun Tank(
 /** The milestone line, by the rung's unit — plurals, because it counts a noun. */
 private fun milestoneCopy(milestone: Milestone): Int =
     if (milestone.weekly) R.plurals.today_milestone_weeks else R.plurals.today_milestone_days
+
+/**
+ * The same milestone in the chip's register, the way [R.string.today_chip_remaining]
+ * is the count's: the bar has room for one string beside three action icons.
+ *
+ * Not an abbreviation for its own sake. The panel's sentence, drawn here,
+ * truncated to "7 days in a row. Mom…" on a 720 dp screen at font scale 1.0 —
+ * found by ticking a rung on a device, and invisible to every test, because a
+ * Compose assertion that the text is present passes on a node drawing it
+ * clipped. The description keeps the long form; only the drawn label shortens.
+ */
+private fun chipMilestoneCopy(milestone: Milestone): Int =
+    if (milestone.weekly) R.plurals.today_chip_milestone_weeks else R.plurals.today_chip_milestone_days
 
 /**
  * The panel's line — one per mood (today-view §4), and for regenerating the one

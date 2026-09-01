@@ -72,6 +72,21 @@
         <item quantity="one">%1$d week in a row. Momo is dazzled.</item>
         <item quantity="other">%1$d weeks in a row. Momo is dazzled.</item>
     </plurals>
+    <!-- The same milestone, short enough for the app-bar chip, and short for the
+         same reason today_chip_remaining is: the bar holds one string beside
+         three action icons. Reusing the panel's sentence above truncated it to
+         "7 days in a row. Mom…" on a 720 dp screen at font scale 1.0 — caught on
+         a device 2026-09-01, not by any test, because a Compose test asserting
+         the string is present passes on a node that draws it clipped.
+         What TalkBack speaks is still the panel's full sentence — see TodayChip. -->
+    <plurals name="today_chip_milestone_days">
+        <item quantity="one">%1$d day!</item>
+        <item quantity="other">%1$d days!</item>
+    </plurals>
+    <plurals name="today_chip_milestone_weeks">
+        <item quantity="one">%1$d week!</item>
+        <item quantity="other">%1$d weeks!</item>
+    </plurals>
 
     <!-- The empty state's call to action, and the way to the habit list. The
          body copy has promised the first of these since the screen was built. -->
