@@ -264,10 +264,25 @@ Small decisions that were easier to make once drawn:
   appears once it has scrolled off, carrying a small face and a short count in
   the title's place. It replaces the title rather than joining it, because a
   title, a chip and three action icons do not fit across one bar at a large font
-  scale. It is **not** a second live region: the panel's copy already is one and
-  is only scrolled off rather than gone, so a second would have TalkBack read the
-  mood twice after every tick. That is asserted structurally — no emulator image
-  here has TalkBack — and the by-hand check is owed in `docs/running.md` §4.
+  scale.
+
+  **It is not a live region, and the first rationale for that was wrong.** It
+  said the panel's copy is "only scrolled off rather than gone", so a second
+  live region would read the mood twice. A review pointed out that the panel is
+  a `LazyColumn` item and is *disposed* once the chip is up — `HabitList` says so
+  itself, and the chip's own test proves it by asserting the panel's count no
+  longer exists. The two never coexist, so there was never a double read.
+
+  What that leaves is a **silence**, and it is now a choice rather than a side
+  effect: a tick made while the chip is up changes only its description, and a
+  description change on a non-live node is not announced. Kept, for three
+  reasons. The row's own checkbox announces its state change, so the tick is not
+  feedback-free. A live region fires when its node *appears* as well as when it
+  changes, so every scroll past the tank would speak the whole sentence — a poor
+  trade for something this section calls "deliberately small". And no emulator
+  image here has TalkBack, so a live region would ship unheard. **Open**: make it
+  a polite live region, on a device that can verify what it actually sounds
+  like. `chip_isNotALiveRegion` pins today's answer either way.
 
   **A review caught the chip saying less than it showed, and the shape of the
   miss is worth keeping.** A node carrying a `contentDescription` has its `text`
@@ -275,10 +290,21 @@ Small decisions that were easier to make once drawn:
   sentence — and the first build described only the mood, so the count was drawn
   and never announced. Every test passed, because they all read the label back,
   and the label is exactly the part TalkBack does not read. The description is
-  now built from the panel's own two lines, and `chip_speaksTheCountItShows`
-  pins it. The general form, worth carrying past this chip: where a node's shown
-  and spoken strings differ on purpose, asserting the shown one proves nothing
-  about the other.
+  now built from the panel's own mood line and count, and
+  `chip_speaksTheCountItShows` pins it. The general form, worth carrying past
+  this chip: where a node's shown and spoken strings differ on purpose,
+  asserting the shown one proves nothing about the other.
+
+  **Still open: the chip does not carry the milestone line.** The panel swaps
+  that in for the length of a celebration and [momo.md](momo.md) §6 makes the
+  swap the announcement, but the milestone lives on `TodayMotion`, which
+  `HabitList` owns one level below the app bar — so a rung crossed while
+  scrolled down is neither drawn nor spoken. Older than the chip: the panel was
+  already disposed by then, so nothing was drawn there either. Closing it means
+  hoisting `rememberTodayMotion` above the `LazyColumn` so the app bar can read
+  `motion.milestone`, which is more than a chip line's worth of change — the
+  `Empty` branch builds its own motion with different arguments, and `Loading`
+  and `Unavailable` build none.
 - ~~**The `regenerating` copy has nowhere to come from yet.** §3 says it
   "names the habit and offers the repair", but the mood is a bare label —
   it names an artboard, not a habit — and `HabitMoodState` deliberately
@@ -306,5 +332,9 @@ Small decisions that were easier to make once drawn:
 - ~~**`regenerating` is currently invisible.**~~ Visible since 2026-08-25: its
   own face, its own line ([momo.md](momo.md) §3). ~~The half of this that was
   the copy gap above is still open — the line does not name the habit.~~ It
-  names it, since 2026-08-31. The unnamed line stays as the fallback for a
-  break whose row the screen no longer holds.
+  names it, since 2026-08-31. The unnamed line is kept, but a review was right
+  that calling it a fallback overstated it: the mapper cannot select it, because
+  a regenerating mood means a break exists and its id always names a live row —
+  the rule and the row list are one filter over one set of habits. It survives as
+  the exhaustive `when`'s regenerating arm, reached only by a hand-built state in
+  a test.
