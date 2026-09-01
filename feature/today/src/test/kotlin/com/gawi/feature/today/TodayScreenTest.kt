@@ -378,6 +378,24 @@ class TodayScreenTest {
         compose.onNodeWithText(resources.getString(R.string.today_chip_remaining, LONG.remaining)).assertIsDisplayed()
         compose.onNodeWithText(resources.getString(R.string.today_remaining, LONG.remaining, LONG.rows.size))
             .assertDoesNotExist()
+        // The face itself, which nothing else here looks at: every other chip
+        // assertion reads the label, the description or the title swap, so the
+        // drawing could go missing entirely and stay green. Mutation-checked
+        // both ways — drop the Momo call, or draw it with a fixed mood instead
+        // of the chip's, and this is the line that fails.
+        //
+        // What it does *not* protect is `Modifier.size(ChipFace)`. Removing that
+        // was expected to collapse the face to 0 x 0, the defect this repo
+        // shipped once in the tank, but the tests stay green: the tank's Canvas
+        // collapsed because its constraints were unbounded, while the app bar
+        // hands this Box bounded ones and fillMaxSize simply fills them. The
+        // size line is a layout choice here, not a correctness one, and nothing
+        // asserts it.
+        //
+        // Exactly one node matches, which is itself the check: the panel draws
+        // the same tag but is disposed while the chip is up, so assertIsDisplayed
+        // would throw on two.
+        compose.onNodeWithTag("momo:${LONG.mood}", useUnmergedTree = true).assertIsDisplayed()
     }
 
     /**
