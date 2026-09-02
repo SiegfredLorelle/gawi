@@ -1,9 +1,20 @@
 package com.gawi.feature.habits
 
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertHasClickAction
+import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.assertIsToggleable
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -405,6 +416,59 @@ class HabitDetailScreenTest {
         render(detail(strip = strip(completed = setOf(TODAY.minusDays(1)))))
 
         compose.onAllNodesWithText(NOTE_MARKER, useUnmergedTree = true).assertCountEquals(0)
+    }
+
+    /**
+     * The open cell is a checkbox to assistive technology and says which way it
+     * is set. Written before `cellAction` swapped `semantics` for
+     * `clearAndSetSemantics` (2026-09-02): Compose clears every semantics
+     * modifier *after* the clearing one in the chain, so the `combinedClickable`
+     * that gives the cell its role and its click has to stay ahead of it, and
+     * this is the assertion that says whether it did. Reversing the two turns
+     * it red.
+     */
+    @Test
+    fun anOpenCell_isACheckboxThatReportsItsState() {
+        render(detail(strip = strip(completed = setOf(TODAY.minusDays(2)))))
+
+        compose.onNodeWithContentDescription(cellLabel(back = 1))
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Checkbox))
+            .assertIsToggleable()
+            .assertIsOff()
+            .assertHasClickAction()
+        compose.onNodeWithContentDescription(cellLabel(back = 2, done = true))
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Checkbox))
+            .assertIsOn()
+    }
+
+    /**
+     * The note is a long-press with a label, and it exists only where the
+     * description promises it — a completed open day. Pinned for the reason the
+     * test above gives: the label rides the `combinedClickable`.
+     */
+    @Test
+    fun theNoteAction_isALongClickOnlyWhereItIsOffered() {
+        render(detail(strip = strip(completed = setOf(TODAY.minusDays(2)))))
+
+        val offered = compose.onNodeWithContentDescription(cellLabel(back = 2, done = true))
+            .fetchSemanticsNode().config[SemanticsActions.OnLongClick]
+        assertEquals(string(R.string.habits_strip_note), offered.label)
+        compose.onNodeWithContentDescription(cellLabel(back = 1))
+            .assert(SemanticsMatcher.keyNotDefined(SemanticsActions.OnLongClick))
+        compose.onNodeWithContentDescription(cellLabel(back = 4, shut = true))
+            .assert(SemanticsMatcher.keyNotDefined(SemanticsActions.OnLongClick))
+    }
+
+    /** A shut day is not a control that is off; it is a day with nothing to press. */
+    @Test
+    fun theShutCell_isDisabledAndNotABox() {
+        render(detail())
+
+        compose.onNodeWithContentDescription(cellLabel(back = 4, shut = true))
+            .assertIsNotEnabled()
+            .assertHasNoClickAction()
+            .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Role))
+            .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.ToggleableState))
     }
 
     private companion object {
