@@ -199,10 +199,16 @@ private fun Modifier.cellAction(cell: RetroCellUi, onCell: (RetroCellUi) -> Unit
     )
     val action = stringResource(if (cell.completed) R.string.habits_strip_undo else R.string.habits_strip_complete)
     val noteLabel = stringResource(R.string.habits_strip_note)
-    val hasNote = if (cell.hasNote) ". " + stringResource(R.string.habits_strip_has_note) else ""
-    // Inside the open branch below, so completion is the only condition left
-    // to ask about: a shut cell never reaches it.
-    val notable = cell.completed
+    val noteWord = stringResource(R.string.habits_strip_has_note).takeIf { cell.hasNote }
+    // Only an open day offers a gesture, and only a completed one offers the
+    // note — a shut completed day (an archived habit's) is inert, as the KDoc
+    // says.
+    val notable = cell.open && cell.completed
+    // One list for both branches: the label, a note if there is one, then the
+    // gestures the cell offers, in the order a reader needs them. A shut day
+    // still reports its note the way it still reports whether it was done:
+    // refused, not hidden.
+    val description = listOfNotNull(label, noteWord, action.takeIf { cell.open }, noteLabel.takeIf { notable }).joinToString(". ")
     return if (cell.open) {
         combinedClickable(
             role = Role.Checkbox,
@@ -210,7 +216,7 @@ private fun Modifier.cellAction(cell: RetroCellUi, onCell: (RetroCellUi) -> Unit
             onLongClickLabel = noteLabel.takeIf { notable },
             onLongClick = if (notable) ({ onCellNote(cell) }) else null,
         ).clearAndSetSemantics {
-            contentDescription = if (notable) "$label$hasNote. $action. $noteLabel" else "$label$hasNote. $action"
+            contentDescription = description
             toggleableState = ToggleableState(cell.completed)
         }
     } else {
@@ -220,9 +226,7 @@ private fun Modifier.cellAction(cell: RetroCellUi, onCell: (RetroCellUi) -> Unit
         // other cell is one. With merging alone it was one stop that read all
         // four after the description.
         clearAndSetSemantics {
-            // A shut day still reports its note, the same way it still reports
-            // whether it was done: refused, not hidden.
-            contentDescription = "$label$hasNote"
+            contentDescription = description
             disabled()
         }
     }
