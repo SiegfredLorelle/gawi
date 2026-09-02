@@ -19,8 +19,10 @@ tank ([momo.md](momo.md) §4) above an unscrollable column puts the
 button, or the second row, below the fold on a small screen or at a
 large font scale. What survived intact is the chip: once the panel has
 scrolled off, the app bar carries the mood and the remaining count in
-the title's place. The decision — Momo in a bounded box, rows on plain
-surface, a chip as the mitigation — is unchanged; only "fixed" is.
+the title's place — and, since 2026-09-01, the milestone line in the
+count's place for the length of a run. The decision — Momo in a bounded
+box, rows on plain surface, a chip as the mitigation — is unchanged;
+only "fixed" is.
 
 Sketch boards (11 low-fi artboards, 2026-08-19): the "Today sketch (archive)"
 page of the Gawi Redesign canvas, where they were folded in on 2026-08-25 when
@@ -33,7 +35,8 @@ the standalone sketch link was retired —
 
 Momo lives in a **fixed-height panel between the app bar and the habit
 list**. On scroll it collapses into a chip in the app bar carrying the
-mood and the remaining count; the habit list scrolls underneath.
+mood and the remaining count — or the milestone line in the count's
+place, while one runs; the habit list scrolls underneath.
 
 Rationale, in the order it mattered:
 
