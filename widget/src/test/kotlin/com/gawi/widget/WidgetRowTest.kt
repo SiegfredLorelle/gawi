@@ -1,5 +1,6 @@
 package com.gawi.widget
 
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.glance.EmittableImage
@@ -12,11 +13,15 @@ import androidx.glance.appwidget.testing.unit.hasRunCallbackClickAction
 import androidx.glance.appwidget.testing.unit.isChecked
 import androidx.glance.appwidget.testing.unit.runGlanceAppWidgetUnitTest
 import androidx.glance.findModifier
+import androidx.glance.layout.EmittableRow
+import androidx.glance.layout.HeightModifier
 import androidx.glance.testing.GlanceNodeMatcher
 import androidx.glance.testing.unit.MappedNode
 import androidx.glance.testing.unit.hasContentDescription
 import androidx.glance.testing.unit.hasContentDescriptionEqualTo
+import androidx.glance.unit.Dimension
 import com.gawi.widget.testsupport.habitId
+import com.gawi.widget.testsupport.isDescribed
 import com.gawi.widget.testsupport.todayHabit
 import com.gawi.widget.testsupport.todaySnapshot
 import org.junit.Test
@@ -26,14 +31,21 @@ import org.robolectric.RuntimeEnvironment
 import kotlin.time.Duration.Companion.seconds
 
 /**
- * The shape of a habit row now that its name is a bitmap: a text-less checkbox,
- * one image beside it described by the name, and the toggle reachable from both.
+ * The shape of a habit row now that its name is a bitmap: a 48dp clickable row
+ * described as the name and its state, a text-less checkbox keeping the bare
+ * name, one decorative image, and the toggle reachable from row and glyph.
  *
  * `WidgetTextColourTest` asserts the image's colour; this asserts everything
  * else the switch from `CheckBox(text = …)` could have lost — the name TalkBack
  * reads, the tap on the name, and the checked state — because each of those
  * survived the change only by being re-wired, and a re-wiring is exactly what a
- * decision-only test cannot see.
+ * decision-only test cannot see. The row is what is described because the row
+ * is the stop TalkBack lands on: Glance describes a `CheckBox`'s wrapper and not
+ * the control, and a device heard the name at the row and nothing at the box
+ * (`TodayWidget.kt`, `HabitRows`). What the JVM sees is the emittable tree —
+ * that every row *asks* for its description and its height; what a launcher
+ * lays out, and what the 32dp control inside still measures, is the device's
+ * half (docs/running.md §4).
  */
 @RunWith(RobolectricTestRunner::class)
 class WidgetRowTest {
@@ -52,12 +64,28 @@ class WidgetRowTest {
         onAllNodes(image()).assertCountEquals(2)
     }
 
-    /** The bare name stays on the checkbox; the row carries name and state, and the image is decorative. */
+    /** On the row, in words, because the row is the stop TalkBack lands on. */
     @Test
-    fun `the name is what the checkbox is described as`() = render {
-        onAllNodes(hasContentDescriptionEqualTo("read")).assertCountEquals(1)
-        onAllNodes(hasContentDescriptionEqualTo("walk")).assertCountEquals(1)
+    fun `the row is described as the name and whether it is done`() = render {
+        onAllNodes(hasContentDescriptionEqualTo("read, done")).assertCountEquals(1)
+        onAllNodes(hasContentDescriptionEqualTo("walk, not done")).assertCountEquals(1)
+        onAllNodes(describedRow("read, done")).assertCountEquals(1)
+    }
+
+    /** Kept on the box as the bare name, so a host that attaches it to the control has a label; the image stays decorative. */
+    @Test
+    fun `the checkbox keeps the bare name and the image carries nothing`() = render {
         onAllNodes(describedCheckBox("read")).assertCountEquals(1)
+        onAllNodes(describedCheckBox("walk")).assertCountEquals(1)
+        onAllNodes(hasContentDescriptionEqualTo("read")).assertCountEquals(1)
+        onAllNodes(describedImage()).assertCountEquals(0)
+    }
+
+    /** The 48dp floor, asked for on every row. Whether a launcher draws it so is the device's to say. */
+    @Test
+    fun `every row asks for the 48dp touch-target height`() = render {
+        onAllNodes(row()).assertCountEquals(2)
+        onAllNodes(rowOfHeight(48.dp)).assertCountEquals(2)
     }
 
     /**
@@ -117,3 +145,19 @@ private fun describedCheckBox(name: String) = GlanceNodeMatcher<MappedNode>("is 
 }
 
 private fun image() = GlanceNodeMatcher<MappedNode>("is an image") { it.value.emittable is EmittableImage }
+
+private fun describedImage() = GlanceNodeMatcher<MappedNode>("is a described image") {
+    it.value.emittable is EmittableImage && it.value.emittable.isDescribed()
+}
+
+private fun row() = GlanceNodeMatcher<MappedNode>("is a row") { it.value.emittable is EmittableRow }
+
+private fun describedRow(spoken: String) = GlanceNodeMatcher<MappedNode>("is a row described as $spoken") {
+    it.value.emittable is EmittableRow && hasContentDescriptionEqualTo(spoken).matches(it)
+}
+
+/** `Dimension.Dp` is not a data class, so the dp is compared rather than the wrapper. */
+private fun rowOfHeight(height: Dp) = GlanceNodeMatcher<MappedNode>("is a row $height tall") {
+    val row = it.value.emittable as? EmittableRow ?: return@GlanceNodeMatcher false
+    (row.modifier.findModifier<HeightModifier>()?.height as? Dimension.Dp)?.dp == height
+}
