@@ -401,6 +401,15 @@ strictly better than seven ambiguous stops ahead of the grid. "I keep missing
 Sundays" is a thing this grid should be able to tell someone who cannot see it,
 and now can.
 
+**Heard on a device 2026-09-02** (Nothing A059, TalkBack 17, docs/running.md
+§4): no letter is ever a stop, every cell says its weekday, date and state,
+today says *"today, not done yet"*, and days after today are not stops. One
+thing more
+than intended: a cell reads *"Thursday 20, not done. 20"* — the description and
+then the day number the cell draws, because the cell merges its children under a
+description and this TalkBack reads both. `clearAndSetSemantics` on the cell is
+the fix; not made here.
+
 This is what moved the spelled-out weekday names into `:core:ui`. They were
 `:feature:settings`' — the week-start picker's options — and this screen needed
 the same seven.
@@ -699,7 +708,10 @@ it now, where the meaning is known.
 label is the month's initial, and J, M and A each name two months — §8.4's
 weekday-letters problem, solved the same way: every column carries its own
 spoken form, *"March, 15 active days"*, so the ambiguous letters are covered by
-the thing a screen reader actually reads. The initial is a **resource**
+the thing a screen reader actually reads — and, heard on a device on 2026-09-02,
+followed by them: TalkBack 17 read *"August, 30 active days. 30. capital A"*,
+the description and then the two texts the column draws, the same leak as §8.4's
+cells and the same fix (docs/running.md §4). The initial is a **resource**
 (`insights_month_initial_*`), not the name's first character: "Juin" and
 "Juillet" share one, "1月" and "11月" would share a digit, and §8.4 already
 decided that an abbreviation is the translator's call. Under three columns the

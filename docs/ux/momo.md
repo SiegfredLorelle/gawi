@@ -176,7 +176,9 @@ pixels a viewer with animations off sees on Today. It is gated on the size the
 host reports — one cell tall stays the name-and-checkbox widget
 [widget.md](widget.md) §2 settled; from 170 dp the face sits above the rows, 72
 dp tall, described once by TalkBack in the Today panel's words. Beside the
-no-habits copy the face is decorative, so the copy is still read once.
+no-habits copy the face is decorative, so the copy is still read once. (What a
+launcher actually lets TalkBack reach is another matter — widget.md §7 records
+the Nothing launcher reading none of it on 2026-09-02.)
 
 **The reminder and the launcher use the mark, not the character.** The
 canvas's "Launcher icon" artboard measured the full character as mush at 40 px

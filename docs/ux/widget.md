@@ -402,7 +402,12 @@ a fixed gap, which walked the tail off the edge from about 48 habits.
 **One reading, and in this body it is the mood line's.** In the face-above-rows
 body Momo carries the mood sentence because nothing else says it; in the large
 body the sentence is drawn, so she is decorative and the band is decorative, and
-TalkBack reads the line once and then the rows (momo.md §5). Her height on the
+TalkBack reads the line once and then the rows (momo.md §5) — **or should**: on
+the Nothing launcher on 2026-09-02 it read neither the line nor the face and
+went straight to the rows, each of which was two stops, its name and then its
+checkbox (docs/running.md §4). The header has no focusable node of its own and
+the launcher's frame is described "Today", which hides an unfocusable child.
+Whether the Pixel launcher does the same is not known. Her height on the
 pill is a second constant, `MomoBitmap.PILL_HEIGHT_DP`, for the reason the first
 one is a constant: the bitmap's cost must not follow a host's idea of "large".
 The line gets three lines of caption type, not the canvas's one: at the gate the
@@ -439,7 +444,14 @@ make the room; no caption leaves a greyscale viewer with only an expression to
 read. One word costs four new strings and a fifth mood vocabulary to keep in
 step with the sentences, and that was judged the cheaper cost. TalkBack does not
 read the word: the face carries the full sentence once, and the word is
-decorative — so the widget never says "Momo is pottering about. pottering." With
+decorative — so the widget never says "Momo is pottering about. pottering." **On
+the Nothing launcher it says neither** (2026-09-02, docs/running.md §4): the
+widget is one stop, *"Momo"*, the launcher's label for the frame, and the next
+swipe leaves it. The face's description is there and unreachable, because the
+frame is described and nothing inside it is focusable; the Streaks widget's rows
+are reachable for exactly the opposite reason. A focusable node inside the body
+is the shape of the fix, once a second launcher has said whether this is the
+launcher's habit or every launcher's. With
 no habits the roles swap, the way the Today widget's do: the no-habits copy is
 drawn and read, and the face is decorative. A failed read draws the failure copy
 and no face, because nothing was read.

@@ -217,6 +217,15 @@ note" appended to the cell's spoken label. The second half is the sharper one:
 without it a note is discoverable only by long-pressing every completed day in
 turn.
 
+**What the label sounds like on a device (2026-09-02, Nothing A059, TalkBack
+17, docs/running.md §4)**: *"Day 30, not done. Mark done. capital S. 30. Middle
+dot. Check box"*. The label is complete and right; the cell's four drawn texts —
+weekday letter, day number, tick or dot, note mark — are read after it, because
+`cellAction` sets the description on a merged node and this TalkBack reads the
+merged text too. The shut day is disabled with no role, so it cannot announce as
+a box, but it carries the same trailing glyphs. `clearAndSetSemantics` on the
+cell is the fix, and the test that pins the label would pass either side of it.
+
 ### Every past-day write confirms, in both directions
 
 PRD §5 fixes the copy — *"You're logging for a previous day — make sure this is

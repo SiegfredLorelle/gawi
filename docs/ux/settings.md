@@ -836,5 +836,6 @@ this app hands off to a browser. The notices are there to be present, at
 `bodySmall`, under a `titleMedium` heading and a one-line grey role so the two
 are findable while scrolling — not to be read like a settings row.
 
-**Still owed on a device**: TalkBack over the two headings and the non-tappable
-Version row (docs/running.md §4).
+**Heard on a device 2026-09-02** (Nothing A059, TalkBack 17, docs/running.md
+§4): the Version row is one stop with no activate hint, and *Outfit* and
+*Lucide* are each a stop of their own.
