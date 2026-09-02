@@ -306,7 +306,8 @@ desaturation, done arithmetically in `drawMomo` so a test can measure it.
   250 dp tank makes more pressing, not less.~~ **Built 2026-08-31**: once the
   tank scrolls off, the app bar carries a small face and the remaining count in
   the title's place — and, since 2026-09-01, the milestone line in the count's
-  place for the length of a run, the same swap the panel's own line makes. The tank made it pressing exactly as this line predicted —
+  place for the length of a run, the same swap the panel's own line makes. The
+  tank made it pressing exactly as this line predicted —
   250 dp leaves the screen quickly — and the chip is the mitigation §1 always
   named, deliberately small. It draws the face with animations off: at that size
   the idle motion is invisible and a frame clock behind a scrolling list is a
