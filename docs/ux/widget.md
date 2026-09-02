@@ -455,12 +455,17 @@ frame is described and nothing inside it is reached. What separates this body
 from the two that are reached is the container, not clickability: the Streaks
 rows carry no click action at all and are still stops of their own, the Today
 rows are stops too, and both live in a Glance `LazyColumn` that lands as a real
-list in the hosted tree, while this body was a `Box` and a `Column`. So the cheap
-experiment is a one-item `LazyColumn` around the face, not a clickable — **made
-2026-09-02** without waiting for a second launcher, since no AVD has TalkBack and
-the Today checkbox finding showed the mechanism sits in Glance's translation
-rather than in one launcher. It is one revertable commit; a swipe on the phone
-decides it (docs/running.md §4). With
+list in the hosted tree, while this body is a `Box` and a `Column`. So a
+one-item `LazyColumn` around the face is one experiment — **built and withdrawn
+on 2026-09-02**: the instrumented host test cannot see into a collection, an
+API 29–31 host would draw the face a beat late, and a `ListView` eats the
+home-screen swipe (docs/running.md §4 has the four counts). The Today checkbox
+finding supplied the other: TalkBack folds a described unfocusable view into
+its nearest *focusable* ancestor, and a clickable `Column` is focusable with
+none of a list's machinery. "Not clickability" above was inferred from rows
+that are reached without a click, which shows a list suffices, not that a
+focusable view would fail. The clickable goes first on the phone, the list is
+the fallback; neither is made. With
 no habits the roles swap, the way the Today widget's do: the no-habits copy is
 drawn and read, and the face is decorative. A failed read draws the failure copy
 and no face, because nothing was read.

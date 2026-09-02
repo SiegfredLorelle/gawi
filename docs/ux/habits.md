@@ -185,7 +185,12 @@ daily streak is a count, a weekly one is in weeks, and the two must never be
 styled as the same number" is one decision with two renderings rather than two
 copies that can drift. Detail distinguishes them three ways — the `w`, a caption
 naming the unit, and a different colour role — so it survives a reader who
-cannot tell the two colours apart.
+cannot tell the two colours apart. **What it says is shared too (2026-09-02):**
+the panel is one node speaking `:core:ui`'s `spokenStreak` — *"12 days in a
+row"*, *"Streak broken, was 4 weeks"* — because *"3w"* reads as "3 w" on
+TalkBack 17 and the broken form was three stops. Found by review when the Today
+badge took the same fix; the device pass never opened this panel, so it is owed
+a hearing (docs/running.md §4).
 
 ### The retro strip is five cells, and one of them is shut
 
