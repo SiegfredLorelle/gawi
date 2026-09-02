@@ -41,6 +41,12 @@ import com.gawi.core.ui.theme.parseHabitColor
  *
  * Emoji rather than drawables, because `HabitMetadata.icon` is a String that
  * has to survive an export and an import — a drawable id would not.
+ *
+ * **Each option is announced by the platform's name for the emoji** ("books"
+ * for 📖), because here the emoji *is* the label — unlike `HabitIcon`, which
+ * sits beside a name and is decorative. The same defect class the list and
+ * Today fixed on 2026-09-02, left open: a positional `ICON_LABELS` mirroring
+ * [COLOR_LABELS] is the recorded follow-up (docs/ux/habits.md §4).
  */
 @Composable
 internal fun IconPicker(form: HabitEditorUiState.Form, onEdit: (HabitEditorUiState.Form) -> Unit) {
