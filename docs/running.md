@@ -2258,7 +2258,13 @@ without sight, and whether it survives a reader who needs it larger.
       **bare number** (*"1"*, *"7"*, and *"1w"* for a weekly row), because
       `HabitIcon` draws the emoji as plain text and `StreakBadge` draws
       `today_streak_days` = `%d` as plain text. Both heard by the user, not only
-      read off the overlay. *Change the day cutoff*, by D-pad: every settings
+      read off the overlay. **Fixed 2026-09-02, unheard**: `HabitIcon` clears
+      its semantics wherever it sits beside a name (`row_doesNotSpeakTheIcon`,
+      `iconBadge_isDecorative`); the badge speaks `today_streak_*_spoken` —
+      *"3 days in a row"*, *"1 week in a row"*, *"Streak broken, was 12 days"*
+      — via `clearAndSetSemantics` after the milestone tag
+      (`streak_speaksItsUnit`, `brokenStreak_speaksWhatWasLost`). *Change the
+      day cutoff*, by D-pad: every settings
       row is one stop reading title, value and helper in order (*"Day is nearly
       over at. 21:00. When Momo starts…"*), so the row is reachable and named;
       the picker itself was not driven. *Add a habit* was not swiped. One

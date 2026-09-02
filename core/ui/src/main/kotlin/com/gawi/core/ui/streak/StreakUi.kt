@@ -18,11 +18,14 @@ import com.gawi.core.domain.streak.StreakSnapshot
  * surfaces, the Today view and habit detail, and the rule deciding which number
  * they show has to be one rule or the two will drift.
  *
- * What is **not** shared is the rendering. This module has no `res/` by design
- * — `Notice` takes strings rather than ids for that reason — and the two
- * surfaces want different treatments anyway: a compact trailing badge on a
- * Today row, a header on detail. Each feature draws this its own way from its
- * own strings.
+ * What is **not** shared is the rendering. This module's `res/` holds only copy
+ * two features draw (the weekday names) — `Notice` takes strings rather than
+ * ids for that reason — and the surfaces want different treatments anyway: a
+ * compact trailing badge on a Today row, a header on detail, a bare count on
+ * the widget. Each feature draws this its own way from its own strings, and
+ * that goes for the *spoken* forms too: the widget's `spokenLabel` and the
+ * Today badge's plurals word the same fact differently on purpose. They are
+ * the two that would merge here if that ever changes.
  */
 sealed interface StreakUi {
 

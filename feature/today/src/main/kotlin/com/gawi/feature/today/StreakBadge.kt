@@ -15,7 +15,10 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.unit.dp
 import com.gawi.core.ui.streak.StreakUi
 import com.gawi.core.ui.theme.GawiSpacing
@@ -38,6 +41,16 @@ import com.gawi.core.ui.theme.GawiSpacing
  * number nor the title column beside it ever shifts; [pulse] is read inside
  * a layer lambda, so a frame redraws and recomposes nothing. A broken or
  * absent streak cannot be at a rung and ignores it.
+ *
+ * **What it says is not what it draws.** "3" and "3w" are silent about what
+ * they count, and TalkBack 17 read them as a bare *"1"*, *"7"* and *"1 w"*
+ * (docs/running.md §4, 2026-09-02), so the badge speaks its unit in words —
+ * *"3 days in a row"*, *"1 week in a row"*, *"Streak broken, was 12 days"* —
+ * the widget's `spokenLabel` decision, made again here in the panel's own
+ * phrase. `clearAndSetSemantics` rather than `semantics`, because a leaf with
+ * both a text and a description is read twice on that TalkBack; and it comes
+ * *after* [celebrated], because a clearing modifier discards every semantics
+ * modifier later in the chain, and the milestone tag is one.
  */
 @Composable
 internal fun StreakBadge(streak: StreakUi, modifier: Modifier = Modifier, pulse: (() -> Float)? = null) {
@@ -46,21 +59,40 @@ internal fun StreakBadge(streak: StreakUi, modifier: Modifier = Modifier, pulse:
         // never reading zero is about a live streak, which this is not.
         StreakUi.None -> Unit
 
-        is StreakUi.Days -> Text(
-            text = stringResource(R.string.today_streak_days, streak.count),
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = modifier.celebrated(MaterialTheme.colorScheme.primaryContainer, pulse),
-        )
+        is StreakUi.Days -> {
+            val spoken = pluralStringResource(R.plurals.today_streak_days_spoken, streak.count, streak.count)
+            Text(
+                text = stringResource(R.string.today_streak_days, streak.count),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = modifier
+                    .celebrated(MaterialTheme.colorScheme.primaryContainer, pulse)
+                    .clearAndSetSemantics { contentDescription = spoken },
+            )
+        }
 
-        is StreakUi.Weeks -> Text(
-            text = stringResource(R.string.today_streak_weeks, streak.count),
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.tertiary,
-            modifier = modifier.celebrated(MaterialTheme.colorScheme.tertiaryContainer, pulse),
-        )
+        is StreakUi.Weeks -> {
+            val spoken = pluralStringResource(R.plurals.today_streak_weeks_spoken, streak.count, streak.count)
+            Text(
+                text = stringResource(R.string.today_streak_weeks, streak.count),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.tertiary,
+                modifier = modifier
+                    .celebrated(MaterialTheme.colorScheme.tertiaryContainer, pulse)
+                    .clearAndSetSemantics { contentDescription = spoken },
+            )
+        }
 
-        is StreakUi.Broken -> BrokenStreak(streak, modifier)
+        is StreakUi.Broken -> {
+            val spoken = pluralStringResource(
+                if (streak.weekly) R.plurals.today_streak_broken_weeks_spoken else R.plurals.today_streak_broken_days_spoken,
+                streak.previous,
+                streak.previous,
+            )
+            // On the outer Column, so its three texts are descendants and go
+            // with the clearing.
+            BrokenStreak(streak, modifier.clearAndSetSemantics { contentDescription = spoken })
+        }
     }
 }
 

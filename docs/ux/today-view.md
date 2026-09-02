@@ -217,6 +217,15 @@ Small decisions that were easier to make once drawn:
 - **A daily habit's streak is a count; a weekly habit's is in weeks.** A
   weekly row reads `2/3 this week` in its subtitle and `3w` in the streak
   slot. The two must never be styled as the same number.
+- **What a row speaks is not what it draws (2026-09-02).** The icon is
+  decorative — the name is beside it, and TalkBack 17 had been reading the
+  emoji's Unicode name ahead of it — and the streak is spoken in the panel's
+  own phrase, *"3 days in a row"*, *"1 week in a row"*, *"Streak broken, was 12
+  days"*, because a `3` or `3w` read aloud cannot say what it counts (the widget
+  made the same call in `spokenLabel`). Both via `clearAndSetSemantics`, which
+  is why the drawn `3` is not in the row's text; `row_doesNotSpeakTheIcon`,
+  `streak_speaksItsUnit` and `brokenStreak_speaksWhatWasLost` pin it, and
+  hearing it is owed (docs/running.md §4).
 - **An incomplete daily habit still shows its live streak.** Per
   `Streaks.dayStreak`, an unfinished current day has not broken anything —
   it simply has not extended it. A row unchecked at 09:00 must not read
