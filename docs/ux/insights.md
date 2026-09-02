@@ -408,8 +408,10 @@ thing more
 than intended: a cell reads *"Thursday 20, not done. 20"* — the description and
 then the day number the cell draws, because the cell merges its children under a
 description and this TalkBack reads both. `clearAndSetSemantics` on the cell is
-the shape of the fix — a plain swap here, unlike the retro strip's (habits.md);
-not made here.
+the fix — a plain swap here, unlike the retro strip's (habits.md) — **made
+2026-09-02** and pinned by `a day cell speaks its label and not its number after
+it`, which also finds the number still drawn in the unmerged tree. Not yet
+re-heard; docs/running.md §4 keeps the box open.
 
 This is what moved the spelled-out weekday names into `:core:ui`. They were
 `:feature:settings`' — the week-start picker's options — and this screen needed
@@ -712,7 +714,10 @@ spoken form, *"March, 15 active days"*, so the ambiguous letters are covered by
 the thing a screen reader actually reads — and, heard on a device on 2026-09-02,
 followed by them: TalkBack 17 read *"August, 30 active days. 30. capital A"*,
 the description and then the two texts the column draws, the same leak as §8.4's
-cells and the same fix (docs/running.md §4). The initial is a **resource**
+cells and the same fix, **made 2026-09-02**: the column clears its subtree where
+it describes it, pinned by `a trend column speaks its month once, not its texts
+as well`. The rate card's columns pass no spoken form and are untouched — their
+two texts are what a reader gets (docs/running.md §4). The initial is a **resource**
 (`insights_month_initial_*`), not the name's first character: "Juin" and
 "Juillet" share one, "1月" and "11月" would share a digit, and §8.4 already
 decided that an abbreviation is the translator's call. Under three columns the

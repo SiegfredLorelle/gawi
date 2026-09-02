@@ -1,5 +1,8 @@
 package com.gawi.feature.insights
 
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
@@ -327,6 +330,35 @@ class InsightsScreenTest {
         )
         compose.onNodeWithContentDescription(spoken).assertIsDisplayed()
         compose.onNodeWithText(string(R.string.insights_month_april), useUnmergedTree = true).assertExists()
+    }
+
+    /**
+     * The spoken form replaces the two texts rather than preceding them. TalkBack
+     * 17 read a column as *"August, 30 active days. 30. capital A"* because the
+     * column merged a described node with two text children (docs/running.md
+     * §4, 2026-09-02). It clears them now; the unmerged tree says they are still
+     * drawn. "17" is April's count and no other node's.
+     */
+    @Test
+    fun `a trend column speaks its month once, not its texts as well`() {
+        render(
+            overview(
+                trend = listOf(
+                    TrendPointUi(R.string.insights_month_april, R.string.insights_month_initial_april, 17, 17f / 30),
+                    TrendPointUi(R.string.insights_month_may, R.string.insights_month_initial_may, 22, 22f / 31),
+                    TrendPointUi(R.string.insights_month_june, R.string.insights_month_initial_june, 22, 22f / 30),
+                ),
+            ),
+        )
+
+        val spoken = resources.getString(
+            R.string.insights_trend_point,
+            string(R.string.insights_month_april),
+            resources.getQuantityString(R.plurals.insights_active_days, 17, 17),
+        )
+        compose.onNodeWithContentDescription(spoken).assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Text))
+        compose.onAllNodesWithText("17").assertCountEquals(0)
+        compose.onNodeWithText("17", useUnmergedTree = true).assertExists()
     }
 
     @Test
