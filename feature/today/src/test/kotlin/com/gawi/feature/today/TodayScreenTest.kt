@@ -523,6 +523,47 @@ class TodayScreenTest {
     }
 
     /**
+     * A weekly rung says weeks, in both strings.
+     *
+     * Its own test because its whole subject is which arm of a two-arm `when`
+     * was taken, and nothing rendered a weekly milestone before: every weekly
+     * case in the module sat in `MilestoneFrameTest`, which composes nothing, so
+     * `chipMilestoneCopy` and `milestoneCopy` could have had their arms swapped —
+     * or both pointed at the daily plural — and shipped green. The daily tests
+     * above cannot see that; only drawing a weekly one can.
+     *
+     * Both strings, because the two functions are separate readers: the label
+     * comes from `chipMilestoneCopy` and the description from `milestoneCopy`,
+     * and the second is a gap this screen inherited rather than made. Asserting
+     * the daily plural is *absent* is the same mutation from the other side, and
+     * costs one line.
+     *
+     * No return trip here — [chip_carriesTheMilestoneLine] owns that, and
+     * repeating it would only re-test the clock.
+     */
+    @Test
+    fun chip_carriesTheWeeklyMilestoneLine() {
+        val state = mutableStateOf(longWith(StreakUi.Weeks(3)))
+        compose.setContent {
+            GawiTheme { TodayScreen(state.value, NO_ACTIONS, SnackbarHostState()) }
+        }
+        scrollPastTheTank()
+
+        compose.mainClock.autoAdvance = false
+        // 4 is the first rung of the weekly ladder, as 7 is of the daily one
+        // (Milestones.WEEKS).
+        state.value = longWith(StreakUi.Weeks(4))
+        settle()
+
+        compose.onNodeWithText(quantity(R.plurals.today_chip_milestone_weeks, 4)).assertIsDisplayed()
+        compose.onNodeWithText(quantity(R.plurals.today_chip_milestone_days, 4)).assertDoesNotExist()
+
+        val spoken = quantity(R.plurals.today_milestone_weeks, 4) +
+            " " + resources.getString(R.string.today_remaining, LONG.remaining, LONG.rows.size)
+        compose.onNodeWithContentDescription(spoken).assertIsDisplayed()
+    }
+
+    /**
      * Mood.REGENERATING's promise, drawn: the line names the habit.
      *
      * Through the screen rather than the mapper because the mapper can only say

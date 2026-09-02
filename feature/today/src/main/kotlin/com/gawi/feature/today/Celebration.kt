@@ -176,6 +176,23 @@ internal class CelebrationState {
  * happened before the app opened — the one case the paragraph above says never
  * fires. Skipping the sighting leaves `previous` null until there is a real
  * mood, which is exactly the cold start the guard is for.
+ *
+ * **It skips the sighting without clearing `previous`, and that shows on one
+ * path.** A review reasoned that the cold start is the *only* way through the
+ * null, because `Loading` is nothing but `stateIn`'s initial value. That holds
+ * for `Loading` and not for `Unavailable`: `TodayViewModel`'s `catch` terminates
+ * the subscription, and says itself that recovery is the screen re-subscribing,
+ * which emits `Habits` again. `TodayRoute` composes `TodayScreen` for every
+ * state, so this object survives `Habits` to `Unavailable` and back with its
+ * `previous` intact, and returning to a finished day celebrates. The old
+ * per-branch state could not: `Unavailable` disposed `HabitList` and the motion
+ * with it, so coming back was a first sighting.
+ *
+ * Left standing rather than reset. Either reading is defensible — the day may
+ * have been finished by the very tick that raced the failure, in which case the
+ * celebration is owed — and reaching it needs a Room, codec or settings failure
+ * and then a recovery, which is not worth a forget-path on this class. Recorded
+ * because the hoist changed it and nobody chose it.
  */
 @Composable
 internal fun rememberCelebration(mood: Mood?, animationsOn: Boolean): CelebrationState {
