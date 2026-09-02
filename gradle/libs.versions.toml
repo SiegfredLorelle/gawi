@@ -46,12 +46,23 @@ work = "2.11.2"
 # NotificationManagerCompat (:feature:settings reads whether notifications are
 # allowed at all).
 #
-# Pinned to the version that already resolved, measured with
-# `dependencyInsight` rather than read off the cache — so declaring it changes
-# no resolution anywhere. It is honesty, not an upgrade: two modules name types
-# from an artifact that only arrived through hilt-android and the compose BOM,
-# which is the trap the ApplicationProvider and ActivityScenarioRule entries
-# below already record.
+# It exists because two modules name types from an artifact that only arrived
+# through hilt-android and the compose BOM — the trap the ApplicationProvider
+# and ActivityScenarioRule entries below already record.
+#
+# Until 2026-09-02 it was also pinned to the version that already resolved, and
+# this paragraph said declaring it changed no resolution anywhere: honesty, not
+# an upgrade. That was true and measured — core-ktx's highest transitive request
+# is 1.18.0, which is what the pin read.
+#
+# At 1.19.0 it is no longer true, so do not read the old sentence off this line.
+# Re-measured with the same `dependencyInsight` command on 2026-09-02: core-ktx
+# is still requested at 1.18.0 at the highest, so this declaration now moves it
+# up one minor by conflict resolution, and pulls androidx.core:core from a
+# transitive top of 1.16.0 to 1.19.0 behind it. Kept rather than reverted: the
+# thing a core bump can actually break is the manifest, and
+# ManifestPermissionTest asserts the exact permission set and passes.
+# Re-measure at the next bump rather than trusting this paragraph.
 androidxCore = "1.19.0"
 androidxTestExtJunit = "1.3.0"
 # The instrumented side, new 2026-08-21 with the widget. Latest stables:
