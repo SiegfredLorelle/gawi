@@ -222,10 +222,12 @@ Small decisions that were easier to make once drawn:
   emoji's Unicode name ahead of it — and the streak is spoken in the panel's
   own phrase, *"3 days in a row"*, *"1 week in a row"*, *"Streak broken, was 12
   days"*, because a `3` or `3w` read aloud cannot say what it counts (the widget
-  made the same call in `spokenLabel`). Both via `clearAndSetSemantics`, which
-  is why the drawn `3` is not in the row's text; `row_doesNotSpeakTheIcon`,
-  `streak_speaksItsUnit` and `brokenStreak_speaksWhatWasLost` pin it, and
-  hearing it is owed (docs/running.md §4).
+  made the same call in `spokenLabel`). The words are `:core:ui`'s
+  `spokenStreak`, shared with habit detail's panel (habits.md §7). Both via
+  `clearAndSetSemantics`, which is why the drawn `3` is not in the row's text;
+  `row_doesNotSpeakTheIcon`, `streak_speaksItsUnit` and
+  `brokenStreak_speaksWhatWasLost` pin it, and hearing it is owed
+  (docs/running.md §4).
 - **An incomplete daily habit still shows its live streak.** Per
   `Streaks.dayStreak`, an unfinished current day has not broken anything —
   it simply has not extended it. A row unchecked at 09:00 must not read

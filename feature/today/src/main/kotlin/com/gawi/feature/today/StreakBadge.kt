@@ -15,12 +15,12 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.unit.dp
 import com.gawi.core.ui.streak.StreakUi
+import com.gawi.core.ui.streak.spokenStreak
 import com.gawi.core.ui.theme.GawiSpacing
 
 /**
@@ -44,56 +44,60 @@ import com.gawi.core.ui.theme.GawiSpacing
  *
  * **What it says is not what it draws.** "3" and "3w" are silent about what
  * they count, and TalkBack 17 read them as a bare *"1"*, *"7"* and *"1 w"*
- * (docs/running.md §4, 2026-09-02), so the badge speaks its unit in words —
- * *"3 days in a row"*, *"1 week in a row"*, *"Streak broken, was 12 days"* —
- * the widget's `spokenLabel` decision, made again here in the panel's own
- * phrase. `clearAndSetSemantics` rather than `semantics`, because a leaf with
- * both a text and a description is read twice on that TalkBack; and it comes
- * *after* [celebrated], because a clearing modifier discards every semantics
- * modifier later in the chain, and the milestone tag is one.
+ * (docs/running.md §4, 2026-09-02), so the badge speaks [spokenStreak]'s words
+ * — *"3 days in a row"*, *"1 week in a row"*, *"Streak broken, was 12 days"* —
+ * the same words habit detail speaks, from `:core:ui`. `clearAndSetSemantics`
+ * rather than `semantics`, because a leaf with both a text and a description is
+ * read twice on that TalkBack; and it comes *after* [celebrated], because a
+ * clearing modifier discards every semantics modifier later in the chain, and
+ * the milestone tag is one.
  */
 @Composable
 internal fun StreakBadge(streak: StreakUi, modifier: Modifier = Modifier, pulse: (() -> Float)? = null) {
+    val spoken = spokenStreak(streak)
     when (streak) {
         // Nothing has ever run, so there is nothing to say. §5's rule about
         // never reading zero is about a live streak, which this is not.
         StreakUi.None -> Unit
 
-        is StreakUi.Days -> {
-            val spoken = pluralStringResource(R.plurals.today_streak_days_spoken, streak.count, streak.count)
-            Text(
-                text = stringResource(R.string.today_streak_days, streak.count),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = modifier
-                    .celebrated(MaterialTheme.colorScheme.primaryContainer, pulse)
-                    .clearAndSetSemantics { contentDescription = spoken },
-            )
-        }
+        is StreakUi.Days -> LiveStreak(
+            drawn = stringResource(R.string.today_streak_days, streak.count),
+            spoken = checkNotNull(spoken),
+            weekly = false,
+            modifier = modifier,
+            pulse = pulse,
+        )
 
-        is StreakUi.Weeks -> {
-            val spoken = pluralStringResource(R.plurals.today_streak_weeks_spoken, streak.count, streak.count)
-            Text(
-                text = stringResource(R.string.today_streak_weeks, streak.count),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.tertiary,
-                modifier = modifier
-                    .celebrated(MaterialTheme.colorScheme.tertiaryContainer, pulse)
-                    .clearAndSetSemantics { contentDescription = spoken },
-            )
-        }
+        is StreakUi.Weeks -> LiveStreak(
+            drawn = stringResource(R.string.today_streak_weeks, streak.count),
+            spoken = checkNotNull(spoken),
+            weekly = true,
+            modifier = modifier,
+            pulse = pulse,
+        )
 
-        is StreakUi.Broken -> {
-            val spoken = pluralStringResource(
-                if (streak.weekly) R.plurals.today_streak_broken_weeks_spoken else R.plurals.today_streak_broken_days_spoken,
-                streak.previous,
-                streak.previous,
-            )
-            // On the outer Column, so its three texts are descendants and go
-            // with the clearing.
-            BrokenStreak(streak, modifier.clearAndSetSemantics { contentDescription = spoken })
-        }
+        // On the outer Column, so its three texts are descendants and go with
+        // the clearing.
+        is StreakUi.Broken -> BrokenStreak(streak, modifier.clearAndSetSemantics { contentDescription = checkNotNull(spoken) })
     }
+}
+
+/**
+ * A live streak's number in its unit's colour role, on its pill while
+ * celebrating, spoken in words. One composable for days and weeks so the
+ * order that matters — [celebrated] *before* the clearing modifier, or the
+ * milestone tag goes with the text — is written once.
+ */
+@Composable
+private fun LiveStreak(drawn: String, spoken: String, weekly: Boolean, modifier: Modifier, pulse: (() -> Float)?) {
+    Text(
+        text = drawn,
+        style = MaterialTheme.typography.labelLarge,
+        color = if (weekly) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary,
+        modifier = modifier
+            .celebrated(if (weekly) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.primaryContainer, pulse)
+            .clearAndSetSemantics { contentDescription = spoken },
+    )
 }
 
 /** The swell and the pill behind the number, or nothing at all when the row is not celebrating. */

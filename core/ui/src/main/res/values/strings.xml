@@ -45,4 +45,30 @@
     <string name="ui_weekday_saturday">Saturday</string>
     <string name="ui_weekday_sunday">Sunday</string>
 
+    <!-- A streak, spoken (SpokenStreak.kt). The drawn forms stay per surface —
+         "3" on a Today row, "3w" under a caption on habit detail — and a screen
+         reader cannot tell one from the other: TalkBack 17 read a Today badge
+         as a bare "1", "7" and "1 w" (docs/running.md §4, 2026-09-02). Two
+         screens say the same fact, so the words live here; the widget keeps
+         its own ("7 days", spokenLabel) because its rows carry nothing else.
+         "in a row" is the Today panel's own milestone phrase. Real plurals: 1
+         is every first completion. -->
+    <plurals name="ui_streak_days_spoken">
+        <item quantity="one">%1$d day in a row</item>
+        <item quantity="other">%1$d days in a row</item>
+    </plurals>
+    <plurals name="ui_streak_weeks_spoken">
+        <item quantity="one">%1$d week in a row</item>
+        <item quantity="other">%1$d weeks in a row</item>
+    </plurals>
+    <!-- A break says so and keeps its unit: "was 12w" would read as "was 12 w". -->
+    <plurals name="ui_streak_broken_days_spoken">
+        <item quantity="one">Streak broken, was %1$d day</item>
+        <item quantity="other">Streak broken, was %1$d days</item>
+    </plurals>
+    <plurals name="ui_streak_broken_weeks_spoken">
+        <item quantity="one">Streak broken, was %1$d week</item>
+        <item quantity="other">Streak broken, was %1$d weeks</item>
+    </plurals>
+
 </resources>

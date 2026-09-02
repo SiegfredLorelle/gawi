@@ -29,6 +29,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import java.time.LocalDate
+import com.gawi.core.ui.R as UiR
 
 /**
  * The screen, rendered.
@@ -159,13 +160,13 @@ class TodayScreenTest {
         compose.onNode(hasScrollAction()).performScrollToNode(hasText("stretch"))
 
         compose.onNodeWithText(READ.name)
-            .assert(hasContentDescription(quantity(R.plurals.today_streak_days_spoken, 3)))
+            .assert(hasContentDescription(quantity(UiR.plurals.ui_streak_days_spoken, 3)))
             .assert(hasText(resources.getString(R.string.today_streak_days, 3)).not())
         compose.onNodeWithText(WALK.name)
-            .assert(hasContentDescription(quantity(R.plurals.today_streak_weeks_spoken, 1)))
+            .assert(hasContentDescription(quantity(UiR.plurals.ui_streak_weeks_spoken, 1)))
             .assert(hasText(resources.getString(R.string.today_streak_weeks, 1)).not())
         compose.onNodeWithText("stretch")
-            .assert(hasContentDescription(quantity(R.plurals.today_streak_days_spoken, 1)))
+            .assert(hasContentDescription(quantity(UiR.plurals.ui_streak_days_spoken, 1)))
     }
 
     /** A break is announced as one, with what was lost in its unit — never "0" and then "was 12". */
@@ -176,7 +177,7 @@ class TodayScreenTest {
         compose.onNode(hasScrollAction()).performScrollToNode(hasText(WALK.name))
 
         compose.onNodeWithText(READ.name)
-            .assert(hasContentDescription(quantity(R.plurals.today_streak_broken_days_spoken, 12)))
+            .assert(hasContentDescription(quantity(UiR.plurals.ui_streak_broken_days_spoken, 12)))
             .assert(hasText(string(R.string.today_streak_broken)).not())
             .assert(hasText(resources.getString(R.string.today_streak_was_days, 12)).not())
     }
@@ -386,6 +387,19 @@ class TodayScreenTest {
 
     private fun string(id: Int): String = resources.getString(id)
 
+    /** The chip's drawn count for [LONG]. */
+    private val chipLabel: String get() = resources.getString(R.string.today_chip_remaining, LONG.remaining)
+
+    /**
+     * The chip's drawn label, in the unmerged tree: the chip clears its subtree
+     * (`chip_doesNotAlsoReadItsLabel`), so the label is drawn and not spoken,
+     * and every test that reads it back reads it from here.
+     */
+    private fun onChipLabel() = compose.onNodeWithText(chipLabel, useUnmergedTree = true)
+
+    /** The chip's drawn milestone line, likewise. */
+    private fun onChipMilestone(id: Int, n: Int) = compose.onNodeWithText(quantity(id, n), useUnmergedTree = true)
+
     /** Scroll the list far enough that item 0 — the tank — is off the top. */
     private fun scrollPastTheTank() {
         compose.onNode(hasScrollAction()).performScrollToIndex(LONG.rows.size)
@@ -429,10 +443,7 @@ class TodayScreenTest {
         }
         scrollPastTheTank()
 
-        compose.onNodeWithText(
-            resources.getString(R.string.today_chip_remaining, LONG.remaining),
-            useUnmergedTree = true,
-        ).assertIsDisplayed()
+        onChipLabel().assertIsDisplayed()
         compose.onNodeWithText(resources.getString(R.string.today_remaining, LONG.remaining, LONG.rows.size))
             .assertDoesNotExist()
         // The face itself, which nothing else here looks at: every other chip
@@ -496,10 +507,9 @@ class TodayScreenTest {
         }
         scrollPastTheTank()
 
-        val label = resources.getString(R.string.today_chip_remaining, LONG.remaining)
         compose.onNodeWithTag(CHIP_TAG).assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Text))
-        compose.onNodeWithText(label).assertDoesNotExist()
-        compose.onNodeWithText(label, useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithText(chipLabel).assertDoesNotExist()
+        onChipLabel().assertIsDisplayed()
     }
 
     /**
@@ -551,20 +561,14 @@ class TodayScreenTest {
         // Scrolled before the clock is held: performScrollToIndex needs to settle,
         // and it cannot while nothing advances time.
         scrollPastTheTank()
-        compose.onNodeWithText(
-            resources.getString(R.string.today_chip_remaining, LONG.remaining),
-            useUnmergedTree = true,
-        ).assertIsDisplayed()
+        onChipLabel().assertIsDisplayed()
 
         compose.mainClock.autoAdvance = false
         state.value = longWith(StreakUi.Days(7))
         settle()
 
-        compose.onNodeWithText(quantity(R.plurals.today_chip_milestone_days, 7), useUnmergedTree = true).assertIsDisplayed()
-        compose.onNodeWithText(
-            resources.getString(R.string.today_chip_remaining, LONG.remaining),
-            useUnmergedTree = true,
-        ).assertDoesNotExist()
+        onChipMilestone(R.plurals.today_chip_milestone_days, 7).assertIsDisplayed()
+        onChipLabel().assertDoesNotExist()
         // The panel's sentence must not be what the bar draws. Drawing it here
         // truncated to "7 days in a row. Mom…" on a device at font scale 1.0,
         // and every assertion above stayed green, because a text assertion
@@ -576,11 +580,8 @@ class TodayScreenTest {
         compose.mainClock.advanceTimeBy(MilestoneFrame.MILLIS + 100L)
         settle()
 
-        compose.onNodeWithText(
-            resources.getString(R.string.today_chip_remaining, LONG.remaining),
-            useUnmergedTree = true,
-        ).assertIsDisplayed()
-        compose.onNodeWithText(quantity(R.plurals.today_chip_milestone_days, 7), useUnmergedTree = true).assertDoesNotExist()
+        onChipLabel().assertIsDisplayed()
+        onChipMilestone(R.plurals.today_chip_milestone_days, 7).assertDoesNotExist()
     }
 
     /**
@@ -644,8 +645,8 @@ class TodayScreenTest {
         state.value = longWith(StreakUi.Weeks(4))
         settle()
 
-        compose.onNodeWithText(quantity(R.plurals.today_chip_milestone_weeks, 4), useUnmergedTree = true).assertIsDisplayed()
-        compose.onNodeWithText(quantity(R.plurals.today_chip_milestone_days, 4), useUnmergedTree = true).assertDoesNotExist()
+        onChipMilestone(R.plurals.today_chip_milestone_weeks, 4).assertIsDisplayed()
+        onChipMilestone(R.plurals.today_chip_milestone_days, 4).assertDoesNotExist()
 
         val spoken = quantity(R.plurals.today_milestone_weeks, 4) +
             " " + resources.getString(R.string.today_remaining, LONG.remaining, LONG.rows.size)
