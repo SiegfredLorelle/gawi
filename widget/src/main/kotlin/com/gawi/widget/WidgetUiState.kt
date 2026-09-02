@@ -159,8 +159,9 @@ private fun fitsLargeBody(size: DpSize, textScale: Float): Boolean = size.width 
  * face. The rule is about dp of room, which is the property that matters, and
  * docs/running.md §4 records which side of it each launcher lands on. Above
  * it, [MomoBitmap]'s
- * 72dp face still leaves at least 82dp for rows after the padding, so Momo
- * never displaces every habit. Rather than a resize breakpoint from the
+ * 72dp face still leaves at least 82dp for rows after the padding — one full
+ * 48dp row (`ROW_HEIGHT`) and most of a second — so Momo never displaces every
+ * habit. Rather than a resize breakpoint from the
  * provider xml, because the API 31 attributes that would express one are a
  * `res/xml-v31` variant this widget does not carry (visual-identity §7.4).
  */

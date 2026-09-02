@@ -279,31 +279,54 @@ private fun BandMask(mask: Bitmap, tint: ColorProvider, width: Dp) {
 }
 
 /**
- * One row per habit: the glyph, then the name.
+ * One row per habit: the glyph, then the name, as one 48dp clickable `Row` that
+ * carries the spoken line — *"Read, done"* — with the toggle on the row and on
+ * the glyph.
  *
- * The `CheckBox` carries no text of its own any more — the name is the
- * [OutfitText] beside it — so the two are one clickable `Row`. The action stays
- * on the checkbox as well, and that is not redundancy: on API 31+ a
- * `CompoundButton` toggles *visually* on a tap with or without an action behind
- * it, so a glyph without its own callback would flip on screen and write
- * nothing. The name goes on the checkbox as its `contentDescription`, meant to
- * keep TalkBack pairing it with the checked state the way `CheckBox(text = …)`
- * did; the image is decorative. Review caught the first cut describing the
- * image instead, which read as an anonymous checkbox beside a named picture.
- * On a device the pairing did not hold: TalkBack 17 on the Nothing launcher
- * read the box as "not checked. Check box" with no name, so this description
- * is not surviving into the hosted `RemoteViews` (docs/running.md §4,
- * 2026-09-02). The name has to reach the box another way — not yet decided.
+ * The `CheckBox` carries no text of its own — the name is the [OutfitText]
+ * beside it. The action stays on the checkbox as well as the row, and that is
+ * not redundancy: on API 31+ a `CompoundButton` toggles *visually* on a tap with
+ * or without an action behind it, so a glyph without its own callback would flip
+ * on screen and write nothing.
+ *
+ * **The name and the state are the Row's description, since 2026-09-02, and
+ * here is why they cannot be the checkbox's.** The first cut put the name on the
+ * `CheckBox` as its `contentDescription`, meaning to keep TalkBack pairing it
+ * with the checked state the way `CheckBox(text = …)` did. On the Nothing A059
+ * (TalkBack 17) each row was two stops: *"Read. In list, double tap to
+ * activate"* on the row and *"not checked. Check box, double tap to toggle"* on
+ * the glyph — the name reached the row and never the box. Glance's
+ * `glance_check_box.xml` is a `FrameLayout` around the real `CheckBox`;
+ * `applyModifiers` describes the wrapper while the toggle goes to the control
+ * inside, and TalkBack folds a described non-focusable wrapper into the nearest
+ * focusable ancestor, which is this row. So the description survived — on a
+ * view nothing stops at. The row now says name and state itself
+ * (`widget_today_row_description`, the streak widget's pattern, which the same
+ * device read as *"Water, 7 days"*), and the box keeps the bare name so a host
+ * that does attach it to the control gets *"Read, checked"* rather than an
+ * unlabelled box — bare, not name and state, or that host would say the state
+ * twice. The glyph's own stop still says only its state: Glance has no way to
+ * take a `CheckBox` out of the accessibility tree, and an empty description
+ * would be an empty string on the wrapper. Two stops per row remain; the first
+ * is now complete. docs/running.md §4 has the measurement, and [ROW_HEIGHT] the
+ * other half of what the Scanner found.
  */
 @Composable
 private fun HabitRows(rows: List<WidgetRow>) {
+    val context = LocalContext.current
     val nameWidth = contentWidth() - CHECKBOX_SLOT.dp
     val ink = rememberOutfitInk()
     LazyColumn {
         items(rows) { row ->
             val toggle = actionRunCallback<ToggleHabitAction>(actionParametersOf(HABIT_ID to row.habitId))
+            val state = context.getString(if (row.completed) R.string.widget_today_row_done else R.string.widget_today_row_not_done)
+            val spoken = context.getString(R.string.widget_today_row_description, row.name, state)
             Row(
-                modifier = GlanceModifier.fillMaxWidth().clickable(toggle),
+                modifier = GlanceModifier
+                    .fillMaxWidth()
+                    .height(ROW_HEIGHT.dp)
+                    .clickable(toggle)
+                    .semantics { contentDescription = spoken },
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 CheckBox(
@@ -390,6 +413,21 @@ internal const val BAND_GAP = 3
  * row rather than under the edge of the widget.
  */
 private const val CHECKBOX_SLOT = 48
+
+/**
+ * Every habit row's height, in dp — the 48dp touch-target floor. Left to itself
+ * a row is the checkbox glyph's 32dp (Glance's `glance_check_box.xml` sets no
+ * minimum, and the pre-31 backport layout hard-codes 32), which Accessibility
+ * Scanner measured at 75px on the Nothing A059 on 2026-09-02. The `Row` is the
+ * target that grows: a height on the `CheckBox` modifier reaches only Glance's
+ * wrapper `FrameLayout`, never the 32dp control inside it, so the control stays
+ * under the floor and the row around it is what a finger and TalkBack land on.
+ * The cost is rows: 94dp of usable height at the 110dp minimum is one full row
+ * and most of a second where it was two and most of a third, and the 4×3 large
+ * body shows three where it showed five. The list scrolls. Chosen with that
+ * cost in view (docs/ux/widget.md §8).
+ */
+private const val ROW_HEIGHT = 48
 
 /** The copy states may wrap: "Can't read your habits" is 159dp at 16sp, wider than the smallest widget. */
 internal const val MAX_COPY_LINES = 3
