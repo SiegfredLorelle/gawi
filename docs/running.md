@@ -448,7 +448,14 @@ the retro strip, the history grid, the trend columns and the chip all say more
 than their description. The accessibility block has the recordings; the shape
 of the fix is one modifier (`clearAndSetSemantics`) in four places — a plain
 swap in three, and on the retro strip one that has to keep the cell's checkbox
-role and toggle state — and it is not made here.
+role and toggle state. **Made 2026-09-02** in all four (`TodayChip`, `DayCell`,
+`LabelledColumns`, `cellAction`); the strip's role and state were pinned first
+by `anOpenCell_isACheckboxThatReportsItsState` and
+`theShutCell_isDisabledAndNotABox`, and one test per site holds the child text
+out of the merged tree. The same day took the other findings too: the icon
+badge is decorative, the streak badge speaks its unit, each Archive button is
+named for its row, the Today widget's rows are 48dp and described, and Momo's
+body is a one-item list. Every box below stays open — a device has to hear it.
 
 That deferral has expired. The widget drew on Glance's default theme on purpose
 for two phases — a Glance tree cannot consume the Compose theme (architecture
@@ -1383,6 +1390,17 @@ took three of the four** — greyscale by the user's eye, the light scheme by
       Accessibility Scanner on the same widget adds that the rows and boxes are
       75 px tall here, **32 dp**, under the 48 dp floor, and that the boxes
       share one description — the same lost name, seen from the other side.
+
+      **Half fixed 2026-09-02.** The rows are 48dp (`ROW_HEIGHT`) and each
+      row's description is the name and its state, on the row — the streak
+      widget's pattern. The name had been surviving all along, on Glance's
+      checkbox wrapper (`glance_check_box.xml`, a `FrameLayout` around the
+      control), which TalkBack folds into the row; that is what *"Read"* at the
+      row stop was, so "not surviving" above is wrong by one view. Expect the
+      row stop to read *"Read, done. In list, double tap to activate"* and the
+      box stop unchanged; the header's silence and the box's own 32dp are not
+      addressed. `WidgetRowTest` pins what the tree asks for. Re-swipe after
+      `make run`.
 - [x] **The Momo widget is offered, two by two, and says what it is.** Long-press
       → *Widgets* → **Gawi**: three entries. The *Momo* preview on API 31+ is her
       ground and a word with **no face** — deliberate, and widget.md §7 says
@@ -1443,6 +1461,14 @@ took three of the four** — greyscale by the user's eye, the light scheme by
       *"double tap to activate"* on a Streaks row has no callback behind it and
       is itself a reason to re-listen. Whether the Pixel launcher labels its
       frame the same way is unknown.
+
+      **The experiment is made, 2026-09-02**, without the second launcher: no
+      AVD has TalkBack, and the checkbox finding above showed the reachability
+      question is decided in Glance's translation and TalkBack's folding, not
+      by one launcher. `MomoBody`'s ready branch is a one-item `LazyColumn`
+      (`a mood puts the face in a one-item list`). Swipe into the widget and
+      listen for the sentence inside the frame; if it still says only
+      *"Momo"*, revert that one commit and write the null result here.
 - [x] **A write in the app moves all three widgets**, on the same commit.
       **Seen 2026-09-02**, all three placed and dumped before and after each
       write: ticking *Stretch* checked its box on the Today widget and moved its
@@ -2422,16 +2448,20 @@ without sight, and whether it survives a reader who needs it larger.
       (3) On
       the 4×3 Today widget, *Touch target* on every row and checkbox — 75 px,
       **32 dp** here — and duplicate descriptions on the nameless checkboxes
-      (real, both). (4) The disabled *Save* label in an empty editor, which is
+      (real, both; rows fixed to 48dp and described on 2026-09-02, but the
+      checkbox control inside is still 32dp and will still be listed). (4)
+      The disabled *Save* label in an empty editor, which is
       Material's disabled-text contrast. No unlabelled control anywhere, no
       touch-target hit in the app itself.
 
 **Still owed, and an emulator does not discharge any of them:** the TalkBack
 pass over *adding a habit* (the other two flows ran on 2026-09-02 and are
 written up above), and the two widget bodies under TalkBack, which failed on the
-Nothing launcher and want a second launcher before anything is changed. The
-retro strip's spoken labels and Accessibility Scanner both ran on 2026-09-02;
-what they found is in their boxes, not fixed. The widget's three device checks
+Nothing launcher and were changed the same day anyway — described 48dp rows,
+and a one-item list around Momo as the experiment — so they want re-hearing
+rather than a second launcher. The retro strip's spoken labels and Accessibility
+Scanner both ran on 2026-09-02; what they found is fixed and pinned (each box
+says by what) but not re-heard or re-scanned. The widget's three device checks
 in its own block are owed twice over: once against the widget as it stands and
 again when it takes the palette (visual-identity.md §7.4).
 
