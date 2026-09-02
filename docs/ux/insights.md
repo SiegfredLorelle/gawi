@@ -408,7 +408,8 @@ thing more
 than intended: a cell reads *"Thursday 20, not done. 20"* — the description and
 then the day number the cell draws, because the cell merges its children under a
 description and this TalkBack reads both. `clearAndSetSemantics` on the cell is
-the fix; not made here.
+the shape of the fix — a plain swap here, unlike the retro strip's (habits.md);
+not made here.
 
 This is what moved the spelled-out weekday names into `:core:ui`. They were
 `:feature:settings`' — the week-start picker's options — and this screen needed
