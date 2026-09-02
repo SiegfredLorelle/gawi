@@ -453,9 +453,12 @@ role and toggle state. **Made 2026-09-02** in all four (`TodayChip`, `DayCell`,
 by `anOpenCell_isACheckboxThatReportsItsState` and
 `theShutCell_isDisabledAndNotABox`, and one test per site holds the child text
 out of the merged tree. The same day took the other findings too: the icon
-badge is decorative, the streak badge speaks its unit, each Archive button is
-named for its row, the Today widget's rows are 48dp and described, and Momo's
-body is a one-item list. Every box below stays open — a device has to hear it.
+badge is decorative, the streak badge and habit detail's streak panel speak
+their unit in `:core:ui`'s words, the colour swatch clears its tick, each
+Archive button is named for its row, and the Today widget's rows are 48dp and
+described. Momo's body is unchanged — the list experiment was built and
+withdrawn the same day; its box says why. Every box below stays open — a device
+has to hear it.
 
 That deferral has expired. The widget drew on Glance's default theme on purpose
 for two phases — a Glance tree cannot consume the Compose theme (architecture
@@ -1462,13 +1465,25 @@ took three of the four** — greyscale by the user's eye, the light scheme by
       is itself a reason to re-listen. Whether the Pixel launcher labels its
       frame the same way is unknown.
 
-      **The experiment is made, 2026-09-02**, without the second launcher: no
-      AVD has TalkBack, and the checkbox finding above showed the reachability
-      question is decided in Glance's translation and TalkBack's folding, not
-      by one launcher. `MomoBody`'s ready branch is a one-item `LazyColumn`
-      (`a mood puts the face in a one-item list`). Swipe into the widget and
-      listen for the sentence inside the frame; if it still says only
-      *"Momo"*, revert that one commit and write the null result here.
+      **Built and withdrawn, 2026-09-02.** The one-item `LazyColumn` was made
+      and passed the JVM suite, and review took it out before it shipped, on
+      four counts. `MomoWidgetHostTest` waits for the mood sentence from a
+      host view that is never attached to a window, and such a host never asks
+      a collection's adapter for its items (`WidgetHostBinding` says so), so
+      the instrumented test would time out with the whole body inside an
+      item. On API 29–31 Glance serves a list through `RemoteViewsService`, so
+      the face would arrive a beat after the ground where the `Column` painted
+      in one pass; Today and Streaks keep their headers outside their lists
+      for that reason and Momo would have had nothing outside. A `ListView`
+      claims vertical drags that start on it, so a home-screen swipe over a
+      static tile would go dead. And the folding rule the Today checkbox
+      taught — TalkBack folds a described, unfocusable view into its nearest
+      *focusable* ancestor — points at a cheaper experiment first: a clickable
+      `Column` (`actionStartActivity` to the app) is focusable without an
+      adapter, a service or "in list" in every announcement. The Streaks rows
+      being reached *without* a click shows a list suffices, not that a
+      focusable view would fail. So two experiments stay for the phone, the
+      clickable first and the list as fallback; neither is made here.
 - [x] **A write in the app moves all three widgets**, on the same commit.
       **Seen 2026-09-02**, all three placed and dumped before and after each
       write: ticking *Stretch* checked its box on the Today widget and moved its
@@ -2289,7 +2304,10 @@ without sight, and whether it survives a reader who needs it larger.
       `iconBadge_isDecorative`); the badge speaks `today_streak_*_spoken` —
       *"3 days in a row"*, *"1 week in a row"*, *"Streak broken, was 12 days"*
       — via `clearAndSetSemantics` after the milestone tag
-      (`streak_speaksItsUnit`, `brokenStreak_speaksWhatWasLost`). *Change the
+      (`streak_speaksItsUnit`, `brokenStreak_speaksWhatWasLost`); the words
+      are `:core:ui`'s `spokenStreak`, and habit detail's streak panel — which
+      this pass never opened, and which drew *"3w"* and a three-stop break the
+      same way — took them in the same change on review's finding. *Change the
       day cutoff*, by D-pad: every settings
       row is one stop reading title, value and helper in order (*"Day is nearly
       over at. 21:00. When Momo starts…"*), so the row is reachable and named;
@@ -2357,6 +2375,11 @@ without sight, and whether it survives a reader who needs it larger.
       ([visual-identity.md](ux/visual-identity.md) §6.2). No *unit* test can check
       this — `HabitsUiMapperTest` pins only that the labels and the hues are the
       same length, and a name is not a checkable property of a hex (§4.3).
+      **Not re-heard since the clearing (2026-09-02):** the selected swatch drew
+      a `✓` under a merged description, the same shape that read *"Check mark"*
+      on the retro strip, so it now clears its subtree with `selectable` kept
+      ahead (`theSelectedSwatch_doesNotAlsoReadItsTick`). Found by review, not
+      on the device — the editor was not swiped.
 
       **But it is checkable on a device, and that is better than listening.**
       `adb shell uiautomator dump` gives every swatch's `content-desc` together
@@ -2457,9 +2480,9 @@ without sight, and whether it survives a reader who needs it larger.
 **Still owed, and an emulator does not discharge any of them:** the TalkBack
 pass over *adding a habit* (the other two flows ran on 2026-09-02 and are
 written up above), and the two widget bodies under TalkBack, which failed on the
-Nothing launcher and were changed the same day anyway — described 48dp rows,
-and a one-item list around Momo as the experiment — so they want re-hearing
-rather than a second launcher. The retro strip's spoken labels and Accessibility
+Nothing launcher: the Today rows were changed the same day (described, 48dp)
+and want re-hearing; Momo's body was not, and its box names the two experiments
+the phone can settle. The retro strip's spoken labels and Accessibility
 Scanner both ran on 2026-09-02; what they found is fixed and pinned (each box
 says by what) but not re-heard or re-scanned. The widget's three device checks
 in its own block are owed twice over: once against the widget as it stands and
