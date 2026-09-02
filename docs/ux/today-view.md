@@ -308,14 +308,16 @@ Small decisions that were easier to make once drawn:
   So a described node's text is not ignored; it is read after the description,
   and the chip now says its count twice in two forms. The same shape leaks on
   the retro strip, the history grid and the trend columns (docs/running.md §4's
-  accessibility block has each recording). The shape of the fix is one
-  modifier, `clearAndSetSemantics` in place of `semantics` where the description
-  is set — a plain swap here and on the grid and columns, not on the retro
-  strip, where the description rides a `combinedClickable` whose role and
-  toggle state must survive the clearing (habits.md) — and
-  `chip_speaksTheCountItShows` would pass either side of it — which is why
-  the rule above stands and gains a clause: asserting the *spoken* string proves
-  the description is complete, not that it is all that is spoken.
+  accessibility block has each recording). The fix is one modifier,
+  `clearAndSetSemantics` in place of `semantics` where the description is set —
+  **made 2026-09-02** here, on the grid and the columns, and on the retro strip
+  with the `combinedClickable` kept ahead of it so its role and toggle state
+  survive (habits.md). `chip_speaksTheCountItShows` passes either side of it,
+  so `chip_doesNotAlsoReadItsLabel` is the pin: the chip's node carries no
+  text, and the label exists only in the unmerged tree. Hearing it again is
+  owed (docs/running.md §4). The rule above stands and gains a clause:
+  asserting the *spoken* string proves the description is complete, not that it
+  is all that is spoken.
 
   ~~**Still open: the chip does not carry the milestone line.**~~ **Drawn since
   2026-09-01; the announcing is what is left.** The panel swaps that line in for

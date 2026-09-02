@@ -375,7 +375,10 @@ class TodayScreenTest {
         }
         scrollPastTheTank()
 
-        compose.onNodeWithText(resources.getString(R.string.today_chip_remaining, LONG.remaining)).assertIsDisplayed()
+        compose.onNodeWithText(
+            resources.getString(R.string.today_chip_remaining, LONG.remaining),
+            useUnmergedTree = true,
+        ).assertIsDisplayed()
         compose.onNodeWithText(resources.getString(R.string.today_remaining, LONG.remaining, LONG.rows.size))
             .assertDoesNotExist()
         // The face itself, which nothing else here looks at: every other chip
@@ -408,8 +411,9 @@ class TodayScreenTest {
      * is the bug this pins, and it is not one a label assertion can see. It was
      * written on the premise that TalkBack ignores a described node's `text`;
      * a device showed the text is read *after* the description instead
-     * (docs/ux/today-view.md §1), so this proves the description is complete,
-     * not that it is all that is spoken.
+     * (docs/ux/today-view.md §1), and the chip now clears its subtree so it is
+     * not (`chip_doesNotAlsoReadItsLabel`). This proves the description is
+     * complete; that one proves it is all there is.
      */
     @Test
     fun chip_speaksTheCountItShows() {
@@ -421,6 +425,27 @@ class TodayScreenTest {
         val spoken = string(R.string.today_mood_worried) +
             " " + resources.getString(R.string.today_remaining, LONG.remaining, LONG.rows.size)
         compose.onNodeWithContentDescription(spoken).assertIsDisplayed()
+    }
+
+    /**
+     * The label is drawn and not read. TalkBack 17 read the chip as its
+     * description and then its label — "3 of 14 left today. 3 left"
+     * (docs/running.md §4, 2026-09-02) — because the Row merged a described
+     * node with a text child. It clears the child now: the chip's node carries
+     * no text, the label is absent from the merged tree, and the unmerged tree
+     * says it is still drawn.
+     */
+    @Test
+    fun chip_doesNotAlsoReadItsLabel() {
+        compose.setContent {
+            GawiTheme { TodayScreen(LONG, NO_ACTIONS, SnackbarHostState()) }
+        }
+        scrollPastTheTank()
+
+        val label = resources.getString(R.string.today_chip_remaining, LONG.remaining)
+        compose.onNodeWithTag(CHIP_TAG).assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Text))
+        compose.onNodeWithText(label).assertDoesNotExist()
+        compose.onNodeWithText(label, useUnmergedTree = true).assertIsDisplayed()
     }
 
     /**
@@ -472,27 +497,36 @@ class TodayScreenTest {
         // Scrolled before the clock is held: performScrollToIndex needs to settle,
         // and it cannot while nothing advances time.
         scrollPastTheTank()
-        compose.onNodeWithText(resources.getString(R.string.today_chip_remaining, LONG.remaining)).assertIsDisplayed()
+        compose.onNodeWithText(
+            resources.getString(R.string.today_chip_remaining, LONG.remaining),
+            useUnmergedTree = true,
+        ).assertIsDisplayed()
 
         compose.mainClock.autoAdvance = false
         state.value = longWith(StreakUi.Days(7))
         settle()
 
-        compose.onNodeWithText(quantity(R.plurals.today_chip_milestone_days, 7)).assertIsDisplayed()
-        compose.onNodeWithText(resources.getString(R.string.today_chip_remaining, LONG.remaining)).assertDoesNotExist()
+        compose.onNodeWithText(quantity(R.plurals.today_chip_milestone_days, 7), useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithText(
+            resources.getString(R.string.today_chip_remaining, LONG.remaining),
+            useUnmergedTree = true,
+        ).assertDoesNotExist()
         // The panel's sentence must not be what the bar draws. Drawing it here
         // truncated to "7 days in a row. Mom…" on a device at font scale 1.0,
         // and every assertion above stayed green, because a text assertion
         // passes on a node that draws its string clipped. This is the half of
         // that a test can hold: not that the short form fits, but that the long
         // form is not the one being drawn.
-        compose.onNodeWithText(quantity(R.plurals.today_milestone_days, 7)).assertDoesNotExist()
+        compose.onNodeWithText(quantity(R.plurals.today_milestone_days, 7), useUnmergedTree = true).assertDoesNotExist()
 
         compose.mainClock.advanceTimeBy(MilestoneFrame.MILLIS + 100L)
         settle()
 
-        compose.onNodeWithText(resources.getString(R.string.today_chip_remaining, LONG.remaining)).assertIsDisplayed()
-        compose.onNodeWithText(quantity(R.plurals.today_chip_milestone_days, 7)).assertDoesNotExist()
+        compose.onNodeWithText(
+            resources.getString(R.string.today_chip_remaining, LONG.remaining),
+            useUnmergedTree = true,
+        ).assertIsDisplayed()
+        compose.onNodeWithText(quantity(R.plurals.today_chip_milestone_days, 7), useUnmergedTree = true).assertDoesNotExist()
     }
 
     /**
@@ -500,10 +534,9 @@ class TodayScreenTest {
      *
      * A separate test from [chip_carriesTheMilestoneLine] rather than one more
      * assertion on it, for the reason today-view §6 records against this very
-     * chip: a node with a `contentDescription` has its `text` ignored by a
-     * screen reader, so
-     * the label and the description are two independent strings and asserting
-     * one proves nothing about the other. The label gives up the count for the
+     * chip: the label is drawn and the description is what is spoken — the
+     * chip clears its subtree — so the label and the description are two
+     * independent strings and asserting one proves nothing about the other. The label gives up the count for the
      * run; the description has room for both and keeps it, which is the shape
      * the panel has during a run.
      */
@@ -557,8 +590,8 @@ class TodayScreenTest {
         state.value = longWith(StreakUi.Weeks(4))
         settle()
 
-        compose.onNodeWithText(quantity(R.plurals.today_chip_milestone_weeks, 4)).assertIsDisplayed()
-        compose.onNodeWithText(quantity(R.plurals.today_chip_milestone_days, 4)).assertDoesNotExist()
+        compose.onNodeWithText(quantity(R.plurals.today_chip_milestone_weeks, 4), useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithText(quantity(R.plurals.today_chip_milestone_days, 4), useUnmergedTree = true).assertDoesNotExist()
 
         val spoken = quantity(R.plurals.today_milestone_weeks, 4) +
             " " + resources.getString(R.string.today_remaining, LONG.remaining, LONG.rows.size)

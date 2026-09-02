@@ -26,6 +26,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
@@ -144,9 +145,14 @@ internal fun MascotPanel(mascot: MascotUi, motion: TodayMotion, modifier: Modifi
  * it replaced. It is built from the panel's own mood line and count for that
  * reason, and `chip_speaksTheCountItShows` is the assertion that keeps it. The
  * premise was half right: on a device (TalkBack 17, 2026-09-02) the label is
- * read *after* the description, so the chip says its count twice — see
- * docs/ux/today-view.md §1 and docs/running.md §4. Reading the label back still
- * proves nothing about what is spoken, only that it is not all of it.
+ * read *after* the description, so the chip said its count twice — see
+ * docs/ux/today-view.md §1 and docs/running.md §4. Since 2026-09-02 the Row
+ * clears its subtree instead of merging it, so the label is drawn and not read;
+ * `chip_doesNotAlsoReadItsLabel` pins that the chip's node carries no text and
+ * the label lives only in the unmerged tree. Reading the label back still
+ * proves nothing about what is spoken. `testTag` stays ahead of the clearing
+ * modifier because it is semantics too and would otherwise be wiped with the
+ * children.
  *
  * **It carries the milestone line, and the line replaces the count rather than
  * joining it.** The panel swaps its mood line for the milestone's for the length
@@ -194,16 +200,19 @@ internal fun TodayChip(mascot: MascotUi, milestone: Milestone?, modifier: Modifi
     val milestoneLabel = milestone?.let { pluralStringResource(chipMilestoneCopy(it), it.count, it.count) }
     val milestoneSpoken = milestone?.let { pluralStringResource(milestoneCopy(it), it.count, it.count) }
     // The panel's own first line and its count, joined: the face has no
-    // description of its own and the label is not read, so this one string is
-    // the whole announcement. The milestone line takes the mood line's place
+    // description of its own and the label is cleared from the tree below, so
+    // this one string is the whole announcement. The milestone line takes the mood line's place
     // here, not the count's — the drawn label gives up its count for the run
     // because it has room for one string; the description has room for both and
     // dropping the count from what is spoken is the very defect above.
     val spoken = listOfNotNull(milestoneSpoken ?: moodLine(mascot), remainingLine(mascot)).joinToString(" ")
     Row(
         modifier = modifier
+            // The tag first: it is semantics too, and clearAndSetSemantics wipes
+            // every semantics modifier after it in the chain along with the
+            // children.
             .testTag(CHIP_TAG)
-            .semantics(mergeDescendants = true) { contentDescription = spoken },
+            .clearAndSetSemantics { contentDescription = spoken },
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(GawiSpacing.Gap),
     ) {

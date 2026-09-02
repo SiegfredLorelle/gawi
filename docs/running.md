@@ -2145,8 +2145,10 @@ the one sequence that only plays while the frame loop runs.
       `combinedClickable` with a checkbox role and toggle state that the
       transcript shows being announced; clearing there must keep both, which a
       Robolectric assertion should pin first. The test that asserted the
-      description was complete would pass either side of it, which is why this
-      stays written here rather than fixed.
+      description was complete passes either side of it, so
+      `chip_doesNotAlsoReadItsLabel` was added: the chip's node carries no
+      text, and the label is found only in the unmerged tree. **Changed
+      2026-09-02**; not re-heard, which is why the box is open.
 
       **What *was* checked, 2026-08-31, and how:** `uiautomator dump` reads the
       same node description a screen reader consumes, and on API 37 the chip's
