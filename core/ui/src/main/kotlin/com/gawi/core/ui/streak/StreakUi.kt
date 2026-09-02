@@ -22,10 +22,10 @@ import com.gawi.core.domain.streak.StreakSnapshot
  * two features draw (the weekday names) — `Notice` takes strings rather than
  * ids for that reason — and the surfaces want different treatments anyway: a
  * compact trailing badge on a Today row, a header on detail, a bare count on
- * the widget. Each feature draws this its own way from its own strings, and
- * that goes for the *spoken* forms too: the widget's `spokenLabel` and the
- * Today badge's plurals word the same fact differently on purpose. They are
- * the two that would merge here if that ever changes.
+ * the widget. Each feature draws this its own way from its own strings. The
+ * *spoken* form is the exception, and it is here: [spokenStreak] gives the two
+ * screens one set of words, while the widget's `spokenLabel` words the same
+ * fact more briefly on purpose, since its rows carry nothing else.
  */
 sealed interface StreakUi {
 
