@@ -237,6 +237,13 @@ desaturation, done arithmetically in `drawMomo` so a test can measure it.
   change, one short sentence after each tick. It happens with animations off too, for the same two seconds,
   because a line is text and the gate governs what moves; the row's badge
   takes its pill for the same window, so the row and the line agree.
+  **All of that is the panel's, and the panel is not always on screen.** Once
+  the chip has taken the bar (today-view §1) the panel is *disposed*, not
+  merely scrolled past, so this live region reads nothing at all. The chip
+  swaps in the milestone line too, since 2026-09-01 — but it is deliberately
+  not a live region, and a description change on a node that is not one is not
+  spoken. Scrolled down, the line is drawn and not announced; today-view §6
+  holds that open for a device with TalkBack.
 
 ## 6. What this does not decide
 
@@ -298,7 +305,8 @@ desaturation, done arithmetically in `drawMomo` so a test can measure it.
 - ~~**The collapse into an app-bar chip** on scroll (today-view §1), which the
   250 dp tank makes more pressing, not less.~~ **Built 2026-08-31**: once the
   tank scrolls off, the app bar carries a small face and the remaining count in
-  the title's place. The tank made it pressing exactly as this line predicted —
+  the title's place — and, since 2026-09-01, the milestone line in the count's
+  place for the length of a run, the same swap the panel's own line makes. The tank made it pressing exactly as this line predicted —
   250 dp leaves the screen quickly — and the chip is the mitigation §1 always
   named, deliberately small. It draws the face with animations off: at that size
   the idle motion is invisible and a frame clock behind a scrolling list is a
