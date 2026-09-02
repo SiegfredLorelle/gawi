@@ -286,10 +286,14 @@ private fun BandMask(mask: Bitmap, tint: ColorProvider, width: Dp) {
  * on the checkbox as well, and that is not redundancy: on API 31+ a
  * `CompoundButton` toggles *visually* on a tap with or without an action behind
  * it, so a glyph without its own callback would flip on screen and write
- * nothing. The name goes on the checkbox as its `contentDescription`, so
- * TalkBack still pairs it with the checked state the way `CheckBox(text = …)`
+ * nothing. The name goes on the checkbox as its `contentDescription`, meant to
+ * keep TalkBack pairing it with the checked state the way `CheckBox(text = …)`
  * did; the image is decorative. Review caught the first cut describing the
  * image instead, which read as an anonymous checkbox beside a named picture.
+ * On a device the pairing did not hold: TalkBack 17 on the Nothing launcher
+ * read the box as "not checked. Check box" with no name, so this description
+ * is not surviving into the hosted `RemoteViews` (docs/running.md §4,
+ * 2026-09-02). The name has to reach the box another way — not yet decided.
  */
 @Composable
 private fun HabitRows(rows: List<WidgetRow>) {
