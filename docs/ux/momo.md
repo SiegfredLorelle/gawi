@@ -207,8 +207,9 @@ desaturation, done arithmetically in `drawMomo` so a test can measure it.
   the face — so TalkBack reads "Momo is getting worried." once, not a nameless
   image and then a sentence naming it, and not the same sentence twice. That
   is the widget's lesson from both sides — the one `TodayWidget.kt`'s
-  `HabitRows` note records, where review caught a row describing its image
-  and its checkbox separately.
+  `HabitRows` KDoc records, first when review caught a row describing its image
+  and its checkbox separately, and again when a device showed where a checkbox's
+  description actually lands.
 - **Animations off means still.** `rememberAnimationsEnabled` reads the
   system *Animator duration scale* once per composition, and everything that
   loops — Momo, the tank life, a celebration — answers to that one reading, so
