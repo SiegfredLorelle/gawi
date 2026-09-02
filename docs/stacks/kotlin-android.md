@@ -16,8 +16,8 @@ sdkmanager "platform-tools" "platforms;android-37.0" "build-tools;37.0.0"
 # services.gradle.org/distributions/gradle-<version>-bin.zip.sha256) —
 # validateDistributionUrl alone checks the URL, not the bytes. After this,
 # every command goes through ./gradlew and nothing else needs a local Gradle.
-gradle wrapper --gradle-version 9.7.0 --distribution-type bin \
-  --gradle-distribution-sha256-sum 84fbba45c7f4c64abc77460e1c00f541e9f960e3c7ed2538f1ede19eacd873ae
+gradle wrapper --gradle-version 9.7.1 --distribution-type bin \
+  --gradle-distribution-sha256-sum acd53f1edaf02f1a8ff99879f8a34b302661a057d9b063ae9e35b552f804d20a
 ```
 
 ## 1. Makefile
