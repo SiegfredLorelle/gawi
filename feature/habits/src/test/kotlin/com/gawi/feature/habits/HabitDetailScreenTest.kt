@@ -37,6 +37,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import java.time.DayOfWeek
 import java.time.LocalDate
+import com.gawi.core.ui.R as UiR
 
 /**
  * What habit detail draws, and what its one action reports.
@@ -65,12 +66,22 @@ class HabitDetailScreenTest {
 
     private fun string(id: Int): String = resources.getString(id)
 
+    private fun quantity(id: Int, n: Int): String = resources.getQuantityString(id, n, n)
+
+    /**
+     * The streak's texts are read off the unmerged tree throughout: the panel
+     * clears its subtree and speaks `spokenStreak`'s words instead, so what is
+     * drawn and what is said are asserted separately, as on Today.
+     */
     @Test
     fun aDailyStreak_isACount() {
         render(detail(streak = StreakUi.Days(12)))
 
-        compose.onNodeWithText("12").assertIsDisplayed()
-        compose.onNodeWithText(string(R.string.habits_detail_streak_days_caption)).assertIsDisplayed()
+        compose.onNodeWithText("12", useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithText(string(R.string.habits_detail_streak_days_caption), useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithContentDescription(quantity(UiR.plurals.ui_streak_days_spoken, 12))
+            .assertIsDisplayed()
+            .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Text))
     }
 
     /**
@@ -85,9 +96,10 @@ class HabitDetailScreenTest {
     fun aWeeklyStreak_isCountedInWeeksAndNeverAsABareNumber() {
         render(detail(streak = StreakUi.Weeks(3)))
 
-        compose.onNodeWithText("3w").assertIsDisplayed()
-        compose.onNodeWithText(string(R.string.habits_detail_streak_weeks_caption)).assertIsDisplayed()
-        compose.onNodeWithText("3").assertDoesNotExist()
+        compose.onNodeWithText("3w", useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithText(string(R.string.habits_detail_streak_weeks_caption), useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithText("3", useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithContentDescription(quantity(UiR.plurals.ui_streak_weeks_spoken, 3)).assertIsDisplayed()
     }
 
     /**
@@ -99,9 +111,11 @@ class HabitDetailScreenTest {
     fun aBrokenStreak_keepsWhatWasLostBesideTheZero() {
         render(detail(streak = StreakUi.Broken(previous = 4, weekly = false)))
 
-        compose.onNodeWithText(string(R.string.habits_detail_streak_broken)).assertIsDisplayed()
-        compose.onNodeWithText(resources.getString(R.string.habits_detail_streak_was_days, 4)).assertIsDisplayed()
-        compose.onNodeWithText(string(R.string.habits_detail_streak_broken_glyph)).assertIsDisplayed()
+        compose.onNodeWithText(string(R.string.habits_detail_streak_broken), useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithText(resources.getString(R.string.habits_detail_streak_was_days, 4), useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithText(string(R.string.habits_detail_streak_broken_glyph), useUnmergedTree = true).assertIsDisplayed()
+        // One stop, in words — not the glyph, the zero and "was 4" as three.
+        compose.onNodeWithContentDescription(quantity(UiR.plurals.ui_streak_broken_days_spoken, 4)).assertIsDisplayed()
     }
 
     /**
