@@ -316,11 +316,12 @@ private fun HabitRows(rows: List<WidgetRow>) {
     val context = LocalContext.current
     val nameWidth = contentWidth() - CHECKBOX_SLOT.dp
     val ink = rememberOutfitInk()
+    val done = context.getString(R.string.widget_today_row_done)
+    val notDone = context.getString(R.string.widget_today_row_not_done)
     LazyColumn {
         items(rows) { row ->
             val toggle = actionRunCallback<ToggleHabitAction>(actionParametersOf(HABIT_ID to row.habitId))
-            val state = context.getString(if (row.completed) R.string.widget_today_row_done else R.string.widget_today_row_not_done)
-            val spoken = context.getString(R.string.widget_today_row_description, row.name, state)
+            val spoken = context.getString(R.string.widget_today_row_description, row.name, if (row.completed) done else notDone)
             Row(
                 modifier = GlanceModifier
                     .fillMaxWidth()
