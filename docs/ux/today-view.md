@@ -285,7 +285,11 @@ Small decisions that were easier to make once drawn:
   trade for something this section calls "deliberately small". And no emulator
   image here has TalkBack, so a live region would ship unheard. **Open**: make it
   a polite live region, on a device that can verify what it actually sounds
-  like. `chip_isNotALiveRegion` pins today's answer either way.
+  like. `chip_isNotALiveRegion` pins today's answer either way. **Heard on a
+  device 2026-09-02** (Nothing A059, TalkBack 17, docs/running.md §4): with the
+  chip up, ticking a row spoke *"checked"* from the row and nothing from the
+  chip — the silence is exactly as designed, and the question of trading it
+  for a live region now has its recording.
 
   **A review caught the chip saying less than it showed, and the shape of the
   miss is worth keeping.** A node carrying a `contentDescription` has its `text`
@@ -297,6 +301,18 @@ Small decisions that were easier to make once drawn:
   `chip_speaksTheCountItShows` pins it. The general form, worth carrying past
   this chip: where a node's shown and spoken strings differ on purpose,
   asserting the shown one proves nothing about the other.
+
+  **The premise was half right, and a device said which half (2026-09-02).**
+  TalkBack 17 on the Nothing A059 read the chip as *"Momo is pottering about.
+  3 of 14 left today. 3 left"* — the description **and then** the drawn label.
+  So a described node's text is not ignored; it is read after the description,
+  and the chip now says its count twice in two forms. The same shape leaks on
+  the retro strip, the history grid and the trend columns (docs/running.md §4's
+  accessibility block has each recording). The fix is one modifier,
+  `clearAndSetSemantics` in place of `semantics` where the description is set,
+  and `chip_speaksTheCountItShows` would pass either side of it — which is why
+  the rule above stands and gains a clause: asserting the *spoken* string proves
+  the description is complete, not that it is all that is spoken.
 
   ~~**Still open: the chip does not carry the milestone line.**~~ **Drawn since
   2026-09-01; the announcing is what is left.** The panel swaps that line in for
