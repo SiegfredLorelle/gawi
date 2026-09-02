@@ -47,14 +47,23 @@ fmt: ## Format the codebase
 # minutes, so a stale `docs/` reference fails fast instead of at the end. It is a
 # script and not a Gradle task on purpose — see its header, and architecture §9.
 #
-# `:app:assembleDebug` runs last because it is the only step here that packages.
-# CI calls nothing but `make`, and until 2026-09-02 none of fmt/lint/test merged
-# a manifest, merged resources or dexed anything, so a green run said nothing
-# about whether the app still built into an APK — a packaging regression waited
-# for the next `make run`. Debug and not release: release is unsigned and R8 is
-# deferred (docs/running.md §3), so assembling it would prove nothing more.
-# It lives in `lint` rather than `test` so `test` stays plain `./gradlew test`
-# (architecture §9), and so the break shows up at CI's first gate, not its last.
+# `:app:assembleDebug` is the only step here that packages. CI calls nothing but
+# `make`, and until 2026-09-02 none of fmt/lint/test merged a manifest, merged
+# resources or dexed anything, so a green run said nothing about whether the app
+# still built into an APK — a packaging regression waited for the next
+# `make run`. Debug and not release: release is unsigned and R8 is deferred
+# (docs/running.md §3), so assembling it would prove nothing more.
+#
+# It is listed last for the reader, not the scheduler. Gradle takes command-line
+# order as a hint, and with org.gradle.parallel on, :app's compile and dex start
+# while Spotless and detekt are still running — measured: spotlessCheck finished
+# after dexBuilderDebug. A formatting failure therefore lands after some of the
+# assemble has been paid for, not before it starts; the waste is small because
+# lintDebug already compiled :app, leaving only dex and packaging (~3s warm).
+# The ordering that does hold is make's: this recipe is CI's lint step, which
+# runs before its test step, so a packaging break fails there and not at the
+# end. That is also why it lives in `lint` rather than `test`, together with
+# `test` staying plain `./gradlew test` (architecture §9).
 lint: ## Lint and type-check the codebase
 	./scripts/check-citations.sh
 	./gradlew spotlessCheck detekt lint :app:assembleDebug
