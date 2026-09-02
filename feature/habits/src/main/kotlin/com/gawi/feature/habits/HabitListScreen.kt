@@ -152,10 +152,13 @@ private fun HabitManageRow(row: HabitListRowUi, actions: HabitListActions, modif
             onClick = { actions.onArchiveToggle(row.id, row.archived) },
             modifier = Modifier.semantics { contentDescription = spoken },
         ) {
-            Text(
-                stringResource(if (row.archived) R.string.habits_unarchive else R.string.habits_archive),
-                modifier = Modifier.clearAndSetSemantics { },
-            )
+            // Cleared on a wrapper rather than on the Text: a clearing modifier
+            // wipes the text off its own node in both trees, and on a parent it
+            // leaves the child findable in the unmerged tree — which is how a
+            // test tells "not spoken" from "not drawn".
+            Box(Modifier.clearAndSetSemantics { }) {
+                Text(stringResource(if (row.archived) R.string.habits_unarchive else R.string.habits_archive))
+            }
         }
     }
 }

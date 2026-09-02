@@ -70,6 +70,7 @@ class WidgetRowTest {
         onAllNodes(hasContentDescriptionEqualTo("read, done")).assertCountEquals(1)
         onAllNodes(hasContentDescriptionEqualTo("walk, not done")).assertCountEquals(1)
         onAllNodes(describedRow("read, done")).assertCountEquals(1)
+        onAllNodes(describedRow("walk, not done")).assertCountEquals(1)
     }
 
     /** Kept on the box as the bare name, so a host that attaches it to the control has a label; the image stays decorative. */

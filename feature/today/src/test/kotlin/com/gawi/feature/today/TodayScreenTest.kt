@@ -141,6 +141,8 @@ class TodayScreenTest {
         compose.onNode(hasScrollAction()).performScrollToNode(hasText(READ.name))
 
         compose.onNodeWithText(READ.name).assert(hasText(READ.icon).not())
+        // Still drawn, just not spoken — the unmerged tree keeps the cleared glyph.
+        compose.onNodeWithText(READ.icon, useUnmergedTree = true).assertIsDisplayed()
     }
 
     /**
