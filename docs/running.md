@@ -445,8 +445,10 @@ hand and reported by ear, and the boxes say which. **And one premise fell**: on
 this TalkBack a Compose node that merges its descendants and carries a
 `contentDescription` is read as the description *and then* every child text, so
 the retro strip, the history grid, the trend columns and the chip all say more
-than their description. The accessibility block has the recordings; the fix is
-one shape (`clearAndSetSemantics`) in four places, and it is not made here.
+than their description. The accessibility block has the recordings; the shape
+of the fix is one modifier (`clearAndSetSemantics`) in four places — a plain
+swap in three, and on the retro strip one that has to keep the cell's checkbox
+role and toggle state — and it is not made here.
 
 That deferral has expired. The widget drew on Glance's default theme on purpose
 for two phases — a Glance tree cannot consume the Compose theme (architecture
@@ -1270,7 +1272,7 @@ took three of the four** — greyscale by the user's eye, the light scheme by
 `cmd uimode`, and TalkBack by hand, which is where the two widget bodies failed
 — and left the flip owed to a launcher with other cells; each box says how.
 
-- [x] **The Today widget grows a header at four by three.** Place *Today* and
+- [ ] **The Today widget grows a header at four by three.** Place *Today* and
       resize it to four cells wide and three tall (250×200dp on the canvas):
       Momo on a teal pill at the left, the mood line beside her, and beneath the
       line a band of thin segments — one per habit, filled where today is done.
@@ -1295,11 +1297,14 @@ took three of the four** — greyscale by the user's eye, the light scheme by
       2026-08-22 instance had been rows-alone since install for that reason.
       **The two-column flip is unreachable here too**: two cells is 170 dp and
       the provider's minimum is 180, so the launcher refuses, as the Pixel one
-      did at 240. The arithmetic for whoever has a third launcher: the
-      face-above-rows body wants either three cells under 220 dp (cells under 73
-      dp) or two cells at 180 or more (cells of 90 or more); 85 dp cells fall in
-      the gap on both counts. One row is refused as well (85 < 110). So: header
-      seen, rows-alone seen, the flip still owed to a launcher with other cells.
+      refused its two columns at 160. The arithmetic for whoever has a third
+      launcher: the face-above-rows body wants a width of at least 180 dp (the
+      provider's floor) and under 220 dp (the header's gate), so either three
+      cells of 60 to 73.3 dp or two cells of 90 to 110 dp. Nothing's 85 dp cells
+      and the Pixel's 80 dp cells both fall in the gap between those windows,
+      which is why neither launcher can show it. One row is refused as well
+      (85 < 110). So: header seen, rows-alone seen, the flip still owed to a
+      launcher with other cells.
 - [x] **The band is the checkboxes.** Count the segments against the rows and
       tap a row: its segment flips with its box, on the same write. A band that
       disagrees with the rows beneath it has been given a rule of its own, which
@@ -1364,14 +1369,20 @@ took three of the four** — greyscale by the user's eye, the light scheme by
       spoken, though the mood line's `ImageView` carries it as its description.
       Each row is then **two** stops, not one: *"Read. In list, double tap to
       activate"* and *"not checked. Check box, double tap to toggle"*. The band
-      and the face are silent, which is the one half that holds. Two mechanisms
-      to check in the Glance body: the header has no focusable node of its own,
-      so a described container with no reachable child is skipped; and the row's
-      click and its `CheckBox` are separate nodes, so TalkBack lands on each.
-      Whether the Pixel launcher does the same is unknown — no AVD image has
-      TalkBack. Accessibility Scanner on the same widget adds that the rows and
-      boxes are 75 px tall here, **32 dp**, under the 48 dp floor, and that the
-      boxes share one description because none carries its habit's name.
+      and the face are silent, which is the one half that holds. Two things to
+      check in the Glance body. The header sits outside the `LazyColumn` that
+      the rows live in, and the rows are what TalkBack reached — see the Momo
+      box below for why the list may be the mechanism. And the row's click and
+      its `CheckBox` are separate nodes, so TalkBack lands on each; the box's
+      stop said only *"not checked. Check box"* although `TodayWidget.kt` sets
+      the habit's name as the `CheckBox`'s `contentDescription`, so a Glance
+      description on a `CheckBox` is not surviving into the hosted
+      `RemoteViews` — the name has to reach it another way (the checkbox's own
+      text, which was deliberately dropped, or the row's description). Whether
+      the Pixel launcher does the same is unknown — no AVD image has TalkBack.
+      Accessibility Scanner on the same widget adds that the rows and boxes are
+      75 px tall here, **32 dp**, under the 48 dp floor, and that the boxes
+      share one description — the same lost name, seen from the other side.
 - [x] **The Momo widget is offered, two by two, and says what it is.** Long-press
       → *Widgets* → **Gawi**: three entries. The *Momo* preview on API 31+ is her
       ground and a word with **no face** — deliberate, and widget.md §7 says
@@ -1420,12 +1431,18 @@ took three of the four** — greyscale by the user's eye, the light scheme by
       The sentence is **never** spoken, and neither is the word. The face
       `ImageView` carries the sentence as its description, but the frame
       (`LauncherAppWidgetHostView`,
-      described "Momo" by the launcher) has no focusable child inside it, and a
-      described container hides its unfocusable children from TalkBack. The
-      Streaks widget shows the way out: its rows are each clickable and each is
-      its own stop (*"Water 7 days, double tap to activate"*), so a focusable
-      node inside the body is what makes content reachable here. Whether the
-      Pixel launcher labels its frame the same way is unknown.
+      described "Momo" by the launcher) has no reachable child inside it, and a
+      described container hides its unreachable children from TalkBack. What
+      separates the bodies is the container, not clickability: the Streaks
+      rows are stops of their own (*"Water 7 days"*) and carry no click action
+      at all — `StreakWidget.kt` has none — and the Today rows are stops too;
+      both bodies are Glance `LazyColumn`s, which land as a real list in the
+      `RemoteViews` tree (the Today rows say *"In list"*), while Momo's body is
+      a plain `Box` and `Column`. So the experiment for the second launcher is
+      a one-item `LazyColumn` around the face, not a clickable. The user's
+      *"double tap to activate"* on a Streaks row has no callback behind it and
+      is itself a reason to re-listen. Whether the Pixel launcher labels its
+      frame the same way is unknown.
 - [x] **A write in the app moves all three widgets**, on the same commit.
       **Seen 2026-09-02**, all three placed and dumped before and after each
       write: ticking *Stretch* checked its box on the Today widget and moved its
@@ -2122,9 +2139,14 @@ the one sequence that only plays while the frame loop runs.
       that a described node's text is not read; on this TalkBack it is, so the
       count is spoken twice in two forms. The same shape leaks on the retro
       strip, the history grid and the trend columns (the accessibility block).
-      The fix is `clearAndSetSemantics` where the description is set, and the
-      test that asserted the description was complete would still pass on it —
-      which is why this stays written here rather than fixed.
+      The shape of the fix is `clearAndSetSemantics` where the description is
+      set — a plain swap here, on the grid cell and on the trend column, but
+      not on the retro strip, whose open cell chains its description onto a
+      `combinedClickable` with a checkbox role and toggle state that the
+      transcript shows being announced; clearing there must keep both, which a
+      Robolectric assertion should pin first. The test that asserted the
+      description was complete would pass either side of it, which is why this
+      stays written here rather than fixed.
 
       **What *was* checked, 2026-08-31, and how:** `uiautomator dump` reads the
       same node description a screen reader consumes, and on API 37 the chip's
@@ -2327,8 +2349,13 @@ without sight, and whether it survives a reader who needs it larger.
       `cellAction` sets the description on a merged node and this TalkBack reads
       the merged text too. The shut day's own words were not isolated by ear;
       structurally it has no role and is disabled, so it cannot announce as a
-      box. The fix is `clearAndSetSemantics` on the cell; the JVM test that pins
-      the description would not notice either way.
+      box. The shape of the fix is `clearAndSetSemantics` on the cell, but this
+      is the one site where it is not a plain swap: the description is chained
+      onto the `combinedClickable` that gives the cell its role and toggle
+      state, and clearing the subtree must leave both announced or the cell
+      stops being a checkbox to a screen reader. Pin that with a Robolectric
+      assertion before the change lands. The JVM test that pins the description
+      would not notice either way.
 - [x] **200% font scale.** Settings → Display → Font size, at maximum. Three
       screens already carry reasoning about this in comments — `TodayScreen`,
       `HabitDetailScreen` and `SettingsScreen` all scroll or floor a dimension
