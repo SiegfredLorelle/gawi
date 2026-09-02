@@ -193,6 +193,24 @@ internal class CelebrationState {
  * celebration is owed — and reaching it needs a Room, codec or settings failure
  * and then a recovery, which is not worth a forget-path on this class. Recorded
  * because the hoist changed it and nobody chose it.
+ *
+ * **A second path reaches the same replay without touching the null at all.**
+ * `Empty` has a mood: `Mascot.mood` answers `CONTENT` for a list with nothing
+ * live in it, so an empty screen seeds `previous` exactly as a full one does,
+ * and the first `Habits` mood after it is judged against `CONTENT`. When that
+ * mood is `THRIVING` — one live habit, not outstanding today, a Mon/Wed/Fri
+ * habit seen on a Tuesday — `celebrates` fires the day's celebration for a day
+ * on which nothing was ticked. The per-branch state could not do this either:
+ * `Empty` built its own motion, so crossing into `Habits` was a first sighting.
+ *
+ * Nothing reaches it today, and that is navigation's doing rather than this
+ * class's. Every way a habit can appear leaves the screen first — `onAddHabit`
+ * goes to `Destination.HabitEditor`, an import goes to Settings, unarchiving
+ * goes to the habit list — and Today's composition goes with it. Recorded
+ * rather than fixed on the same terms as the paragraph above, and for one
+ * further reason: both want the same forget-path, so they are one decision and
+ * not two. The day something adds a habit without leaving Today, this is what
+ * it will do.
  */
 @Composable
 internal fun rememberCelebration(mood: Mood?, animationsOn: Boolean): CelebrationState {
@@ -220,9 +238,16 @@ internal class TodayMotion(val animationsOn: Boolean, val celebration: Celebrati
  *
  * [mood] is nullable because the states without one — `Loading`, `Unavailable` —
  * are branches *under* this, and [rememberCelebration] explains what the null
- * protects. [rows] is empty for the same states, which needs no guard of its
- * own: `milestoneCrossed` treats a first sighting as no crossing, so an empty
- * list leaves `seen` empty and is indistinguishable from a fresh state.
+ * protects. [rows] is empty for those states and for `Empty`, and takes no
+ * guard of its own — but not because handing over an empty list does nothing.
+ * `MilestoneState.see` sets `seen` from the rows it is given, so an empty list
+ * *wipes* it, and the `trim` that follows keeps no milestone whose row has gone
+ * missing, which is all of them: an in-flight run is cancelled. What makes that
+ * safe is not that it is a no-op but that the outcome matches the pre-hoist
+ * one, where disposing `HabitList` cancelled the scope anyway — and a wiped
+ * `seen` is a first sighting again, which `milestoneCrossed` treats as no
+ * crossing, so nothing fires on the way back. Read this before trusting
+ * "empty is harmless" for some new state that passes empty rows mid-run.
  */
 @Composable
 internal fun rememberTodayMotion(mood: Mood?, rows: List<HabitRowUi>): TodayMotion {
