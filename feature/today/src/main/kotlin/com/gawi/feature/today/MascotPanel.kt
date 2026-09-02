@@ -137,13 +137,16 @@ internal fun MascotPanel(mascot: MascotUi, motion: TodayMotion, modifier: Modifi
  *
  * **What is shown and what is spoken are different strings, and the description
  * has to carry both facts.** The bar has no room for "3 of 8 left today" beside
- * three action icons, so the label is the short form — but a node with a
- * `contentDescription` has its `text` ignored by TalkBack, so a description of
- * the mood alone would silently drop the count from the announcement and leave
- * the chip saying less than the panel it replaced. It is built from the panel's
- * own mood line and count for that reason, and `chip_speaksTheCountItShows` is
- * the assertion that keeps it: reading the label back proves nothing, because
- * the label is exactly the part a screen reader does not read.
+ * three action icons, so the label is the short form — and the description was
+ * built on the premise that a node with a `contentDescription` has its `text`
+ * ignored by TalkBack, so a description of the mood alone would silently drop
+ * the count from the announcement and leave the chip saying less than the panel
+ * it replaced. It is built from the panel's own mood line and count for that
+ * reason, and `chip_speaksTheCountItShows` is the assertion that keeps it. The
+ * premise was half right: on a device (TalkBack 17, 2026-09-02) the label is
+ * read *after* the description, so the chip says its count twice — see
+ * docs/ux/today-view.md §1 and docs/running.md §4. Reading the label back still
+ * proves nothing about what is spoken, only that it is not all of it.
  *
  * **It carries the milestone line, and the line replaces the count rather than
  * joining it.** The panel swaps its mood line for the milestone's for the length
