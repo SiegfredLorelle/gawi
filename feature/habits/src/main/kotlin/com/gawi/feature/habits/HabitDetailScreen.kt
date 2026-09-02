@@ -32,12 +32,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextAlign
 import com.gawi.core.ui.component.GawiIconButton
 import com.gawi.core.ui.component.GawiIcons
 import com.gawi.core.ui.component.HabitIcon
 import com.gawi.core.ui.component.Notice
 import com.gawi.core.ui.streak.StreakUi
+import com.gawi.core.ui.streak.spokenStreak
 import com.gawi.core.ui.theme.GawiSpacing
 import com.gawi.core.ui.theme.glyphColorOn
 
@@ -281,13 +284,24 @@ private fun HabitHeader(state: HabitDetailUiState.Detail) {
  * carries a `w`, the caption names its unit, and the colour role differs — so
  * the distinction survives a reader who cannot tell the two colours apart.
  *
- * The rendering is this screen's own; only the `StreakUi` decision behind it is
- * shared with the Today row, which draws the same state as a compact badge.
+ * The rendering is this screen's own; the `StreakUi` decision behind it and
+ * the *spoken* form are shared with the Today row, which draws the same state
+ * as a compact badge. Spoken, since 2026-09-02, as one node in
+ * [spokenStreak]'s words — *"12 days in a row"*, *"Streak broken, was 4
+ * weeks"* — because the drawn `3w` and `was 4w` read as "3 w" on TalkBack 17,
+ * and the broken form was three stops (docs/running.md §4; found by review
+ * when the Today badge took the same fix, since the device pass never opened
+ * detail's panel). `clearAndSetSemantics`, so the texts are drawn and not read
+ * after the description. The no-completions line is already words and keeps
+ * its text.
  */
 @Composable
 private fun StreakPanel(streak: StreakUi, modifier: Modifier = Modifier) {
+    val spoken = spokenStreak(streak)
     Column(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .then(if (spoken != null) Modifier.clearAndSetSemantics { contentDescription = spoken } else Modifier),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(GawiSpacing.Line),
     ) {
