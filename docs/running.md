@@ -256,7 +256,15 @@ adb connect 192.168.1.50:5555    # port from the main Wireless debugging screen
 ```
 
 The two ports differ, which is the usual stumbling block. Pairing is once per
-workstation.
+workstation. Two more things, both measured on the Nothing A059 on 2026-09-02:
+`adb mdns services` lists both ports (`_adb-tls-pairing` and `_adb-tls-connect`)
+once the toggle is on, so nobody has to read them off the phone; and the pairing
+code dies the moment the pairing dialog is closed or reopened — two `adb pair`
+attempts on a code that had been read out a minute earlier failed with
+`protocol fault (couldn't read status message)`, and the third, sent within
+seconds of a fresh code, paired. mDNS also opens a second transport for the same
+phone, so `adb disconnect <name>._adb-tls-connect._tcp` it (or set
+`ANDROID_SERIAL` to the `ip:port` one) before `make run`, which cannot pick.
 
 **Wireless debugging needs no udev rules and no group membership**, because udev
 governs USB device nodes and this path has no USB node in it. That makes it the
@@ -417,6 +425,28 @@ unticked and named at the end of each block — the TalkBack items, Accessibilit
 Scanner, and the widget on a launcher, which is the only end-to-end
 `ProjectionListener` exercise and has still never run. The Nothing A059 pass
 (§3) is what would upgrade the rest.
+
+**The Nothing A059 pass ran on 2026-09-02** — Android 16 (API 36), 1080×2392 at
+375 dpi, font scale 0.85, the Nothing launcher, TalkBack 17.0.1 and
+Accessibility Scanner 2.5.1, over Wi-Fi adb — against a seeded event log
+(fourteen habits, two streaks broken on different days, a six-day run, tags),
+since the phone's own data was a single test habit. Every box below that names
+that date ran there, and each says how. Two things about how it ran are worth
+more than any one tick. **TalkBack cannot be driven from `adb shell input`**:
+injected taps and swipes bypass the accessibility layer entirely, so a tap under
+TalkBack *toggles* the row it lands on and a swipe at a row's height does too —
+which is exactly the "direct tap" these boxes forbid, arriving by another door.
+What can be driven is input focus, `input keyevent KEYCODE_DPAD_DOWN`, which
+TalkBack announces for every focusable node, and what can be read is TalkBack's
+*Display speech output* overlay (its developer setting) off a `screencap` taken
+within half a second of the key. Everything that is not focusable — the panel,
+the chip, headings, grid cells, trend columns, widget bodies — was swiped by
+hand and reported by ear, and the boxes say which. **And one premise fell**: on
+this TalkBack a Compose node that merges its descendants and carries a
+`contentDescription` is read as the description *and then* every child text, so
+the retro strip, the history grid, the trend columns and the chip all say more
+than their description. The accessibility block has the recordings; the fix is
+one shape (`clearAndSetSemantics`) in four places, and it is not made here.
 
 That deferral has expired. The widget drew on Glance's default theme on purpose
 for two phases — a Glance tree cannot consume the Compose theme (architecture
@@ -1234,10 +1264,13 @@ watched and measured, not inferred:
   cells tall" wording widget.md §2 and momo.md §4 used; all three now say 170dp
   of room and name this launcher as the one where that is three rows.
 
-Not seen: greyscale by eye (the capture cannot show it), TalkBack, the light
-scheme, and the two-column flip.
+Not seen there: greyscale by eye (the capture cannot show it), TalkBack, the
+light scheme, and the two-column flip. **The Nothing A059 pass of 2026-09-02
+took three of the four** — greyscale by the user's eye, the light scheme by
+`cmd uimode`, and TalkBack by hand, which is where the two widget bodies failed
+— and left the flip owed to a launcher with other cells; each box says how.
 
-- [ ] **The Today widget grows a header at four by three.** Place *Today* and
+- [x] **The Today widget grows a header at four by three.** Place *Today* and
       resize it to four cells wide and three tall (250×200dp on the canvas):
       Momo on a teal pill at the left, the mood line beside her, and beneath the
       line a band of thin segments — one per habit, filled where today is done.
@@ -1248,6 +1281,25 @@ scheme, and the two-column flip.
       and the floor, and two rows is 132dp — so this box needs a launcher with
       other cells. `WidgetBodyTest` pins the two gates; only a launcher shows
       which side of them its cells land on.
+
+      **Run 2026-09-02 on the Nothing A059's own launcher** (85 dp cells, five
+      columns), driven over adb: long-press the widget's padding → *Resize*,
+      then drag an edge one cell at a time. **Four by three** (341×256 dp)
+      **grows the header**: Momo on the pill, the mood line, and a band of
+      fourteen segments with the two done habits woven in `#7FD4DC` against
+      `#324042` — the derivation exactly, sampled off the screenshot — over five
+      rows. Three columns (256 dp) keeps it, with the mood line wrapping to two
+      lines. **Two rows is rows alone**: 3×2 spans 170.7 dp of cells, and the
+      launcher reports less than 170 after its padding, so this launcher's 2-row
+      widget is under the face gate even though its cells are not — the
+      2026-08-22 instance had been rows-alone since install for that reason.
+      **The two-column flip is unreachable here too**: two cells is 170 dp and
+      the provider's minimum is 180, so the launcher refuses, as the Pixel one
+      did at 240. The arithmetic for whoever has a third launcher: the
+      face-above-rows body wants either three cells under 220 dp (cells under 73
+      dp) or two cells at 180 or more (cells of 90 or more); 85 dp cells fall in
+      the gap on both counts. One row is refused as well (85 < 110). So: header
+      seen, rows-alone seen, the flip still owed to a launcher with other cells.
 - [x] **The band is the checkboxes.** Count the segments against the rows and
       tap a row: its segment flips with its box, on the same write. A band that
       disagrees with the rows beneath it has been given a rule of its own, which
@@ -1294,27 +1346,94 @@ scheme, and the two-column flip.
       it is two taps rather than one. And `am get-config` is the check that
       matters — `getprop persist.sys.locale` still read `en-US` after the
       handle's menu and before the confirmation, so it lags the thing being set.
-- [ ] **In greyscale the band still reads.** Monochromacy on: a woven segment
+- [x] **In greyscale the band still reads.** Monochromacy on: a woven segment
       and an outstanding one must still tell apart by lightness alone (3.78:1
       light, 6.34:1 dark, measured). `screencap` will not show you this — see
-      the streak block above — so look at the device.
+      the streak block above — so look at the device. **Looked at on the Nothing
+      A059, 2026-09-02**, dark scheme, the 4×3 body with eleven woven and three
+      outstanding segments, monochromacy set over adb (`settings put secure
+      accessibility_display_daltonizer_enabled 1` and `…_daltonizer 0`, which
+      work without root on this phone): "the two kinds of segments are clear
+      even on monochrome". Restored after.
 - [ ] **TalkBack reads the large body once.** The mood line, then each row with
       its state. Not the face and then the line, and nothing for the band.
-- [ ] **The Momo widget is offered, two by two, and says what it is.** Long-press
+
+      **Fails on the Nothing launcher, 2026-09-02, swiped by hand.** The header
+      is not a stop at all — swiping into the 4×3 widget goes straight to the
+      list, and *"Momo is regrowing a gill. Pick the thread back up."* is never
+      spoken, though the mood line's `ImageView` carries it as its description.
+      Each row is then **two** stops, not one: *"Read. In list, double tap to
+      activate"* and *"not checked. Check box, double tap to toggle"*. The band
+      and the face are silent, which is the one half that holds. Two mechanisms
+      to check in the Glance body: the header has no focusable node of its own,
+      so a described container with no reachable child is skipped; and the row's
+      click and its `CheckBox` are separate nodes, so TalkBack lands on each.
+      Whether the Pixel launcher does the same is unknown — no AVD image has
+      TalkBack. Accessibility Scanner on the same widget adds that the rows and
+      boxes are 75 px tall here, **32 dp**, under the 48 dp floor, and that the
+      boxes share one description because none carries its habit's name.
+- [x] **The Momo widget is offered, two by two, and says what it is.** Long-press
       → *Widgets* → **Gawi**: three entries. The *Momo* preview on API 31+ is her
       ground and a word with **no face** — deliberate, and widget.md §7 says
-      why; the description under the name is what names her.
-- [ ] **Her ground is the tank colour, in both schemes.** Light `#B4E9F0`, dark
+      why; the description under the name is what names her. **Seen on the
+      Nothing launcher, 2026-09-02**: the picker's Gawi row reads "Momo,
+      Streaks, Today"; expanded, *Momo* is "2 × 2" with "How Momo is doing, in
+      one word" under the name and a preview of the ground and the word
+      *pottering* with no face (a real host preview, a
+      `LauncherAppWidgetHostView`, not a drawable); *Streaks* "3 × 2" with its
+      line; *Today* "3 × 2". `input draganddrop` from the preview to the home
+      screen placed each one.
+- [x] **Her ground is the tank colour, in both schemes.** Light `#B4E9F0`, dark
       `#0F545C`, sampled off a screenshot; the word on it in `#00353A` / `#B2E7EE`.
-      A flat colour, not the Today screen's gradient.
-- [ ] **The word follows the mood.** Complete everything → *thriving*; leave one
+      A flat colour, not the Today screen's gradient. **Sampled 2026-09-02 on
+      the Nothing A059**, the placed 2×2 widget (400×400 px): dark ground
+      `#0F545C` on 103,983 of its pixels with the word in `#B2E7EE`; light,
+      after `cmd uimode night no` (which needs no root on this phone, unlike the
+      AVD), ground `#B4E9F0` on the same 103,983 pixels with the word in
+      `#00353A`. To the byte, both ways. Night mode was put back afterwards.
+- [x] **The word follows the mood.** Complete everything → *thriving*; leave one
       → *pottering* or *worried* as the day goes; break a streak → *regrowing*,
       with the dimmer face. Same face as the Today screen at that moment.
-- [ ] **With no habits she is still there**, under *No habits yet*. Archive every
-      habit rather than `pm clear` to see it.
+      **Seen 2026-09-02**: *regrowing* with the faded-gill face while two
+      streaks were freshly broken; *pottering* with the smiling face once both
+      were
+      picked back up; *thriving* with the sparkle face once all fourteen were
+      done. *Worried* was not seen — it needs the clock past 21:00, and the pass
+      ended before it. Each word change arrived with the app's own write (see
+      the last box).
+- [x] **With no habits she is still there**, under *No habits yet*. Archive every
+      habit rather than `pm clear` to see it. **Seen 2026-09-02**: fourteen
+      `HabitArchived` events appended to the log (the run-as recipe in §5) and
+      the projection rebuilt — the Today screen showed *Momo is waiting for a
+      habit.* / *No habits yet* / *Add a habit*, and the widget kept its ground
+      and her smiling face with *No habits yet* in the word's place; the Today
+      and Streaks widgets said the same three words. Deleting the fourteen
+      events brought all fourteen habits back.
 - [ ] **TalkBack reads the sentence, not the word.** Focus the widget: *"Momo is
       pottering about."* once, and never *"pottering"* as well.
-- [ ] **A write in the app moves all three widgets**, on the same commit.
+
+      **Fails on the Nothing launcher, 2026-09-02, swiped by hand — and not in
+      the way the box feared.** The widget is one stop that says *"Momo"*, then
+      *"Actions available, swipe up and swipe down, double tap to activate"*:
+      the launcher's own label for the widget frame and its move/resize
+      actions. The next swipe leaves the widget for the neighbouring app icon.
+      The sentence is **never** spoken, and neither is the word. The face
+      `ImageView` carries the sentence as its description, but the frame
+      (`LauncherAppWidgetHostView`,
+      described "Momo" by the launcher) has no focusable child inside it, and a
+      described container hides its unfocusable children from TalkBack. The
+      Streaks widget shows the way out: its rows are each clickable and each is
+      its own stop (*"Water 7 days, double tap to activate"*), so a focusable
+      node inside the body is what makes content reachable here. Whether the
+      Pixel launcher labels its frame the same way is unknown.
+- [x] **A write in the app moves all three widgets**, on the same commit.
+      **Seen 2026-09-02**, all three placed and dumped before and after each
+      write: ticking *Stretch* checked its box on the Today widget and moved its
+      Streaks row 0 → 1 while Momo, still regenerating over *Read*, kept her
+      sentence — as she should; ticking *Read* then checked its box, moved its
+      row 0 → 1 **and** changed Momo's description to *"Momo is pottering
+      about."* with the word *pottering*. One write, three widgets, all changed
+      by the next dump about five seconds later.
 
 ### The reminder
 
@@ -1884,11 +2003,18 @@ the one sequence that only plays while the frame loop runs.
 - [ ] **200 % font scale.** The tank stays 250 dp; the copy under it grows and
       wraps and pushes the list down rather than clipping. The character must
       not shrink.
-- [ ] **TalkBack, once.** Swipe onto the panel: it is one node and should
+- [x] **TalkBack, once.** Swipe onto the panel: it is one node and should
       announce the mood's line once — "Momo is pottering about." followed by
       the remaining count — and never "image" or "unlabelled". If the tank and
-      the caption land as two stops, the merge has been lost.
-- [ ] **The regenerating line names a habit** (2026-08-31, today-view §6).
+      the caption land as two stops, the merge has been lost. **Heard on the
+      Nothing A059, 2026-09-02**, TalkBack 17: one stop, the sentence and the
+      count together, no "image". The overlay spelled it *"Momo is pottering
+      about.. 3 of 14 left today"* — the copy's own full stop plus TalkBack's
+      joiner, a nit to hear rather than a defect. The same line was read
+      unprompted on a cold launch, and again each time the panel scrolled back
+      into composition, which is the live region firing on appearance that
+      today-view §1 predicted.
+- [x] **The regenerating line names a habit** (2026-08-31, today-view §6).
       **Half seen 2026-08-31** and the box stays open for the other half. With
       three streaks broken on the same day the line read "Momo is regrowing a
       gill. Pick Read back up" — a real name, in the sentence, at API 37. That
@@ -1899,6 +2025,13 @@ the one sequence that only plays while the frame loop runs.
       days* are the only way to see it. `TodayUiMapperTest` pins which name
       reaches the state and `TodayScreenTest` pins that the panel draws it;
       neither can see whether a long habit name still reads as a sentence.
+
+      **The other half, seen 2026-09-02 on the Nothing A059.** Seeded: *Read*
+      completed 20–29 August (broken on the 31st), *Stretch* completed 24–30
+      August (broken on 1 September), *Read* first in the list. The line read
+      *"Momo is regrowing a gill. Pick Stretch back up."* — the newer break,
+      over the one that sorts first. Ticking *Stretch* moved it to *"Pick Read
+      back up."*, and ticking *Read* ended it: *"Momo is pottering about."*
 - [x] **The app-bar chip** (2026-08-31, today-view §1). Seen on API 37: the
       title "Today" gives way to Momo's face and "4 left", and scrolling back
       restores the title. The face is the current mood's — the drained
@@ -1920,6 +2053,13 @@ the one sequence that only plays while the frame loop runs.
       for long lists, and with four habits Momo never really leaves — or
       whether the trigger should fire on "mostly gone" instead, is open in
       today-view §1.
+
+      **Measured again 2026-09-02 on the Nothing A059**, 1080×2392 at 375 dpi:
+      viewport 2060 px (879 dp), panel 722 px (308 dp), row 150 px (64 dp), so
+      the chip needs **fourteen** habits here — it appeared with fourteen and
+      forty pixels to spare, reading *"10 left"*. Nine on a small emulator,
+      fourteen on a tall phone: the count is the screen's, not the design's,
+      which is one more reason the question in today-view §1 is a design call.
 - [x] **The chip at 200 % font scale** (2026-08-31). The face, "4 left" and all
       three action icons on one bar, nothing truncated. This is the case the
       chip replaces the title *for*, so it is the one that would have justified
@@ -1972,6 +2112,19 @@ the one sequence that only plays while the frame loop runs.
       that would settle that, so run it before deciding.
       `chip_isNotALiveRegion` pins the property on the JVM, but only a screen
       reader can say what is spoken, and neither emulator image here has one.
+
+      **Run 2026-09-02 on the Nothing A059, swiped by hand, and both halves
+      hold — with one thing the box did not ask for.** The chip is one stop.
+      Ticking *Guitar* under it spoke *"checked"* from the row and nothing from
+      the chip; unticking spoke *"not checked"*. But the stop read *"Momo is
+      pottering about. 3 of 14 left today. **3 left**"* — the description and
+      then the drawn label. today-view §1 built the description on the premise
+      that a described node's text is not read; on this TalkBack it is, so the
+      count is spoken twice in two forms. The same shape leaks on the retro
+      strip, the history grid and the trend columns (the accessibility block).
+      The fix is `clearAndSetSemantics` where the description is set, and the
+      test that asserted the description was complete would still pass on it —
+      which is why this stays written here rather than fixed.
 
       **What *was* checked, 2026-08-31, and how:** `uiautomator dump` reads the
       same node description a screen reader consumes, and on API 37 the chip's
@@ -2073,6 +2226,21 @@ without sight, and whether it survives a reader who needs it larger.
       forced through the tree in order. Watch for a control that is reachable but
       unnamed, two targets that say the same thing, and a state change that
       happens silently (WCAG 2.4.3 and 4.1.3).
+
+      **Partly run 2026-09-02 on the Nothing A059.** *Complete one from Today*,
+      by hand: each row is one stop and speaks its state on toggle. What it
+      speaks is *"checked. 📚. Read. 1. Check box. In list. 15 items"* — the
+      **icon emoji is read by name** before the habit, and the streak is a
+      **bare number** (*"1"*, *"7"*, and *"1w"* for a weekly row), because
+      `HabitIcon` draws the emoji as plain text and `StreakBadge` draws
+      `today_streak_days` = `%d` as plain text. Both heard by the user, not only
+      read off the overlay. *Change the day cutoff*, by D-pad: every settings
+      row is one stop reading title, value and helper in order (*"Day is nearly
+      over at. 21:00. When Momo starts…"*), so the row is reachable and named;
+      the picker itself was not driven. *Add a habit* was not swiped. One
+      "two targets that say the same thing" came from the Scanner instead: the
+      fourteen *Archive* buttons on the habit list all announce *"Archive"* with
+      no habit name.
 - [ ] **A TalkBack pass over the Insights screen.** Two pickers and a list, and
       the thing to listen for is whether a bar row makes sense read aloud: the
       label, the total, and nothing announcing the bar itself. The bars carry no
@@ -2082,6 +2250,17 @@ without sight, and whether it survives a reader who needs it larger.
       active days" in full, never a bare "M" — the initials are hidden behind
       the column's own description (insights.md §9.4). And the disabled ▶ on the
       current period should still be announced, as disabled, not skipped.
+
+      **Run 2026-09-02 on the Nothing A059, swiped by hand.** A bar row is
+      **three** stops — name, percentage, schedule, in that order — and the bar
+      itself is never one. The disabled ▶ is a stop: *"Later period. Button.
+      Disabled"*. The August column read *"August, 30 active days. **30. capital
+      A**"* — the full form first, so no bare "M", but the number and the
+      initial follow it, because the column merges its children under a
+      description and this TalkBack reads both (`LabelledColumns`). The
+      Scanner adds that the repeated *"0%"* and *"Every day · best 1 day"*
+      texts across rows count as duplicate descriptions, which is the same
+      unmerged-row structure seen from the other side.
 - [ ] **A TalkBack pass over the history grid, swipe-only.** Its own item because
       it is the one screen in this app that **hides content from a screen
       reader** — the seven column letters carry `clearAndSetSemantics`, since `T`
@@ -2096,6 +2275,15 @@ without sight, and whether it survives a reader who needs it larger.
       swiping and that is the point — a calendar is read day by day, and if this
       is tedious rather than usable it is worth knowing before the trends screen
       copies the pattern.
+
+      **Run 2026-09-02 on the Nothing A059.** Every cell of August carries
+      *"<Weekday> <n>, done|not done"* — 31 nodes, no letter nodes anywhere in
+      the tree, so the `clearAndSetSemantics` trade holds. Today is *"Wednesday
+      2, today, not done yet"* on a habit not yet done and *"…, today, done"* on
+      one that is; 3 September onwards are not nodes at all. Swiped by hand, a
+      cell read *"Thursday 20, not done. **20**"* — the bare day number trails
+      the description, the same leak as the strip and the columns
+      (`HistoryGrid.kt` merges under a description). Tedium was not judged.
 - [x] **The colour picker's swatch names.** Every swatch announces a name rather
       than a hex, and after the retune one of those names moved: the seventh is
       "Gold", not "Yellow", because the hue at that slot is `#9C851F` and calling
@@ -2129,6 +2317,18 @@ without sight, and whether it survives a reader who needs it larger.
       label is *legible as speech* rather than merely complete. A shut day is the
       one to listen to hardest: it must announce as unavailable, not as an
       unchecked box.
+
+      **Fails on legibility, 2026-09-02 on the Nothing A059**, by D-pad and by
+      hand alike: *"Day 30, not done. Mark done. **capital S. 30. Middle dot.**
+      Check box"*, and the done cell *"checked. Day 2, done. Mark not done. Add
+      or edit note. **capital W. 2. Check mark.** Check box"*. The label is
+      right and complete; the cell's four child texts — the weekday letter, the
+      day number, the ✓/· glyph and the note glyph — are read after it, because
+      `cellAction` sets the description on a merged node and this TalkBack reads
+      the merged text too. The shut day's own words were not isolated by ear;
+      structurally it has no role and is disabled, so it cannot announce as a
+      box. The fix is `clearAndSetSemantics` on the cell; the JVM test that pins
+      the description would not notice either way.
 - [x] **200% font scale.** Settings → Display → Font size, at maximum. Three
       screens already carry reasoning about this in comments — `TodayScreen`,
       `HabitDetailScreen` and `SettingsScreen` all scroll or floor a dimension
@@ -2141,18 +2341,41 @@ without sight, and whether it survives a reader who needs it larger.
       against Roboto and the app now draws in Outfit, whose metrics differ — and
       it was re-run the same day. The restyle block has what the second pass
       measured.
-- [ ] **Accessibility Scanner**, as a pre-release sweep rather than routine.
+- [x] **Accessibility Scanner**, as a pre-release sweep rather than routine.
       Install Google's Accessibility Scanner, run it over each screen, and read
       the report the way you would a Lighthouse audit: the touch-target and
       contrast items are already asserted, so what it earns its place for is
       unlabelled controls and text-contrast cases the theme tests do not reach.
 
+      **Run 2026-09-02 on the Nothing A059**, Scanner 2.5.1, its service enabled
+      over adb (`appops set … SYSTEM_ALERT_WINDOW allow` and the
+      `enabled_accessibility_services` setting) and its floating button tapped
+      on each screen. **Settings and Licences: no suggestions.** Everything
+      else fell into four classes. (1) *Text contrast* on every emoji icon badge
+      — Today ×14, habit list ×14, detail ×1, editor's icon picker ×4 — measured
+      as the glyph colour `glyphColorOn` declares against the badge tint
+      (`#F5F5F5` on `#427FF6` = 3.44:1, wanted 4.5): the colour never paints a
+      colour emoji, so this is noise while icons are emoji and would be real the
+      day a plain character is allowed; a decision for visual-identity, not a
+      bug. (2) *Multiple items have the same description*: the fourteen
+      **Archive** buttons on the habit list (real — no habit name), the repeated
+      rate and schedule texts across Insights bar rows (the unmerged rows
+      again), and the "—" placeholders under the history's rate columns (noise).
+      (3) On
+      the 4×3 Today widget, *Touch target* on every row and checkbox — 75 px,
+      **32 dp** here — and duplicate descriptions on the nameless checkboxes
+      (real, both). (4) The disabled *Save* label in an empty editor, which is
+      Material's disabled-text contrast. No unlabelled control anywhere, no
+      touch-target hit in the app itself.
+
 **Still owed, and an emulator does not discharge any of them:** the TalkBack
-pass and the retro strip's *spoken* labels — note that item is a different check
-from the restyle block's visual one above, and the two are easy to conflate —
-plus Accessibility Scanner, which needs a Play install. The widget's three device
-checks in its own block are owed twice over: once against the widget as it stands
-and again when it takes the palette (visual-identity.md §7.4).
+pass over *adding a habit* (the other two flows ran on 2026-09-02 and are
+written up above), and the two widget bodies under TalkBack, which failed on the
+Nothing launcher and want a second launcher before anything is changed. The
+retro strip's spoken labels and Accessibility Scanner both ran on 2026-09-02;
+what they found is in their boxes, not fixed. The widget's three device checks
+in its own block are owed twice over: once against the widget as it stands and
+again when it takes the palette (visual-identity.md §7.4).
 
 Not in CI, and not automatable: TalkBack cannot be driven from the instrumented
 source set, and §8's line that CI runs unit tests only is unaffected by this
@@ -2163,16 +2386,28 @@ block.
 Built 2026-08-30 (docs/ux/settings.md §9). The JVM tests prove the two notices
 are packaged and rendered; what only a device can show is how the section reads.
 
-- [ ] Settings scrolls to a fourth header, **About**, below Data. The Version row
+- [x] Settings scrolls to a fourth header, **About**, below Data. The Version row
       shows the build's `versionName` in its small grey line, has no primary
-      middle line, and does nothing when tapped.
-- [ ] **Licences** opens a screen titled Licences with two headings, Outfit then
+      middle line, and does nothing when tapped. **Seen 2026-09-02 on the
+      Nothing A059**: *About* at the bottom under *Data*; *Version* with `0.1.0`
+      in the
+      small line and no middle one; a tap on the row changed nothing in the tree
+      (dumped before and after, identical), and there is no clickable wrapper
+      around it to have taken the tap.
+- [x] **Licences** opens a screen titled Licences with two headings, Outfit then
       Lucide, each with a one-line role and the full notice text under it. Both
       texts scroll; the OFL runs to its section 5 and the Lucide notice to its
-      MIT block. Back returns to Settings at the same scroll position.
-- [ ] TalkBack: the Version row is read as one item with no "double-tap to
+      MIT block. Back returns to Settings at the same scroll position. **Seen
+      2026-09-02**: the OFL node is 4,387 characters and contains `5)` and
+      TERMINATION; the Lucide node is 3,207 and contains the Feather MIT block
+      down to its last line; three swipes scrolled the OFL to a 100 px sliver
+      at the top with Lucide's text ending at the bottom edge. Back returned to
+      Settings with *About* at the same y as before.
+- [x] TalkBack: the Version row is read as one item with no "double-tap to
       activate"; each heading on the Licences screen is a stop of its own.
-      *Not yet checked — no TalkBack on either emulator image.*
+      **Heard 2026-09-02 on the Nothing A059**, swiped by hand: the Version row
+      is one stop with no activate hint, and *Outfit* and *Lucide* are each a
+      stop of their own.
 
 ### The day-rollover refresh
 
