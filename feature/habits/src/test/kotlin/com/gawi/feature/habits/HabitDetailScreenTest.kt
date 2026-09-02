@@ -471,6 +471,25 @@ class HabitDetailScreenTest {
             .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.ToggleableState))
     }
 
+    /**
+     * The description is the whole announcement. TalkBack 17 read a cell's four
+     * drawn texts after its label (docs/running.md §4, 2026-09-02); now they are
+     * drawn and not in the merged tree. The unmerged count says they are still
+     * drawn — a cell that stopped painting its dot would also pass the first
+     * half.
+     */
+    @Test
+    fun aCell_speaksItsLabelAndNothingElse() {
+        render(detail(strip = strip(completed = setOf(TODAY.minusDays(2)))))
+
+        compose.onNodeWithContentDescription(cellLabel(back = 1))
+            .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Text))
+        compose.onNodeWithContentDescription(cellLabel(back = 4, shut = true))
+            .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Text))
+        compose.onAllNodesWithText(EMPTY_MARKER).assertCountEquals(0)
+        compose.onAllNodesWithText(EMPTY_MARKER, useUnmergedTree = true).assertCountEquals(4)
+    }
+
     private companion object {
         val HABIT = HabitId("00000000-0000-7000-8000-000000000001")
         val OTHER = HabitId("00000000-0000-7000-8000-000000000002")
@@ -535,6 +554,9 @@ class HabitDetailScreenTest {
 
         /** Mirrors RetroStrip's NOTE_GLYPH, which is private to the composable. */
         const val NOTE_MARKER = "•"
+
+        /** Mirrors RetroStrip's EMPTY_GLYPH, for the same reason. */
+        const val EMPTY_MARKER = "·"
     }
 
     /**
