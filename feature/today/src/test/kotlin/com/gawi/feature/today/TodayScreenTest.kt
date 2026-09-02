@@ -6,6 +6,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -125,6 +126,59 @@ class TodayScreenTest {
         compose.onNodeWithText(WALK.name).performClick()
 
         assertEquals(Triple(WALK.id, false, LOGICAL_DATE), reported)
+    }
+
+    /**
+     * The merged row does not carry the icon. TalkBack 17 read a row as
+     * "checked. books. Read. 1. Check box" — the emoji by its Unicode name,
+     * ahead of the habit (docs/running.md §4, 2026-09-02); `HabitIcon` clears
+     * its semantics now.
+     */
+    @Test
+    fun row_doesNotSpeakTheIcon() {
+        compose.setContent { GawiTheme { TodayScreen(HABITS, NO_ACTIONS, SnackbarHostState()) } }
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText(READ.name))
+
+        compose.onNodeWithText(READ.name).assert(hasText(READ.icon).not())
+    }
+
+    /**
+     * The badge speaks its unit and the drawn number is not in the row's text.
+     * A daily and a weekly row together, because the point of the two spoken
+     * forms is that "3" and "1w" no longer sound alike; a singular alongside,
+     * since 1 is what every first completion reads.
+     */
+    @Test
+    fun streak_speaksItsUnit() {
+        val rows = listOf(
+            READ.copy(streak = StreakUi.Days(3)),
+            WALK.copy(streak = StreakUi.Weeks(1)),
+            WALK.copy(id = HabitId("00000000-0000-7000-8000-000000000003"), name = "stretch", streak = StreakUi.Days(1)),
+        )
+        compose.setContent { GawiTheme { TodayScreen(HABITS.copy(rows = rows), NO_ACTIONS, SnackbarHostState()) } }
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText("stretch"))
+
+        compose.onNodeWithText(READ.name)
+            .assert(hasContentDescription(quantity(R.plurals.today_streak_days_spoken, 3)))
+            .assert(hasText(resources.getString(R.string.today_streak_days, 3)).not())
+        compose.onNodeWithText(WALK.name)
+            .assert(hasContentDescription(quantity(R.plurals.today_streak_weeks_spoken, 1)))
+            .assert(hasText(resources.getString(R.string.today_streak_weeks, 1)).not())
+        compose.onNodeWithText("stretch")
+            .assert(hasContentDescription(quantity(R.plurals.today_streak_days_spoken, 1)))
+    }
+
+    /** A break is announced as one, with what was lost in its unit — never "0" and then "was 12". */
+    @Test
+    fun brokenStreak_speaksWhatWasLost() {
+        val rows = listOf(READ.copy(streak = StreakUi.Broken(previous = 12, weekly = false)), WALK)
+        compose.setContent { GawiTheme { TodayScreen(HABITS.copy(rows = rows), NO_ACTIONS, SnackbarHostState()) } }
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText(WALK.name))
+
+        compose.onNodeWithText(READ.name)
+            .assert(hasContentDescription(quantity(R.plurals.today_streak_broken_days_spoken, 12)))
+            .assert(hasText(string(R.string.today_streak_broken)).not())
+            .assert(hasText(resources.getString(R.string.today_streak_was_days, 12)).not())
     }
 
     /** A completed row reports the state it is in, so the ViewModel can undo it. */

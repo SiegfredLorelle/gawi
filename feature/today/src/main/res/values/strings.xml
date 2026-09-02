@@ -32,6 +32,30 @@
     <!-- Stands in for the cut-thread glyph the sketch draws. A resource so
          swapping it for a vector is a one-file change. -->
     <string name="today_streak_broken_glyph">\u2702</string>
+    <!-- Spoken forms of the badge above. "3" and "3w" are the drawn forms, and
+         a screen reader cannot tell one from the other: TalkBack 17 read the
+         badge as a bare "1", "7" and "1 w" (docs/running.md §4, 2026-09-02).
+         "in a row" rather than the widget's "3 days" because the row also
+         carries "2/3 this week", and it is the panel's own milestone phrase,
+         so the row and the line word one fact one way. Real plurals, as the
+         milestone line's are: 1 occurs here on every first completion. -->
+    <plurals name="today_streak_days_spoken">
+        <item quantity="one">%1$d day in a row</item>
+        <item quantity="other">%1$d days in a row</item>
+    </plurals>
+    <plurals name="today_streak_weeks_spoken">
+        <item quantity="one">%1$d week in a row</item>
+        <item quantity="other">%1$d weeks in a row</item>
+    </plurals>
+    <!-- A break says so and keeps its unit: "was 12w" would read as "was 12 w". -->
+    <plurals name="today_streak_broken_days_spoken">
+        <item quantity="one">Streak broken, was %1$d day</item>
+        <item quantity="other">Streak broken, was %1$d days</item>
+    </plurals>
+    <plurals name="today_streak_broken_weeks_spoken">
+        <item quantity="one">Streak broken, was %1$d week</item>
+        <item quantity="other">Streak broken, was %1$d weeks</item>
+    </plurals>
 
     <!-- One line per mood (today-view §4), read as the panel's description
          beside the drawn face. Placeholder wording still — §4's per-mood copy
