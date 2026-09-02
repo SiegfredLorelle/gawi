@@ -18,8 +18,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.gawi.core.domain.model.Schedule
 import com.gawi.core.ui.component.GawiIconButton
@@ -189,7 +189,13 @@ internal fun ColorPicker(form: HabitEditorUiState.Form, onEdit: (HabitEditorUiSt
                     role = Role.RadioButton,
                     onClick = { onEdit(form.copy(color = hex)) },
                 )
-                .semantics { contentDescription = label },
+                // Clearing, not merging: the selected swatch draws a tick, and
+                // TalkBack 17 reads a merged node's child text after its
+                // description (docs/running.md §4, 2026-09-02) — "Gold,
+                // selected, check mark". After `selectable`, which carries the
+                // role, the state and the click: a clearing modifier discards
+                // every semantics modifier later in the chain.
+                .clearAndSetSemantics { contentDescription = label },
             contentAlignment = Alignment.Center,
         ) {
             if (selected) {

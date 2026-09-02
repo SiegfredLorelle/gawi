@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
@@ -12,6 +13,7 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -247,6 +249,22 @@ class HabitEditorScreenTest {
         }
     }
 
+    /**
+     * The selected swatch's tick is drawn and not read. Its name rides a
+     * `selectable`, which merges, and TalkBack 17 reads a merged node's child
+     * text after its description (docs/running.md §4, 2026-09-02) — so the
+     * swatch clears its subtree. The selected assertion is the half that holds
+     * the order: cleared *before* `selectable`, the swatch would lose its state.
+     */
+    @Test
+    fun theSelectedSwatch_doesNotAlsoReadItsTick() {
+        render(habitState(color = HabitPalette.Colors.first()).toForm())
+
+        compose.onNodeWithContentDescription(string(COLOR_LABELS.first())).performScrollTo().assertIsSelected()
+        compose.onAllNodesWithText(SWATCH_TICK).assertCountEquals(0)
+        compose.onAllNodesWithText(SWATCH_TICK, useUnmergedTree = true).assertCountEquals(1)
+    }
+
     @Test
     fun steppingTheTarget_reportsTheNewNumber() {
         render(newHabitForm().copy(schedule = ScheduleUi.Weekly(3)))
@@ -459,3 +477,6 @@ class HabitEditorScreenTest {
 
 /** WCAG 2.5.5, and Android's own floor. A literal on purpose — see the test above. */
 private val MIN_TOUCH_TARGET = 48.dp
+
+/** Mirrors the tick ColorPicker draws on the selected swatch. */
+private const val SWATCH_TICK = "✓"
