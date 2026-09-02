@@ -20,9 +20,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.disabled
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.toggleableState
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.style.TextDecoration
@@ -174,6 +174,17 @@ private fun Modifier.cellSurface(cell: RetroCellUi): Modifier {
  * `combinedClickable` rather than `toggleable`, since a cell now has two
  * gestures. The checkbox role and the toggle's own semantics are restated by
  * hand so what assistive technology hears does not change.
+ *
+ * `clearAndSetSemantics` rather than `semantics`, since 2026-09-02, and the
+ * order of the two modifiers is load-bearing. On a device (TalkBack 17, Nothing
+ * A059, docs/running.md §4) a merged node with a description was read as the
+ * description *and then* every child text — *"Day 30, not done. Mark done.
+ * capital S. 30. Middle dot. Check box"* — so the four drawn texts are cleared
+ * from the tree. Compose clears every semantics modifier *after* the clearing
+ * one in the chain as well as the descendants, so the `combinedClickable` that
+ * carries the role, the click and the long-click label has to stay ahead of it;
+ * `anOpenCell_isACheckboxThatReportsItsState` and
+ * `theNoteAction_isALongClickOnlyWhereItIsOffered` go red if the two swap.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -198,16 +209,17 @@ private fun Modifier.cellAction(cell: RetroCellUi, onCell: (RetroCellUi) -> Unit
             onClick = { onCell(cell) },
             onLongClickLabel = noteLabel.takeIf { notable },
             onLongClick = if (notable) ({ onCellNote(cell) }) else null,
-        ).semantics {
+        ).clearAndSetSemantics {
             contentDescription = if (notable) "$label$hasNote. $action. $noteLabel" else "$label$hasNote. $action"
             toggleableState = ToggleableState(cell.completed)
         }
     } else {
-        // mergeDescendants, because the open branch gets merging for free from
-        // combinedClickable. Without it the one cell this section exists to
-        // explain is four TalkBack stops — its description, then the weekday,
-        // the date and the glyph — where every other cell is one.
-        semantics(mergeDescendants = true) {
+        // Clearing merges as well as it clears: without either, the one cell
+        // this section exists to explain is four TalkBack stops — its
+        // description, then the weekday, the date and the glyph — where every
+        // other cell is one. With merging alone it was one stop that read all
+        // four after the description.
+        clearAndSetSemantics {
             // A shut day still reports its note, the same way it still reports
             // whether it was done: refused, not hidden.
             contentDescription = "$label$hasNote"

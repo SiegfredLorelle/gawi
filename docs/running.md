@@ -2356,6 +2356,17 @@ without sight, and whether it survives a reader who needs it larger.
       stops being a checkbox to a screen reader. Pin that with a Robolectric
       assertion before the change lands. The JVM test that pins the description
       would not notice either way.
+
+      **Pinned, then changed, 2026-09-02.**
+      `anOpenCell_isACheckboxThatReportsItsState`,
+      `theNoteAction_isALongClickOnlyWhereItIsOffered` and
+      `theShutCell_isDisabledAndNotABox` were green before `cellAction`
+      changed and after; `aCell_speaksItsLabelAndNothingElse` holds the four
+      texts out of the merged tree. The `combinedClickable` stays *ahead* of
+      `clearAndSetSemantics` in the chain — Compose clears everything after
+      the clearing modifier, not before it — and that order is what the first
+      two pins hold: reversing it turned both red. Not re-heard, so the box
+      stays open.
 - [x] **200% font scale.** Settings → Display → Font size, at maximum. Three
       screens already carry reasoning about this in comments — `TodayScreen`,
       `HabitDetailScreen` and `SettingsScreen` all scroll or floor a dimension
