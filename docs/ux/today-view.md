@@ -227,7 +227,8 @@ Small decisions that were easier to make once drawn:
   `clearAndSetSemantics`, which is why the drawn `3` is not in the row's text;
   `row_doesNotSpeakTheIcon`, `streak_speaksItsUnit` and
   `brokenStreak_speaksWhatWasLost` pin it, and hearing it is owed
-  (docs/running.md §4).
+  (docs/running.md §4) — including the order: the badge's description is on a
+  child node after the name, so the name should still lead.
 - **An incomplete daily habit still shows its live streak.** Per
   `Streaks.dayStreak`, an unfinished current day has not broken anything —
   it simply has not extended it. A row unchecked at 09:00 must not read

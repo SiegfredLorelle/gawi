@@ -560,8 +560,10 @@ docs/running.md §4 has the boxes.
   streak widget's pattern, which the same device read correctly. The cost is
   visible rows: three at 4×3 where there were five, one full row at the 110dp
   minimum, and the list scrolls; taken with that in view. Open: the glyph is
-  still a separate nameless 32dp stop, because Glance gives no way to remove
-  the control from the tree or grow it, and Scanner will keep listing it.
+  still a separate 32dp stop that said only its state on the launcher measured
+  — the source names it, and the name lands on the wrapper — because Glance
+  gives no way to remove the control from the tree or grow it, and Scanner
+  will keep listing it.
   Closing that means an `Image` glyph on the clickable row (the Streaks shape)
   in place of the `CheckBox`, at the cost of the compound-button wiring and
   `isChecked`. The header's silence is a separate question (§7).

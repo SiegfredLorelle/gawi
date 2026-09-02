@@ -1403,7 +1403,13 @@ took three of the four** — greyscale by the user's eye, the light scheme by
       row stop to read *"Read, done. In list, double tap to activate"* and the
       box stop unchanged; the header's silence and the box's own 32dp are not
       addressed. `WidgetRowTest` pins what the tree asks for. Re-swipe after
-      `make run`.
+      `make run`. **And listen for the name twice**: the box keeps its bare
+      name, which by the folding rule lands on this same row stop, so it is
+      either suppressed by the row's description or read after it — *"Read,
+      done. Read"*. A JVM test cannot tell the two apart. If the name repeats,
+      drop the box's description; if it does not, the "host that attaches it
+      to the control" justification stays untested on this launcher and says
+      so.
 - [x] **The Momo widget is offered, two by two, and says what it is.** Long-press
       → *Widgets* → **Gawi**: three entries. The *Momo* preview on API 31+ is her
       ground and a word with **no face** — deliberate, and widget.md §7 says
@@ -2307,7 +2313,15 @@ without sight, and whether it survives a reader who needs it larger.
       (`streak_speaksItsUnit`, `brokenStreak_speaksWhatWasLost`); the words
       are `:core:ui`'s `spokenStreak`, and habit detail's streak panel — which
       this pass never opened, and which drew *"3w"* and a three-stop break the
-      same way — took them in the same change on review's finding. *Change the
+      same way — took them in the same change on review's finding. **What a
+      row should now say**, and the thing to listen for: *"checked, read, 2 of
+      3 this week, 3 days in a row, checkbox"* — the name first. The row's own
+      node carries no description, so TalkBack reads its children in order,
+      and the badge is last; a review predicted the badge would lead because
+      the row is now a merged node with a description *and* text, which is
+      the shape this branch removes elsewhere — but the description here is
+      on a child, not on the row. If the phone hears the badge first, describe
+      the whole row after `toggleable` (the widget row's shape). *Change the
       day cutoff*, by D-pad: every settings
       row is one stop reading title, value and helper in order (*"Day is nearly
       over at. 21:00. When Momo starts…"*), so the row is reachable and named;
