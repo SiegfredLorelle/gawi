@@ -11,8 +11,10 @@ activityCompose = "1.13.0"
 lifecycle = "2.11.0"
 hilt = "2.60.1"
 # Navigation arrives with the second screen (docs/architecture.md §2).
-# 2.10.0 is still rc at the time of writing; every other version here is
-# stable, so this one is too.
+# 2.10.0 has been stable since it followed 2.10.0-rc01. This line used to
+# say it was still rc, which was true while the pin was 2.9.8 and was the
+# reason for it; the bump to 2.10.0 left it contradicting the version
+# under it. Every version here is a stable release — keep it that way.
 navigation = "2.10.0"
 androidxHilt = "1.4.0"
 # Glance is NOT in the compose BOM; it ships on its own train, so this is a
