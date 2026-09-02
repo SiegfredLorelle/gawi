@@ -31,8 +31,10 @@ import org.robolectric.RobolectricTestRunner
  * the first real thriving throws a party for something that happened before the
  * app opened.
  *
- * The two tests are a pair. The second is the control: without it a broken rig
- * that could never observe a celebration would make the first one green.
+ * The two tests are a pair, and the second is the control: without it a broken
+ * rig that could never observe a celebration would make the first one green.
+ * They are not redundant — the first ends by celebrating on a state that has
+ * already been through the null, the second on a fresh one.
  */
 @RunWith(RobolectricTestRunner::class)
 class CelebrationGuardTest {
@@ -40,7 +42,17 @@ class CelebrationGuardTest {
     @get:Rule
     val compose = createComposeRule()
 
-    /** `Loading` then a finished day: the mood the screen opens on is a sighting, not an event. */
+    /**
+     * `Loading` then a finished day: the mood the screen opens on is a sighting,
+     * not an event — and skipping that sighting does not wedge the state.
+     *
+     * The second half is the point of the continuation. A guard written as an
+     * early return can silently become permanent, and a test that stopped at
+     * "did not celebrate" would pass just as well on a state that could never
+     * celebrate again. There was a third assertion here, before the first
+     * `mood.value`; it could not fail, because `progress` is `Animatable(1f)`
+     * and so `isOver` is true from construction, before this ever composed.
+     */
     @Test
     fun `a mood arriving after none never celebrates`() {
         val mood = mutableStateOf<Mood?>(null)
@@ -48,15 +60,22 @@ class CelebrationGuardTest {
         compose.mainClock.autoAdvance = false
         compose.setContent { state = rememberCelebration(mood.value, animationsOn = true) }
         settle()
-        assertTrue("there is nothing to celebrate before a mood arrives", state.isOver.value)
 
         mood.value = Mood.THRIVING
         settle()
-
         assertTrue("a day already finished when the screen opened is not a celebration", state.isOver.value)
+
+        // The same state object, now carrying a real `previous`: leaving thriving
+        // and coming back is the day being finished while watching.
+        mood.value = Mood.CONTENT
+        settle()
+        mood.value = Mood.THRIVING
+        settle()
+
+        assertFalse("the skipped sighting must not have left this state unable to celebrate", state.isOver.value)
     }
 
-    /** The control: the same rig must be able to see a real celebration, or the test above proves nothing. */
+    /** The control: the same rig must be able to see a real celebration from a fresh state. */
     @Test
     fun `finishing the day while watching celebrates`() {
         val mood = mutableStateOf<Mood?>(Mood.CONTENT)
@@ -64,7 +83,6 @@ class CelebrationGuardTest {
         compose.mainClock.autoAdvance = false
         compose.setContent { state = rememberCelebration(mood.value, animationsOn = true) }
         settle()
-        assertTrue("the resting state, before the day is finished", state.isOver.value)
 
         mood.value = Mood.THRIVING
         settle()
