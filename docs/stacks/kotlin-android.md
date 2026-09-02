@@ -30,7 +30,7 @@ fmt: ## Format the codebase
 	./gradlew spotlessApply
 
 lint: ## Lint and type-check the codebase
-	./gradlew spotlessCheck detekt lint
+	./gradlew spotlessCheck detekt lint :app:assembleDebug
 
 test: ## Run the test suite
 	./gradlew test
@@ -38,8 +38,10 @@ test: ## Run the test suite
 
 `./gradlew help` looks like a no-op but the wrapper downloads the Gradle
 distribution and warms the daemon, which is exactly what `setup` means here.
-`lint` is three gates in one: formatting (Spotless check, non-mutating),
-static analysis (detekt), and Android Lint. `test` is deliberately generic —
+`lint` is four gates in one: formatting (Spotless check, non-mutating),
+static analysis (detekt), Android Lint, and a debug assemble — the one step
+that packages, without which CI never proves the app builds into an APK
+(architecture §9). `test` is deliberately generic —
 it resolves to plain `test` on pure-JVM modules and the unit-test tasks on
 Android modules, so a newly added module can never be silently skipped the
 way an explicit task list would allow.

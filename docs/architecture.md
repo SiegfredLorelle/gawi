@@ -693,7 +693,7 @@ The template's Makefile contract maps to Gradle as:
 |---|---|
 | `make setup` | `./gradlew help` warm-up (wrapper fetches everything) + git hooks |
 | `make fmt` | Spotless (ktlint) apply |
-| `make lint` | `scripts/check-citations.sh`, then Spotless check + detekt + Android Lint |
+| `make lint` | `scripts/check-citations.sh`, then Spotless check + detekt + Android Lint + `:app:assembleDebug` |
 | `make test` | `./gradlew test` (module-generic: JVM modules' `test` plus Android modules' unit tests; a new module can never be silently skipped) |
 | `make itest` | `./gradlew :app:connectedDebugAndroidTest` — needs a device; not called by CI (see below) |
 | `make run` | `./gradlew :app:installDebug` + `adb shell am start` (see below) |
@@ -720,6 +720,19 @@ Deviations and notes:
   `robolectric` comment in `gradle/libs.versions.toml` came to name a
   `robolectric.properties` path that had never existed. It also refuses a bare
   `§N` in a file that uses that number for two different documents.
+- **`make lint` gained a second step, `:app:assembleDebug`** (2026-09-02). Same
+  shape as the citation check — inside an existing target, so `ci.yml` is
+  untouched. What it closes: CI ran `setup`, `lint` and `test`, and none of the
+  three merged a manifest, merged resources or dexed, so **a green CI run said
+  nothing about whether the app built into an APK**. Found while checking
+  whether the AGP 9.3.2 bump needed device testing: the only APK on disk was
+  from the previous day's toolchain, because nothing in the gates had ever
+  produced one. It goes in `lint` and not `test` for two reasons: `test` is
+  documented above as plain `./gradlew test`, module-generic, and an `:app:`
+  task there would falsify that; and `lint` is CI's first Gradle gate, so a
+  packaging break fails early. Debug rather than release because release is
+  unsigned and R8 is deferred (running.md §3) — assembling it would add an
+  unsigned artifact and no information.
 - **The citation check is a script, not a Gradle task.** A task would be the more
   idiomatic home — `build-logic/` owns build configuration, and no convention
   plugin registers a custom task today, so this is deliberately not the start of

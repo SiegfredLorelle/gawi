@@ -46,9 +46,18 @@ fmt: ## Format the codebase
 # The citation check runs first because it takes about a second and Gradle takes
 # minutes, so a stale `docs/` reference fails fast instead of at the end. It is a
 # script and not a Gradle task on purpose — see its header, and architecture §9.
+#
+# `:app:assembleDebug` runs last because it is the only step here that packages.
+# CI calls nothing but `make`, and until 2026-09-02 none of fmt/lint/test merged
+# a manifest, merged resources or dexed anything, so a green run said nothing
+# about whether the app still built into an APK — a packaging regression waited
+# for the next `make run`. Debug and not release: release is unsigned and R8 is
+# deferred (docs/running.md §3), so assembling it would prove nothing more.
+# It lives in `lint` rather than `test` so `test` stays plain `./gradlew test`
+# (architecture §9), and so the break shows up at CI's first gate, not its last.
 lint: ## Lint and type-check the codebase
 	./scripts/check-citations.sh
-	./gradlew spotlessCheck detekt lint
+	./gradlew spotlessCheck detekt lint :app:assembleDebug
 
 test: ## Run the test suite
 	./gradlew test
