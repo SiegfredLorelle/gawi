@@ -51,8 +51,9 @@ import com.gawi.core.ui.theme.GawiSpacing
  * character on their own grounds (momo.md §4).
  *
  * `toMvp()` used to be called here and nowhere else; the fourth face made it
- * dead and it is gone. What is deferred is still §1's behaviour — the collapse
- * into an app-bar chip on scroll — not the slot.
+ * dead and it is gone. §1's behaviour — the collapse into an app-bar chip on
+ * scroll — is built, and is [TodayChip] below rather than anything here; the
+ * slot is unchanged by it, which is why that is the whole of the news.
  */
 @Composable
 internal fun MascotPanel(mascot: MascotUi, motion: TodayMotion, modifier: Modifier = Modifier) {
@@ -104,8 +105,8 @@ internal fun MascotPanel(mascot: MascotUi, motion: TodayMotion, modifier: Modifi
 }
 
 /**
- * today-view §1's app-bar chip: the mood and the remaining count, once the tank
- * has scrolled away.
+ * today-view §1's app-bar chip: the mood and the remaining count once the tank
+ * has scrolled away, and the milestone line in the count's place while one runs.
  *
  * §1 accepted that Momo leaves the screen on a long list and named this chip as
  * the mitigation, "deliberately small". Small is what it is — a face and a short

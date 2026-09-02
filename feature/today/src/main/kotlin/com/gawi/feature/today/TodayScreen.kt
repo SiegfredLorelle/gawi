@@ -41,7 +41,8 @@ import java.time.LocalDate
  * list rather than sitting above it as a fixed header — see the comment on the
  * Habits branch for why — and §1's chip is the part that survived: once the tank
  * has scrolled off, the app bar carries the mood and the remaining count in its
- * place. That was deferred until the data path underneath this had run on a
+ * place — and the milestone line in the count's place for the length of a run.
+ * That was deferred until the data path underneath this had run on a
  * device, because a scroll animation and a mood state machine on the same
  * unproven screen is the wrong thing to debug first. It has, on four.
  */
@@ -130,8 +131,12 @@ internal fun TodayScreen(state: TodayUiState, actions: TodayActions, snackbarHos
             // sit above the list as a fixed header; a 250dp tank (docs/ux/momo.md
             // §4) above an unscrollable column leaves a small screen, or a large
             // font scale, with the button or the second row below the fold. §1
-            // already accepted Momo leaving the screen on a long list; the
-            // collapse into an app-bar chip is what is still deferred.
+            // already accepted Momo leaving the screen on a long list, and the
+            // collapse into an app-bar chip is the mitigation it named: built
+            // 2026-08-31, carrying the milestone line since 2026-09-01. What is
+            // still open in §1 is not whether the chip exists but *when* it
+            // appears — the trigger is the panel leaving the viewport entirely,
+            // which on a short list never happens.
             is TodayUiState.Empty -> {
                 Column(
                     Modifier
