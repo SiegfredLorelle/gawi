@@ -15,6 +15,7 @@ import androidx.glance.findModifier
 import androidx.glance.testing.GlanceNodeMatcher
 import androidx.glance.testing.unit.MappedNode
 import androidx.glance.testing.unit.hasContentDescription
+import androidx.glance.testing.unit.hasContentDescriptionEqualTo
 import com.gawi.widget.testsupport.habitId
 import com.gawi.widget.testsupport.todayHabit
 import com.gawi.widget.testsupport.todaySnapshot
@@ -51,11 +52,11 @@ class WidgetRowTest {
         onAllNodes(image()).assertCountEquals(2)
     }
 
-    /** On the checkbox, so TalkBack pairs the name with the checked state; the image is decorative. */
+    /** The bare name stays on the checkbox; the row carries name and state, and the image is decorative. */
     @Test
     fun `the name is what the checkbox is described as`() = render {
-        onAllNodes(hasContentDescription("read")).assertCountEquals(1)
-        onAllNodes(hasContentDescription("walk")).assertCountEquals(1)
+        onAllNodes(hasContentDescriptionEqualTo("read")).assertCountEquals(1)
+        onAllNodes(hasContentDescriptionEqualTo("walk")).assertCountEquals(1)
         onAllNodes(describedCheckBox("read")).assertCountEquals(1)
     }
 

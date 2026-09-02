@@ -14,6 +14,15 @@
     <string name="widget_mood_content">Momo is pottering about.</string>
     <string name="widget_mood_worried">Momo is getting worried.</string>
     <string name="widget_mood_regenerating">Momo is regrowing a gill. Pick the thread back up.</string>
+    <!-- One Today row, as TalkBack reads it: the name, then whether today is
+         done. On the row, not the checkbox, because Glance describes the box's
+         wrapper and TalkBack stops only at the row and the control
+         (TodayWidget.kt, HabitRows). "done" / "not done" is what the retro
+         strip and the history grid already say (habits_strip_not_done,
+         insights_day_not_done). -->
+    <string name="widget_today_row_description">%1$s, %2$s</string>
+    <string name="widget_today_row_done">done</string>
+    <string name="widget_today_row_not_done">not done</string>
     <!-- ===== The streak widget (docs/ux/visual-identity.md 7.4) ===== -->
     <string name="widget_streak_name">Streaks</string>
     <!-- Shown by the launcher's widget picker on API 31+, from res/xml-v31. -->
