@@ -157,9 +157,16 @@ class HabitListScreenTest {
         compose.onNodeWithContentDescription(archive(SWIM.name)).assertIsDisplayed().assertHasClickAction()
         compose.onAllNodesWithContentDescription(string(R.string.habits_archive)).assertCountEquals(0)
         compose.onAllNodesWithText(string(R.string.habits_archive)).assertCountEquals(0)
+        // …and still drawn: the label is cleared from semantics, not from the screen.
+        compose.onAllNodesWithText(string(R.string.habits_archive), useUnmergedTree = true).assertCountEquals(2)
     }
 
-    /** The spoken name begins with the drawn word (WCAG 2.5.3), and a copy edit to one side alone fails here. */
+    /**
+     * The spoken name begins with the drawn word (WCAG 2.5.3), and a copy edit
+     * to one side alone fails here. That the word is *drawn* is the unmerged
+     * assertion in [archiveButtons_areNamedForTheirOwnRow]; this compares the
+     * two strings.
+     */
     @Test
     fun archiveDescription_leadsWithTheDrawnWord() {
         assertTrue(archive("x").startsWith(string(R.string.habits_archive)))
@@ -177,6 +184,8 @@ class HabitListScreenTest {
         render(HabitListUiState.Habits(active = listOf(READ), archived = emptyList()))
 
         compose.onAllNodesWithText(READ.icon).assertCountEquals(0)
+        // Cleared from semantics, not from the screen — the unmerged tree keeps it.
+        compose.onAllNodesWithText(READ.icon, useUnmergedTree = true).assertCountEquals(1)
     }
 
     /**
