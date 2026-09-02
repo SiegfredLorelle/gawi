@@ -448,10 +448,14 @@ decorative — so the widget never says "Momo is pottering about. pottering." **
 the Nothing launcher it says neither** (2026-09-02, docs/running.md §4): the
 widget is one stop, *"Momo"*, the launcher's label for the frame, and the next
 swipe leaves it. The face's description is there and unreachable, because the
-frame is described and nothing inside it is focusable; the Streaks widget's rows
-are reachable for exactly the opposite reason. A focusable node inside the body
-is the shape of the fix, once a second launcher has said whether this is the
-launcher's habit or every launcher's. With
+frame is described and nothing inside it is reached. What separates this body
+from the two that are reached is the container, not clickability: the Streaks
+rows carry no click action at all and are still stops of their own, the Today
+rows are stops too, and both live in a Glance `LazyColumn` that lands as a real
+list in the hosted tree, while this body is a `Box` and a `Column`. So the cheap
+experiment is a one-item `LazyColumn` around the face, not a clickable — once a
+second launcher has said whether this is the launcher's habit or every
+launcher's. With
 no habits the roles swap, the way the Today widget's do: the no-habits copy is
 drawn and read, and the face is decorative. A failed read draws the failure copy
 and no face, because nothing was read.

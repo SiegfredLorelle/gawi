@@ -224,7 +224,12 @@ weekday letter, day number, tick or dot, note mark — are read after it, becaus
 `cellAction` sets the description on a merged node and this TalkBack reads the
 merged text too. The shut day is disabled with no role, so it cannot announce as
 a box, but it carries the same trailing glyphs. `clearAndSetSemantics` on the
-cell is the fix, and the test that pins the label would pass either side of it.
+cell is the shape of the fix, and here it is not a plain swap: the open cell's
+description is chained onto the `combinedClickable` that gives it
+`Role.Checkbox` and its toggle state — the very things the transcript shows
+announced — so the clearing must keep both, and a Robolectric assertion should
+pin that before the change lands. The test that pins the label would pass
+either side of it.
 
 ### Every past-day write confirms, in both directions
 
