@@ -402,12 +402,14 @@ class TodayScreenTest {
      * What the chip *says* is not what the chip shows, and the count has to
      * survive the difference.
      *
-     * A node carrying a `contentDescription` has its `text` ignored by TalkBack.
-     * The chip has both — the short label is drawn, the sentence is spoken — so
-     * a description naming only the mood would drop the count from the
-     * announcement while every visible-text assertion above stayed green. That
-     * is the bug this pins, and it is not one a label assertion can see: the
-     * label is exactly the part a screen reader does not read.
+     * The chip has both a short drawn label and a spoken sentence, so a
+     * description naming only the mood would drop the count from what a screen
+     * reader says while every visible-text assertion above stayed green. That
+     * is the bug this pins, and it is not one a label assertion can see. It was
+     * written on the premise that TalkBack ignores a described node's `text`;
+     * a device showed the text is read *after* the description instead
+     * (docs/ux/today-view.md §1), so this proves the description is complete,
+     * not that it is all that is spoken.
      */
     @Test
     fun chip_speaksTheCountItShows() {
