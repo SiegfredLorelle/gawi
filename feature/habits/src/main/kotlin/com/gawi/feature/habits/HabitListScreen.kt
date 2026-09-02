@@ -30,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -124,6 +125,15 @@ private fun HabitList(state: HabitListUiState.Habits, actions: HabitListActions,
  * than the row itself toggling archived. Archiving is the one of the two that
  * feels destructive, so it gets its own target and its own word instead of
  * being what happens when you meant to tap a name.
+ *
+ * **The button is named for its row** — "Archive Read", "Bring back Read" —
+ * since 2026-09-02, when Accessibility Scanner on a device listed fourteen
+ * buttons all announcing *"Archive"* (docs/running.md §4). The description is
+ * `semantics`, not `clearAndSetSemantics`: `Button` adds its role and `Surface`
+ * its click *after* the caller's modifier on the same node, and a clearing
+ * modifier discards everything after it. The drawn word is cleared instead, so
+ * it is not read a second time after the description, and the description
+ * leads with it so the name a reader hears begins with the label they see.
  */
 @Composable
 private fun HabitManageRow(row: HabitListRowUi, actions: HabitListActions, modifier: Modifier = Modifier) {
@@ -134,8 +144,18 @@ private fun HabitManageRow(row: HabitListRowUi, actions: HabitListActions, modif
     ) {
         HabitIcon(icon = row.icon, tint = row.iconTint)
         HabitTitles(row, Modifier.weight(1f), onOpen = { actions.onOpen(row.id) })
-        TextButton(onClick = { actions.onArchiveToggle(row.id, row.archived) }) {
-            Text(stringResource(if (row.archived) R.string.habits_unarchive else R.string.habits_archive))
+        val spoken = stringResource(
+            if (row.archived) R.string.habits_unarchive_spoken else R.string.habits_archive_spoken,
+            row.name,
+        )
+        TextButton(
+            onClick = { actions.onArchiveToggle(row.id, row.archived) },
+            modifier = Modifier.semantics { contentDescription = spoken },
+        ) {
+            Text(
+                stringResource(if (row.archived) R.string.habits_unarchive else R.string.habits_archive),
+                modifier = Modifier.clearAndSetSemantics { },
+            )
         }
     }
 }

@@ -1,8 +1,12 @@
 package com.gawi.feature.habits
 
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -45,6 +49,11 @@ class HabitListScreenTest {
     private val resources = RuntimeEnvironment.getApplication().resources
 
     private fun string(id: Int): String = resources.getString(id)
+
+    /** The Archive button's whole accessible name for one row; its drawn word is cleared, so this is what a test finds. */
+    private fun archive(name: String): String = resources.getString(R.string.habits_archive_spoken, name)
+
+    private fun bringBack(name: String): String = resources.getString(R.string.habits_unarchive_spoken, name)
 
     private fun render(state: HabitListUiState, actions: HabitListActions = NO_ACTIONS) {
         compose.setContent {
@@ -105,13 +114,17 @@ class HabitListScreenTest {
      * offering "Archive" on an already-archived habit would be accepted by the
      * domain, write a redundant event, and leave the habit exactly where it was
      * — a dead button with no error to show for it.
+     *
+     * By the spoken name rather than the drawn word, because the drawn word is
+     * cleared from semantics (HabitManageRow says why) and is found in neither
+     * tree.
      */
     @Test
     fun archivedRow_offersBringBackAndActiveRowOffersArchive() {
         render(HabitListUiState.Habits(active = listOf(READ), archived = listOf(OLD)))
 
-        compose.onNodeWithText(string(R.string.habits_archive)).assertIsDisplayed()
-        compose.onNodeWithText(string(R.string.habits_unarchive)).assertIsDisplayed()
+        compose.onNodeWithContentDescription(archive(READ.name)).assertIsDisplayed()
+        compose.onNodeWithContentDescription(bringBack(OLD.name)).assertIsDisplayed()
     }
 
     /** The row's own archived state travels with the tap, not the screen's. */
@@ -123,10 +136,47 @@ class HabitListScreenTest {
             NO_ACTIONS.copy(onArchiveToggle = { id, archived -> reported += id to archived }),
         )
 
-        compose.onNodeWithText(string(R.string.habits_archive)).performClick()
-        compose.onNodeWithText(string(R.string.habits_unarchive)).performClick()
+        compose.onNodeWithContentDescription(archive(READ.name)).performClick()
+        compose.onNodeWithContentDescription(bringBack(OLD.name)).performClick()
 
         assertEquals(listOf(READ.id to false, OLD.id to true), reported)
+    }
+
+    /**
+     * Each button is named for its own row, and no bare "Archive" survives in
+     * any form. Accessibility Scanner on a device listed fourteen buttons with
+     * one description (docs/running.md §4, 2026-09-02). The click action is
+     * asserted too: it is the reason the button takes `semantics` and not
+     * `clearAndSetSemantics`, which would have taken the click with the text.
+     */
+    @Test
+    fun archiveButtons_areNamedForTheirOwnRow() {
+        render(HabitListUiState.Habits(active = listOf(READ, SWIM), archived = emptyList()))
+
+        compose.onNodeWithContentDescription(archive(READ.name)).assertIsDisplayed().assertHasClickAction()
+        compose.onNodeWithContentDescription(archive(SWIM.name)).assertIsDisplayed().assertHasClickAction()
+        compose.onAllNodesWithContentDescription(string(R.string.habits_archive)).assertCountEquals(0)
+        compose.onAllNodesWithText(string(R.string.habits_archive)).assertCountEquals(0)
+    }
+
+    /** The spoken name begins with the drawn word (WCAG 2.5.3), and a copy edit to one side alone fails here. */
+    @Test
+    fun archiveDescription_leadsWithTheDrawnWord() {
+        assertTrue(archive("x").startsWith(string(R.string.habits_archive)))
+        assertTrue(bringBack("x").startsWith(string(R.string.habits_unarchive)))
+    }
+
+    /**
+     * The icon badge is not in the tree. On this unmerged row it was a stop of
+     * its own, reading the emoji's Unicode name (docs/running.md §4,
+     * 2026-09-02). Pinned here because `:core:ui`, which owns `HabitIcon`, has
+     * no Compose tests.
+     */
+    @Test
+    fun iconBadge_isDecorative() {
+        render(HabitListUiState.Habits(active = listOf(READ), archived = emptyList()))
+
+        compose.onAllNodesWithText(READ.icon).assertCountEquals(0)
     }
 
     /**

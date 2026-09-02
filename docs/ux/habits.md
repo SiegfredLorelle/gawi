@@ -70,7 +70,11 @@ Fields are fixed by `HabitMetadata(name, icon, color, schedule, tag)`.
   palette is what the editor offers, not a guarantee about what is in the log,
   which may hold anything an import or the old debug seeder wrote.
   Icons are **emoji**, because `HabitMetadata.icon` is a `String` that has to
-  survive an export and an import, and a drawable resource id would not.
+  survive an export and an import, and a drawable resource id would not. They
+  are decorative wherever a name sits beside them — `HabitIcon` clears its
+  semantics, since 2026-09-02, after a device read the emoji's Unicode name as
+  its own stop; only the editor's picker speaks them, by those platform names.
+  A positional `ICON_LABELS` mirroring `COLOR_LABELS` is the follow-up there.
 - **Schedule** — daily, or weekly with a target. **The target is capped at
   1..7, and the cap is load-bearing.** `Schedule.Weekly` validates with
   `require`, so an out-of-range target **throws** rather than returning a
@@ -148,6 +152,15 @@ The separation this section is about is unchanged — the destructive action sti
 has its own target and its own word — and what moved is only which screen the
 safe tap opens. Detail is the better default: opening a habit is usually to look
 at it, and the editor is one tap further on rather than unreachable.
+
+**Amended 2026-09-02:** the button is named for its row — *"Archive Read"*,
+*"Bring back Read"*. Fourteen buttons announcing *"Archive"* failed Accessibility
+Scanner's same-description check on a device (docs/running.md §4). The
+description leads with the drawn word (WCAG 2.5.3) and the drawn label is
+cleared from semantics, since this TalkBack reads a merged node's text after its
+description; `clearAndSetSemantics` on the button itself would have taken its
+role and click with the text, which `archiveButtons_areNamedForTheirOwnRow`
+asserts against. Not yet re-scanned.
 
 Contrast the Today view, where §5 of [today-view.md](today-view.md)
 deliberately makes the *whole row* the toggle: there, one tap is the point, and

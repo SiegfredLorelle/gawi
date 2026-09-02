@@ -2270,7 +2270,10 @@ without sight, and whether it survives a reader who needs it larger.
       the picker itself was not driven. *Add a habit* was not swiped. One
       "two targets that say the same thing" came from the Scanner instead: the
       fourteen *Archive* buttons on the habit list all announce *"Archive"* with
-      no habit name.
+      no habit name. **Fixed 2026-09-02, unheard**: each is *"Archive Read"* /
+      *"Bring back Read"* with the drawn word cleared
+      (`archiveButtons_areNamedForTheirOwnRow`). The box stays open until a
+      device hears all three fixes.
 - [ ] **A TalkBack pass over the Insights screen.** Two pickers and a list, and
       the thing to listen for is whether a bar row makes sense read aloud: the
       label, the total, and nothing announcing the bar itself. The bars carry no
@@ -2411,7 +2414,9 @@ without sight, and whether it survives a reader who needs it larger.
       colour emoji, so this is noise while icons are emoji and would be real the
       day a plain character is allowed; a decision for visual-identity, not a
       bug. (2) *Multiple items have the same description*: the fourteen
-      **Archive** buttons on the habit list (real — no habit name), the repeated
+      **Archive** buttons on the habit list (real — no habit name; fixed
+      2026-09-02, pinned by `archiveButtons_areNamedForTheirOwnRow`, not yet
+      re-scanned), the repeated
       rate and schedule texts across Insights bar rows (the unmerged rows
       again), and the "—" placeholders under the history's rate columns (noise).
       (3) On

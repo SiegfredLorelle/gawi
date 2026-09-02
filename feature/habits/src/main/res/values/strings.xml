@@ -16,6 +16,15 @@
     <string name="habits_archived_header">Archived</string>
     <string name="habits_archive">Archive</string>
     <string name="habits_unarchive">Bring back</string>
+    <!-- Spoken labels for the two buttons above, one per row. Fourteen rows all
+         announcing "Archive" fail the Scanner's same-description check and tell
+         a reader nothing about which habit is under focus (docs/running.md §4,
+         2026-09-02). The first word must stay equal to habits_archive /
+         habits_unarchive: the drawn label is cleared from semantics, so this
+         is the whole accessible name, and it has to begin with what is drawn
+         (WCAG 2.5.3). archiveDescription_leadsWithTheDrawnWord pins that. -->
+    <string name="habits_archive_spoken">Archive %1$s</string>
+    <string name="habits_unarchive_spoken">Bring back %1$s</string>
     <string name="habits_edit">Edit</string>
     <!-- The row's click label. "Open" rather than "Edit" since 2026-08-21: the
          title block leads to detail, and detail is where Edit now lives. -->
