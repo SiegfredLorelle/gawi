@@ -2284,7 +2284,10 @@ without sight, and whether it survives a reader who needs it larger.
       description and this TalkBack reads both (`LabelledColumns`). The
       Scanner adds that the repeated *"0%"* and *"Every day · best 1 day"*
       texts across rows count as duplicate descriptions, which is the same
-      unmerged-row structure seen from the other side.
+      unmerged-row structure seen from the other side. **Changed 2026-09-02**:
+      `LabelledColumns` clears the column where it describes it; `a trend
+      column speaks its month once, not its texts as well` pins it. The rate
+      card's undescribed columns are untouched. Not re-heard.
 - [ ] **A TalkBack pass over the history grid, swipe-only.** Its own item because
       it is the one screen in this app that **hides content from a screen
       reader** — the seven column letters carry `clearAndSetSemantics`, since `T`
@@ -2308,6 +2311,10 @@ without sight, and whether it survives a reader who needs it larger.
       cell read *"Thursday 20, not done. **20**"* — the bare day number trails
       the description, the same leak as the strip and the columns
       (`HistoryGrid.kt` merges under a description). Tedium was not judged.
+      **Changed 2026-09-02**: `DayCell` clears rather than merges; `a day cell
+      speaks its label and not its number after it` pins it, and `the days up
+      to today are drawn` now reads the numbers off the unmerged tree, where
+      they still are. Not re-heard.
 - [x] **The colour picker's swatch names.** Every swatch announces a name rather
       than a hex, and after the retune one of those names moved: the seventh is
       "Gold", not "Yellow", because the hue at that slot is `#9C851F` and calling

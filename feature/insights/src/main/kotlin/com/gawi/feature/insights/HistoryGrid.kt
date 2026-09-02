@@ -21,7 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.gawi.core.ui.date.weekdayName
@@ -146,10 +145,12 @@ private fun DayCell(cell: DayCellUi, modifier: Modifier = Modifier) {
             .defaultMinSize(minHeight = CELL_MIN_HEIGHT)
             .background(ground, shape)
             .then(if (cell.isToday) Modifier.border(BorderStroke(CELL_RING, ring), shape) else Modifier)
-            // Merged and described by hand, like the strip's shut cell: without
-            // it the number is its own stop and says "14" with no month, no
-            // weekday and no state.
-            .semantics(mergeDescendants = true) { contentDescription = label }
+            // Cleared and described by hand, like the strip's cells. Merged
+            // instead, the number stayed its own text and TalkBack 17 read it
+            // after the description — "Thursday 20, not done. 20" (2026-09-02,
+            // docs/running.md §4); with neither, it is its own stop and says
+            // "14" with no month, no weekday and no state.
+            .clearAndSetSemantics { contentDescription = label }
             .padding(vertical = CELL_PADDING),
         contentAlignment = Alignment.Center,
     ) {

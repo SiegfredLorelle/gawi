@@ -1,6 +1,9 @@
 package com.gawi.feature.insights
 
 import androidx.annotation.StringRes
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -100,8 +103,10 @@ class HistoryScreenTest {
     fun `the days up to today are drawn`() {
         render(month())
 
+        // The unmerged tree: a cell clears its number from what is spoken, and
+        // this test is about what is drawn.
         listOf("1", "3", "17", "18").forEach { day ->
-            compose.onNodeWithText(day).assertIsDisplayed()
+            compose.onNodeWithText(day, useUnmergedTree = true).assertIsDisplayed()
         }
     }
 
@@ -116,7 +121,7 @@ class HistoryScreenTest {
         render(month())
 
         listOf("19", "20", "31").forEach { day ->
-            compose.onAllNodesWithText(day).assertCountEquals(0)
+            compose.onAllNodesWithText(day, useUnmergedTree = true).assertCountEquals(0)
         }
         // And nothing claims a state for one either.
         compose.onAllNodesWithContentDescription(dayLabel(R.string.insights_day_not_done, DayOfWeek.WEDNESDAY, 19))
@@ -128,7 +133,7 @@ class HistoryScreenTest {
     fun `an earlier month draws every one of its days`() {
         render(month(month = THIS_MONTH.minusMonths(1)))
 
-        compose.onNodeWithText("31").assertIsDisplayed()
+        compose.onNodeWithText("31", useUnmergedTree = true).assertIsDisplayed()
     }
 
     @Test
@@ -138,6 +143,24 @@ class HistoryScreenTest {
 
         compose.onNodeWithContentDescription(dayLabel(R.string.insights_day_done, DayOfWeek.MONDAY, 3)).assertIsDisplayed()
         compose.onNodeWithContentDescription(dayLabel(R.string.insights_day_not_done, DayOfWeek.TUESDAY, 4)).assertIsDisplayed()
+    }
+
+    /**
+     * The label is the whole announcement. TalkBack 17 read a cell as
+     * *"Thursday 20, not done. 20"* — the description and then the number it
+     * draws — because the cell merged a described node with a text child
+     * (docs/running.md §4, 2026-09-02). It clears the child now: the cell's node
+     * has no text, the number is gone from the merged tree, and the unmerged
+     * tree says it is still drawn.
+     */
+    @Test
+    fun `a day cell speaks its label and not its number after it`() {
+        render(month(completed = mapOf(thisMonth(3) to null)))
+
+        compose.onNodeWithContentDescription(dayLabel(R.string.insights_day_done, DayOfWeek.MONDAY, 3))
+            .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Text))
+        compose.onAllNodesWithText("3").assertCountEquals(0)
+        compose.onNodeWithText("3", useUnmergedTree = true).assertIsDisplayed()
     }
 
     /**
@@ -236,7 +259,7 @@ class HistoryScreenTest {
     }
 
     /**
-     * A weekly habit says so, because §4 forbids reading its percentages as a
+     * A weekly habit says so, because docs/ux/insights.md §4 forbids reading its percentages as a
      * daily habit's. Asserted through the formatted string so the argument is
      * checked too — an id with no target passed would render "%1$d× a week".
      */
@@ -293,7 +316,7 @@ class HistoryScreenTest {
         render(HistoryUiState.Loading)
 
         compose.onNodeWithText(string(R.string.insights_history_title)).assertIsDisplayed()
-        compose.onAllNodesWithText("18").assertCountEquals(0)
+        compose.onAllNodesWithText("18", useUnmergedTree = true).assertCountEquals(0)
         compose.onAllNodesWithContentDescription(string(R.string.insights_month_previous)).assertCountEquals(0)
     }
 
