@@ -1,9 +1,9 @@
 # PRD: Gawi (working title) — habit tracker with Momo the axolotl
 
-**Version:** 0.5 (draft)
+**Version:** 0.6 (draft)
 **Author:** Siegfred Lorelle Mina
 **Status:** Baseline for iteration
-**Last updated:** 2026-08-23
+**Last updated:** 2026-09-03
 
 ---
 
@@ -30,7 +30,7 @@ Existing habit trackers are cloud-first, account-required, and lock data behind 
 ### Non-Goals (for now)
 - iOS, web, desktop (Android first; others later)
 - Social features, sharing, leaderboards
-- Full gamification systems (XP, currencies, shops)
+- Full gamification systems (XP, currencies, shops). **Boundary drawn 2026-09-03:** unlockables tied to the user's own record — a costume Momo earns at a streak, something new in the tank after a good month — are motivation and in scope for 1.x (§5); anything bought, traded or counted in a currency stays out.
 - Running timers / time tracking
 - Heavy goal-management features (tags are the lightweight substitute)
 
@@ -115,7 +115,7 @@ the app onto a phone.
 - Configurable: day boundary time, week start day (default Monday), reminder time, timezone behavior (default: device timezone).
 - **A fourth preference that is not on this list landed 2026-08-26**: the app's theme, as System / Light / Dark ([docs/ux/settings.md](ux/settings.md) §7). Not scope creep so much as the last thing OQ-4 left owed — the two schemes were designed and built on 2026-08-23 and the device could choose between them, but the user could not. Timezone behaviour, the fourth item this line *does* list, remains deliberately unbuilt for the reason that document's §1 gives: it has exactly one value.
 
-**MVP success criteria:** I use it every day for 30 consecutive days without reverting to my old method. **Waived on 2026-08-23 — not met, not failed, not run.** Kept rather than deleted because three other things in this document were leaning on it: §9's first risk named it as its only mitigation, and OQ-1 and OQ-3 were both explicitly parked on what it would reveal. Deleting the criterion would have left those three pointing at nothing, which is the failure mode this repo keeps finding. It is also **not rescheduled**: 30 days on a Phase 1 build measures a different app, so this criterion cannot be picked up later — it can only be replaced by a new one.
+**MVP success criteria:** I use it every day for 30 consecutive days without reverting to my old method. **Waived on 2026-08-23 — not met, not failed, not run.** Kept rather than deleted because three other things in this document were leaning on it: §9's first risk named it as its only mitigation, and OQ-1 and OQ-3 were both explicitly parked on what it would reveal. Deleting the criterion would have left those three pointing at nothing, which is the failure mode this repo keeps finding. It is also **not rescheduled**: 30 days on a Phase 1 build measures a different app, so this criterion cannot be picked up later. **No replacement is scheduled (2026-09-03).** The roadmap in this section states outcomes, and §9 carries the risk this criterion used to cover as open.
 
 ### Phase 1 — Mascot, quick actions & insights (committed)
 
@@ -182,7 +182,12 @@ document scopes its palette and the three further surfaces.~~ The widget set
 §7.4 scoped is built and derives its palette from the app's (2026-08-28/29;
 [docs/ux/widget.md](ux/widget.md) §6–§7). The cost is honest and worth stating: engineering now
 waits on a design decision that has been open since this document was written,
-and the split is what bounds that wait rather than removing it.
+and the split is what bounds that wait rather than removing it. **Closed
+2026-08-24:** the experiment ran and the answer was no — a Glance widget
+silently drops a bundled font — so the face was chosen anyway, Outfit, and the
+widget draws its names as bitmaps set in the same face
+([docs/ux/visual-identity.md](ux/visual-identity.md) §2, §5). The paragraph
+above is kept in its tense-of-decision; nothing in it is still open.
 
 Everything below that is not colour — the completion-rate denominator and the
 tag aggregate query — is unblocked either way, and was built first for that
@@ -208,6 +213,118 @@ reason (2026-08-23).
 ### Phase 1.5 — Retrospectives (the long-horizon payoff)
 - **Quarterly / yearly review screens**: adherence per habit and per tag across the period, trend lines, best/worst streaks, "focus shifted from X to Y" summaries. (**Built 2026-08-29**, not as new screens: the Insights overview gained a stepper that walks its Month/Quarter/Year back through the calendar, an active-days-per-month trend, a best run per habit row and the focus sentence. "Worst" was deliberately not built — every habit's worst streak is zero. [docs/ux/insights.md](ux/insights.md) §9 has each decision.)
 - Export of a review as an image/PDF (nice-to-have). (**Deferred 2026-08-29** — recorded as a later feature in [docs/ux/insights.md](ux/insights.md) §7; nothing built prevents it.)
+
+### The road to 1.0.0, and past it (set 2026-09-03)
+
+Written the day v0.2.0 was cut. That tag marks the source state after the
+accessibility re-hearing, 201 commits past `v0.1.0-alpha.1`: the visual
+identity finished, Momo in the tank and on the home screen, three widgets,
+the theme setting, About and licences, Insights with its retrospectives. It
+ships nothing installable — the release variant has never been signed — which
+is the fact that shapes what comes next. The order below was decided with the
+maintainer, one question at a time; [CHANGELOG.md](../CHANGELOG.md) records
+what each tag contained.
+
+#### Phase 1 close-out → 1.0.0, the first installable release
+
+**What 1.0.0 is.** A signed, shrunk release APK attached to a GitHub release,
+installed on the maintainer's phone from that release, with every device box in
+[docs/running.md](running.md) §4 ticked on that build. The target user is
+still §3's "me"; no store, so OQ-6 stays parked on "closer to launch". No tag
+lands between 0.2.0 and 1.0.0. `versionCode 3`.
+
+**Step 0 — the cleanup pass.** First, because everything after it should be
+verified against a smaller, truer repo. Three rules, each written into
+`AGENTS.md` with a mechanical gate in `make lint` beside the citation check:
+
+- *Tests.* A test survives if it asserts a behaviour a user or a document
+  names; it goes if it asserts an artefact of the implementation — an exact
+  pixel or ARGB constant, a magic computed value, a library's internals reached
+  by reflection, an XML attribute string read off disk — or duplicates another.
+  Copied test helpers get one home each where the module graph allows.
+- *Comments.* A comment keeps what the code cannot say — the invariant, the
+  reason, the document section — and drops dates, "used to", "a review said"
+  and its own correction history; git owns those. A date stays only where it
+  stamps how stale a hardware measurement is.
+- *Documents.* Each checklist box keeps its instruction and one status line;
+  the quoted TalkBack output and session narrative go. Struck passages are
+  deleted, "still open" sections compress to one bullet per item with its
+  blocker, and history reduces to the decision and, where it matters, its date.
+  Documents record decisions and current state; git records history.
+
+**Step 1 — release signing and R8.** A keystore made locally and kept in the
+password manager with an offline copy, never in git; its path and passwords
+through the four variables `.env.example` already sketches; the signing config
+in the convention plugin, so a build with them unset still assembles debug (CI
+has no key). R8 on at the same time, with keep rules for Room, Hilt,
+kotlinx-serialization and Glance tested on the phone — first, so every later
+step is verified on the build that ships. `mapping.txt` travels with every
+release. `make release` joins `run` and `itest` as a stack-specific target
+(architecture §9).
+
+**Step 2 — the canvas-fidelity pass.** One design session before any UI code,
+and the standing practice from here on: every current screen goes on the
+design canvas beside its build screenshot and the maintainer marks what is off.
+Known already: type weight against the canvas; Momo's content-mood eyes drawn
+closed where the canvas has them open; thriving stars that only scale where the
+canvas drifts them; the right-hand weeds lost on the light end of the dark
+tank's gradient; settings layout, copy and missing rows; an artboard for every
+screen with **no habits yet**, so the empty app is designed rather than
+defaulted; launcher-icon eye options. And one open design question with no
+data cost: **whether a habit keeps an icon and a colour at all.** The icon set
+is twelve emoji drawn as text; the colour picker offers eight hues. The page
+draws the Today row, list, detail and editor under four options — name only; a
+Lucide icon on a neutral ground; a Lucide icon in the habit's hue on that hue
+at low alpha; colour as a leading dot — and picks one.
+[docs/ux/visual-identity.md](ux/visual-identity.md) §7.3 already showed a
+Lucide name is a string like the emoji, so the wire format and Room do not
+move whichever way it goes.
+
+**Step 3 — Phase 1's own list.** Quick-complete actions as OQ-2 now reads;
+gills as OQ-3 now reads, canvas page first, then the domain value with JVM
+tests, then the row and the panel; and Momo's real copy — every panel line but
+the regenerating one is still placeholder — drafted on the canvas in Momo's
+voice and edited there by the maintainer.
+
+**Step 4 — polish.** Everything step 2 marked, item by item, verified on the
+emulator against its artboard; and the naming sweep — Kotlin identifiers,
+test names, packages, resource files and ids — with detekt's naming rules
+switched on in `make lint` so it is done once.
+
+**Step 5 — verification, on the release build.** All of running.md §4's
+unticked boxes on the phone; the four accessibility follow-ups the re-hearing
+recorded (icon-picker labels, an image glyph for the widget's 32 dp control,
+the Momo widget's clickable experiment, a spoken weekly ratio); the
+Accessibility Scanner sweep that document already calls pre-release.
+
+**Step 6 — tag.** `v1.0.0`, a CHANGELOG entry, the APK and `mapping.txt` on the
+release; this document, the README and SECURITY.md stop saying pre-1.0.
+
+#### 1.x — after 1.0.0, before sync
+
+Growth, one feature at a time, each on the canvas first: onboarding, possibly
+with a baby Momo; more widgets (a Momo-only one, a stats one — the API 31 size
+attributes and picker previews [docs/ux/widget.md](ux/widget.md) §8 lists are
+the price of a third provider); themes, Momo costumes and things in the tank
+earned by the user's own record, inside §2's boundary. Standing items that fit
+here: multi-tag (OQ-1) once [docs/ux/insights.md](ux/insights.md) §6's
+tag-identity-on-write question is settled; the per-tag trend that waits on it;
+export of a review as an image; the Today-row long-press
+([docs/ux/habits.md](ux/habits.md) §8).
+
+#### Phase 2 becomes 2.0.0
+
+LAN sync, as the next section describes it, is the app's first network
+permission. §7's "no network permission" line, SECURITY.md's threat model and
+the README's first sentence all change on purpose, and architecture §6's
+"export is the only recovery path" closes. A major version because the privacy
+claim changes shape, not because the feature is large.
+
+#### A store launch, unnumbered
+
+F-Droid and/or Play is its own milestone with no version yet, gated on OQ-6
+and on widening §3's target user. That is the point where onboarding and a
+privacy policy stop being polish and become requirements.
 
 ### Phase 2 — LAN Sync (committed)
 - Device discovery on same network via mDNS; pairing with confirmation code (LocalSend-style trust model).
@@ -247,11 +364,11 @@ reason (2026-08-23).
 ## 8. Open Questions
 
 - ~~**OQ-1:** Multi-tag per habit, or is one tag enough? (Proposal: one at MVP.)~~ **Settled 2026-08-23: multi-tag, eventually.** The proposal held for the MVP and one tag is what ships, but the answer to the question as asked is that one tag is *not* enough for good. It is committed and **deliberately not assigned to a phase** — what is decided is the direction, not the date. The cost is known and is why it is not being rushed: `HabitMetadata.tag` is a single field in the domain *and in the wire format*, so this is an event-payload schema bump with an upcast-on-read rather than a UI change, which the event log's embedded schema versioning (§7) exists to absorb. The practical consequence today is a prohibition rather than a task — nothing new should be built as though one tag were permanent, and §5's Phase 1 item 2 is where that bites first. Settled on the reasoning above rather than on the 30-day trial, which is where this question used to be parked and which was waived (§5).
-- **OQ-2:** Notification quick-complete UX when >3 habits remain (Android caps 3 action buttons) — show top 3? "Complete all"? Opens the app?
-- **OQ-3:** Streak freeze / grace day mechanics. **Re-parked 2026-08-23 on OQ-4 rather than on usage.** This used to read "decide after the 30-day personal trial reveals how resets feel"; the trial was waived (§5), and a question whose only trigger has been removed is a question with no owner, so it was given a new one rather than left floating. **The new trigger is Momo's fourth face** — this opens when OQ-4 does, and gets decided on a build where a reset is actually visible on screen. Until then the mechanics stay unbuilt and `Mascot.REGENERATING_WINDOW_DAYS` stays 3 and stays a guess. Waiving the trial costs *this* question less than it looks, for the reason the rest of this bullet already gave: **two numbers ride on this, not one** (noted 2026-08-22), and the trial could never have answered the second. `Mascot.REGENERATING_WINDOW_DAYS = 3` is a separate guess at how long a broken streak keeps Momo regenerating, and its KDoc flags it for this same trial. **The trial as shipped cannot answer that half.** Phase 0 draws three faces and folds `regenerating` onto `neutral` ([docs/ux/today-view.md](ux/today-view.md) §4), so nothing on screen distinguishes a user recovering from a broken streak from one merely pottering — the window is decided, tested and unobservable. So it waits for Phase 1's fourth face — which is now the whole question's trigger and not just this half's. Recorded because the code said "flagged for the 30-day trial" and that instruction could not be carried out as written; `Mascot.REGENERATING_WINDOW_DAYS`' KDoc now names the fourth face instead.
+- ~~**OQ-2:** Notification quick-complete UX when >3 habits remain (Android caps 3 action buttons) — show top 3? "Complete all"? Opens the app?~~ **Decided 2026-09-03: up to three buttons, none above three.** One to three habits left: a button each, and a tap writes the completion under the same rules as the widget tap. Four or more: no buttons, the notification opens Today. Nothing ranks habits silently and nothing offers "complete all", which would sit badly beside the retroactive-logging honesty prompt. Scheduled in §5's 1.0.0 step 3; [docs/ux/reminder.md](ux/reminder.md) §4 and §6 take the detail.
+- **OQ-3:** Streak freeze / grace day mechanics. **The trigger below fired on 2026-08-25 (the fourth face was built) and the question was decided on 2026-09-03: gills.** A gill is a spare life. A daily habit grows one per seven clean days, capped at three; a missed day burns one automatically and the streak count is preserved; with none left the streak breaks as today and Momo regenerates. Weekly habits get the same in weeks. Nothing to tap: Momo's gills show the count, which is the visual the character already has. Scheduled in §5's 1.0.0 step 3, canvas page first; `Mascot.REGENERATING_WINDOW_DAYS` is re-examined against it there. The paragraph that follows is the history of how the question got its trigger, kept because it explains why the number below is a guess. **Re-parked 2026-08-23 on OQ-4 rather than on usage.** This used to read "decide after the 30-day personal trial reveals how resets feel"; the trial was waived (§5), and a question whose only trigger has been removed is a question with no owner, so it was given a new one rather than left floating. **The new trigger is Momo's fourth face** — this opens when OQ-4 does, and gets decided on a build where a reset is actually visible on screen. Until then the mechanics stay unbuilt and `Mascot.REGENERATING_WINDOW_DAYS` stays 3 and stays a guess. Waiving the trial costs *this* question less than it looks, for the reason the rest of this bullet already gave: **two numbers ride on this, not one** (noted 2026-08-22), and the trial could never have answered the second. `Mascot.REGENERATING_WINDOW_DAYS = 3` is a separate guess at how long a broken streak keeps Momo regenerating, and its KDoc flags it for this same trial. **The trial as shipped cannot answer that half.** Phase 0 draws three faces and folds `regenerating` onto `neutral` ([docs/ux/today-view.md](ux/today-view.md) §4), so nothing on screen distinguishes a user recovering from a broken streak from one merely pottering — the window is decided, tested and unobservable. So it waits for Phase 1's fourth face — which is now the whole question's trigger and not just this half's. Recorded because the code said "flagged for the 30-day trial" and that instruction could not be carried out as written; `Mascot.REGENERATING_WINDOW_DAYS`' KDoc now names the fourth face instead.
 - **OQ-4:** Mascot art style (round/chibi? pixel? flat vector?), and static-first vs animated-first. (Species and name decided: Momo the axolotl.) **The app's launcher icon is part of this question, not a separate one** (noted 2026-08-22) — it is Android's default placeholder today, and a mark drawn before the character would have to be redrawn to match it. §5's Phase 1 has the detail. **Widened 2026-08-23 to the whole visual identity: the app's colour scheme, its typography and the habit hues are part of this question too.** Not a new decision so much as the discovery of an old one — `core/ui`'s `GawiTheme` is stock Material 3 and its KDoc already says why ("Momo's palette is PRD OQ-4 and undesigned — inventing one here would mean choosing it in the module least able to explain the choice"), and `HabitPalette`'s says the same of its hues. Both had parked themselves here; nothing recorded that they had. The practical consequence is that this question now blocks more than a character, which is why §5's Phase 1 order was inverted to put it first. It has two halves with different lead times — palette, typography and hues, then Momo's art and the icon — and only the first half blocks Insights. **Two surfaces, not one:** a Glance tree is `RemoteViews` and cannot consume a Compose theme (architecture §2), so the widget takes any palette a second time, and `WidgetTextColourDarkTest` and its light twin must be re-run against the new values.
 
-  **First half decided and built, 2026-08-23** — the colour scheme and the eight habit hues are in the code, and `GawiTheme` is no longer stock. [docs/ux/visual-identity.md](ux/visual-identity.md) is the record: §7.2 for the scheme, §3 for the role values including the two that failed measurement and were replaced, §6 for the hues. Building it also fixed the glyph-contrast defect §4.2 of that document describes. **Typography is decided in principle and deliberately not built**: §5 of that document defines the ten type roles the app draws and commits to bundling one variable font, but the typeface itself waits on an experiment — whether a Glance widget can be handed a bundled font at all — because the app and the widget sit next to each other on a home screen and a face that cannot reach the widget is a different choice from one that can. ~~**The second half is untouched and still open**: Momo's art style, static-versus-animated, and the launcher icon, which is still Android's default placeholder.~~ **The second half is decided and built for Today, 2026-08-25** — flat, the canvas's character, animated in Compose, all four moods drawn ([docs/ux/momo.md](ux/momo.md)). The launcher icon is now unblocked and still Android's default placeholder; the widget and reminder still show no mascot. What is now *not* true of this question is that it blocks Insights — that was the whole point of the split, and the first half landing is what discharges it. The widget's own palette is also still owed, for the reason the paragraph above gives; §7.4 of that document scopes it.
+  **First half decided and built, 2026-08-23** — the colour scheme and the eight habit hues are in the code, and `GawiTheme` is no longer stock. [docs/ux/visual-identity.md](ux/visual-identity.md) is the record: §7.2 for the scheme, §3 for the role values including the two that failed measurement and were replaced, §6 for the hues. Building it also fixed the glyph-contrast defect §4.2 of that document describes. **Typography is decided in principle and deliberately not built**: §5 of that document defines the ten type roles the app draws and commits to bundling one variable font, but the typeface itself waits on an experiment — whether a Glance widget can be handed a bundled font at all — because the app and the widget sit next to each other on a home screen and a face that cannot reach the widget is a different choice from one that can. ~~**The second half is untouched and still open**: Momo's art style, static-versus-animated, and the launcher icon, which is still Android's default placeholder.~~ **The second half is decided and built for Today, 2026-08-25** — flat, the canvas's character, animated in Compose, all four moods drawn ([docs/ux/momo.md](ux/momo.md)). ~~The launcher icon is now unblocked and still Android's default placeholder; the widget and reminder still show no mascot.~~ **All closed:** the launcher and reminder marks are Momo (2026-08-25, §5 Mascot), the Momo widget and the large Today body carry the character (2026-08-29, [docs/ux/widget.md](ux/widget.md) §6–§7), and ~~the widget's own palette is also still owed, for the reason the paragraph above gives; §7.4 of that document scopes it~~ the widget derives its palette from the app's (2026-08-28, widget.md §6). What is now *not* true of this question is that it blocks Insights — that was the whole point of the split, and the first half landing is what discharges it. **Typography** is closed too: the experiment in the paragraph above ran on 2026-08-24 and the face is Outfit (§5 Phase 1). Nothing in OQ-4 is open; the visual work that remains is fidelity to the canvas, which §5's 1.0.0 step 2 owns.
 - ~~**OQ-5:** Should the widget show streaks or stay minimal (just checkboxes)?~~ **Settled 2026-08-21 with the widget: minimal.** A streak is the one number that reaches zero with no new event, so it is the value whose staleness is not bounded by user inaction — on the one surface with no live query. It also costs the width that rows need. §6.6 is narrowed accordingly rather than contradicted; see [docs/ux/widget.md](ux/widget.md) §2.
 - **OQ-6:** Final name call between Gawi / Hinabi / Araw; verify availability (Play Store, domain, trademark) closer to launch. ("Habi" rejected — existing habit tracker at habi.app.)
 
