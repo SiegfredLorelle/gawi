@@ -45,9 +45,9 @@ body:
     attributes:
       label: App version or commit
       description: >-
-        There are no published releases yet, so this is most likely the commit
+        There is no installable release yet, so this is most likely the commit
         you built from — `git rev-parse --short HEAD`.
-      placeholder: 0.1.0, or bcf9c16
+      placeholder: 0.2.0, or bcf9c16
     validations:
       required: true
 

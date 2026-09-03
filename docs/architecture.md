@@ -766,9 +766,9 @@ Deviations and notes:
   forever. Without caching, every CI run pays a 5–10 minute cold Gradle build.
 - The wiring gets documented in `docs/stacks/kotlin-android.md` in the
   template's own style.
-- Secrets: nothing at MVP (no network). When release signing arrives, the
-  keystore and its passwords stay out of git; signing config paths go in
-  `.env.example` with placeholders.
+- Secrets: nothing at MVP (no network). When release signing arrives — step 1
+  of the road to 1.0.0, PRD §5 — the keystore and its passwords stay out of
+  git; signing config paths go in `.env.example` with placeholders.
 
 ## 10. Where a new file goes
 

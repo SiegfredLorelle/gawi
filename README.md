@@ -8,8 +8,11 @@ your data never leaves the device. For what and why, read
 
 ## Status
 
-Pre-1.0 and pre-release. Version `0.1.0` (`versionCode 1`), no published
-release, and not on Play Store. Build it from source with the commands below.
+Pre-1.0. Version `0.2.0` (`versionCode 2`), tagged `v0.2.0` on 2026-09-03 —
+a tag and release notes, **not an installable build**: the release variant has
+never been signed, so every phone still runs the debug build from source. Signing
+is the 1.0.0 deliverable. Not on any store. Build it from source with the
+commands below; [CHANGELOG.md](CHANGELOG.md) records what each tag contained.
 
 Phase 0, the MVP, is feature-complete: habits, logging, streaks, the
 home-screen widget, the end-of-day reminder, and export/import all work. Its
@@ -19,20 +22,28 @@ consecutive days of real daily use without reverting to the old method.
 and Phase 1 started in its place. PRD §5 records what waiving it cost, and §9
 records the risk it leaves uncovered.
 
-Phase 1 is under way. It is being taken in a different order from the one
-PRD §5 first assessed: the visual identity came first, because the app was on
-stock Material 3 by an explicit deferral (PRD §8, OQ-4) and the screens Phase 1
-adds would otherwise have been styled twice. The colour half of that has landed —
-a designed light and dark scheme and eight retuned habit hues
-([docs/ux/visual-identity.md](docs/ux/visual-identity.md)). Typography and Momo's
-own art are still open. **Insights v1 is what the reordering was for, and all
-three of its surfaces have landed** — a per-habit history calendar and a
-completion-rate trend reached from habit detail, and an Insights screen reporting
-on every habit at once over a chosen month, quarter or year
-([docs/ux/insights.md](docs/ux/insights.md)).
+Phase 1 is all but done, taken in a different order from the one PRD §5 first
+assessed: the visual identity came first, because the app was on stock Material 3
+by an explicit deferral (PRD §8, OQ-4) and the screens Phase 1 adds would
+otherwise have been styled twice. All of it has landed — a designed light and dark
+scheme, eight habit hues, Outfit on every type role, a vendored Lucide icon set,
+and Momo as the launcher mark
+([docs/ux/visual-identity.md](docs/ux/visual-identity.md)). Momo lives in the
+Today view's tank in four moods, celebrates finished days and streak milestones,
+and speaks through an app-bar chip ([docs/ux/momo.md](docs/ux/momo.md)). Three
+home-screen widgets share one palette derived from the app's
+([docs/ux/widget.md](docs/ux/widget.md)). Settings choose the theme and carry an
+About section with licences. **Insights v1 is what the reordering was for**: a
+per-habit history calendar and completion-rate trend reached from habit detail,
+and an Insights screen reporting on every habit at once over a month, quarter or
+year, stepped back through the calendar for retrospectives
+([docs/ux/insights.md](docs/ux/insights.md)). An accessibility pass was heard on
+a real device ([docs/running.md](docs/running.md) §4). The one Phase 1 bullet
+still open is the reminder's quick-complete action, decided and scheduled.
 
-What comes next, and in what order, is recorded in [PRD §5](docs/prd.md). The
-open design questions are in §8 of the same file.
+What comes next, and in what order, is recorded in [PRD §5](docs/prd.md): a
+cleanup pass, then release signing, then the first installable release as
+1.0.0. The open design questions are in §8 of the same file.
 
 Single maintainer, so expect unhurried responses.
 
