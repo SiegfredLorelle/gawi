@@ -457,8 +457,9 @@ badge is decorative, the streak badge and habit detail's streak panel speak
 their unit in `:core:ui`'s words, the colour swatch clears its tick, each
 Archive button is named for its row, and the Today widget's rows are 48dp and
 described. Momo's body is unchanged — the list experiment was built and
-withdrawn the same day; its box says why. Every box below stays open — a device
-has to hear it.
+withdrawn the same day; its box says why. Every box below was left open for a
+device to hear; the 2026-09-03 pass heard most of them, and each box quotes
+what was said and names what, if anything, it still waits on.
 
 That deferral has expired. The widget drew on Glance's default theme on purpose
 for two phases — a Glance tree cannot consume the Compose theme (architecture
@@ -568,10 +569,14 @@ the shape the 4b bug took. Wording itself is still yours to read.
       18:17, the screen left alone, and at 18:21 the panel read *Momo is
       getting worried.* with no habit touched. Whether the rows reloaded under
       it was not watched — a reload of unchanged rows draws the same pixels —
-      so that half rests on `TodayMoodTest` (`a reminder edit does not re-run
-      the streak sweep`, `crossing the reminder threshold re-emits with the
-      rows unchanged`) and the box stays open for someone watching the screen
-      at the boundary.
+      and **nothing pins that half**: `TodayMoodTest`'s `crossing the reminder
+      threshold re-emits with the rows unchanged` asserts the rows are *equal*
+      before and after, which an identical re-query also satisfies (its sibling
+      test says as much about `distinctUntilChanged`), and the sweep test is
+      about a settings edit, not a clock crossing. So the box stays open for
+      someone watching the screen at the boundary, and it is the only check of
+      that half. The run itself is written up once, in the Momo widget block's
+      *word follows the mood* box.
 - [ ] **Week start re-buckets what is already on screen.** With a weekly habit
       showing a ratio, change the week start. The ratio re-counts against the
       new week without leaving the screen. Unlike the cutoff, this is not
@@ -1289,9 +1294,10 @@ Not seen there: greyscale by eye (the capture cannot show it), TalkBack, the
 light scheme, and the two-column flip. **The Nothing A059 pass of 2026-09-02
 took three of the four** — greyscale by the user's eye, the light scheme by
 `cmd uimode`, and TalkBack by hand, which is where the two widget bodies failed
-— and left the flip owed to a launcher with other cells; each box says how.
+— and left the flip owed to a launcher with other cells, which an AVD stood in
+for on 2026-09-03 without discharging the box; each box says how.
 
-- [x] **The Today widget grows a header at four by three.** Place *Today* and
+- [ ] **The Today widget grows a header at four by three.** Place *Today* and
       resize it to four cells wide and three tall (250×200dp on the canvas):
       Momo on a teal pill at the left, the mood line beside her, and beneath the
       line a band of thin segments — one per habit, filled where today is done.
@@ -1322,8 +1328,8 @@ took three of the four** — greyscale by the user's eye, the light scheme by
       cells of 60 to 73.3 dp or two cells of 90 to 110 dp. Nothing's 85 dp cells
       and the Pixel's 80 dp cells both fall in the gap between those windows,
       which is why neither launcher can show it. One row is refused as well
-      (85 < 110). So: header seen, rows-alone seen, the flip still owed to a
-      launcher with other cells.
+      (85 < 110). So, that day: header seen, rows-alone seen, the flip owed
+      to a launcher with other cells.
 
       **The flip, seen 2026-09-03 on a throwaway AVD.** No third launcher was
       needed: a launcher's cell is its screen width less padding over its
@@ -1335,8 +1341,17 @@ took three of the four** — greyscale by the user's eye, the light scheme by
       view measured 550×369 px, **183×123 dp**: rows alone. One row taller,
       **183×188 dp**: the face above the rows and no header — the 2026-08-25
       body, the one neither phone launcher could reach. Three wide, 283×188
-      dp: the header. Light scheme, four habits, none done. The AVD is kept
-      under `~/.android/avd/gawi-flip.avd` for the next time a gate moves.
+      dp: the header. Light scheme, four habits, none done. To make it again
+      anywhere: `avdmanager create avd -n gawi-flip -d small_phone -k
+      "system-images;android-37.1;google_apis_playstore_ps16k;x86_64"`, then
+      the three `hw.lcd.*` edits above in its `config.ini`; the copy on this
+      machine is kept for the next time a gate moves. **The box stays open
+      all the same**: this block's standard, four paragraphs up, is that an
+      emulator is not an OEM launcher and does not tick a launcher box. The
+      AVD shows the gates are right and the body draws; it does not show a
+      phone launcher's cells landing in the window, which is what the box
+      asks. Header and rows-alone are the Nothing's; the flip is still owed to
+      a phone launcher with other cells, and now known to be reachable.
 - [x] **The band is the checkboxes.** Count the segments against the rows and
       tap a row: its segment flips with its box, on the same write. A band that
       disagrees with the rows beneath it has been given a rule of its own, which
@@ -1477,8 +1492,10 @@ took three of the four** — greyscale by the user's eye, the light scheme by
       read *Momo is getting worried.* — while **both widgets still said
       *pottering***, a minute past the hour, because nothing had been written
       and their only clock is the 30-minute `updatePeriodMillis`
-      (widget.md §4, "shortened, not bounded"). One write in the app — a row
-      unticked — and the Momo widget read *worried* under the worried face,
+      (widget.md §4, "shortened, not bounded"). One write in the app — *test
+      123* unticked, the one row this pass had ticked by D-pad earlier, so the
+      phone's habits end the day as found with two events appended to its log
+      — and the Momo widget read *worried* under the worried face,
       and the Today widget's header *Momo is getting worried.* with the band
       all outstanding. So the word follows the mood and the mood follows the
       clock, but the widget learns of the clock only on the next write or
@@ -2244,16 +2261,17 @@ the one sequence that only plays while the frame loop runs.
       description was complete passes either side of it, so
       `chip_doesNotAlsoReadItsLabel` was added: the chip's node carries no
       text, and the label is found only in the unmerged tree. **Changed
-      2026-09-02**; not re-heard, which is why the box is open.
+      2026-09-02**; not re-heard that day, which is what kept the box open
+      until the next paragraph.
 
       **Re-heard 2026-09-03 on the Nothing A059, by the user's swipe**: with
       the list scrolled down the chip is one stop, *"Momo is pottering about.
       12 of 14 left today."* — the description and nothing after it, so the
       leak is gone. The panel, scrolled back up, reads *"Momo is pottering
-      about.. 12 of 14 left today. In list. 15 items"*: its two texts joined
-      by TalkBack's own full stop after a line that already has one, and the
-      list position, because the panel is the list's first item. Neither is
-      a defect, and both are now known words rather than predicted ones.
+      about.. 12 of 14 left today. In list. 15 items"*: the joiner nit the
+      *TalkBack, once* box above records, plus the list position, because the
+      panel is the list's first item. Neither is a defect, and both are now
+      known words rather than predicted ones.
 
       **What *was* checked, 2026-08-31, and how:** `uiautomator dump` reads the
       same node description a screen reader consumes, and on API 37 the chip's
@@ -2383,7 +2401,8 @@ without sight, and whether it survives a reader who needs it larger.
       day cutoff*, by D-pad: every settings
       row is one stop reading title, value and helper in order (*"Day is nearly
       over at. 21:00. When Momo starts…"*), so the row is reachable and named;
-      the picker itself was not driven. *Add a habit* was not swiped. One
+      the picker itself was not driven. *Add a habit* was not swiped that day
+      (it was on 2026-09-03, below). One
       "two targets that say the same thing" came from the Scanner instead: the
       fourteen *Archive* buttons on the habit list all announce *"Archive"* with
       no habit name. **Fixed 2026-09-02, unheard**: each is *"Archive Read"* /
@@ -2407,9 +2426,9 @@ without sight, and whether it survives a reader who needs it larger.
       `today_week_progress` has no spoken twin; how a voice reads a slash is
       the voice's business, and a *"1 of 3 this week"* string is the follow-up
       if the user's ear says it reads badly. The mascot panel, which the D-pad
-      also lands on, reads *"Momo is pottering about.. 12 of 14 left today"*:
-      the mood line ends in a full stop and TalkBack joins the panel's two
-      texts with another, which is a longer pause and not a defect. On the
+      also lands on, reads *"Momo is pottering about.. 12 of 14 left today"* —
+      the double stop is the joiner nit the panel's own *TalkBack, once* box
+      in the Today-view block already records. On the
       habit list every button reads its own row — *"Archive Piano. Button. In
       list. 14 items"*, *"Archive Stretch. Button. In list. 14 items"*.
 
@@ -2520,7 +2539,7 @@ without sight, and whether it survives a reader who needs it larger.
       clause is the bug review caught, where the row reflowed under the finger.
       Run on an emulator on 2026-08-23 against a habit holding the pre-retune
       red: nine swatches before and after the tap, no bounds moved.
-- [x] **The retro strip, specifically.** It is the densest thing here: five cells
+- [ ] **The retro strip, specifically.** It is the densest thing here: five cells
       — four writable and one drawn shut — each carrying a day, a done state, a
       note marker and up to two gestures. Every one of those is in the spoken
       label by design (`RetroStrip`'s `cellAction`), so this is the check that the
@@ -2553,8 +2572,7 @@ without sight, and whether it survives a reader who needs it larger.
       texts out of the merged tree. The `combinedClickable` stays *ahead* of
       `clearAndSetSemantics` in the chain — Compose clears everything after
       the clearing modifier, not before it — and that order is what the first
-      two pins hold: reversing it turned both red. Not re-heard, so the box
-      stays open.
+      two pins hold: reversing it turned both red. Not re-heard that day.
 
       **Re-heard 2026-09-03 on the Nothing A059**, main's build, by D-pad and
       the speech overlay, on a habit done today. An open cell: *"Day 2, not
@@ -2568,7 +2586,10 @@ without sight, and whether it survives a reader who needs it larger.
       30, too old to change"* — its description — is still the user's ear.
       **The user's swipe, the same day**: *"Day 30, too old to change.
       Disabled"* — unavailable, not an unchecked box, which was the hardest
-      thing this box asked to hear. Ticked on the two of them together.
+      thing this box asked to hear. Not ticked, though: of the four parts the
+      label carries, the **note marker** — `cellAction` appends *"has a note"*
+      only when the cell has one — was on neither quoted cell, so a noted day
+      is the one sentence still to hear.
 - [x] **200% font scale.** Settings → Display → Font size, at maximum. Three
       screens already carry reasoning about this in comments — `TodayScreen`,
       `HabitDetailScreen` and `SettingsScreen` all scroll or floor a dimension
@@ -2626,19 +2647,23 @@ without sight, and whether it survives a reader who needs it larger.
       as predicted; the box's own 32 dp is the recorded follow-up.
 
 **Still owed, and an emulator does not discharge any of them** (rewritten
-2026-09-03, after the re-hearing pass): the day-cutoff **picker** under
-TalkBack, the only part of the three core flows no pass has driven; the
-**tedium** of a full month on the history grid, a judgement rather than a
-sentence; and the Momo widget's body, still one stop saying *"Momo"*, whose
-box names the two experiments. Everything the 2026-09-02 pass found and the
-a11y-fixes branch changed has now been heard on the phone or re-scanned —
-Today rows, Archive buttons, chip, strip, grid cell, trend column, swatch,
-detail streak panel, Today widget row — and each box quotes the words. The
-Today widget's checkbox is still a nameless 32 dp second stop and its header
-still silent, recorded in its box as follow-ups rather than as this pass's
-debt. The widget's three device checks in its own block are owed twice over:
-once against the widget as it stands and again when it takes the palette
-(visual-identity.md §7.4).
+2026-09-03, after the re-hearing pass). Open boxes, each saying why: the
+day-cutoff **picker** under TalkBack, the only part of the three core flows no
+pass has driven; the **tedium** of a full month on the history grid, a
+judgement rather than a sentence; a **noted** strip cell, whose *has a note*
+word no quoted cell carried; the Today widget's body under TalkBack, whose
+header is still not a stop and whose checkbox is still a nameless 32 dp second
+stop; and the Momo widget's body, still one stop saying *"Momo"*, whose box
+names the two experiments. Heard on the phone and quoted in their boxes:
+Today rows, Archive buttons, chip, open and done strip cells, the shut day,
+today's grid cell, the August trend column, an unselected swatch, detail's
+streak panel, the Today widget row. Two gaps inside that list: the **selected**
+swatch — the one cell the branch changed — was never quoted back, and the
+re-scan covered the habit list and the home screen only, so the Today, detail,
+editor and Insights items of the 2026-09-02 scan are inferred clear from the
+same badge change, not re-scanned. The widget's three device checks in its own
+block are owed twice over: once against the widget as it stands and again when
+it takes the palette (visual-identity.md §7.4).
 
 Not in CI, and not automatable: TalkBack cannot be driven from the instrumented
 source set, and §8's line that CI runs unit tests only is unaffected by this
