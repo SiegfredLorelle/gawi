@@ -563,6 +563,15 @@ the shape the 4b bug took. Wording itself is still yours to read.
       panel changes with no habit touched and no interaction — and the habit
       rows do not reload underneath it, which is the point of the repository
       subscribing to the settings twice with different dedupes.
+
+      **Half seen 2026-09-03 on the Nothing A059**: the hour set to 18:20 at
+      18:17, the screen left alone, and at 18:21 the panel read *Momo is
+      getting worried.* with no habit touched. Whether the rows reloaded under
+      it was not watched — a reload of unchanged rows draws the same pixels —
+      so that half rests on `TodayMoodTest` (`a reminder edit does not re-run
+      the streak sweep`, `crossing the reminder threshold re-emits with the
+      rows unchanged`) and the box stays open for someone watching the screen
+      at the boundary.
 - [ ] **Week start re-buckets what is already on screen.** With a weekly habit
       showing a ratio, change the week start. The ratio re-counts against the
       new week without leaving the screen. Unlike the cutoff, this is not
@@ -1452,6 +1461,20 @@ took three of the four** — greyscale by the user's eye, the light scheme by
       done. *Worried* was not seen — it needs the clock past 21:00, and the pass
       ended before it. Each word change arrived with the app's own write (see
       the last box).
+
+      ***Worried* seen 2026-09-03 on the Nothing A059**, by moving the hour
+      rather than waiting for it: *Day is nearly over at* set to 18:20 at
+      18:17 with eleven habits outstanding. At 18:21 the Today panel already
+      read *Momo is getting worried.* — while **both widgets still said
+      *pottering***, a minute past the hour, because nothing had been written
+      and their only clock is the 30-minute `updatePeriodMillis`
+      (widget.md §4, "shortened, not bounded"). One write in the app — a row
+      unticked — and the Momo widget read *worried* under the worried face,
+      and the Today widget's header *Momo is getting worried.* with the band
+      all outstanding. So the word follows the mood and the mood follows the
+      clock, but the widget learns of the clock only on the next write or
+      period, which is the documented trade and now a seen one. The hour was
+      put back to 21:00 afterwards.
 - [x] **With no habits she is still there**, under *No habits yet*. Archive every
       habit rather than `pm clear` to see it. **Seen 2026-09-02**: fourteen
       `HabitArchived` events appended to the log (the run-as recipe in §5) and
@@ -2345,6 +2368,28 @@ without sight, and whether it survives a reader who needs it larger.
       *"Bring back Read"* with the drawn word cleared
       (`archiveButtons_areNamedForTheirOwnRow`). The box stays open until a
       device hears all three fixes.
+
+      **Re-heard 2026-09-03 on the Nothing A059**, main's build, by D-pad and
+      the speech overlay. A Today row: *"Read. Streak broken, was 10 days.
+      Check box"*, *"Water. 7 days in a row. Check box"*, *"Walk. 1/3 this
+      week. 1 week in a row. Check box"*; a row toggled with the centre key
+      and landed on again: *"checked. test 123. 1 day in a row. Check box"*.
+      The name first, no emoji name, the streak in words, the badge last — the
+      review's prediction did not come true and the row keeps its shape. Two
+      things the overlay showed that the sentence above did not predict. An
+      unchecked row carries **no state word at all**: this TalkBack says
+      *checked* for a Compose checkbox and nothing for the other state, so the
+      *"not checked"* the widget's `CheckBox` view speaks is a view thing. And
+      the weekly ratio is spoken **as drawn**, *"1/3 this week"*, because
+      `today_week_progress` has no spoken twin; how a voice reads a slash is
+      the voice's business, and a *"1 of 3 this week"* string is the follow-up
+      if the user's ear says it reads badly. The mascot panel, which the D-pad
+      also lands on, reads *"Momo is pottering about.. 12 of 14 left today"*:
+      the mood line ends in a full stop and TalkBack joins the panel's two
+      texts with another, which is a longer pause and not a defect. On the
+      habit list every button reads its own row — *"Archive Piano. Button. In
+      list. 14 items"*, *"Archive Stretch. Button. In list. 14 items"*. *Add a
+      habit* is still the user's swipe, and the box stays open for it.
 - [ ] **A TalkBack pass over the Insights screen.** Two pickers and a list, and
       the thing to listen for is whether a bar row makes sense read aloud: the
       label, the total, and nothing announcing the bar itself. The bars carry no
@@ -2461,6 +2506,17 @@ without sight, and whether it survives a reader who needs it larger.
       the clearing modifier, not before it — and that order is what the first
       two pins hold: reversing it turned both red. Not re-heard, so the box
       stays open.
+
+      **Re-heard 2026-09-03 on the Nothing A059**, main's build, by D-pad and
+      the speech overlay, on a habit done today. An open cell: *"Day 2, not
+      done. Mark done. Check box"*. The done cell: *"checked. Day 3, done. Mark
+      not done. Add or edit note. Check box"*. No letter, no number, no
+      *"Check mark"* after either — the four child texts are gone from what is
+      spoken, and the role and the toggle state survived the clearing as the
+      pins said they would. The shut day is not a D-pad stop at all (input
+      focus skips from the first open cell to *See full history*), which is
+      right for a disabled cell, so whether a swipe lands on it and says *"Day
+      30, too old to change"* — its description — is still the user's ear.
 - [x] **200% font scale.** Settings → Display → Font size, at maximum. Three
       screens already carry reasoning about this in comments — `TodayScreen`,
       `HabitDetailScreen` and `SettingsScreen` all scroll or floor a dimension
@@ -2503,6 +2559,19 @@ without sight, and whether it survives a reader who needs it larger.
       The disabled *Save* label in an empty editor, which is
       Material's disabled-text contrast. No unlabelled control anywhere, no
       touch-target hit in the app itself.
+
+      **Re-scanned 2026-09-03 on the Nothing A059, main's build**, the Scanner
+      enabled over adb the same way. **The habit list: no suggestions at all.**
+      The fourteen *Archive* duplicates are gone, and so are the fourteen
+      emoji contrast items — class (1) above — because a decorative badge's
+      `Text` no longer reaches the tree the Scanner reads. **The home screen
+      with the 4×3 Today widget and the 2×2 Momo widget: six suggestions**,
+      none of them a row. The three 32 dp checkboxes are each a *Touch
+      target*; the first of them also carries *Multiple items have the same
+      description*; the two widget frames are *Unsupported item type*, which
+      is the Scanner declining a `LauncherAppWidgetHostView`, not a finding.
+      So the 48 dp rows left the list as predicted and the boxes stayed on it
+      as predicted; the box's own 32 dp is the recorded follow-up.
 
 **Still owed, and an emulator does not discharge any of them:** the TalkBack
 pass over *adding a habit* (the other two flows ran on 2026-09-02 and are
