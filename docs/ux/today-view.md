@@ -182,9 +182,11 @@ The 3-day figure is a guess, and **no amount of use settles it** — §6 below a
 PRD §8's OQ-3 both carry the reason, which is that the MVP mapping makes
 `regenerating` unobservable. Argued in those two rather than a third time here.
 (The 30-day trial named here until 2026-08-23 was waived, and could not have
-settled this either; PRD §8's OQ-3 is parked on Phase 1's fourth face instead,
-which is the build where this window first has a visible effect.) Grace mechanics, if they ever land, change `recentlyBroken` and therefore
-this whole section.
+settled this either; PRD §8's OQ-3 was parked on Phase 1's fourth face instead,
+which is the build where this window first has a visible effect. That face
+landed 2026-08-25 and OQ-3 was decided as gills on 2026-09-03.) Grace mechanics,
+scheduled for 1.0.0 (PRD §5, step 3), change `recentlyBroken` and therefore this
+whole section when they land.
 
 ### MVP mapping — history since 2026-08-25
 

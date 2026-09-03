@@ -8,7 +8,7 @@ your data never leaves the device. For what and why, read
 
 ## Status
 
-Pre-1.0. Version `0.2.0` (`versionCode 2`), tagged `v0.2.0` on 2026-09-03 —
+Pre-1.0. Version `0.2.0` (`versionCode 2`), tagged `v0.2.0` —
 a tag and release notes, **not an installable build**: the release variant has
 never been signed, so every phone still runs the debug build from source. Signing
 is the 1.0.0 deliverable. Not on any store. Build it from source with the
@@ -39,7 +39,9 @@ and an Insights screen reporting on every habit at once over a month, quarter or
 year, stepped back through the calendar for retrospectives
 ([docs/ux/insights.md](docs/ux/insights.md)). An accessibility pass was heard on
 a real device ([docs/running.md](docs/running.md) §4). The one Phase 1 bullet
-still open is the reminder's quick-complete action, decided and scheduled.
+still open is the reminder's quick-complete action, decided and scheduled; two
+questions Phase 1 raised and left open, grace mechanics and Momo's real copy,
+are scheduled beside it.
 
 What comes next, and in what order, is recorded in [PRD §5](docs/prd.md): a
 cleanup pass, then release signing, then the first installable release as

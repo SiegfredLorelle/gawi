@@ -1,7 +1,9 @@
 # Changelog
 
-What each tag contained, newest first. The entry for a tag is also the tag's
-annotated body and the GitHub release body, so the three never disagree. Format
+What each tag contained, newest first. From `v0.2.0` on, the entry for a tag
+is also the tag's annotated body and the GitHub release body, so the three
+cannot disagree; the two earlier tags predate this file, and `v0.0.1` is a
+lightweight tag with no body at all. Format
 after [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions after
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). The roadmap that
 says what the next tag will be is [docs/prd.md](docs/prd.md) §5.
@@ -13,10 +15,11 @@ Nothing yet. Next is the cleanup pass, then release signing, on the road to
 
 ## [0.2.0] — 2026-09-03
 
-Marks main after the accessibility re-hearing: 201 commits past
-`v0.1.0-alpha.1` (30 feat, 38 fix, 24 test, 7 refactor, 5 build, 2 style,
-95 docs). 1,235 unit tests green across 126 suites, run fresh with
-`--rerun-tasks` (289 tasks, none up-to-date). `versionCode` 2.
+Marks the tip of main once the release branch merged: 201 commits of work
+past `v0.1.0-alpha.1` (30 feat, 38 fix, 24 test, 7 refactor, 5 build, 2 style,
+95 docs), plus the release branch's own version bump and notes. 1,235 unit
+tests green across 126 suites, run fresh with `--rerun-tasks` (289 tasks, none
+up-to-date). `versionCode` 2.
 
 **This is a tag and a set of notes, not an installable build.** The release
 variant has never been signed and R8 is off, so `assembleRelease` still
@@ -64,6 +67,9 @@ source. Signing and shrinking are step 1 of the 1.0.0 road in PRD §5.
 - No installable build (above).
 - The reminder's quick-complete action: decided (up to three buttons, none
   above three) and scheduled, not built.
+- Momo's copy: every panel line but the regenerating one is still placeholder
+  text, functional and unreviewed. Grace mechanics are decided as gills and not
+  built. Both are scheduled beside quick-complete.
 - 119 of the 172 manual device checks in running.md §4 are unticked; they run
   against the release build before 1.0.0.
 - Four accessibility follow-ups left open on purpose: labels for the icon

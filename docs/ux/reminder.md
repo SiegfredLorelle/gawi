@@ -362,7 +362,10 @@ documented so it isn't lost"*. §6.1.1's *"logging < 5 seconds"* is already
 satisfied by the widget, so a button here is a second path to a solved problem —
 and it would carry OQ-2 with it, which is still unanswered: Android caps three
 action buttons, and what to show when more than three habits remain is a real
-design question. Deep-linking is out for a smaller reason: `:app` owns the
+design question. **Answered 2026-09-03 (PRD §8, OQ-2): up to three buttons, one
+per habit left, each writing a completion under the widget's rules; four or more
+left, no buttons and the tap opens Today. Scheduled for 1.0.0 (PRD §5, step 3);
+until it lands this paragraph describes the build.** Deep-linking is out for a smaller reason: `:app` owns the
 navigation graph and Today is already the start destination, so a route would be
 a second way to express the same landing place, free to disagree with the graph.
 
@@ -488,7 +491,8 @@ mutation-checked against the code before the fix.
   and coupling `:feature:settings` to it for one edge case was declined. The row
   would say the reminder will arrive, and it would not.
 - **Quick-complete actions** (PRD §4, OQ-2). Deferred to Phase 1 on the PRD's own
-  terms; §4 above has the reasoning.
+  terms; §4 above has the reasoning. **Decided 2026-09-03 and scheduled for
+  1.0.0**; §4 records the shape.
 - **The wake can drift, and nothing measures how far.** Delivery is inside
   eligibility rather than delivery — architecture §7 calls it *deliberately
   inexact*, and there is no flex interval to quote because these are one-time
