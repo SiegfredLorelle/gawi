@@ -1282,7 +1282,7 @@ took three of the four** — greyscale by the user's eye, the light scheme by
 `cmd uimode`, and TalkBack by hand, which is where the two widget bodies failed
 — and left the flip owed to a launcher with other cells; each box says how.
 
-- [ ] **The Today widget grows a header at four by three.** Place *Today* and
+- [x] **The Today widget grows a header at four by three.** Place *Today* and
       resize it to four cells wide and three tall (250×200dp on the canvas):
       Momo on a teal pill at the left, the mood line beside her, and beneath the
       line a band of thin segments — one per habit, filled where today is done.
@@ -1315,6 +1315,19 @@ took three of the four** — greyscale by the user's eye, the light scheme by
       which is why neither launcher can show it. One row is refused as well
       (85 < 110). So: header seen, rows-alone seen, the flip still owed to a
       launcher with other cells.
+
+      **The flip, seen 2026-09-03 on a throwaway AVD.** No third launcher was
+      needed: a launcher's cell is its screen width less padding over its
+      column count, so an AVD whose screen puts a cell in one of the windows
+      does it. `gawi-flip` is the API 37 Play image with `config.ini` edited
+      to `hw.lcd.width=1260`, `hw.lcd.height=1800`, `hw.lcd.density=480` —
+      420×600 dp, at which the Pixel launcher picks four columns and its
+      picker already offers *Today* as "2 × 2". Placed at two by two the host
+      view measured 550×369 px, **183×123 dp**: rows alone. One row taller,
+      **183×188 dp**: the face above the rows and no header — the 2026-08-25
+      body, the one neither phone launcher could reach. Three wide, 283×188
+      dp: the header. Light scheme, four habits, none done. The AVD is kept
+      under `~/.android/avd/gawi-flip.avd` for the next time a gate moves.
 - [x] **The band is the checkboxes.** Count the segments against the rows and
       tap a row: its segment flips with its box, on the same write. A band that
       disagrees with the rows beneath it has been given a rule of its own, which
