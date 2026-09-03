@@ -406,7 +406,7 @@ The correctness core of the app. All of it lives in `:core:domain`.
   habits are `n` completions anywhere in the week — not tied to specific days.
 - Streaks are computed from completions: **day-streaks** for daily habits,
   **week-streaks** (consecutive weeks hitting n/n) for weekly habits. A missed
-  day/week resets; grace mechanics deferred (PRD OQ-3).
+  day/week resets; grace mechanics decided as gills, not yet built (PRD OQ-3).
 - The **3-day retroactive window** is a *command* rule (§1.6): the domain
   rejects an attempt to log a completion whose `logical_date` is more than
   3 days before today. It does **not** apply to the event apply/replay path —

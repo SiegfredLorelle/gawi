@@ -97,7 +97,8 @@ Full guide with examples: `.github/COMMIT_CONVENTION.md`
   have been their third copy, rather than after it was.
 - **Design on the canvas before writing UI or animation code.** Any change to
   what a screen, the mascot or a motion looks like goes on the Gawi Redesign
-  canvas as a new page beside a screenshot of the build, gets marked by the
+  canvas (one canvas, its link in docs/ux/momo.md §1; never a new artifact) as
+  a new page beside a screenshot of the build, gets marked by the
   maintainer, and only then is coded and checked on the emulator against its
   artboard. Rule since 2026-09-03, when a side-by-side found four drifts the
   tests could not: type weight lighter than designed, a mood face drawn with
