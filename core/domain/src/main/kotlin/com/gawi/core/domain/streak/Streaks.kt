@@ -16,7 +16,7 @@ import java.time.LocalDate
  * Liveness semantics: an unfinished current day (or a current week still
  * below target) does not break a streak — it simply hasn't extended it yet.
  * A finished day/week that missed resets to zero. Grace mechanics are
- * deferred (PRD OQ-3).
+ * decided as gills and not yet built (PRD OQ-3).
  */
 object Streaks {
 
