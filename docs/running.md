@@ -344,7 +344,9 @@ kotlinx-serialization can be tested against a real release build
 (`build-logic/src/main/kotlin/AndroidApplicationConventionPlugin.kt`), so
 `assembleRelease` produces an *unsigned* APK that no device will accept. Anything
 you run on a phone is the debug build: `debuggable`, unminified, and entirely fine
-for use — just not a release rehearsal.
+for use — just not a release rehearsal. This is why `v0.2.0` (2026-09-03) is a
+tag and a changelog entry with nothing attached; signing and R8 are step 1 of
+the road to 1.0.0 in PRD §5.
 
 **With more than one device attached, `make run` is ambiguous.** It is
 `./gradlew :app:installDebug` followed by `$(ADB) shell am start`, and neither

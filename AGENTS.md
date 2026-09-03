@@ -95,6 +95,14 @@ Full guide with examples: `.github/COMMIT_CONVENTION.md`
   2026-08-24**, which is what following this rule looks like: `GlyphButton` and
   the seven weekday labels moved to `:core:ui` when the history screen would
   have been their third copy, rather than after it was.
+- **Design on the canvas before writing UI or animation code.** Any change to
+  what a screen, the mascot or a motion looks like goes on the Gawi Redesign
+  canvas as a new page beside a screenshot of the build, gets marked by the
+  maintainer, and only then is coded and checked on the emulator against its
+  artboard. Rule since 2026-09-03, when a side-by-side found four drifts the
+  tests could not: type weight lighter than designed, a mood face drawn with
+  its eyes closed, stars scaling where they should drift, and weeds lost on a
+  gradient. A test pins what was built; only the canvas says what was meant.
 - **Versions live only in `gradle/libs.versions.toml`.** Convention plugins
   in `build-logic/` own build configuration; module build files only apply
   `gawi.*` plugin ids and declare dependencies. **One recorded exception**:
