@@ -11,8 +11,8 @@ android {
     namespace = "com.gawi.app"
     defaultConfig {
         applicationId = "com.gawi.app"
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.2.0"
         // The only module with an androidTest source set (architecture §8).
         // configureAndroid sets no runner, because until now nothing needed one.
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
