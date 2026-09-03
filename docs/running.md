@@ -1432,6 +1432,15 @@ took three of the four** — greyscale by the user's eye, the light scheme by
       drop the box's description; if it does not, the "host that attaches it
       to the control" justification stays untested on this launcher and says
       so.
+
+      **Re-heard 2026-09-03 on the Nothing launcher, by the user's swipe**, a
+      fresh 4×3 placement of main's build: the row stop is *"Read. Not done"*
+      and the box stop *"Not checked. Check box"*. The name is **not** read
+      twice, so the box keeps its description and the justification above
+      stays untested here, as it said it would. The row is now one named stop
+      with its state; the box is still a second, nameless stop, and the header
+      was not reported as a stop, so the two halves this box still owes are the
+      ones already recorded — the control's own 32 dp and the header's silence.
 - [x] **The Momo widget is offered, two by two, and says what it is.** Long-press
       → *Widgets* → **Gawi**: three entries. The *Momo* preview on API 31+ is her
       ground and a word with **no face** — deliberate, and widget.md §7 says
@@ -1526,6 +1535,10 @@ took three of the four** — greyscale by the user's eye, the light scheme by
       being reached *without* a click shows a list suffices, not that a
       focusable view would fail. So two experiments stay for the phone, the
       clickable first and the list as fallback; neither is made here.
+
+      **Re-heard 2026-09-03**, a fresh 2×2 placement on the same launcher:
+      still one stop, *"Momo"*. Unchanged, as expected — nothing in the body
+      changed — and the two experiments are still the way to settle it.
 - [x] **A write in the app moves all three widgets**, on the same commit.
       **Seen 2026-09-02**, all three placed and dumped before and after each
       write: ticking *Stretch* checked its box on the Today widget and moved its
@@ -2194,7 +2207,7 @@ the one sequence that only plays while the frame loop runs.
       Seeded habits and the tick were removed afterwards by restoring the
       database file pulled before any of it, so the four real habits and their
       history are untouched — verified by event counts and `integrity_check`.
-- [ ] **TalkBack: the chip is one stop, and a tick under it is silent.** The
+- [x] **TalkBack: the chip is one stop, and a tick under it is silent.** The
       first version of this box asked for something that cannot happen — "the
       announcement should come from the panel's live region only" — when the
       panel is a list item and is disposed the moment the chip appears. A
@@ -2232,6 +2245,15 @@ the one sequence that only plays while the frame loop runs.
       `chip_doesNotAlsoReadItsLabel` was added: the chip's node carries no
       text, and the label is found only in the unmerged tree. **Changed
       2026-09-02**; not re-heard, which is why the box is open.
+
+      **Re-heard 2026-09-03 on the Nothing A059, by the user's swipe**: with
+      the list scrolled down the chip is one stop, *"Momo is pottering about.
+      12 of 14 left today."* — the description and nothing after it, so the
+      leak is gone. The panel, scrolled back up, reads *"Momo is pottering
+      about.. 12 of 14 left today. In list. 15 items"*: its two texts joined
+      by TalkBack's own full stop after a line that already has one, and the
+      list position, because the panel is the list's first item. Neither is
+      a defect, and both are now known words rather than predicted ones.
 
       **What *was* checked, 2026-08-31, and how:** `uiautomator dump` reads the
       same node description a screen reader consumes, and on API 37 the chip's
@@ -2377,9 +2399,10 @@ without sight, and whether it survives a reader who needs it larger.
       The name first, no emoji name, the streak in words, the badge last — the
       review's prediction did not come true and the row keeps its shape. Two
       things the overlay showed that the sentence above did not predict. An
-      unchecked row carries **no state word at all**: this TalkBack says
-      *checked* for a Compose checkbox and nothing for the other state, so the
-      *"not checked"* the widget's `CheckBox` view speaks is a view thing. And
+      unchecked row carries **no state word when landed on**: this TalkBack
+      says *checked* for a Compose checkbox and nothing for the other state
+      (the *"not checked"* heard on 2026-09-02 was the toggle's own
+      announcement, and the widget's `CheckBox` view speaks it as a view). And
       the weekly ratio is spoken **as drawn**, *"1/3 this week"*, because
       `today_week_progress` has no spoken twin; how a voice reads a slash is
       the voice's business, and a *"1 of 3 this week"* string is the follow-up
@@ -2388,9 +2411,18 @@ without sight, and whether it survives a reader who needs it larger.
       the mood line ends in a full stop and TalkBack joins the panel's two
       texts with another, which is a longer pause and not a defect. On the
       habit list every button reads its own row — *"Archive Piano. Button. In
-      list. 14 items"*, *"Archive Stretch. Button. In list. 14 items"*. *Add a
-      habit* is still the user's swipe, and the box stays open for it.
-- [ ] **A TalkBack pass over the Insights screen.** Two pickers and a list, and
+      list. 14 items"*, *"Archive Stretch. Button. In list. 14 items"*.
+
+      **The same day, by the user's swipe**: habit detail's streak panel reads
+      *"1 week in a row"* in full, one stop, so the third fix is heard too.
+      *Add a habit* was swiped end to end: the icon picker's cells read *"Not
+      selected. <the emoji's platform name>. Radio button"* — the known gap,
+      `ICON_LABELS` is its follow-up — and the colour swatches *"Not selected.
+      Pink. Radio button"*; nothing unnamed and nothing silent was reported.
+      That leaves one thing this box asked for that no pass has driven: the
+      day-cutoff **picker itself** under TalkBack (its row was reached and
+      named on 2026-09-02). The box stays open for that alone.
+- [x] **A TalkBack pass over the Insights screen.** Two pickers and a list, and
       the thing to listen for is whether a bar row makes sense read aloud: the
       label, the total, and nothing announcing the bar itself. The bars carry no
       text, so a row is its label and its number — if that is not enough to know
@@ -2413,6 +2445,12 @@ without sight, and whether it survives a reader who needs it larger.
       `LabelledColumns` clears the column where it describes it; `a trend
       column speaks its month once, not its texts as well` pins it. The rate
       card's undescribed columns are untouched. Not re-heard.
+
+      **Re-heard 2026-09-03 on the Nothing A059, by the user's swipe**: the
+      August column reads *"August, 30 active days"* and nothing after it.
+      With the bar rows and the disabled ▶ already heard on 2026-09-02, every
+      part of this box has now been listened to; the three-stop bar row is the
+      recorded shape, not a leak, so the box is ticked.
 - [ ] **A TalkBack pass over the history grid, swipe-only.** Its own item because
       it is the one screen in this app that **hides content from a screen
       reader** — the seven column letters carry `clearAndSetSemantics`, since `T`
@@ -2440,6 +2478,13 @@ without sight, and whether it survives a reader who needs it larger.
       speaks its label and not its number after it` pins it, and `the days up
       to today are drawn` now reads the numbers off the unmerged tree, where
       they still are. Not re-heard.
+
+      **Re-heard 2026-09-03 on the Nothing A059, by the user's swipe**: today's
+      cell reads *"Thursday, 3, today, not done yet"* and nothing after it, so
+      the trailing number is gone and the today wording holds. The letters
+      were already proven absent from the tree on 2026-09-02. What no pass has
+      yet judged is the tedium of the full month, which is the one sentence
+      this box still asks for, so it stays open on that alone.
 - [x] **The colour picker's swatch names.** Every swatch announces a name rather
       than a hex, and after the retune one of those names moved: the seventh is
       "Gold", not "Yellow", because the hue at that slot is `#9C851F` and calling
@@ -2451,7 +2496,11 @@ without sight, and whether it survives a reader who needs it larger.
       a `✓` under a merged description, the same shape that read *"Check mark"*
       on the retro strip, so it now clears its subtree with `selectable` kept
       ahead (`theSelectedSwatch_doesNotAlsoReadItsTick`). Found by review, not
-      on the device — the editor was not swiped.
+      on the device — the editor was not swiped. **Swiped 2026-09-03 by the
+      user**: a swatch reads *"Not selected. Pink. Radio button. Double tap to
+      toggle"* — a name and a role, nothing drawn read after it. The selected
+      swatch's own words were not quoted back, so the ✓ clearing rests on its
+      pin and on the unselected cells sharing the one `clearAndSetSemantics`.
 
       **But it is checkable on a device, and that is better than listening.**
       `adb shell uiautomator dump` gives every swatch's `content-desc` together
@@ -2471,7 +2520,7 @@ without sight, and whether it survives a reader who needs it larger.
       clause is the bug review caught, where the row reflowed under the finger.
       Run on an emulator on 2026-08-23 against a habit holding the pre-retune
       red: nine swatches before and after the tap, no bounds moved.
-- [ ] **The retro strip, specifically.** It is the densest thing here: five cells
+- [x] **The retro strip, specifically.** It is the densest thing here: five cells
       — four writable and one drawn shut — each carrying a day, a done state, a
       note marker and up to two gestures. Every one of those is in the spoken
       label by design (`RetroStrip`'s `cellAction`), so this is the check that the
@@ -2517,6 +2566,9 @@ without sight, and whether it survives a reader who needs it larger.
       focus skips from the first open cell to *See full history*), which is
       right for a disabled cell, so whether a swipe lands on it and says *"Day
       30, too old to change"* — its description — is still the user's ear.
+      **The user's swipe, the same day**: *"Day 30, too old to change.
+      Disabled"* — unavailable, not an unchecked box, which was the hardest
+      thing this box asked to hear. Ticked on the two of them together.
 - [x] **200% font scale.** Settings → Display → Font size, at maximum. Three
       screens already carry reasoning about this in comments — `TodayScreen`,
       `HabitDetailScreen` and `SettingsScreen` all scroll or floor a dimension
@@ -2573,16 +2625,20 @@ without sight, and whether it survives a reader who needs it larger.
       So the 48 dp rows left the list as predicted and the boxes stayed on it
       as predicted; the box's own 32 dp is the recorded follow-up.
 
-**Still owed, and an emulator does not discharge any of them:** the TalkBack
-pass over *adding a habit* (the other two flows ran on 2026-09-02 and are
-written up above), and the two widget bodies under TalkBack, which failed on the
-Nothing launcher: the Today rows were changed the same day (described, 48dp)
-and want re-hearing; Momo's body was not, and its box names the two experiments
-the phone can settle. The retro strip's spoken labels and Accessibility
-Scanner both ran on 2026-09-02; what they found is fixed and pinned (each box
-says by what) but not re-heard or re-scanned. The widget's three device checks
-in its own block are owed twice over: once against the widget as it stands and
-again when it takes the palette (visual-identity.md §7.4).
+**Still owed, and an emulator does not discharge any of them** (rewritten
+2026-09-03, after the re-hearing pass): the day-cutoff **picker** under
+TalkBack, the only part of the three core flows no pass has driven; the
+**tedium** of a full month on the history grid, a judgement rather than a
+sentence; and the Momo widget's body, still one stop saying *"Momo"*, whose
+box names the two experiments. Everything the 2026-09-02 pass found and the
+a11y-fixes branch changed has now been heard on the phone or re-scanned —
+Today rows, Archive buttons, chip, strip, grid cell, trend column, swatch,
+detail streak panel, Today widget row — and each box quotes the words. The
+Today widget's checkbox is still a nameless 32 dp second stop and its header
+still silent, recorded in its box as follow-ups rather than as this pass's
+debt. The widget's three device checks in its own block are owed twice over:
+once against the widget as it stands and again when it takes the palette
+(visual-identity.md §7.4).
 
 Not in CI, and not automatable: TalkBack cannot be driven from the instrumented
 source set, and §8's line that CI runs unit tests only is unaffected by this
