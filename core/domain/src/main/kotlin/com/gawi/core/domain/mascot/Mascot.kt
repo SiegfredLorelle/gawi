@@ -22,8 +22,8 @@ import java.time.temporal.ChronoUnit
  *
  * Provisional in the way today-view §4 is provisional: this is Phase 1 behaviour, written
  * down so the MVP placeholder and the eventual Rive state machine are driven by
- * one rule. Grace mechanics, if they ever land (PRD OQ-3), change what
- * "recently broken" means and therefore this whole file.
+ * one rule. Grace mechanics — decided as gills, scheduled (PRD OQ-3, §5) —
+ * change what "recently broken" means and therefore this whole file.
  */
 object Mascot {
 
@@ -45,10 +45,10 @@ object Mascot {
      * written: Phase 0 draws three faces and folds [Mood.REGENERATING] onto
      * neutral, so no amount of using the app distinguishes this window's
      * effect from its absence. The trial itself was waived on 2026-08-23
-     * (PRD §5), which changes nothing here for that same reason. **It waits
-     * for Phase 1's fourth face**, which PRD §8's OQ-3 is now parked on too:
-     * until a build exists where a reset is visible on screen, this stays 3
-     * and stays a guess.
+     * (PRD §5), which changes nothing here for that same reason. The fourth
+     * face landed and PRD §8's OQ-3 is decided as gills; this number is
+     * re-examined when gills are built (PRD §5, 1.0.0 step 3) and stays 3
+     * and a guess until then.
      */
     const val REGENERATING_WINDOW_DAYS = 3L
 
