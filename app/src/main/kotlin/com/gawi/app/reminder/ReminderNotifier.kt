@@ -33,11 +33,11 @@ internal const val REMINDER_CHANNEL_ID = "end_of_day_reminder"
  * a unique id per post would only be a way for a duplicate to become visible as
  * two rows instead of one.
  *
- * **No action buttons.** Quick-complete is PRD §4's stretch goal and it stays one:
- * §6.1.1's *"logging < 5 seconds"* is already satisfied by the widget, and OQ-2
- * (what to show when more than three habits remain, against Android's three-button
- * cap) is unanswered. Adding buttons here would be a second path to a solved
- * problem carrying an open question with it.
+ * **No action buttons yet.** Quick-complete is decided (PRD §8 OQ-2: up to three
+ * buttons, one per habit left, none when four or more remain) and scheduled for
+ * 1.0.0 (PRD §5). Until it lands the notification only opens the app: §6.1.1's
+ * *"logging < 5 seconds"* is already satisfied by the widget, so nothing is lost
+ * by shipping the reminder without buttons first.
  */
 internal class ReminderNotifier @Inject constructor(@ApplicationContext private val context: Context) {
 
