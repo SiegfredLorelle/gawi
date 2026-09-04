@@ -34,8 +34,8 @@ import kotlin.math.roundToInt
  * process, by the same [drawMomo] the Today screen animates, at the frame it
  * rests on — [MomoFrame.rest], which is also what a viewer with animations off
  * sees (docs/ux/momo.md §4–§5). No second copy of the geometry, and no asset
- * per mood: visual-identity §7.4's "four static drawables" was priced before
- * the character was code.
+ * per mood, which is what visual-identity §7.4's "four static drawables" would
+ * have cost.
  *
  * **No tint.** Unlike a line of text, Momo carries her own palette, the same in
  * both themes (momo.md §2), so the `Image` takes no `ColorFilter`. That also

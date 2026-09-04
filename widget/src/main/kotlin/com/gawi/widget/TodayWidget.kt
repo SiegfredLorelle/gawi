@@ -99,15 +99,7 @@ internal class TodayWidget : GlanceAppWidget() {
     }
 }
 
-/**
- * How the widget reaches the graph.
- *
- * A `GlanceAppWidget` and an `ActionCallback` are built by the framework, not by
- * Hilt, so neither is an injection site. Resolving off the application reaches
- * the same repository singleton the app uses, which matters: it owns the command
- * mutex and the in-memory projection, so a second instance would be a second
- * command authority disagreeing in silence.
- */
+/** The repository, resolved through [WidgetEntryPoint], which has why. */
 internal fun repositoryFrom(context: Context): HabitRepository =
     EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java).habitRepository()
 
@@ -182,13 +174,9 @@ internal fun WidgetBody(content: WidgetContent) {
  * [BandBitmap] has why: Glance caps a container at ten children, and a box per
  * habit truncated the band at six.
  *
- * **"In the rows' own order" is a claim about the picture as well as the list,
- * and it holds in either direction.** Without that, a Hebrew system locale
- * mirrors the rows — the glyph moves to the right edge — while the band does
- * not, so the first habit's segment lands where a right-to-left reader stops
- * rather than where they start (measured on a launcher, docs/running.md §4).
- * [WovenBand] reads the direction and [BandBitmap] mirrors on it. Stated here
- * because the sentence above is the one that reads as covering it.
+ * **"In the rows' own order" is a claim about the picture as well as the list**,
+ * and holds in either reading direction: [WovenBand] resolves the direction and
+ * [BandBitmap] mirrors on it.
  *
  * The copy is caption-sized and semibold, as the canvas drew it, and it gets the
  * width the pill and the gap leave. Three lines, not the canvas's one: at the
@@ -234,16 +222,17 @@ private fun LargeHeader(mood: Mood, rows: List<WidgetRow>) {
  * **"The rows' order" is read in the host's direction, and this is where the
  * direction is resolved.** [BandBitmap] is pure and takes it as a flag; the
  * value is the app's configuration, because Glance composes in our process and
- * the launcher's own is not reachable from here. Under a system RTL locale, the
- * case that matters, the two agree; where they could not, the flag would mirror
- * the band alone and invert a picture that had been right, which [BandBitmap]
- * and docs/ux/widget.md §8 both state rather than file under §2's milder
- * fallback. Said here as well as on [BandBitmap] because this is the composable
- * that emits the band, so it is the doc a reader lands on first.
+ * the launcher's own is not reachable from here. Under a system RTL locale — the
+ * case that matters — the two agree. Where they could not, the flag would mirror
+ * the band alone and invert a picture that was right, which is why
+ * docs/ux/widget.md §8 states it rather than filing it under §2's milder
+ * fallback. Without any of this a Hebrew locale mirrors the rows and leaves the
+ * band, so the first habit's segment lands where a right-to-left reader stops.
  *
  * Two [BandBitmap] masks in one [Box], each tinted by its own provider, so
- * the band has no child count to hit ([BandBitmap] has the ten-child cap this
- * replaced) and both fills still resolve through the palette. Remembered
+ * the band has no child count to hit ([BandBitmap] has the ten-child cap that
+ * rules out a box per habit) and both fills still resolve through the palette.
+ * Remembered
  * against everything that changes the pixels: the flags, the room, the density
  * and the direction. Not the colour — the masks are white, and the tint is the
  * free half, as with [OutfitText].
@@ -359,8 +348,7 @@ internal fun contentWidth() = LocalSize.current.width - (2 * WIDGET_PADDING).dp
  * does not**: `CheckBoxTranslator` branches at 31, and under it the glyph is
  * resolved in *our* process and baked into the `RemoteViews` as one colour. The
  * selector never reaches the host, so its missing `-night` variant is not the
- * cause. [WidgetPalette] has the full path-by-path account and the measurements;
- * it is not repeated here, because two copies of it would drift.
+ * cause. [WidgetPalette] has the path-by-path account and the measurements.
  *
  * A provider can be handed to a checkbox, with one restriction.
  * `CheckboxDefaults.colors(checkedColor = GlanceTheme.colors.primary, …)`
@@ -376,8 +364,8 @@ internal fun contentWidth() = LocalSize.current.width - (2 * WIDGET_PADDING).dp
  * reflection into Glance, and the module does not do that. The glyph's two
  * colours are held to the 4.5:1 floor at the palette instead
  * (`WidgetPaletteTest`), and docs/running.md §4 keeps the by-hand toggle on
- * API 29 or 30 — which is also the only place to see which translation path a
- * real host takes, where the defect lived.
+ * API 29 or 30, which is the only place to see which translation path a real
+ * host takes.
  */
 
 internal const val WIDGET_PADDING = 8
@@ -411,10 +399,9 @@ private const val CHECKBOX_SLOT = 48
  * target that grows: a height on the `CheckBox` modifier reaches only Glance's
  * wrapper `FrameLayout`, never the 32dp control inside it, so the control stays
  * under the floor and the row around it is what a finger and TalkBack land on.
- * The cost is rows: 94dp of usable height at the 110dp minimum is one full row
- * and most of a second where it was two and most of a third, and the 4×3 large
- * body shows three where it showed five. The list scrolls. Chosen with that
- * cost in view (docs/ux/widget.md §8).
+ * The cost is rows: 94dp of usable height at the 110dp minimum fits one full row
+ * and most of a second, and the 4×3 large body fits three. The list scrolls.
+ * Chosen with that cost in view (docs/ux/widget.md §8).
  */
 private const val ROW_HEIGHT = 48
 

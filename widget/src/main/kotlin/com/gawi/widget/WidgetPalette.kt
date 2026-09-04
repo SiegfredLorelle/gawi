@@ -17,13 +17,10 @@ import com.gawi.core.ui.theme.gawiRole
  * the debt this avoids: four roles in two schemes, and with no accessor for
  * `onSurface`, `primary` or `outline`, retuning one in `core/ui/theme/Color.kt`
  * moves the app's checkboxes and leaves the widget's glyph behind with every
- * test in this module still green. docs/ux/visual-identity.md §7.4 names that
- * as the widget set's debt to clear and costs two ways out — three more
- * accessors, or reading a composed `GawiTheme` in a Robolectric test. Deriving
- * is neither: it removes the second copy rather than guarding it, so there is
- * no drift left to detect. §2 says "there is no mechanism that would let it be
- * one", which reads as correct and is not: a Glance tree cannot take a Compose
- * *theme*, but a plain `Color` is not a theme.
+ * test in this module still green — the debt docs/ux/visual-identity.md §7.4
+ * names. Deriving removes the second copy rather than guarding it, so there is
+ * no drift left to detect: a Glance tree cannot take a Compose *theme*, but a
+ * plain `Color` is not a theme.
  *
  * **Why day/night providers, and not the pinned literals the docs ask for.**
  * The bug this fixes is a disagreement between two colours, so pinning one
@@ -38,17 +35,16 @@ import com.gawi.core.ui.theme.gawiRole
  *    `setViewBackgroundColorResource`, which the **host** resolves in its own
  *    theme — so it follows a night-mode toggle on its own, immediately.
  *  - An image tint has no resource path below API 31 at all, and the checkbox
- *    glyph below 31 goes through `getColor(context)` the same way, so both were
- *    resolved in *our* process at translation and kept the last render's value.
+ *    glyph below 31 goes through `getColor(context)` the same way, so both are
+ *    resolved in *our* process at translation and keep the last render's value.
  *
- * One side following the host while the other two stayed put is what produced
- * near-zero contrast rather than a stale widget ([BitmapText] has the numbers).
- * A day/night provider is translated the same way at all three sites: API 31
- * and up hands the host a day/night pair, so the widget still follows a toggle
- * instantly; below 31 all three resolve in our process at the same instant,
- * from the same configuration, so they cannot disagree. A toggle there now
- * leaves the widget stale *together* and legible, repairing at the next render
- * — which is what docs/running.md §4 expected of it in the first place.
+ * One side following the host while the other two stay put is near-zero contrast
+ * rather than a stale widget ([BitmapText] has the numbers). A day/night
+ * provider is translated the same way at all three sites: API 31 and up hands
+ * the host a day/night pair, so the widget still follows a toggle instantly;
+ * below 31 all three resolve in our process at the same instant, from the same
+ * configuration, so they cannot disagree. A toggle there leaves the widget stale
+ * *together* and legible, repairing at the next render (docs/running.md §4).
  *
  * Contrast against [surface] in the matching scheme, light then night: 16.59 and
  * 14.82 for [onSurface], 5.56 and 10.44 for [glyphChecked], 5.18 and 5.31 for
