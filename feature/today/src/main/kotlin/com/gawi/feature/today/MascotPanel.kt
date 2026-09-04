@@ -44,17 +44,14 @@ import com.gawi.core.ui.theme.GawiSpacing
 /**
  * Momo's slot — docs/ux/today-view.md §3, with the character in it.
  *
- * today-view §3 promises one box, at one size, in one place. It held Phase 0's
- * copy line alone; since 2026-08-25 it holds the tank with Momo in it
- * (momo.md §4) above the same copy, which is now the description of the drawn
- * face rather than a stand-in for it. The tank is drawn here and not in `:core:ui`
- * because only Today is a habitat — the widget and the reminder get the
- * character on their own grounds (momo.md §4).
+ * today-view §3 promises one box, at one size, in one place. It holds the tank
+ * with Momo in it (momo.md §4) above the copy line, which is the description of
+ * the drawn face rather than a stand-in for it. The tank is drawn here and not
+ * in `:core:ui` because only Today is a habitat — the widget and the reminder
+ * get the character on their own grounds (momo.md §4).
  *
- * `toMvp()` used to be called here and nowhere else; the fourth face made it
- * dead and it is gone. §1's behaviour — the collapse into an app-bar chip on
- * scroll — is built, and is [TodayChip] below rather than anything here; the
- * slot is unchanged by it, which is why that is the whole of the news.
+ * §1's behaviour — the collapse into an app-bar chip on scroll — is [TodayChip]
+ * below rather than anything here; this slot is unchanged by it.
  */
 @Composable
 internal fun MascotPanel(mascot: MascotUi, motion: TodayMotion, modifier: Modifier = Modifier) {
@@ -118,13 +115,12 @@ internal fun MascotPanel(mascot: MascotUi, motion: TodayMotion, modifier: Modifi
  * [ChipFace] the idle motion is invisible, and a frame clock running behind a
  * scrolling list is the one cost this chip could impose and has no need to.
  *
- * **One semantics node, and deliberately not a live region — but not for the
- * reason it first appeared.** [MascotPanel] is a `LazyColumn` item, so once the
- * chip is up the panel is *disposed*, not merely off-screen: `HabitList` says so
- * where it hoists the motion state, and `chip_carriesTheMoodAndTheRemainingCount`
- * proves it, since its `assertDoesNotExist` could not pass on a panel that was
- * still composed. The two nodes never coexist, so there was never a double read
- * to avoid.
+ * **One semantics node, and deliberately not a live region.** [MascotPanel] is
+ * a `LazyColumn` item, so once the chip is up the panel is *disposed*, not
+ * merely off-screen: `HabitList` says so where it hoists the motion state, and
+ * `chip_carriesTheMoodAndTheRemainingCount` proves it, since its
+ * `assertDoesNotExist` could not pass on a panel that was still composed. The
+ * two nodes never coexist, so there is no double read to avoid.
  *
  * What that leaves is a silence, and it is chosen rather than inherited: a tick
  * made while the chip is up changes this description, and a plain description
@@ -138,16 +134,14 @@ internal fun MascotPanel(mascot: MascotUi, motion: TodayMotion, modifier: Modifi
  *
  * **What is shown and what is spoken are different strings, and the description
  * has to carry both facts.** The bar has no room for "3 of 8 left today" beside
- * three action icons, so the label is the short form — and the description was
- * built on the premise that a node with a `contentDescription` has its `text`
- * ignored by TalkBack, so a description of the mood alone would silently drop
- * the count from the announcement and leave the chip saying less than the panel
- * it replaced. It is built from the panel's own mood line and count for that
- * reason, and `chip_speaksTheCountItShows` is the assertion that keeps it. The
- * premise was half right: on a device (TalkBack 17, 2026-09-02) the label is
- * read *after* the description, so the chip said its count twice — see
- * docs/ux/today-view.md §1 and docs/running.md §4. Since 2026-09-02 the Row
- * clears its subtree instead of merging it, so the label is drawn and not read;
+ * three action icons, so the label is the short form. The description is built
+ * from the panel's own mood line and count so the chip does not say less than
+ * the panel it replaces, and `chip_speaksTheCountItShows` is the assertion that
+ * keeps it. A node with a `contentDescription` does not have its `text` ignored
+ * by TalkBack: on a device (TalkBack 17) the label is read *after* the
+ * description, so a merged chip says its count twice — see
+ * docs/ux/today-view.md §1 and docs/running.md §4. The Row therefore clears its
+ * subtree instead of merging it, so the label is drawn and not read;
  * `chip_doesNotAlsoReadItsLabel` pins that the chip's node carries no text and
  * the label lives only in the unmerged tree. Reading the label back still
  * proves nothing about what is spoken. `testTag` stays ahead of the clearing
@@ -157,13 +151,13 @@ internal fun MascotPanel(mascot: MascotUi, motion: TodayMotion, modifier: Modifi
  * **It carries the milestone line, and the line replaces the count rather than
  * joining it.** The panel swaps its mood line for the milestone's for the length
  * of a celebration and momo.md §6 makes the swap the announcement; this does the
- * same to the one string it has room for. Until 2026-09-01 it could not: the
- * milestone lived on `TodayMotion`, which `HabitList` owned one level *below*
- * the app bar, so a rung crossed while scrolled down was neither drawn nor
- * spoken. `rememberTodayMotion` now sits above the `Scaffold` for this reason
- * and says so. Replacing rather than joining because the width this bar does
- * not have is the same width the mood line was already denied — and because the
- * panel's own treatment of the line is a swap, not an addition.
+ * same to the one string it has room for. `rememberTodayMotion` sits above the
+ * `Scaffold` for this reason and says so: with the milestone on a `TodayMotion`
+ * that `HabitList` owned one level *below* the app bar, a rung crossed while
+ * scrolled down would be neither drawn nor spoken. Replacing rather than
+ * joining because the width this bar does not have is the same width the mood
+ * line was already denied — and because the panel's own treatment of the line
+ * is a swap, not an addition.
  *
  * The **spoken** half of that swap is not the drawn one, and here the two are
  * different *strings* rather than the same one in different slots. The label is
@@ -188,9 +182,7 @@ internal fun MascotPanel(mascot: MascotUi, motion: TodayMotion, modifier: Modifi
  *
  * One note for tests: this draws its own [Momo], carrying the same `momo:<mood>`
  * tag the tank does. A query while the chip is up still matches exactly one
- * node, because the tank's panel is disposed by then — an earlier version of
- * this line claimed two, on the same mistake the live-region paragraph above
- * corrects.
+ * node, because the tank's panel is disposed by then.
  */
 @Composable
 internal fun TodayChip(mascot: MascotUi, milestone: Milestone?, modifier: Modifier = Modifier) {
@@ -385,8 +377,8 @@ private fun moodLine(mascot: MascotUi): String {
 /**
  * The remaining count as a sentence, or null when there is nothing to count.
  *
- * Null rather than an empty string for the reason the panel used to spell out
- * inline: "Nothing left today" under an empty list reads as an achievement,
+ * Null rather than an empty string: "Nothing left today" under an empty list
+ * reads as an achievement,
  * which is exactly the reading today-view §4's rule 0 exists to prevent. The
  * mood line already speaks for that state.
  *

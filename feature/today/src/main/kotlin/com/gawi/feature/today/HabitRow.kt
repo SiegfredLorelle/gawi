@@ -34,8 +34,8 @@ import com.gawi.core.ui.theme.glyphColorOn
  * technology reads one node with a checkbox role rather than a label and a
  * control that happen to sit together. That one node says the name, a weekly
  * row's progress and the streak in words ([StreakBadge]); the icon is silent
- * ([HabitIcon]). A device had it saying the emoji's name and a bare number
- * before either (docs/running.md §4, 2026-09-02).
+ * ([HabitIcon]). Without either, a device says the emoji's name and a bare
+ * number (docs/running.md §4).
  */
 @Composable
 internal fun HabitRow(row: HabitRowUi, onToggle: (Boolean) -> Unit, modifier: Modifier = Modifier, pulse: (() -> Float)? = null) {

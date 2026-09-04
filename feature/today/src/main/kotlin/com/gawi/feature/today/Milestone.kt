@@ -147,7 +147,7 @@ internal data class MilestoneFrame(
             return List(RING_STARS) { i -> RingSparkle(i, i * 360f / RING_STARS + drift, radius, scale, alpha) }
         }
 
-        /** The Milestone celebration page's defaults, approved 2026-08-29. */
+        /** The Milestone celebration page's defaults. */
         private const val HOP = 18f
         private const val GLOW = 0.30f
         private const val BURST_ALPHA = 0.9f
