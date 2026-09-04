@@ -35,13 +35,12 @@ private const val TAG = "ReminderWorker"
  * succeeded or failed, because a lost link is the one failure the chain cannot
  * repair by itself.
  *
- * **With one exception, which this KDoc used to gloss over.** The guard rethrows
- * cancellation, so a worker WorkManager *stops* — a `REPLACE` from a settings
- * edit, a quota, a constraint — never reaches the arming call at all. That is
- * safe rather than a hole, for two separate reasons: a stop leaves the work
- * enqueued for a retry, so this runs again; and the `REPLACE` that caused the
- * stop has itself just armed that name. Not "unconditional", which is what the
- * previous wording claimed. Found by `/code-review`.
+ * **With one exception.** The guard rethrows cancellation, so a worker
+ * WorkManager *stops* — a `REPLACE` from a settings edit, a quota, a constraint
+ * — never reaches the arming call at all. That is safe rather than a hole, for
+ * two separate reasons: a stop leaves the work enqueued for a retry, so this
+ * runs again; and the `REPLACE` that caused the stop has itself just armed that
+ * name. So the arming is near-unconditional rather than unconditional.
  */
 internal class ReminderWorker(context: Context, parameters: WorkerParameters) : CoroutineWorker(context, parameters) {
 

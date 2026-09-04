@@ -34,7 +34,7 @@ import dagger.hilt.android.AndroidEntryPoint
  * superclass supplies the Hilt factory that every destination's
  * `hiltViewModel()` resolves through.
  *
- * **It is also where the theme is resolved**, since 2026-08-26. The stored mode
+ * **It is also where the theme is resolved.** The stored mode
  * is a `:core:data` preference and the system's setting is a fact about the
  * device; only something inside a composition knows both, and this is the one
  * place the whole app is inside (docs/ux/settings.md §7).

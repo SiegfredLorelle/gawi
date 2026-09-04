@@ -33,13 +33,13 @@ import javax.inject.Singleton
  * AppCompat activity and `AppCompatDelegate.setDefaultNightMode` would not
  * reach a `ComponentActivity` anyway.
  *
- * **What 29 and 30 lose is one flash of the starting window, measured
- * 2026-08-28 on an emulator of each.** With Dark chosen and the system in
- * light, nine cold starts per level sampled off a `screenrecord` showed the
- * light `#F4FBFA` window before the dark app replaced it: 66–331 ms on API 30,
+ * **What 29 and 30 lose is one flash of the starting window,
+ * measured 2026-08-28 on an emulator of each.** With Dark chosen and the
+ * system in light, nine cold starts per level sampled off a `screenrecord`
+ * showed the light `#F4FBFA` window before the dark app replaced it: 66–331 ms
+ * on API 30,
  * and 317–448 ms on API 29, which holds it more than twice as long and is the
- * one place the two differ. Two wider claims stood here first, both reasoned
- * from this code rather than watched, and both emulators retired them.
+ * one place the two differ.
  * `ThemeViewModel.theme` does start `null` and resolve to the *system* scheme,
  * but the read beats the first composed frame: a light-scheme content frame
  * appeared only with the page cache dropped, in four runs of six on each
