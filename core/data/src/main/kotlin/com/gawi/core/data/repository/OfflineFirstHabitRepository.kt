@@ -640,7 +640,7 @@ internal class OfflineFirstHabitRepository @Inject constructor(
             // place responsible for keeping a widget current (architecture §4),
             // and a tap whose scope dies right after the commit is exactly the
             // case that leaves the home screen showing the opposite of the log.
-            // The same lesson the zero-byte export taught, in the direction
+            // The same reasoning as the zero-byte export, in the direction
             // where NonCancellable can actually help — the work has started.
             //
             // It is also inside the mutex, and what it awaits is not free: the
@@ -662,16 +662,16 @@ internal class OfflineFirstHabitRepository @Inject constructor(
      * invariant belongs to the call site: this runs after the commit, inside
      * `NonCancellable`, so a throw would propagate out of a command that had
      * already succeeded and report a written event as a failure. That is not
-     * hypothetical — a `NoClassDefFoundError` out of the Glance listener did
-     * exactly that, and left a habit editor looking as though Save were dead
-     * (docs/ux/widget.md §5). Fixing it only inside that implementation left the
-     * rule enforced by convention, so a second listener, or an edit narrowing
-     * its catch, would bring the bug back.
+     * hypothetical: a `NoClassDefFoundError` out of the Glance listener does
+     * exactly that, and leaves a habit editor looking as though Save were dead
+     * (docs/ux/widget.md §5). Guarding only inside that implementation would
+     * leave the rule enforced by convention, so a second listener, or an edit
+     * narrowing its catch, would bring it back.
      *
-     * `runCatching` rather than a typed catch: `Error` is the class that escaped
-     * last time. Nothing is logged — `:core:data` has no logger by design — so
-     * an implementation that wants to report a failed push logs it itself, which
-     * `GlanceProjectionListener` does.
+     * `runCatching` rather than a typed catch: an `Error`, not only an
+     * `Exception`, can escape the listener. Nothing is logged — `:core:data`
+     * has no logger by design — so an implementation that wants to report a
+     * failed push logs it itself, which `GlanceProjectionListener` does.
      */
     private suspend fun announceProjectionChanged() {
         runCatching { projectionListener.onProjectionChanged() }

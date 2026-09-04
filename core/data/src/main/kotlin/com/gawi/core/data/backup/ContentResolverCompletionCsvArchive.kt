@@ -20,29 +20,25 @@ import javax.inject.Inject
  *
  * **Three rules are shared with [ContentResolverEventArchive] and deliberately
  * duplicated rather than extracted.** They are `NonCancellable`, the `"wt"`
- * mode, and encoding before the document is opened. A reviewer will reasonably
- * ask why there is no shared writer; two reasons, and the second is the one
- * that decided it:
+ * mode, and encoding before the document is opened. Why there is no shared
+ * writer: two reasons, and the second is the one that decides it.
  *
- * That class has **no JVM test at all**, so refactoring it is verified only on a
- * device, and reaching into the one untested class on the recovery path to serve
- * a caller whose stakes are lower is the wrong direction.
+ * The first is the weaker. That class has **no JVM test at all**, so
+ * refactoring it is verified only on a device, and reaching into the one
+ * untested class on the recovery path to serve a caller whose stakes are lower
+ * is the wrong direction. `CompletionCsvArchiveTest` substitutes a
+ * `ContentResolver` for *this* class and the same Robolectric shadow would
+ * work there, so the cost of starting is low. What holds is the sequencing:
+ * the JSON path gets its own behavioural test **first**, and only then is
+ * extracting a shared writer a change with a safety net under it
+ * (docs/ux/settings.md §8).
  *
- * **That argument is now weaker than when it was written, and honestly so.** It
- * used to add that substituting a `ContentResolver` needs a Robolectric shadow
- * nothing in this project uses. A PR reviewer pointed out the cost of starting
- * was low, and `CompletionCsvArchiveTest` now does exactly that for *this*
- * class — so the same shadow would work for [ContentResolverEventArchive] too.
- * What still holds is the second reason below, plus the sequencing: the JSON
- * path should get its own behavioural test **first**, and only then is
- * extracting a shared writer a change with a safety net under it. Recorded in
- * docs/ux/settings.md §8.
- *
- * And its reasoning is **about the backup**, at length and for good cause: a
- * truncated JSON is a file the user will later trust with their whole history.
- * A truncated CSV costs a second tap. Generalising forty lines of argument
- * about the only recovery path, so that a spreadsheet convenience could share
- * it, would make that argument less true rather than more reusable.
+ * The second is that its reasoning is **about the backup**, at length and for
+ * good cause: a truncated JSON is a file the user will later trust with their
+ * whole history. A truncated CSV costs a second tap. Generalising forty lines
+ * of argument about the only recovery path, so that a spreadsheet convenience
+ * could share it, would make that argument less true rather than more
+ * reusable.
  *
  * So the rules are restated here with what differs about them:
  *

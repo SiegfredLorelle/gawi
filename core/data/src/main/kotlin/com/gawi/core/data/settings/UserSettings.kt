@@ -6,8 +6,8 @@ import java.time.LocalTime
 /**
  * The device-local preferences: the day boundary that decides which logical
  * date a tap belongs to, the week start that buckets weekly habits, the
- * reminder time the end-of-day notification fires at, and — since 2026-08-26 —
- * the colour scheme the app draws in.
+ * reminder time the end-of-day notification fires at, and the colour scheme
+ * the app draws in.
  *
  * Settings are not events (architecture §3) — they never sync and never enter
  * the log. Defaults come from the PRD: midnight, Monday, and 21:00.

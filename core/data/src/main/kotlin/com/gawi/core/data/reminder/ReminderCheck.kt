@@ -129,11 +129,11 @@ class ReminderCheck @Inject internal constructor(
         // TodayUiMapper.toUiState already makes and says why: Mascot.mood drops
         // archived habits itself, Mascot.isOutstanding does NOT, and doing it here
         // too is what makes the agreement this function's property rather than
-        // observeToday's — which filters in SQL. This was the one caller taking the
+        // observeToday's — which filters in SQL. This is the one caller taking the
         // coupling that mapper declines, and if that query ever changed, an
         // archived incomplete daily habit would become a phantom outstanding here
         // while the Today chip stayed right: exactly the disagreement this class's
-        // KDoc exists to prevent. Found by /code-review.
+        // KDoc exists to prevent.
         val live = snapshot.habits.filterNot { it.habit.archived }
         val outstanding = live.count { row ->
             Mascot.isOutstanding(row.toMoodState(), snapshot.today, snapshot.weekStart)
@@ -217,16 +217,15 @@ class ReminderCheck @Inject internal constructor(
      * `dayStart.plusDays(1)`, and consistent with [logicalDate]'s rule that a
      * wall time exactly at the cutoff begins the new day.
      *
-     * **It takes the same strictly-ahead fallback as [untilNextReminder], and an
-     * earlier version of this KDoc claimed it needed none** — on the reasoning
-     * that the boundary of the date `now` resolves to is always after `now`. That
-     * is false in exactly one place, and [logicalDate]'s own KDoc names it: a
-     * cutoff strictly inside a DST fall-back's repeated hour makes "today" regress
-     * to "yesterday" for the rewound stretch. With a 01:30 cutoff and clocks going
-     * 02:00 back to 01:00, the second pass through 01:15 resolves to `D - 1`, whose
+     * **It takes the same strictly-ahead fallback as [untilNextReminder].** The
+     * boundary of the date `now` resolves to is not always after `now`, and
+     * [logicalDate]'s own KDoc names the one place it is not: a cutoff strictly
+     * inside a DST fall-back's repeated hour makes "today" regress to "yesterday"
+     * for the rewound stretch. With a 01:30 cutoff and clocks going 02:00 back
+     * to 01:00, the second pass through 01:15 resolves to `D - 1`, whose
      * boundary is 01:30 on `D` — an instant already behind us, because `atZone`
-     * takes the earlier of the repeated offsets. Once a year, for one hour, this
-     * would have armed a wake in the past.
+     * takes the earlier of the repeated offsets. Without the fallback, once a
+     * year and for one hour, this would arm a wake in the past.
      */
     suspend fun untilNextCutoff(): Duration {
         val now = clock.now()

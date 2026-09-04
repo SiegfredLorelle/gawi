@@ -30,10 +30,9 @@ import javax.inject.Inject
  * exists to prevent. And the nudge needs a second signal `UserSettings` cannot
  * carry at all, "is there anything here to lose", so a flow of its own was
  * needed either way. The preferences there are what the user set; this is a
- * record of something the app did. A fourth field did eventually arrive — the
- * theme, on 2026-08-26 — and it is not a counter-example: it changes when the
- * user changes it, and no reader binds it. `UserSettings`' own KDoc has the
- * comparison.
+ * record of something the app did. A fourth field, the theme, is not a
+ * counter-example: it changes when the user changes it, and no reader binds
+ * it. `UserSettings`' own KDoc has the comparison.
  *
  * It shares the *file* with them, which is safe in the direction that is easy to
  * get wrong: `DataStoreSettingsSource.update` assigns only the preference keys
@@ -47,13 +46,12 @@ import javax.inject.Inject
  * the PRD asked for. Four failures are handled that way below, individually: the
  * preferences read, the log count, the write, and a nonsensical stored value.
  *
- * The count was the one that got away. It used to run inside the `map` over the
- * preferences flow, under a `catch` that tests `IOException` — and Room throws
- * `SQLiteException`, which is a `RuntimeException`. So a corrupt, locked or full
- * database went straight past this class's guard and was answered two layers up
- * with "nothing to lose", silencing the nudge on a device whose database was
- * failing. A PR reviewer found it. The two reads have separate guards now,
- * because they fail for separate reasons.
+ * The two reads have separate guards, because they fail for separate reasons.
+ * A single `catch` testing `IOException` does not hold the count: Room throws
+ * `SQLiteException`, which is a `RuntimeException`, so a corrupt, locked or
+ * full database would pass this class's guard and be answered two layers up
+ * with "nothing to lose" — silencing the nudge on exactly the device whose
+ * database is failing.
  *
  * Not a sixth constructor parameter on [EventLogArchive], which already has
  * five — detekt's `LongParameterList` fires *at* six.
@@ -187,10 +185,9 @@ internal class ExportJournal @Inject constructor(
      * like a bug, and it undermines the one row whose job is to be believed. A
      * whole day ahead is jitter; two days is a wrong clock.
      *
-     * This paragraph previously claimed a whole day of skew was needed and that
-     * jitter could not trigger it. Both were false, and the test that pinned it
-     * passed only because the fake clock defaults to UTC, where the two instants
-     * share a date — at `+08:00` it failed. Caught by a reviewer.
+     * A test pinning this needs a non-UTC offset. At UTC the two instants
+     * share a date and the check passes without exercising anything; at
+     * `+08:00` they do not.
      *
      * **A count too large for the UI's `Int` is refused the same way**, and that
      * is not hypothetical arithmetic: a stored `Long.MIN_VALUE` dates the stamp

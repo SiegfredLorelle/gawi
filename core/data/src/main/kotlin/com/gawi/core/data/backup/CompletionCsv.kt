@@ -180,10 +180,10 @@ internal object CompletionCsv {
     /**
      * Characters a spreadsheet reads as the start of a formula.
      *
-     * Four, not six. TAB and CR used to be here as separate entries because they
-     * can precede a sigil; [field] trims before it looks, so every kind of
-     * leading whitespace is covered without enumerating it — and a lone leading
-     * TAB, with no sigil behind it, was never dangerous in the first place.
+     * Four, not six: TAB and CR need no entries of their own. [field] trims
+     * before it looks, so every kind of leading whitespace is covered without
+     * enumerating it, and a lone leading TAB with no sigil behind it is not
+     * dangerous.
      */
     private val FORMULA_LEAD = setOf('=', '+', '-', '@')
 
