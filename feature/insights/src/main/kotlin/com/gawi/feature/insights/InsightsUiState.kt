@@ -4,9 +4,9 @@ import androidx.annotation.StringRes
 import com.gawi.core.ui.streak.StreakUi
 
 /**
- * What the Insights screen draws: one period, two numbers about it, and one
- * breakdown of it — and, since Phase 1.5, the review of that period: where it
- * sits in the calendar, how the months in it went, and where the focus moved.
+ * What the Insights screen draws: one period, two numbers about it, one
+ * breakdown of it, and the review of that period — where it sits in the
+ * calendar, how the months in it went, and where the focus moved.
  *
  * The app's only surface that reports on **every** habit at once. Everything
  * else — the Today view, habit detail, the history grid, the rate trend — is
@@ -78,16 +78,14 @@ internal sealed interface InsightsUiState {
          * Carried because [habits] cannot answer it: that list is the
          * *unarchived* ones, so it is empty both on a fresh install and when
          * everything has been archived — two states that deserve opposite
-         * advice. Without this the screen told a brand-new user "every habit is
-         * archived", which is a claim about their data that was simply untrue,
-         * and Insights is reachable from Today's app bar before a first habit
-         * exists.
+         * advice. Without it the screen tells a brand-new user "every habit is
+         * archived", a claim about their data that is simply untrue, and Insights
+         * is reachable from Today's app bar before a first habit exists.
          */
         val hasAnyHabit: Boolean,
     ) : InsightsUiState
 }
 
-/** Which breakdown of the period is on screen. */
 internal enum class Breakdown { HABITS, TAGS }
 
 /**
@@ -121,10 +119,8 @@ internal sealed interface PeriodLabelUi {
  * which names the leading tag and claims nothing about movement.
  */
 internal sealed interface FocusShiftUi {
-    /** The top tag changed against the period before. */
     data class Shifted(val from: String, val to: String) : FocusShiftUi
 
-    /** The top tag is the one it was. */
     data class Held(val tag: String) : FocusShiftUi
 
     /** The current, unfinished period's leading tag — no comparison made. */
