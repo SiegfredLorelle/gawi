@@ -49,8 +49,8 @@ import com.gawi.core.ui.theme.glyphColorOn
  *
  * PRD §6.6's second streak surface. The streak is the screen's subject rather
  * than a trailing badge — this is where a streak is read deliberately, which is
- * the whole argument widget.md §2 used to keep it off the widget — so it is
- * drawn large and captioned in its own unit.
+ * widget.md §2's whole argument for keeping it off the widget — so it is drawn
+ * large and captioned in its own unit.
  *
  * Editing lives behind the app bar's one action rather than on this screen.
  * Detail is for looking at a habit you are doing; the editor is for changing
@@ -286,12 +286,11 @@ private fun HabitHeader(state: HabitDetailUiState.Detail) {
  *
  * The rendering is this screen's own; the `StreakUi` decision behind it and
  * the *spoken* form are shared with the Today row, which draws the same state
- * as a compact badge. Spoken, since 2026-09-02, as one node in
- * [spokenStreak]'s words — *"12 days in a row"*, *"Streak broken, was 4
- * weeks"* — because the drawn `3w` and `was 4w` read as "3 w" on TalkBack 17,
- * and the broken form was three stops (docs/running.md §4; found by review
- * when the Today badge took the same fix, since the device pass never opened
- * detail's panel). `clearAndSetSemantics`, so the texts are drawn and not read
+ * as a compact badge. Spoken as one node in [spokenStreak]'s words — *"12 days
+ * in a row"*, *"Streak broken, was 4 weeks"* — because the drawn `3w` and
+ * `was 4w` read as "3 w" on TalkBack 17, and the broken form is three stops
+ * (docs/running.md §4). `clearAndSetSemantics`, so the texts are drawn and not
+ * read
  * after the description. The no-completions line is already words and keeps
  * its text.
  */

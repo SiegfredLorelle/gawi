@@ -14,7 +14,7 @@ import java.time.LocalDate
  * exactly one habit. An id that resolves to nothing is [Unavailable], the same
  * state a failed read lands on and for the same reason `HabitEditorUiState`
  * gives: with no delete in the event model, an id that resolves to nothing
- * means the id was wrong rather than the habit having gone, and there is
+ * means the id is wrong rather than the habit having gone, and there is
  * nothing different for the user to do about either.
  *
  * This is the screen PRD §6.6 means by "habit detail" — one of the two surfaces

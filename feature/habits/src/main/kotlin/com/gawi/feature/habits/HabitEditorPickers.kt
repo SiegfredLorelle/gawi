@@ -45,7 +45,7 @@ import com.gawi.core.ui.theme.parseHabitColor
  * **Each option is announced by the platform's name for the emoji** ("books"
  * for 📖), because here the emoji *is* the label — unlike `HabitIcon`, which
  * sits beside a name and is decorative. The same defect class the list and
- * Today fixed on 2026-09-02, left open: a positional `ICON_LABELS` mirroring
+ * Today fixed, left open here: a positional `ICON_LABELS` mirroring
  * [COLOR_LABELS] is the recorded follow-up (docs/ux/habits.md §4).
  */
 @Composable
@@ -111,11 +111,11 @@ private data class Swatch(val hex: String, val label: String)
  * Whether two stored hexes are the same swatch — which means the same *colour*,
  * not the same string.
  *
- * The editor used to compare strings, and a colour off the event log does not
+ * Comparing strings does not work here: a colour off the event log does not
  * have to be spelled the way the palette spells it. `HabitState.color` is
  * unvalidated and [parseHabitColor] accepts six digits or eight, upper case or
- * lower, by design. So an imported `"#f22935"` was not a palette member and not
- * equal to the palette's `"#F22935"`: the row grew a leading swatch carrying the
+ * lower, by design. So an imported `"#f22935"` is not a palette member and not
+ * equal to the palette's `"#F22935"`: the row grows a leading swatch carrying the
  * lowercase value **and showed it selected**, while the identical colour sat
  * beside it unselected. Two swatches, one colour, the wrong one ticked.
  *
@@ -197,7 +197,7 @@ internal fun ColorPicker(form: HabitEditorUiState.Form, onEdit: (HabitEditorUiSt
                 )
                 // Clearing, not merging: the selected swatch draws a tick, and
                 // TalkBack 17 reads a merged node's child text after its
-                // description (docs/running.md §4, 2026-09-02) — "Gold,
+                // description (docs/running.md §4) — "Gold,
                 // selected, check mark". After `selectable`, which carries the
                 // role, the state and the click: a clearing modifier discards
                 // every semantics modifier later in the chain.

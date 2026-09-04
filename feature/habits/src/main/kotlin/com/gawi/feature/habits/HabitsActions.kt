@@ -20,7 +20,7 @@ internal data class HabitListActions(
     /**
      * Opens the habit. Detail rather than the editor
      * (docs/ux/habits.md §6): detail is the hub, and it carries an Edit action
-     * of its own for the case this used to serve.
+     * of its own for the case a direct route here would serve.
      */
     val onOpen: (HabitId) -> Unit,
     val onArchiveToggle: (HabitId, Boolean) -> Unit,

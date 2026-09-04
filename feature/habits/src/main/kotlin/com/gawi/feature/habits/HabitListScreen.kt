@@ -127,8 +127,9 @@ private fun HabitList(state: HabitListUiState.Habits, actions: HabitListActions,
  * being what happens when you meant to tap a name.
  *
  * **The button is named for its row** — "Archive Read", "Bring back Read" —
- * since 2026-09-02, when Accessibility Scanner on a device listed fourteen
- * buttons all announcing *"Archive"* (docs/running.md §4). The description is
+ * because Accessibility Scanner on a device lists fourteen buttons all
+ * announcing *"Archive"* otherwise, seen on 2026-09-02 (docs/running.md §4).
+ * The description is
  * `semantics`, not `clearAndSetSemantics`: `Button` adds its role and `Surface`
  * its click *after* the caller's modifier on the same node, and a clearing
  * modifier discards everything after it. The drawn word is cleared instead, so
