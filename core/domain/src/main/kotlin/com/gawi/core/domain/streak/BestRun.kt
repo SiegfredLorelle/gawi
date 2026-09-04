@@ -8,9 +8,9 @@ import java.time.LocalDate
  * The longest run a habit managed *inside* a period — PRD §5 Phase 1.5's
  * "best streak", measured for a retrospective rather than for today.
  *
- * Not [Streaks]: that answers "how long is the run ending now", and a review
- * of last quarter wants "how long was the longest run that quarter", which the
- * current streak says nothing about once it has broken. Same unit, though —
+ * Not [Streaks]: that answers "how long is the run ending now", and looking
+ * back at last quarter asks "how long was the longest run that quarter", which
+ * the current streak says nothing about once it has broken. Same unit, though —
  * days for a daily habit, weeks for a weekly one — so a caller still needs the
  * schedule to read the number, exactly as with [StreakSnapshot.current].
  *

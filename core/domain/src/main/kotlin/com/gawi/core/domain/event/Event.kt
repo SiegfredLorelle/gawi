@@ -7,8 +7,8 @@ import java.time.Instant
  * Envelope around a payload, mirroring the events table columns
  * (architecture §3). [tzOffsetMin] is the device UTC offset at write time.
  *
- * **It is read by projection, in exactly one place**, and this comment used to
- * say it never was. `Projector.applyCreation` pairs it with [occurredAt] to
+ * **It is read by projection, in exactly one place.**
+ * `Projector.applyCreation` pairs it with [occurredAt] to
  * derive the calendar date a habit was created on, because `HabitCreated`
  * carries no date and adding one would be a payload schema bump for every
  * client. Both fields are written once and never change, so the derivation is a

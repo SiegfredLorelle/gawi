@@ -24,11 +24,10 @@ import java.time.temporal.ChronoUnit
  * a presentation decision deliberately not made here — this function has no
  * opinion about which window it is handed.
  *
- * What changed on 2026-08-24, and this paragraph said the opposite until then:
- * [com.gawi.core.domain.projection.HabitState.createdOn] exists, so the clip has
- * a real date to work from. **Do not reach for the earliest date in
- * `completedDates`**, which is what this used to recommend — it biases every
- * rate upward, because a window that begins at the first completion always
+ * [com.gawi.core.domain.projection.HabitState.createdOn] exists, so the clip
+ * has a real date to work from. **Do not reach for the earliest date in
+ * `completedDates`** — it biases every rate upward, because a window that
+ * begins at the first completion always
  * begins on a day the habit succeeded, and a habit created and then ignored for
  * two weeks loses those two weeks silently.
  */
