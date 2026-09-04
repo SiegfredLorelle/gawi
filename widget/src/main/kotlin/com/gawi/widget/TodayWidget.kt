@@ -118,12 +118,13 @@ internal fun repositoryFrom(context: Context): HabitRepository =
  *
  * Every string here is an [OutfitText] — a bitmap in the app's face, tinted
  * from [WidgetPalette] — rather than a Glance `Text`. [BitmapText] has why a
- * bitmap and what it costs. The colour trap is one bug in two shapes: a default
- * text colour that is not theme-aware while the background is draws near-black
- * on `#303030` at 1.59:1, measured on a Nothing A059 on 2026-08-22; and a fix
- * that is theme-aware in a way the background is not below API 31 is the
- * measurement [BitmapText] records. Both are a mismatch between two colours,
- * which is why this surface takes both of them from one place.
+ * bitmap and what it costs. The colour trap is one bug in two shapes. A default
+ * text colour that is not theme-aware, under a background that is, draws
+ * near-black on `#303030` at 1.59:1, measured on a Nothing A059 on 2026-08-22.
+ * A tint that is theme-aware in a way the background is not below API 31 draws
+ * the same mismatch the other way round, which is what [BitmapText] measures.
+ * Both are a mismatch between two colours, which is why this surface takes both
+ * of them from one place.
  * `WidgetTextColourDarkTest` and its light twin measure every ratio drawn here,
  * the glyph included.
  *
