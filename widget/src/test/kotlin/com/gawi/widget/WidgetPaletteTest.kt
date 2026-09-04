@@ -4,10 +4,10 @@ import android.content.Context
 import android.content.res.Configuration
 import androidx.compose.ui.graphics.luminance
 import androidx.glance.unit.ColorProvider
-import com.gawi.core.testing.WCAG_NON_TEXT_FLOOR
-import com.gawi.core.testing.WCAG_TEXT_FLOOR
-import com.gawi.core.testing.contrastRatio
 import com.gawi.core.ui.theme.GawiRole
+import com.gawi.core.ui.theme.WCAG_NON_TEXT_FLOOR
+import com.gawi.core.ui.theme.WCAG_TEXT_FLOOR
+import com.gawi.core.ui.theme.contrastRatio
 import com.gawi.core.ui.theme.gawiRole
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

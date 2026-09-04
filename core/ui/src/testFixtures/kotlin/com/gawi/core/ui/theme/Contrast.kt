@@ -1,4 +1,4 @@
-package com.gawi.core.testing
+package com.gawi.core.ui.theme
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
@@ -6,9 +6,11 @@ import androidx.compose.ui.graphics.luminance
 /**
  * WCAG relative contrast between two opaque colours.
  *
- * Test code rather than production because nothing the app draws needs to
- * know a ratio — `glyphColorOn` only needs to know which side of the pivot a
- * colour falls on. The tests need the number so they can assert the property
+ * Test fixtures rather than production because nothing the app draws needs to
+ * know a ratio — [glyphColorOn] only needs to know which side of the pivot a
+ * colour falls on. Published from `:core:ui` rather than held in `:core:testing`
+ * because the colours it measures are this module's: a test set that wants the
+ * formula should not take a dependency on the read model and Room with it. The tests need the number so they can assert the property
  * the pivot and the palette exist to deliver rather than the constants that
  * deliver it.
  *
