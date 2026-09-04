@@ -1,8 +1,8 @@
 package com.gawi.widget
 
-import com.gawi.core.testing.WCAG_TEXT_FLOOR
-import com.gawi.core.testing.contrastRatio
 import com.gawi.core.ui.streak.StreakUi
+import com.gawi.core.ui.theme.WCAG_TEXT_FLOOR
+import com.gawi.core.ui.theme.contrastRatio
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue

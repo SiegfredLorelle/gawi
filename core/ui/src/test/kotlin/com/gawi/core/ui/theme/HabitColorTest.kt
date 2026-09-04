@@ -2,8 +2,6 @@ package com.gawi.core.ui.theme
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
-import com.gawi.core.testing.WCAG_TEXT_FLOOR
-import com.gawi.core.testing.contrastRatio
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue

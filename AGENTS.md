@@ -128,8 +128,10 @@ Full guide with examples: `.github/COMMIT_CONVENTION.md`
   string read off disk, no subpath count, and no second test of the same
   thing. `scripts/check-tests.sh`, in `make lint`, refuses `Thread.sleep` and
   reflection by method name in test sources. **Shared test helpers live in
-  `:core:testing`** (pure-domain ones in
-  `core/domain/src/testFixtures`); a second copy of one is the defect.
+  `:core:testing`**, except one that builds or measures a single module's own
+  types, which is published from that module's `src/testFixtures` and
+  re-exported: ids and events from `:core:domain`, the WCAG contrast helper
+  from `:core:ui`. A second copy of one is the defect.
 - Run `make fmt` before committing; `make lint` and `make test` before
   considering any change complete.
 

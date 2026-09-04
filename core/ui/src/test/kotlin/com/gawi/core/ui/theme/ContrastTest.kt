@@ -1,4 +1,4 @@
-package com.gawi.core.testing
+package com.gawi.core.ui.theme
 
 import androidx.compose.ui.graphics.Color
 import org.junit.Assert.assertEquals

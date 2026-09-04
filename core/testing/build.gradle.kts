@@ -16,6 +16,10 @@ dependencies {
     // compiles against both modules through them.
     api(project(":core:data"))
     api(project(":core:ui"))
+    // The WCAG contrast helper, which `:core:ui` publishes because the colours
+    // it measures are that module's. Re-exported so a consumer of the shared
+    // helpers has one import path for all of them.
+    api(testFixtures(project(":core:ui")))
     // uuid(), habitId() and the event builders live in :core:domain's own test
     // fixtures because that module is pure JVM and cannot depend on this one.
     // Re-exported so one import path serves every Android module.

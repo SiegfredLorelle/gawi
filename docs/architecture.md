@@ -52,11 +52,20 @@ Now-in-Android convention: Gradle version catalog
 Dependency rule: `feature → core`, `widget → core`, `app → everything`,
 `core:data → core:domain`, `core:ui → core:domain`, and `:core:domain` depends
 on nothing but the Kotlin stdlib and kotlinx-serialization. Test code has one
-more edge: `core:testing → core:data, core:ui` on its main source set, and
-every Android module's **test** source set → `core:testing`. `:core:domain`
-publishes its id and event builders as Gradle test fixtures instead, because a
-pure-JVM module cannot depend on an Android library; `:core:testing` re-exports
-them, and `:core:data`'s tests take them directly.
+more edge: `core:testing → core:data, core:ui` on its main source set, and the
+**test** source set of every Android module that draws habits → `core:testing`.
+
+Two modules publish **test fixtures** rather than going through it, and for the
+same reason in both cases — a fixture belongs to the module whose types it
+builds, and taking it from `:core:testing` would drag that module's whole
+dependency list into a test task graph that wanted one function.
+`:core:domain` publishes the id and event builders, which it must, being pure
+JVM and unable to depend on an Android library; `:core:ui` publishes the WCAG
+contrast helper. `:core:testing` re-exports both, so a module that wants the
+fakes gets everything from one place, while `:core:data`'s and `:core:ui`'s own
+tests take only the fixtures and stay off it. Measured: routing the contrast
+helper through `:core:testing` put 23 `:core:data` tasks including Room's code
+generation into `:core:ui`'s test graph, 91 tasks against 55.
 
 ```mermaid
 graph TD
@@ -600,11 +609,13 @@ this app's was added — both versions declare the same four.
   resolution, which the single `detekt` task does not run.
 - **`:core:testing`** holds every helper two or more modules' tests need:
   fixtures (`habitState`, `todayHabit`, `todaySnapshot`, `FIXED_DATE`), the one
-  `FakeHabitRepository`, `MainDispatcherRule`, `AnimationsOffRule` and the WCAG
-  `contrastRatio` with its two floors. Robolectric is `compileOnly` there so
-  `:core:ui`'s tests stay Robolectric-free. Ids and events come from
-  `:core:domain`'s test fixtures (`src/testFixtures`), which it re-exports. A
-  second copy of any of these is the defect, not a convenience.
+  `FakeHabitRepository`, `MainDispatcherRule` and `AnimationsOffRule`.
+  Robolectric is `compileOnly` there, so a consumer that does not run it is not
+  handed it. Ids and events come from `:core:domain`'s test fixtures and the
+  WCAG `contrastRatio` from `:core:ui`'s, both re-exported. A second copy of any
+  of these is the defect, not a convenience. The one fake carries what four
+  per-module fakes used to: `unreachable` names the members a screen must not
+  call, because one fake for every screen cannot be loud about that by default.
 - `:widget`: JVM unit tests, most of them without Robolectric. The read is a
   pure `TodaySnapshot` → rows mapper and the tap is a function of the
   repository, so both are testable without Glance, a device or a shadow. The
@@ -813,8 +824,9 @@ the one a first contribution hits immediately.
 §8 owns the policy for what belongs there and why it is only `:app`. A test
 helper that only one module's tests use goes in a `testsupport/` package beside
 them. One that a second module's tests need goes in `:core:testing`'s main
-source set — or, when it is pure domain (an id, an event), in
-`core/domain/src/testFixtures`, which `:core:testing` re-exports. There is no
+source set — unless it builds or measures one module's own types, in which case
+it goes in that module's `src/testFixtures` and `:core:testing` re-exports it:
+ids and events in `core/domain`, the contrast helper in `core/ui`. There is no
 third place, and a copy is not one.
 
 **The core modules are packaged by concept, not by layer.**
@@ -824,7 +836,7 @@ third place, and a copy is not one.
 | `:core:domain` | `command/` `event/` `id/` `mascot/` `model/` `projection/` `rate/` `serialization/` (with `export/` and `wire/`) `streak/` `time/` |
 | `:core:data` | `backup/` `db/` (with `dao/`, `entity/`, `mapper/`) `di/` `model/` `projection/` `reminder/` `repository/` `settings/` `time/`, plus `ProjectionVersion.kt` at the package root |
 | `:core:ui` | `component/` `streak/` `theme/` |
-| `:core:testing` | one package, `com.gawi.core.testing`: `Fixtures.kt`, `FakeHabitRepository.kt`, `MainDispatcherRule.kt`, `AnimationsOffRule.kt`, `Contrast.kt` |
+| `:core:testing` | one package, `com.gawi.core.testing`: `Fixtures.kt`, `FakeHabitRepository.kt`, `MainDispatcherRule.kt`, `AnimationsOffRule.kt` |
 
 Two of those need a word, because the same name appears twice. `projection/`
 exists in both `:core:domain` and `:core:data`: the domain one is the pure
