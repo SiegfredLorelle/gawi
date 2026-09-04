@@ -3,12 +3,12 @@ package com.gawi.feature.today
 import app.cash.turbine.test
 import com.gawi.core.domain.command.CommandError
 import com.gawi.core.domain.command.CommandResult
-import com.gawi.feature.today.testsupport.FakeHabitRepository
-import com.gawi.feature.today.testsupport.MainDispatcherRule
-import com.gawi.feature.today.testsupport.TODAY
-import com.gawi.feature.today.testsupport.Toggle
-import com.gawi.feature.today.testsupport.habitId
-import com.gawi.feature.today.testsupport.todayHabit
+import com.gawi.core.domain.testing.habitId
+import com.gawi.core.testing.Completion
+import com.gawi.core.testing.FIXED_DATE
+import com.gawi.core.testing.FakeHabitRepository
+import com.gawi.core.testing.MainDispatcherRule
+import com.gawi.core.testing.todayHabit
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -44,7 +44,7 @@ class TodayViewModelTest {
         viewModel.uiState.test {
             assertEquals(TodayUiState.Loading, awaitItem())
 
-            repository.emit(listOf(todayHabit(name = "read")))
+            repository.emitToday(listOf(todayHabit(name = "read")))
 
             val state = awaitItem() as TodayUiState.Habits
             assertEquals("read", state.rows.single().name)
@@ -58,7 +58,7 @@ class TodayViewModelTest {
         // SettingsSource.current, which refuses rather than guessing when the
         // preferences file cannot be read. Uncaught, that would escape stateIn's
         // sharing coroutine and take the process down on the only screen.
-        repository.failure = IOException("settings unreadable")
+        repository.failWith = IOException("settings unreadable")
 
         viewModel.uiState.test {
             // No Loading first: the upstream fails on subscription, so stateIn
@@ -72,21 +72,21 @@ class TodayViewModelTest {
     fun `tapping an unticked row completes it for the day it was drawn for`() = runTest {
         viewModel.uiState.test {
             skipItems(1)
-            repository.emit(listOf(todayHabit(id = habitId(1))))
+            repository.emitToday(listOf(todayHabit(id = habitId(1))))
             awaitItem()
 
-            viewModel.onToggle(habitId(1), completed = false, logicalDate = TODAY)
+            viewModel.onToggle(habitId(1), completed = false, logicalDate = FIXED_DATE)
 
-            assertEquals(listOf(Toggle(habitId(1), TODAY, undo = false)), repository.toggles)
+            assertEquals(listOf(Completion(habitId(1), FIXED_DATE, undo = false)), repository.completions)
             cancelAndIgnoreRemainingEvents()
         }
     }
 
     @Test
     fun `tapping a ticked row undoes it`() = runTest {
-        viewModel.onToggle(habitId(1), completed = true, logicalDate = TODAY)
+        viewModel.onToggle(habitId(1), completed = true, logicalDate = FIXED_DATE)
 
-        assertEquals(listOf(Toggle(habitId(1), TODAY, undo = true)), repository.toggles)
+        assertEquals(listOf(Completion(habitId(1), FIXED_DATE, undo = true)), repository.completions)
     }
 
     @Test
@@ -94,7 +94,7 @@ class TodayViewModelTest {
         repository.result = CommandResult.Rejected(CommandError.RetroWindowExceeded)
 
         viewModel.events.test {
-            viewModel.onToggle(habitId(1), completed = false, logicalDate = TODAY)
+            viewModel.onToggle(habitId(1), completed = false, logicalDate = FIXED_DATE)
 
             assertEquals(TodayMessage(R.string.today_error_retro_window), awaitItem())
             expectNoEvents()
@@ -106,8 +106,8 @@ class TodayViewModelTest {
         repository.result = CommandResult.Rejected(CommandError.RetroWindowExceeded)
 
         viewModel.events.test {
-            viewModel.onToggle(habitId(1), completed = false, logicalDate = TODAY)
-            viewModel.onToggle(habitId(1), completed = false, logicalDate = TODAY)
+            viewModel.onToggle(habitId(1), completed = false, logicalDate = FIXED_DATE)
+            viewModel.onToggle(habitId(1), completed = false, logicalDate = FIXED_DATE)
 
             // Held as state, the second would be swallowed as a duplicate. Two
             // taps refused is two things the user needs told.
@@ -123,11 +123,11 @@ class TodayViewModelTest {
         repository.result = CommandResult.Rejected(CommandError.CompletionNotFound)
 
         viewModel.events.test {
-            viewModel.onToggle(habitId(1), completed = true, logicalDate = TODAY)
+            viewModel.onToggle(habitId(1), completed = true, logicalDate = FIXED_DATE)
 
             expectNoEvents()
         }
-        assertTrue(repository.toggles.isNotEmpty())
+        assertTrue(repository.completions.isNotEmpty())
     }
 
     /**
@@ -144,7 +144,7 @@ class TodayViewModelTest {
         repository.commandFailure = IllegalStateException("the settings file cannot be read")
 
         viewModel.events.test {
-            viewModel.onToggle(habitId(1), completed = false, logicalDate = TODAY)
+            viewModel.onToggle(habitId(1), completed = false, logicalDate = FIXED_DATE)
             assertEquals(TodayMessage(R.string.today_error_unexpected), awaitItem())
             cancelAndIgnoreRemainingEvents()
         }

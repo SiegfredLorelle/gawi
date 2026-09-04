@@ -8,14 +8,14 @@ import com.gawi.core.data.settings.settingsDataStore
 import com.gawi.core.data.testsupport.FakeDeviceClock
 import com.gawi.core.data.testsupport.FakeSettingsSource
 import com.gawi.core.data.testsupport.TestStore
-import com.gawi.core.data.testsupport.habitId
-import com.gawi.core.data.testsupport.metadata
 import com.gawi.core.domain.command.CommandResult
 import com.gawi.core.domain.model.HabitId
 import com.gawi.core.domain.model.Schedule
 import com.gawi.core.domain.projection.HabitMetadata
 import com.gawi.core.domain.projection.HabitState
 import com.gawi.core.domain.streak.StreakSnapshot
+import com.gawi.core.domain.testing.habitId
+import com.gawi.core.domain.testing.metadata
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.TestScope

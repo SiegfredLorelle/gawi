@@ -4,11 +4,11 @@ import androidx.room.Room
 import com.gawi.core.data.db.dao.EventDao
 import com.gawi.core.data.db.mapper.toDomain
 import com.gawi.core.data.db.mapper.toEntity
-import com.gawi.core.data.testsupport.completionAdded
-import com.gawi.core.data.testsupport.event
-import com.gawi.core.data.testsupport.habitCreated
-import com.gawi.core.data.testsupport.habitId
 import com.gawi.core.domain.serialization.EventCodec
+import com.gawi.core.domain.testing.completionAdded
+import com.gawi.core.domain.testing.event
+import com.gawi.core.domain.testing.habitCreated
+import com.gawi.core.domain.testing.habitId
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals

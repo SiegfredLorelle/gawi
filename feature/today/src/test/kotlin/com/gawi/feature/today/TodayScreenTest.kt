@@ -19,9 +19,10 @@ import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performScrollToNode
 import com.gawi.core.domain.mascot.Mood
 import com.gawi.core.domain.model.HabitId
+import com.gawi.core.domain.testing.habitId
+import com.gawi.core.testing.AnimationsOffRule
 import com.gawi.core.ui.streak.StreakUi
 import com.gawi.core.ui.theme.GawiTheme
-import com.gawi.feature.today.testsupport.habitId
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test

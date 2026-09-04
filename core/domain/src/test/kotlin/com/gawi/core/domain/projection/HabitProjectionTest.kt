@@ -5,11 +5,11 @@ import com.gawi.core.domain.event.HabitCreated
 import com.gawi.core.domain.event.HabitUnarchived
 import com.gawi.core.domain.event.HabitUpdated
 import com.gawi.core.domain.model.Schedule
-import com.gawi.core.domain.testsupport.event
-import com.gawi.core.domain.testsupport.eventAt
-import com.gawi.core.domain.testsupport.habitCreated
-import com.gawi.core.domain.testsupport.habitId
-import com.gawi.core.domain.testsupport.habitUpdated
+import com.gawi.core.domain.testing.event
+import com.gawi.core.domain.testing.eventAt
+import com.gawi.core.domain.testing.habitCreated
+import com.gawi.core.domain.testing.habitId
+import com.gawi.core.domain.testing.habitUpdated
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull

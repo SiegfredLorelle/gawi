@@ -2,10 +2,11 @@ package com.gawi.core.data.repository
 
 import app.cash.turbine.test
 import com.gawi.core.data.testsupport.TestStore
-import com.gawi.core.data.testsupport.metadata
 import com.gawi.core.domain.command.CommandResult
 import com.gawi.core.domain.model.HabitId
 import com.gawi.core.domain.model.Schedule
+import com.gawi.core.domain.testing.habitId
+import com.gawi.core.domain.testing.metadata
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -204,7 +205,7 @@ class TodayQueryTest {
 
     @Test
     fun `observing an unknown habit emits null rather than failing`() = runTest {
-        store.repository.observeHabitDetail(com.gawi.core.data.testsupport.habitId(404)).test {
+        store.repository.observeHabitDetail(habitId(404)).test {
             assertNull(awaitItem())
             cancelAndIgnoreRemainingEvents()
         }

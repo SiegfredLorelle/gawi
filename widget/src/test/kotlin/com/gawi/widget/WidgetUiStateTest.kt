@@ -1,9 +1,9 @@
 package com.gawi.widget
 
 import com.gawi.core.domain.mascot.Mood
-import com.gawi.widget.testsupport.habitId
-import com.gawi.widget.testsupport.todayHabit
-import com.gawi.widget.testsupport.todaySnapshot
+import com.gawi.core.domain.testing.habitId
+import com.gawi.core.testing.todayHabit
+import com.gawi.core.testing.todaySnapshot
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

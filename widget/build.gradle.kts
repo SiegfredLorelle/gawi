@@ -78,6 +78,8 @@ dependencies {
     implementation(libs.androidx.glance.appwidget)
 
     testImplementation(libs.junit)
+    // Shared test helpers: fixtures, the fake repository and the rules.
+    testImplementation(project(":core:testing"))
     testImplementation(libs.kotlinx.coroutines.test)
     // Glance's own unit-test harness, plus the framework it needs. This is the
     // first test here that renders rather than deciding: everything else asserts

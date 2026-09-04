@@ -7,11 +7,11 @@ import androidx.glance.appwidget.testing.unit.runGlanceAppWidgetUnitTest
 import androidx.glance.testing.unit.hasContentDescription
 import com.gawi.core.domain.model.Schedule
 import com.gawi.core.domain.streak.StreakSnapshot
-import com.gawi.widget.testsupport.FIXED_DATE
+import com.gawi.core.domain.testing.habitId
+import com.gawi.core.testing.FIXED_DATE
+import com.gawi.core.testing.todayHabit
+import com.gawi.core.testing.todaySnapshot
 import com.gawi.widget.testsupport.anyText
-import com.gawi.widget.testsupport.habitId
-import com.gawi.widget.testsupport.todayHabit
-import com.gawi.widget.testsupport.todaySnapshot
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner

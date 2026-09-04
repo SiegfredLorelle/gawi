@@ -2,12 +2,12 @@ package com.gawi.core.data.backup
 
 import com.gawi.core.data.db.entity.EventEntity
 import com.gawi.core.data.testsupport.TestStore
-import com.gawi.core.data.testsupport.metadata
-import com.gawi.core.data.testsupport.uuid
 import com.gawi.core.domain.serialization.EventCodec
 import com.gawi.core.domain.serialization.export.EncodedEvent
 import com.gawi.core.domain.serialization.export.EventLogCodec
 import com.gawi.core.domain.serialization.export.ExportRead
+import com.gawi.core.domain.testing.metadata
+import com.gawi.core.domain.testing.uuid
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals

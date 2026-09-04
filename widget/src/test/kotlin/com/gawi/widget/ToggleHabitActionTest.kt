@@ -1,10 +1,10 @@
 package com.gawi.widget
 
-import com.gawi.widget.testsupport.FIXED_DATE
-import com.gawi.widget.testsupport.FakeHabitRepository
-import com.gawi.widget.testsupport.habitId
-import com.gawi.widget.testsupport.todayHabit
-import com.gawi.widget.testsupport.todaySnapshot
+import com.gawi.core.domain.testing.habitId
+import com.gawi.core.testing.FIXED_DATE
+import com.gawi.core.testing.FakeHabitRepository
+import com.gawi.core.testing.todayHabit
+import com.gawi.core.testing.todaySnapshot
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -27,9 +27,9 @@ class ToggleHabitActionTest {
 
         toggleHabit(habits, habitId(1).value)
 
-        assertEquals(1, habits.writes.size)
-        assertEquals("add", habits.writes.single().kind)
-        assertEquals(habitId(1), habits.writes.single().habitId)
+        assertEquals(1, habits.completions.size)
+        assertEquals(false, habits.completions.single().undo)
+        assertEquals(habitId(1), habits.completions.single().habitId)
     }
 
     @Test
@@ -38,7 +38,7 @@ class ToggleHabitActionTest {
 
         toggleHabit(habits, habitId(1).value)
 
-        assertEquals("undo", habits.writes.single().kind)
+        assertEquals(true, habits.completions.single().undo)
     }
 
     /**
@@ -52,7 +52,7 @@ class ToggleHabitActionTest {
 
         toggleHabit(habits, habitId(1).value)
 
-        assertEquals(FIXED_DATE, habits.writes.single().logicalDate)
+        assertEquals(FIXED_DATE, habits.completions.single().logicalDate)
     }
 
     @Test
@@ -61,7 +61,7 @@ class ToggleHabitActionTest {
 
         toggleHabit(habits, habitId(2).value)
 
-        assertTrue(habits.writes.isEmpty())
+        assertTrue(habits.completions.isEmpty())
     }
 
     /**
@@ -77,7 +77,7 @@ class ToggleHabitActionTest {
 
         toggleHabit(habits, "not-a-uuid")
 
-        assertTrue(habits.writes.isEmpty())
+        assertTrue(habits.completions.isEmpty())
     }
 
     @Test
@@ -86,7 +86,7 @@ class ToggleHabitActionTest {
 
         toggleHabit(habits, null)
 
-        assertTrue(habits.writes.isEmpty())
+        assertTrue(habits.completions.isEmpty())
     }
 
     /**
@@ -101,6 +101,6 @@ class ToggleHabitActionTest {
 
         toggleHabit(habits, habitId(1).value)
 
-        assertTrue(habits.writes.isEmpty())
+        assertTrue(habits.completions.isEmpty())
     }
 }

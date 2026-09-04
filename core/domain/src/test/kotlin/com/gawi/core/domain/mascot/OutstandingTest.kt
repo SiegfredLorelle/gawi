@@ -2,7 +2,7 @@ package com.gawi.core.domain.mascot
 
 import com.gawi.core.domain.model.Schedule
 import com.gawi.core.domain.streak.StreakSnapshot
-import com.gawi.core.domain.testsupport.habitId
+import com.gawi.core.domain.testing.habitId
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

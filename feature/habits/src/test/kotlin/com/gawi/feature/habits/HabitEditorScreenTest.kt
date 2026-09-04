@@ -20,10 +20,10 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.unit.dp
+import com.gawi.core.testing.habitState
 import com.gawi.core.ui.theme.GawiSpacing
 import com.gawi.core.ui.theme.GawiTheme
 import com.gawi.core.ui.theme.HabitPalette
-import com.gawi.feature.habits.testsupport.habitState
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test

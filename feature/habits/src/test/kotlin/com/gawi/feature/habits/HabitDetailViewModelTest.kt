@@ -3,12 +3,12 @@ package com.gawi.feature.habits
 import app.cash.turbine.test
 import com.gawi.core.domain.command.CommandError
 import com.gawi.core.domain.command.CommandResult
-import com.gawi.feature.habits.testsupport.FakeHabitRepository
-import com.gawi.feature.habits.testsupport.MainDispatcherRule
-import com.gawi.feature.habits.testsupport.TODAY
-import com.gawi.feature.habits.testsupport.habitId
-import com.gawi.feature.habits.testsupport.habitState
-import com.gawi.feature.habits.testsupport.todayHabit
+import com.gawi.core.domain.testing.habitId
+import com.gawi.core.testing.FIXED_DATE
+import com.gawi.core.testing.FakeHabitRepository
+import com.gawi.core.testing.MainDispatcherRule
+import com.gawi.core.testing.habitState
+import com.gawi.core.testing.todayHabit
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -162,9 +162,9 @@ class HabitDetailViewModelTest {
     fun `completing a past day writes to that day`() = runTest {
         val detail = detailWriting()
 
-        detail.onToggle(habitId(1), TODAY.minusDays(2), completed = false)
+        detail.onToggle(habitId(1), FIXED_DATE.minusDays(2), completed = false)
 
-        assertEquals(listOf(Triple(habitId(1), TODAY.minusDays(2), null)), repository.completed)
+        assertEquals(listOf(Triple(habitId(1), FIXED_DATE.minusDays(2), null)), repository.completed)
         assertTrue(repository.undone.isEmpty())
     }
 
@@ -173,9 +173,9 @@ class HabitDetailViewModelTest {
     fun `un-completing a day undoes rather than adding again`() = runTest {
         val detail = detailWriting()
 
-        detail.onToggle(habitId(1), TODAY.minusDays(2), completed = true)
+        detail.onToggle(habitId(1), FIXED_DATE.minusDays(2), completed = true)
 
-        assertEquals(listOf(habitId(1) to TODAY.minusDays(2)), repository.undone)
+        assertEquals(listOf(habitId(1) to FIXED_DATE.minusDays(2)), repository.undone)
         assertTrue(repository.completed.isEmpty())
     }
 
@@ -192,7 +192,7 @@ class HabitDetailViewModelTest {
         repository.result = CommandResult.Rejected(CommandError.RetroWindowExceeded)
 
         detail.events.test {
-            detail.onToggle(habitId(1), TODAY.minusDays(2), completed = false)
+            detail.onToggle(habitId(1), FIXED_DATE.minusDays(2), completed = false)
             assertEquals(HabitsMessage(R.string.habits_error_retro_window), awaitItem())
             cancelAndIgnoreRemainingEvents()
         }
@@ -211,7 +211,7 @@ class HabitDetailViewModelTest {
         repository.commandFailure = IllegalStateException("settings unreadable")
 
         detail.events.test {
-            detail.onToggle(habitId(1), TODAY, completed = false)
+            detail.onToggle(habitId(1), FIXED_DATE, completed = false)
             assertEquals(HabitsMessage(R.string.habits_error_unexpected), awaitItem())
             cancelAndIgnoreRemainingEvents()
         }
@@ -231,7 +231,7 @@ class HabitDetailViewModelTest {
         repository.result = CommandResult.Rejected(CommandError.CompletionNotFound)
 
         detail.events.test {
-            detail.onToggle(habitId(1), TODAY, completed = true)
+            detail.onToggle(habitId(1), FIXED_DATE, completed = true)
             expectNoEvents()
             cancelAndIgnoreRemainingEvents()
         }
@@ -244,7 +244,7 @@ class HabitDetailViewModelTest {
         repository.result = CommandResult.Rejected(CommandError.HabitIsArchived)
 
         detail.events.test {
-            detail.onToggle(habitId(1), TODAY, completed = false)
+            detail.onToggle(habitId(1), FIXED_DATE, completed = false)
             assertEquals(HabitsMessage(R.string.habits_error_archived), awaitItem())
             cancelAndIgnoreRemainingEvents()
         }
@@ -256,9 +256,9 @@ class HabitDetailViewModelTest {
     fun `a note is written against the day it belongs to`() = runTest {
         val detail = detailWriting()
 
-        detail.onNote(habitId(1), TODAY.minusDays(2), "went far")
+        detail.onNote(habitId(1), FIXED_DATE.minusDays(2), "went far")
 
-        assertEquals(listOf(Triple(habitId(1), TODAY.minusDays(2), "went far")), repository.notes)
+        assertEquals(listOf(Triple(habitId(1), FIXED_DATE.minusDays(2), "went far")), repository.notes)
     }
 
     /**
@@ -272,9 +272,9 @@ class HabitDetailViewModelTest {
     fun `clearing a note is a write, not a skipped one`() = runTest {
         val detail = detailWriting()
 
-        detail.onNote(habitId(1), TODAY, "")
+        detail.onNote(habitId(1), FIXED_DATE, "")
 
-        assertEquals(listOf(Triple(habitId(1), TODAY, "")), repository.notes)
+        assertEquals(listOf(Triple(habitId(1), FIXED_DATE, "")), repository.notes)
     }
 
     /** A note on a day whose completion has gone says so rather than staying silent. */
@@ -284,7 +284,7 @@ class HabitDetailViewModelTest {
         repository.result = CommandResult.Rejected(CommandError.CompletionNotFound)
 
         detail.events.test {
-            detail.onNote(habitId(1), TODAY, "went far")
+            detail.onNote(habitId(1), FIXED_DATE, "went far")
             assertEquals(HabitsMessage(R.string.habits_error_completion_missing), awaitItem())
             cancelAndIgnoreRemainingEvents()
         }

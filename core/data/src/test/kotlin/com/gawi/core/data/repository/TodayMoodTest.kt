@@ -5,7 +5,6 @@ import com.gawi.core.data.model.toMoodState
 import com.gawi.core.data.settings.UserSettings
 import com.gawi.core.data.testsupport.FakeSettingsSource
 import com.gawi.core.data.testsupport.TestStore
-import com.gawi.core.data.testsupport.metadata
 import com.gawi.core.domain.command.CommandResult
 import com.gawi.core.domain.mascot.HabitMoodState
 import com.gawi.core.domain.mascot.Mascot
@@ -13,6 +12,7 @@ import com.gawi.core.domain.mascot.Mood
 import com.gawi.core.domain.model.HabitId
 import com.gawi.core.domain.model.Schedule
 import com.gawi.core.domain.streak.StreakSnapshot
+import com.gawi.core.domain.testing.metadata
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals

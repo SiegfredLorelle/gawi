@@ -4,10 +4,11 @@ import android.content.Context
 import android.content.res.Configuration
 import androidx.compose.ui.graphics.luminance
 import androidx.glance.unit.ColorProvider
+import com.gawi.core.testing.WCAG_NON_TEXT_FLOOR
+import com.gawi.core.testing.WCAG_TEXT_FLOOR
+import com.gawi.core.testing.contrastRatio
 import com.gawi.core.ui.theme.GawiRole
 import com.gawi.core.ui.theme.gawiRole
-import com.gawi.widget.testsupport.MIN_CONTRAST
-import com.gawi.widget.testsupport.contrastRatio
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -105,7 +106,7 @@ class WidgetPaletteTest {
             val context = context(night)
             for (ink in inks) {
                 val ratio = contrastRatio(ink.provider.getColor(context), ink.ground!!.getColor(context))
-                assertTrue("${ink.name} is $ratio:1 on its ground with night=$night, below $MIN_CONTRAST", ratio >= MIN_CONTRAST)
+                assertTrue("${ink.name} is $ratio:1 on its ground with night=$night, below $WCAG_TEXT_FLOOR", ratio >= WCAG_TEXT_FLOOR)
             }
         }
     }
@@ -122,7 +123,10 @@ class WidgetPaletteTest {
         for (night in listOf(false, true)) {
             val context = context(night)
             val ratio = contrastRatio(WidgetPalette.bandWoven.getColor(context), WidgetPalette.bandOutstanding.getColor(context))
-            assertTrue("the band's two fills are $ratio:1 apart with night=$night, below $NON_TEXT_CONTRAST", ratio >= NON_TEXT_CONTRAST)
+            assertTrue(
+                "the band's two fills are $ratio:1 apart with night=$night, below $WCAG_NON_TEXT_FLOOR",
+                ratio >= WCAG_NON_TEXT_FLOOR,
+            )
         }
     }
 
@@ -187,11 +191,6 @@ class WidgetPaletteTest {
                 )
             }
         }
-    }
-
-    private companion object {
-        /** WCAG 1.4.11, for two fills whose difference is the information. */
-        const val NON_TEXT_CONTRAST = 3f
     }
 
     /** The same application context, in a configuration with night mode forced either way. */

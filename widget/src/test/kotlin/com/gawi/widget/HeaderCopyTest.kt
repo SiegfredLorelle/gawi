@@ -6,6 +6,8 @@ import android.util.TypedValue
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.gawi.core.domain.mascot.Mood
+import com.gawi.core.testing.todayHabit
+import com.gawi.core.testing.todaySnapshot
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -55,7 +57,7 @@ class HeaderCopyTest {
     @Test
     fun `the width gate scales with the text`() {
         val ready = WidgetContent.Ready(
-            com.gawi.widget.testsupport.todaySnapshot(habits = listOf(com.gawi.widget.testsupport.todayHabit())).toWidgetState(),
+            todaySnapshot(habits = listOf(todayHabit())).toWidgetState(),
         )
         assertEquals(WidgetBodyContent.Rows::class, ready.body(DpSize(LARGE_MIN_WIDTH.dp, MOMO_MIN_HEIGHT.dp), textScale = 2f)::class)
         assertEquals(

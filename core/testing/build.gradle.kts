@@ -30,4 +30,5 @@ dependencies {
     compileOnly(libs.robolectric)
 
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
 }

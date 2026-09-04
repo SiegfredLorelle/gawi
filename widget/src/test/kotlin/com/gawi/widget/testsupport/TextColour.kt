@@ -8,6 +8,8 @@ import androidx.glance.TintColorFilterParams
 import androidx.glance.testing.GlanceNodeMatcher
 import androidx.glance.testing.unit.MappedNode
 import androidx.glance.unit.ColorProvider
+import com.gawi.core.testing.WCAG_TEXT_FLOOR
+import com.gawi.core.testing.contrastRatio
 import com.gawi.widget.WidgetPalette
 
 /*
@@ -50,9 +52,9 @@ fun anyText() = GlanceNodeMatcher<MappedNode>("draws text") { node -> node.value
 
 /** Ink below the WCAG floor against [background]. */
 fun illegibleText(context: Context, background: Color) =
-    GlanceNodeMatcher<MappedNode>("draws text below $MIN_CONTRAST:1 against the widget background") { node ->
+    GlanceNodeMatcher<MappedNode>("draws text below $WCAG_TEXT_FLOOR:1 against the widget background") { node ->
         val tint = node.value.emittable.textTint()
-        tint != null && contrastRatio(tint.getColor(context), background) < MIN_CONTRAST
+        tint != null && contrastRatio(tint.getColor(context), background) < WCAG_TEXT_FLOOR
     }
 
 /**

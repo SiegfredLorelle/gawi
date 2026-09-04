@@ -1,12 +1,12 @@
 package com.gawi.core.data.repository
 
 import com.gawi.core.data.testsupport.TestStore
-import com.gawi.core.data.testsupport.habitId
-import com.gawi.core.data.testsupport.metadata
 import com.gawi.core.domain.command.CommandError
 import com.gawi.core.domain.command.CommandResult
 import com.gawi.core.domain.model.HabitId
 import com.gawi.core.domain.model.Schedule
+import com.gawi.core.domain.testing.habitId
+import com.gawi.core.domain.testing.metadata
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest

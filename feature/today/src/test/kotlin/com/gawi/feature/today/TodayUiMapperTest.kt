@@ -3,11 +3,11 @@ package com.gawi.feature.today
 import com.gawi.core.domain.mascot.Mood
 import com.gawi.core.domain.model.Schedule
 import com.gawi.core.domain.streak.StreakSnapshot
+import com.gawi.core.domain.testing.habitId
+import com.gawi.core.testing.FIXED_DATE
+import com.gawi.core.testing.todayHabit
+import com.gawi.core.testing.todaySnapshot
 import com.gawi.core.ui.streak.StreakUi
-import com.gawi.feature.today.testsupport.TODAY
-import com.gawi.feature.today.testsupport.habitId
-import com.gawi.feature.today.testsupport.todayHabit
-import com.gawi.feature.today.testsupport.todaySnapshot
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -61,14 +61,14 @@ class TodayUiMapperTest {
         // Past the reminder with something outstanding, which is §4's rule 3.
         val worried = todaySnapshot(
             habits = listOf(todayHabit(completedToday = false)),
-            now = TODAY.atTime(21, 30),
+            now = FIXED_DATE.atTime(21, 30),
         ).toUiState() as TodayUiState.Habits
         assertEquals(Mood.WORRIED, worried.mood)
 
         // Same rows, same clock, nothing outstanding — §4's rule 1.
         val thriving = todaySnapshot(
             habits = listOf(todayHabit(completedToday = true)),
-            now = TODAY.atTime(21, 30),
+            now = FIXED_DATE.atTime(21, 30),
         ).toUiState() as TodayUiState.Habits
         assertEquals(Mood.THRIVING, thriving.mood)
         assertEquals(0, thriving.remaining)
@@ -101,7 +101,7 @@ class TodayUiMapperTest {
     @Test
     fun `the state carries the date its rows were queried for`() {
         val state = todaySnapshot(habits = listOf(todayHabit())).toUiState() as TodayUiState.Habits
-        assertEquals(TODAY, state.logicalDate)
+        assertEquals(FIXED_DATE, state.logicalDate)
     }
 
     @Test
@@ -111,8 +111,8 @@ class TodayUiMapperTest {
         // becomes a name a person reads.
         val state = todaySnapshot(
             habits = listOf(
-                todayHabit(id = habitId(1), name = "read", streak = brokeOn(TODAY.minusDays(2))),
-                todayHabit(id = habitId(2), name = "walk", streak = brokeOn(TODAY)),
+                todayHabit(id = habitId(1), name = "read", streak = brokeOn(FIXED_DATE.minusDays(2))),
+                todayHabit(id = habitId(2), name = "walk", streak = brokeOn(FIXED_DATE)),
             ),
         ).toUiState() as TodayUiState.Habits
 
@@ -126,7 +126,7 @@ class TodayUiMapperTest {
         // it — the mood is what decides there is no line to name it in. Without
         // the gate this would read "Pick read back up" on a day already done.
         val state = todaySnapshot(
-            habits = listOf(todayHabit(completedToday = true, streak = brokeOn(TODAY))),
+            habits = listOf(todayHabit(completedToday = true, streak = brokeOn(FIXED_DATE))),
         ).toUiState() as TodayUiState.Habits
 
         assertEquals(Mood.THRIVING, state.mood)
@@ -147,7 +147,7 @@ class TodayUiMapperTest {
                     schedule = Schedule.Weekly(3),
                     completedToday = true,
                     weekCount = 1,
-                    streak = brokeOn(TODAY),
+                    streak = brokeOn(FIXED_DATE),
                 ),
                 todayHabit(id = habitId(2), name = "read"),
             ),
@@ -171,9 +171,9 @@ class TodayUiMapperTest {
                     schedule = Schedule.Weekly(3),
                     completedToday = true,
                     weekCount = 1,
-                    streak = brokeOn(TODAY),
+                    streak = brokeOn(FIXED_DATE),
                 ),
-                todayHabit(id = habitId(2), name = "read", streak = brokeOn(TODAY.minusDays(1))),
+                todayHabit(id = habitId(2), name = "read", streak = brokeOn(FIXED_DATE.minusDays(1))),
             ),
         ).toUiState() as TodayUiState.Habits
 
@@ -186,8 +186,8 @@ class TodayUiMapperTest {
         // habit that is actually on screen.
         val state = todaySnapshot(
             habits = listOf(
-                todayHabit(id = habitId(1), name = "old", archived = true, streak = brokeOn(TODAY)),
-                todayHabit(id = habitId(2), name = "walk", streak = brokeOn(TODAY.minusDays(1))),
+                todayHabit(id = habitId(1), name = "old", archived = true, streak = brokeOn(FIXED_DATE)),
+                todayHabit(id = habitId(2), name = "walk", streak = brokeOn(FIXED_DATE.minusDays(1))),
             ),
         ).toUiState() as TodayUiState.Habits
 

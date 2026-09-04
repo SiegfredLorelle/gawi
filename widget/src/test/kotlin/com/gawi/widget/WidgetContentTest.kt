@@ -1,9 +1,9 @@
 package com.gawi.widget
 
-import com.gawi.widget.testsupport.FakeHabitRepository
-import com.gawi.widget.testsupport.habitId
-import com.gawi.widget.testsupport.todayHabit
-import com.gawi.widget.testsupport.todaySnapshot
+import com.gawi.core.domain.testing.habitId
+import com.gawi.core.testing.FakeHabitRepository
+import com.gawi.core.testing.todayHabit
+import com.gawi.core.testing.todaySnapshot
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals

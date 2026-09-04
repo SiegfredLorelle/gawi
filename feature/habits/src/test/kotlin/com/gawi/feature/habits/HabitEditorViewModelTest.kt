@@ -4,11 +4,11 @@ import app.cash.turbine.test
 import com.gawi.core.domain.command.CommandError
 import com.gawi.core.domain.command.CommandResult
 import com.gawi.core.domain.model.Schedule
-import com.gawi.feature.habits.testsupport.FakeHabitRepository
-import com.gawi.feature.habits.testsupport.MainDispatcherRule
-import com.gawi.feature.habits.testsupport.habitId
-import com.gawi.feature.habits.testsupport.habitState
-import com.gawi.feature.habits.testsupport.todayHabit
+import com.gawi.core.domain.testing.habitId
+import com.gawi.core.testing.FakeHabitRepository
+import com.gawi.core.testing.MainDispatcherRule
+import com.gawi.core.testing.habitState
+import com.gawi.core.testing.todayHabit
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

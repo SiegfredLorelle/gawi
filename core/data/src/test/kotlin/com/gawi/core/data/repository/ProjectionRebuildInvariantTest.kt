@@ -3,8 +3,8 @@ package com.gawi.core.data.repository
 import com.gawi.core.data.db.entity.ProjectionMetaEntity
 import com.gawi.core.data.testsupport.RepositoryCommandGenerator
 import com.gawi.core.data.testsupport.TestStore
-import com.gawi.core.data.testsupport.metadata
 import com.gawi.core.domain.command.CommandResult
+import com.gawi.core.domain.testing.metadata
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals

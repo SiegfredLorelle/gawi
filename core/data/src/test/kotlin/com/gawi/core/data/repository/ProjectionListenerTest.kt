@@ -2,9 +2,9 @@ package com.gawi.core.data.repository
 
 import com.gawi.core.data.testsupport.RecordingProjectionListener
 import com.gawi.core.data.testsupport.TestStore
-import com.gawi.core.data.testsupport.metadata
 import com.gawi.core.domain.command.CommandResult
 import com.gawi.core.domain.model.HabitId
+import com.gawi.core.domain.testing.metadata
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
