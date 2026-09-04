@@ -31,6 +31,7 @@ fmt: ## Format the codebase
 
 lint: ## Lint and type-check the codebase
 	./scripts/check-citations.sh
+	./scripts/check-tests.sh
 	./gradlew spotlessCheck detekt lint :app:assembleDebug
 
 test: ## Run the test suite
@@ -39,10 +40,11 @@ test: ## Run the test suite
 
 `./gradlew help` looks like a no-op but the wrapper downloads the Gradle
 distribution and warms the daemon, which is exactly what `setup` means here.
-`lint` is a script and four Gradle gates. The script,
-`scripts/check-citations.sh`, checks that every `docs/` citation in a comment
-resolves; it is a script and not a Gradle task on purpose, because a task can
-pass by being UP-TO-DATE (architecture §9). The Gradle gates are formatting
+`lint` is two scripts and four Gradle gates. `scripts/check-citations.sh`
+checks that every `docs/` citation in a comment resolves, and
+`scripts/check-tests.sh` refuses the constructs that reach past behaviour into
+the implementation. Both are scripts and not Gradle tasks on purpose, because a
+task can pass by being UP-TO-DATE (architecture §9). The Gradle gates are formatting
 (Spotless check, non-mutating), static analysis (detekt), Android Lint, and a
 debug assemble — the one step that packages, without which CI never proves
 the app builds into an APK (architecture §9). `test` is deliberately generic —

@@ -45,7 +45,7 @@ parked themselves on OQ-4 and nothing recorded that they had.**
 | `GawiTheme` KDoc | Stock Material 3, no `ColorScheme`, no typography, "because Momo's palette is PRD OQ-4 and undesigned" | The designed schemes, and why dynamic colour stays off. Type is the one stock thing left, and says what it waits on |
 | `HabitPalette` KDoc | "Not a design system" — mid-tone Material hues, same deferral | Designed, and to the rule in §6, with the two rules that failed |
 | `GawiSpacing` KDoc | "Not a design system and not trying to be one — Momo's visual language is PRD OQ-4" | Narrowed, not rewritten: §8 records that dimensions were genuinely not in this brief, so it still defers — but only about spacing |
-| `TodayWidget`'s glyph comment | Checkbox glyph left unpinned because pinning needs two literals and "this project does not have a palette yet". Ends: "Revisit with OQ-4." | **Pinned on 2026-08-28**, after the check in running.md §4 turned it from styling into a legibility bug. Both reasons that had outlived the palette fell to measurement: the glyph is assertable through one reflective hop, and `CheckBoxColors` refuses only *resource-backed* providers, so a day/night pair works and no flat literals were needed |
+| `TodayWidget`'s glyph comment | Checkbox glyph left unpinned because pinning needs two literals and "this project does not have a palette yet". Ends: "Revisit with OQ-4." | **Pinned on 2026-08-28**, after the check in running.md §4 turned it from styling into a legibility bug. `CheckBoxColors` refuses only *resource-backed* providers, so a day/night pair works and no flat literals were needed. The colours it is given are asserted on the emitted tree; what the resolved glyph looks like is the palette's test and the device's |
 
 All four were rewritten when the scheme landed. Recorded this way rather than
 edited away, because "four places had quietly parked on one open question"
@@ -254,11 +254,13 @@ one prediction held exactly and the other was half wrong:
   `GlanceTheme` colour is one, which is why every attempt hit the
   `IllegalArgumentException`, but a day/night pair is not, so the glyph takes the
   palette in both schemes and the flat literals this bullet priced were never
-  needed. And pinning *did* make the glyph assertable: the `internal` accessor
-  returns a memberless interface, but the object behind it has a public
-  `getColor`, so one reflective hop reaches it and both states are now measured
-  in both themes. `docs/running.md` §4 keeps a by-hand check anyway, for the one
-  thing no JVM test can see — how a real launcher translates the colour.
+  needed. And pinning made the glyph assertable at the level that matters:
+  `EmittableCheckBox` exposes the colours it was given, so `WidgetRowTest` says
+  the widget hands over the palette and `WidgetPaletteTest` holds both of those
+  colours to the floor in both schemes. Resolving what the glyph *became* needs
+  Glance's `internal` accessor and is not done. `docs/running.md` §4 keeps a
+  by-hand check for that and for the one thing no JVM test can see — how a real
+  launcher translates the colour.
 
 ## 3. The colour scheme — the candidates, and what shipped
 
@@ -1097,7 +1099,7 @@ widget. Before any of it is built, the price:
   pairs rather than the flat literals this section priced, since a flat literal
   cannot clear 4.5:1 against a light *and* a dark ground. Two predictions here
   were wrong and §2 records them: `CheckBoxColors` refuses only resource-backed
-  providers, and the glyph is assertable after all. `docs/running.md` §4 keeps a
+  providers, and the colours the glyph is given are assertable after all. `docs/running.md` §4 keeps a
   by-hand check for what a JVM test cannot see.
 - ~~**What is left of this set is the Momo widget and Today large's woven band.**
   Both are drawn on the canvas's page 3 and neither is built.~~ **Both built

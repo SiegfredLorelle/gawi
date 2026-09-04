@@ -12,9 +12,9 @@ import kotlinx.coroutines.flow.flow
  * A settings store a test can drive.
  *
  * `:core:data` has one of these already and it cannot be reached: it is
- * `internal` to that module and no test-fixtures publishing is configured
- * anywhere in this build. This one is shaped for what these tests need rather
- * than being a copy of it.
+ * `internal` to that module, so `:core:testing` could not re-export it either.
+ * This one is shaped for what these tests need rather than being a copy of
+ * it.
  *
  * `MutableSharedFlow(replay = 0)` rather than a `MutableStateFlow`, so nothing
  * is emitted until a test says so — which is what makes the `Loading` state

@@ -128,7 +128,7 @@ modes.)
   | Instead of | Run |
   |---|---|
   | `make fmt` | `gradlew.bat spotlessApply` |
-  | `make lint` | `bash scripts/check-citations.sh` then `gradlew.bat spotlessCheck detekt lint :app:assembleDebug` |
+  | `make lint` | `bash scripts/check-citations.sh` and `bash scripts/check-tests.sh` then `gradlew.bat spotlessCheck detekt lint :app:assembleDebug` |
   | `make test` | `gradlew.bat test` |
   | `make run` | `gradlew.bat :app:installDebug` then the `adb shell am start` line from the Makefile |
 

@@ -25,8 +25,8 @@ import androidx.compose.ui.platform.LocalContext
  * One reader rather than one per animated thing, for a reason a test found:
  * a frame loop is a permanent awaiter on the frame clock, so a Robolectric
  * composition with any loop running is never idle. `AnimationsOffRule` in
- * `:feature:today`'s and `:app`'s test sets zeroes the scale before the
- * activity launches; every loop gated here goes quiet with it, and a loop
+ * `:core:testing` zeroes the scale before the activity launches; every loop
+ * gated here goes quiet with it, and a loop
  * gated on anything else would hang every screen test that composes it.
  *
  * [animated] is the caller's own override — a preview or a still surface
