@@ -27,9 +27,9 @@ import java.time.temporal.ChronoUnit
  * [com.gawi.core.domain.projection.HabitState.createdOn] exists, so the clip
  * has a real date to work from. **Do not reach for the earliest date in
  * `completedDates`** — it biases every rate upward, because a window that
- * begins at the first completion always
- * begins on a day the habit succeeded, and a habit created and then ignored for
- * two weeks loses those two weeks silently.
+ * begins at the first completion always begins on a day the habit succeeded,
+ * and a habit created and then ignored for two weeks loses those two weeks
+ * silently.
  */
 object Rates {
 
