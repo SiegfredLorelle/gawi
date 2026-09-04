@@ -228,7 +228,7 @@ class FakeHabitRepository(
     }
 
     /** The id a create hands back, so a caller could navigate to it. */
-    var mintedId: HabitId = habitId(99)
+    var mintedId: HabitId = habitId(MINTED_ID_TAIL)
 
     val created = mutableListOf<HabitMetadata>()
     val updated = mutableListOf<Pair<HabitId, HabitMetadata>>()
@@ -306,4 +306,9 @@ class FakeHabitRepository(
     override suspend fun rebuildProjections() = unused()
 
     private fun unused(): Nothing = error("no screen or widget reaches this")
+
+    private companion object {
+        /** Far from the ids tests hand out, so a create's answer cannot collide with a fixture. */
+        const val MINTED_ID_TAIL = 99
+    }
 }

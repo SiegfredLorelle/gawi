@@ -22,7 +22,10 @@ import java.time.LocalDate
  */
 
 /** Deterministic canonical UUID whose numeric tail is [n] — ordered like n. */
-fun uuid(n: Int): String = "00000000-0000-7000-8000-" + n.toString(16).padStart(12, '0')
+fun uuid(n: Int): String = "00000000-0000-7000-8000-" + n.toString(HEX).padStart(UUID_TAIL_DIGITS, '0')
+
+private const val HEX = 16
+private const val UUID_TAIL_DIGITS = 12
 
 fun eventId(n: Int): EventId = EventId(uuid(n))
 
