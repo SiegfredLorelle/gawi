@@ -135,9 +135,10 @@ Full guide with examples: `.github/COMMIT_CONVENTION.md`
 - **Comments keep what the code cannot say** (`scripts/check-history.sh`, in
   `make lint`): the mechanism, the invariant, the reason a shape was chosen,
   and the `docs/… §N` it answers to. **History is git's, not the comment's** —
-  no dates, no "used to", no "a review said", no "this KDoc was wrong", no "an
-  earlier version". The script is the mechanical half: it refuses those phrases
-  and any `YYYY-MM-DD` in a `src/main` comment. **A date is exempt only where
+  no dates, no "used to", no "a review said", no "caught on review", no "this
+  KDoc was wrong", no "an earlier version", no "the first cut", no "since Phase
+  N". The script is the mechanical half: it refuses those phrases and any
+  `YYYY-MM-DD` in a `src/main` comment. **A date is exempt only where
   it stamps a hardware measurement**, and `measured` or `seen on` must sit on
   the same line as the date — the gate reads one line at a time, and wrapping
   will otherwise separate them.
