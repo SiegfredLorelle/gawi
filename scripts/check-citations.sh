@@ -3,8 +3,8 @@
 # Every `<doc> §N` citation in Kotlin source names a document and a section that
 # exist, and no single file uses one section number for two different documents.
 #
-# This exists because the comments here cite `docs/` heavily — 631 citations
-# across 211 files — and nothing verified any of them. That is not hypothetical:
+# This exists because the comments here cite `docs/` heavily — 627 citations
+# across 212 files — and nothing verified any of them. That is not hypothetical:
 # the comment above `robolectric` in gradle/libs.versions.toml pointed at a
 # `:core:data/robolectric.properties` that has never existed, and was believed
 # for a phase. A citation is only worth writing if a stale one is noisy.
