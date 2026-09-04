@@ -57,8 +57,7 @@ internal fun Project.configureAndroid(extension: CommonExtension) {
         // The Robolectric SDK pin, shared. Robolectric reads
         // robolectric.properties off the unit-test classpath, so handing every
         // module the same directory is what stops the ceiling being rediscovered
-        // per module — it was already copied once, and the copy's own comment
-        // told the reader to go and read the original.
+        // per module.
         //
         // Harmless on the modules that do not use Robolectric: nothing reads the
         // file unless Robolectric is on their test classpath.
