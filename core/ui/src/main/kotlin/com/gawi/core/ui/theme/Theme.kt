@@ -17,47 +17,30 @@ import androidx.compose.runtime.Composable
  * §8 keeps Material You off permanently: a designed identity is the point of
  * the whole brief, and dynamic colour would hand it back to the wallpaper.
  *
- * **Type is Outfit, as of 2026-08-24.**
- * [GawiTypography] carries it; §5 chose the face and Type.kt records why. The
- * typeface had been parked on an experiment — whether a Glance widget can be
- * handed a bundled font at all — so that the scale would not be chosen before
- * the face it was being chosen for. **That experiment ran and the answer was
- * no**: `RemoteViews` inflation resolves only the platform's generic family
- * names and drops a bundled font resource silently
- * (docs/ux/visual-identity.md §2). The widget got the face anyway a day later,
- * as bitmaps — `widget/…/BitmapText.kt`, which reaches into this module for
- * `R.font.outfit` and for nothing else.
+ * **Type is Outfit.** [GawiTypography] carries it; §5 chose the face and
+ * Type.kt records why. A Glance widget cannot be handed a bundled font:
+ * `RemoteViews` inflation resolves only the platform's generic family names and
+ * drops a bundled font resource silently (docs/ux/visual-identity.md §2). The
+ * widget draws the face as bitmaps instead — `widget/…/BitmapText.kt`, which
+ * reaches into this module for `R.font.outfit` and for nothing else.
  *
- * Not *everything* drawn is Outfit, and the gap is narrower than "the app is
- * restyled" suggests — narrower again since 2026-08-24. Five of the glyph
- * characters the screens drew as text were outside this font's `cmap` and fell
- * back to the platform face, so an app bar mixed the two. That was a reason to
- * replace those dingbats with icons rather than to doubt the face, and it is
- * what `GawiIcons` did. What still comes from this `cmap` is text that is not an
- * icon: `RetroStrip`'s day marks and the editor's selection tick. [Outfit]'s
- * KDoc has the audit and what outlived it — this paragraph asserted the
- * fallback in the present tense for one commit too long, which is what a claim
- * repeated in four files costs.
- *
- * The divergence it warned about was accepted on 2026-08-24 — the app in
- * Outfit, `:widget` in the system sans, one home screen apart — and closed on
- * 2026-08-25 by rasterising the widget's text instead. A quieter face would
- * have hidden the seam for that one day and given up the identity this whole
- * brief exists to buy. Type.kt has the rest, and docs/ux/visual-identity.md §5
- * is where the trade and its reversal are recorded.
+ * Not *everything* drawn is Outfit. What comes from this font's `cmap` is text
+ * that is not an icon: `RetroStrip`'s day marks and the editor's selection
+ * tick. [Outfit]'s KDoc has the audit and the characters it covers, and it is
+ * not repeated here, because a claim repeated in four files is one that drifts
+ * in three of them. The app in Outfit against `:widget` in the system sans is
+ * the divergence that rasterising the widget's text closes, and
+ * docs/ux/visual-identity.md §5 records the trade.
  *
  * A habit's own colour is per-row and comes from the event log, not from here;
  * [HabitPalette] is what the editor offers and [glyphColorOn] decides what is
  * drawn on top of it.
  *
- * **Which of the two is drawn is the user's, since 2026-08-26.** It was the
- * system's setting alone until then, and this KDoc said so. `UserSettings.theme`
- * now holds System, Light or Dark; `MainActivity` resolves that against
+ * **Which of the two is drawn is the user's.** `UserSettings.theme` holds
+ * System, Light or Dark; `MainActivity` resolves that against
  * [isSystemInDarkTheme] and passes the answer in, and on API 31 and up it also
  * tells the platform, so the window painted before `setContent` agrees
- * (docs/ux/settings.md §7). Nothing about this function changed — the parameter
- * was already here for previews and tests — which is the whole reason the
- * setting cost `:core:ui` nothing.
+ * (docs/ux/settings.md §7).
  *
  * @param darkTheme exposed, and defaulted, so a preview or a test can render a
  *   scheme the host is not in. The default is the device's setting, which is

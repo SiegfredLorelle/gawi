@@ -38,14 +38,14 @@ import com.gawi.core.ui.theme.glyphColorOn
  * null falls back to the theme's `secondaryContainer`, which is how a habit with
  * no colour, or a corrupt one, still draws.
  *
- * **It has no semantics**, since 2026-09-02. The three callers all put the
- * habit's name beside it, so to a screen reader the badge is decoration — and a
- * device read it as a stop of its own on the habit list and as a leading
- * "books" on a Today row. The editor's icon picker is the one place an emoji is
- * the label rather than beside one, and it draws its own `Text` for that
- * reason. `row_doesNotSpeakTheIcon` (today) and `iconBadge_isDecorative`
- * (habits) hold this from the two features, since this module has no Compose
- * tests of its own.
+ * **It has no semantics.** The three callers all put the habit's name beside
+ * it, so to a screen reader the badge is decoration — and a device reads it as
+ * a stop of its own on the habit list and as a leading "books" on a Today row.
+ * The editor's icon picker is the one place an emoji is the label rather than
+ * beside one, and it draws its own `Text` for that reason.
+ * `row_doesNotSpeakTheIcon` (today) and `iconBadge_isDecorative` (habits) hold
+ * this from the two features, since this module has no Compose tests of its
+ * own.
  */
 @Composable
 fun HabitIcon(icon: String, tint: Color?, modifier: Modifier = Modifier, style: TextStyle = MaterialTheme.typography.titleSmall) {
@@ -56,9 +56,8 @@ fun HabitIcon(icon: String, tint: Color?, modifier: Modifier = Modifier, style: 
             .background(tint ?: MaterialTheme.colorScheme.secondaryContainer)
             // Decorative: every caller draws the habit's name beside this, and
             // the icon is a free string off the log with no name to give it.
-            // TalkBack 17 read the emoji by its Unicode name — "books" — ahead
-            // of the habit (docs/running.md §4, 2026-09-02). Cleared here rather
-            // than at each call site for the reason the badge is shared at all.
+            // Cleared here rather than at each call site for the reason the
+            // badge is shared at all.
             .clearAndSetSemantics { },
         contentAlignment = Alignment.Center,
     ) {

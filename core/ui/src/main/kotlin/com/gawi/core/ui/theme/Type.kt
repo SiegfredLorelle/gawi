@@ -42,12 +42,12 @@ internal val OutfitWeights = listOf(
  * convincing the argument looks.** It looks very convincing: decompile
  * `ui-text-android:1.12.0` and `Font(resId, weight, …)`'s `$default` bridge
  * plainly builds `FontVariation.Settings(weight, style)` from the declared
- * weight, so passing the axis by hand reads as duplicated work. A code review
- * made exactly that argument from exactly that bytecode. **It does not survive a
- * device.** Measured 2026-08-24 and reproduced: with the argument removed the
- * entire app renders at this file's `fvar` default, which is **100** — its name
- * table reads "Outfit Thin" — hairline everywhere, 3,799 differing pixels on one
- * screen against the same build with the argument present.
+ * weight, so passing the axis by hand reads as duplicated work. **It does not
+ * survive a device.** Measured 2026-08-24 and reproduced: with the argument
+ * removed the entire app renders at this file's `fvar` default, which is
+ * **100** — its name table reads "Outfit Thin" — hairline everywhere, 3,799
+ * differing pixels on one screen against the same build with the argument
+ * present.
  *
  * **The mechanism is overload resolution, and it is worth naming precisely,
  * because the bytecode that makes the argument look redundant is real — it just
@@ -63,12 +63,12 @@ internal val OutfitWeights = listOf(
  * `Font-…$default` bridge that *does* build `Settings(weight, style)` is the
  * third overload's, and passing the argument is what selects it.
  *
- * That also settles the theory this paragraph used to be unable to rule out —
- * that the derived settings name an `ital` axis this font lacks and an
- * unsupported axis voids the string. `FontVariation.italic(0f)` added explicitly
- * is pixel-identical to weight-only, so axes were never the variable; the
- * overload was. **So the hazard is not "a redundant argument" but "deleting an
- * argument silently changes which function you call".**
+ * That also rules out the axis theory — that the derived settings name an
+ * `ital` axis this font lacks, and an unsupported axis voids the string.
+ * `FontVariation.italic(0f)` added explicitly is pixel-identical to
+ * weight-only, so the axes are not the variable; the overload is. **The hazard
+ * is not "a redundant argument" but "deleting an argument silently changes
+ * which function you call".**
  * [GawiTypographyTest] asserts every entry names `wght`, so the deletion fails
  * a test rather than shipping a thin app.
  *
@@ -83,43 +83,35 @@ internal val OutfitWeights = listOf(
  * platform synthesis — fake bold drawn over a genuine bold the app already
  * shipped. Four entries and one asset is the cheaper half of that trade.
  *
- * **This font's `cmap` covers 360 characters, and that is still a live
- * constraint — but no longer a visible one.** Five of the glyphs the app drew as
- * *text* were outside it: `☰` (U+2630), `◔` (U+25D4), `⚙` (U+2699), `✎` (U+270E)
- * and `✕` (U+2715). They fell back to the platform face, so an app bar mixed two
- * faces at one size — habit detail drew `←` in Outfit directly beside `✎` in the
- * system font. No tofu and not a crash, but it was the "looks like a design
- * choice rather than a gap" failure this project keeps naming, and the fix named
- * here was icons rather than dingbats.
+ * **This font's `cmap` covers 360 characters, and that is a live constraint
+ * even though nothing visibly fails on it.** Five glyphs the app would
+ * otherwise draw as *text* are outside it: `☰` (U+2630), `◔` (U+25D4), `⚙`
+ * (U+2699), `✎` (U+270E) and `✕` (U+2715). Outside the `cmap` they fall back to
+ * the platform face, so an app bar mixes two faces at one size — `←` in Outfit
+ * directly beside `✎` in the system font. No tofu and not a crash, but it is
+ * the "looks like a design choice rather than a gap" failure this project keeps
+ * naming, and the answer is icons rather than dingbats.
  *
- * **That fix shipped on 2026-08-24** (`GawiIcons`, docs/ux/visual-identity.md
- * §7.5): every character the app drew as an *icon* is now a vendored vector.
- * **Not every character, and the difference matters here.** Four things still
- * draw text from this `cmap`: `RetroStrip`'s `✓`, `·` and `•`, and the `✓`
- * `HabitEditorPickers` puts on the selected colour swatch. Each sits inside a
- * control and carries its *state* rather than being an affordance — the swatch
- * is a `Role.RadioButton` always, and the day cell a `Role.Checkbox` **only
- * while the day is open**, since the shut branch is `disabled()` and every cell
- * of an archived habit is shut. So the number stays written down for those four
- * as much as for the next character someone reaches for.
- *
- * Two rounds of review landed here. The first killed "nothing is a control any
- * more", the second killed "the cell is a `Role.Checkbox`" without the
- * condition. Both were absolutes, and an absolute is the shape of sentence that
- * gets this limit deleted — see docs/ux/visual-identity.md §7.5.
+ * **Every character the app draws as an *icon* is a vendored vector**
+ * (`GawiIcons`, docs/ux/visual-identity.md §7.5). **Not every character, and
+ * the difference matters here.** Four things still draw text from this `cmap`:
+ * `RetroStrip`'s `✓`, `·` and `•`, and the `✓` `HabitEditorPickers` puts on the
+ * selected colour swatch. Each sits inside a control and carries its *state*
+ * rather than being an affordance — the swatch is a `Role.RadioButton` always,
+ * and the day cell a `Role.Checkbox` **only while the day is open**, since the
+ * shut branch is `disabled()` and every cell of an archived habit is shut. So
+ * the number stays written down for those four as much as for the next
+ * character someone reaches for. Being state marks rather than pictures of an
+ * action is why §7.5 leaves them alone. Neither "nothing is a control" nor "the
+ * cell is a `Role.Checkbox`" without its condition is true, and an absolute is
+ * the shape of sentence that gets this limit deleted.
  *
  * **What the audit found present**, so nobody re-runs it: `←`, `‹`, `›`, `✓`,
- * `•`, and — added after review pointed out the first list was short — `−`
- * (U+2212) and `·` (U+00B7). `−` was the one worth checking rather than
- * assuming: `WeeklyTargetStepper` drew it beside an ASCII `+`, both
- * `titleLarge`, in one `Row`, and had it been absent that would have been a
- * two-face pair at one size, adjacent, and more visible than the app-bar case.
- * It was present — and that pair is two icons now regardless, which is the
- * difference between an audit that was wrong and one that has been superseded.
- * `✓`, `·` and `•` are still drawn as text, and are still covered here — as is
- * the editor's swatch tick, which the first version of this paragraph forgot.
- * They are state marks rather than pictures of an action, which is why §7.5 left
- * them alone; "not controls" was simply the wrong way to say it.
+ * `•`, `−` (U+2212) and `·` (U+00B7). `−` is the one worth checking rather than
+ * assuming: `WeeklyTargetStepper` draws it beside an ASCII `+`, both
+ * `titleLarge`, in one `Row`, and were it absent that would be a two-face pair
+ * at one size, adjacent, and more visible than the app-bar case. It is present,
+ * and that pair is two icons now regardless.
  *
  * **The habit-icon emoji are a different question and not an omission here.**
  * `HabitPalette`'s twelve icons are outside this `cmap` too, and always will be:
@@ -164,18 +156,16 @@ private fun TextStyle.inOutfit(): TextStyle = copy(
  * The app's type: Material's scale, drawn in [Outfit].
  *
  * **The face, and one metric: positive tracking goes to zero.** Every size and
- * line height is still Material's baseline, untouched, for the reason this
- * paragraph has always given — the sizes are the part all four feature modules
- * have been drawing at since Phase 0, so they are the only part already
- * validated on a device, and moving the face and the scale together would make
- * any regression unattributable to either.
+ * line height is still Material's baseline, untouched: the sizes are the part
+ * all four feature modules have been drawing at since Phase 0, so they are the
+ * only part already validated on a device, and moving the face and the scale
+ * together would make any regression unattributable to either.
  *
- * `letterSpacing` is the exception this KDoc predicted, and it asked for the
- * change to be made while looking at a screen; it was, on 2026-08-30. Three
- * candidates were weighed — keep, halve, zero — and the two that decide it were
- * built and compared; halving was settled on the numbers below rather than
- * installed. Material's own values were probed rather than remembered, and
- * positive tracking sits only on roles at 16sp and under —
+ * `letterSpacing` is the exception, and the change was made while looking at a
+ * screen. Of the three candidates — keep, halve, zero — the two that decide it
+ * were built and compared, with halving settled on the numbers below rather
+ * than by installing it. Material's own values are probed rather than
+ * remembered, and positive tracking sits only on roles at 16sp and under —
  * `bodyLarge`, `labelMedium` and `labelSmall` at 0.5, `bodySmall` 0.4,
  * `titleMedium` and `bodyMedium` 0.2, `titleSmall` and `labelLarge` 0.1. Every
  * role at 22sp and over is already 0 except `displayLarge`, which is −0.2 (not
@@ -236,7 +226,7 @@ private fun TextStyle.inOutfit(): TextStyle = copy(
  * **The widget does not get this `Typography`, and draws in the face anyway.**
  * A `RemoteViews` tree resolves only the platform's generic family names,
  * measured on 2026-08-24 (docs/ux/visual-identity.md §2), so `:widget` cannot
- * be handed the font; since 2026-08-25 it rasterises its text in Outfit itself
+ * be handed the font; it rasterises its text in Outfit itself
  * — `widget/…/BitmapText.kt`, which takes `R.font.outfit` from this module and
  * sets `wght` 400 through `Paint.setFontVariationSettings`, because the Thin
  * default described above is a trap on that side too.
