@@ -126,8 +126,9 @@ Full guide with examples: `.github/COMMIT_CONVENTION.md`
   never an artefact of the implementation**: no exact pixel or ARGB constant,
   no magic computed value, no reflection into a library, no XML attribute
   string read off disk, no subpath count, and no second test of the same
-  thing. detekt refuses `Thread.sleep` and reflection by method name in test
-  sources. **Shared test helpers live in `:core:testing`** (pure-domain ones in
+  thing. `scripts/check-tests.sh`, in `make lint`, refuses `Thread.sleep` and
+  reflection by method name in test sources. **Shared test helpers live in
+  `:core:testing`** (pure-domain ones in
   `core/domain/src/testFixtures`); a second copy of one is the defect.
 - Run `make fmt` before committing; `make lint` and `make test` before
   considering any change complete.

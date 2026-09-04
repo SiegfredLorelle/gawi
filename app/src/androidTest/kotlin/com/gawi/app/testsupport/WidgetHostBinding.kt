@@ -79,7 +79,7 @@ class WidgetHostBinding private constructor(
         val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(timeoutSeconds)
         var text = renderedText()
         while (System.nanoTime() < deadline && !predicate(text)) {
-            Thread.sleep(POLL_MILLIS)
+            Thread.sleep(POLL_MILLIS) // bounded poll
             text = renderedText()
         }
         return text
