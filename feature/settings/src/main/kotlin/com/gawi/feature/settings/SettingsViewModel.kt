@@ -95,10 +95,10 @@ internal class SettingsViewModel @Inject constructor(
      * warning costs an export nobody needed; a wrong silence costs the warning
      * PRD §5 asked for, on a device that may have no backup. A bug is exactly the
      * situation in which there is nothing left to argue the choice from, so it
-     * takes the same direction the rest of the feature does. This claimed to be a
-     * bug-only path before it was one: `SQLiteException` from the log count is a
-     * `RuntimeException`, so it slipped past the journal's `IOException` guard and
-     * landed here, where the fallback was silence. A PR reviewer found it.
+     * takes the same direction the rest of the feature does. "Bug-only" is a
+     * claim worth re-checking rather than assuming: `SQLiteException` from the log
+     * count is a `RuntimeException`, so anything guarding only `IOException`
+     * upstream lets it through to here.
      */
     private fun exportStatus(): Flow<ExportStatus> = archive.observeExportStatus()
         .catch { cause ->
@@ -148,15 +148,13 @@ internal class SettingsViewModel @Inject constructor(
      * would be four chances to lose a concurrent edit to a different field.
      *
      * **A null return is a refusal**, which the two times can produce and the
-     * week start and the theme cannot — their transforms simply never return
-     * one. This was two functions until the theme arrived and made the
-     * unrefusable one the majority; they differed only in a nullability the
-     * signature already carries, so the second was a copy of this one with the
-     * `when` shortened.
+     * week start and the theme cannot — their transforms simply never return one.
+     * One function rather than a refusable and an unrefusable pair: the two would
+     * differ only in a nullability this signature already carries.
      *
      * The refusal is one specific combination: the reminder time equal to the day
-     * cutoff. `reminderOn`'s KDoc has always said that combination resolves to the
-     * logical day's *start* rather than its end, and that *"a settings screen
+     * cutoff. `reminderOn`'s KDoc says that combination resolves to the logical
+     * day's *start* rather than its end, and that *"a settings screen
      * offering the two as one control is where the combination should be
      * prevented"*. The store does not prevent it, and with a notification behind
      * the same threshold it becomes a *"N of N left today"* posted at the top of every

@@ -10,12 +10,11 @@ import java.time.format.DateTimeFormatter
 // applies, which help line each of the three rows shows, what an import
 // reports, and what the two save dialogs open on.
 //
-// Split from SettingsUiMapper.kt for the CSV row, whose three functions would
-// have taken that file past detekt's TooManyFunctions, which caps a *file* at
-// eleven — measured at twelve, and the same threshold that forced
-// SettingsPickers.kt out of SettingsScreen.kt. The line it falls on is better
-// than a threshold deserves: nothing here reads or writes a preference, and
-// nothing next door knows a file exists.
+// Separate from SettingsUiMapper.kt because the two together are past detekt's
+// TooManyFunctions, which caps a *file* at eleven — the same threshold that
+// keeps SettingsPickers.kt out of SettingsScreen.kt. The line it falls on is
+// better than a threshold deserves: nothing here reads or writes a preference,
+// and nothing next door knows a file exists.
 
 /**
  * What the export row can say about the last backup.
