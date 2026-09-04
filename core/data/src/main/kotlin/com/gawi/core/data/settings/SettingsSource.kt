@@ -15,8 +15,7 @@ import kotlinx.coroutines.flow.first
  * week start into its queries, so anything holding one value for the life of a
  * collection would keep answering with it after an edit while the streak rows
  * joined into the same query had already been recomputed under the new one. It
- * is also the shape DataStore hands out natively, which is why
- * [DataStoreSettingsSource] could implement this read side as it stood.
+ * is also the shape DataStore hands out natively.
  *
  * [update] takes a transform rather than a setter per field: a preferences file
  * is read-modify-write, and a setter per field would be a chance each to lose a

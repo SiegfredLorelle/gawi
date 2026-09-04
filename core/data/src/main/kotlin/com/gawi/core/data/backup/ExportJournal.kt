@@ -32,7 +32,7 @@ import javax.inject.Inject
  * needed either way. The preferences there are what the user set; this is a
  * record of something the app did. A fourth field, the theme, is not a
  * counter-example: it changes when the user changes it, and no reader binds
- * it. `UserSettings`' own KDoc has the comparison.
+ * it.
  *
  * It shares the *file* with them, which is safe in the direction that is easy to
  * get wrong: `DataStoreSettingsSource.update` assigns only the preference keys
@@ -46,12 +46,8 @@ import javax.inject.Inject
  * the PRD asked for. Four failures are handled that way below, individually: the
  * preferences read, the log count, the write, and a nonsensical stored value.
  *
- * The two reads have separate guards, because they fail for separate reasons.
- * A single `catch` testing `IOException` does not hold the count: Room throws
- * `SQLiteException`, which is a `RuntimeException`, so a corrupt, locked or
- * full database would pass this class's guard and be answered two layers up
- * with "nothing to lose" — silencing the nudge on exactly the device whose
- * database is failing.
+ * The two reads have separate guards, because they fail for separate reasons
+ * and a single `catch` testing `IOException` does not hold the count.
  *
  * Not a sixth constructor parameter on [EventLogArchive], which already has
  * five — detekt's `LongParameterList` fires *at* six.
@@ -80,7 +76,7 @@ internal class ExportJournal @Inject constructor(
      */
     // Suppressed rather than logged: there is nowhere to report this that would
     // not misdescribe an export that worked, and no logger anywhere in this
-    // module to write it to. The KDoc above is the record.
+    // module to write it to.
     @Suppress("SwallowedException")
     suspend fun record() {
         try {
@@ -92,21 +88,6 @@ internal class ExportJournal @Inject constructor(
 
     /**
      * The current status, and every later one.
-     *
-     * **An unreadable file reads as "never exported" rather than propagating**,
-     * exactly as [DataStoreSettingsSource][com.gawi.core.data.settings.DataStoreSettingsSource]'s
-     * read path degrades to the defaults, and for a sharper reason: this is the
-     * one value on the screen whose absence *hides* a warning. Note what the
-     * fallback deliberately does not do — it substitutes empty preferences and
-     * carries on, so the log is still counted, and a device with events on it
-     * therefore still gets nudged. Answering with a fixed "nothing to lose"
-     * would have silenced the nudge over a preferences read, which is the one
-     * failure mode this feature exists to prevent.
-     *
-     * Not a blanket catch, for the reason the settings store gives: anything
-     * that is not a read failure is a bug and swallowing it would hide it behind
-     * a plausible answer. The caller guards that case separately, because a
-     * caption must not be able to take the screen down either way.
      *
      * [distinctUntilChanged] suppresses the *emission*, not the work: DataStore
      * re-emits on every write to the file, settings included, so `COUNT(*)` does
@@ -124,12 +105,14 @@ internal class ExportJournal @Inject constructor(
      * The stored stamp, or null if there is none to read.
      *
      * **An unreadable file reads as "never exported" rather than propagating**,
-     * exactly as `DataStoreSettingsSource`'s read path degrades to the defaults,
-     * and for a sharper reason: this is the one value on the screen whose absence
-     * *hides* a warning. Note what the fallback deliberately does not do — it
-     * substitutes empty preferences rather than a finished answer, so the log is
-     * still counted alongside it and a device with events on it still gets
-     * nudged.
+     * exactly as [DataStoreSettingsSource][com.gawi.core.data.settings.DataStoreSettingsSource]'s
+     * read path degrades to the defaults, and for a sharper reason: this is the
+     * one value on the screen whose absence *hides* a warning. Note what the
+     * fallback deliberately does not do — it substitutes empty preferences rather
+     * than a finished answer, so the log is still counted alongside it and a
+     * device with events on it still gets nudged. Answering with a fixed
+     * "nothing to lose" would silence the nudge over a preferences read, which is
+     * the one failure mode this feature exists to prevent.
      *
      * Not a blanket catch, for the reason the settings store gives: anything that
      * is not a read failure is a bug and swallowing it would hide it behind a

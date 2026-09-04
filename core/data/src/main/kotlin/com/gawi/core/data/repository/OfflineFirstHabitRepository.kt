@@ -107,7 +107,15 @@ internal class OfflineFirstHabitRepository @Inject constructor(
 
     private val mutex = Mutex()
 
-    /** Null until the log has been folded; only ever touched under [mutex]. */
+    /**
+     * Null until the log has been folded; only ever touched under [mutex].
+     *
+     * Once non-null it stays so and [initialised] short-circuits on it, so
+     * anything that leaves this behind the log stays wrong for the life of the
+     * process: every derived table still looks right, and the first undo on the
+     * affected cell reports `CompletionNotFound` against a row the user is
+     * looking at.
+     */
     private var state: ProjectedState? = null
 
     override suspend fun createHabit(metadata: HabitMetadata): CommandResult<HabitId> = mutex.withLock {
@@ -210,10 +218,9 @@ internal class OfflineFirstHabitRepository @Inject constructor(
     /**
      * The habit and its recent cells, read against one date.
      *
-     * Both halves come off the same [readContext] emission, so the strip's
-     * window, the completions in it and the streak beside them are all the same
-     * day's answer. Reading them as two subscriptions would let a rollover land
-     * between the two and pair a fresh window with yesterday's habit.
+     * Both halves come off the same [readContext] emission. Reading them as two
+     * subscriptions would let a rollover land between the two and pair a fresh
+     * window with yesterday's habit.
      *
      * `combine` rather than two `flow`s for the same reason `observeToday`
      * combines its rows with the mood context: one emission per change, and no
@@ -350,11 +357,7 @@ internal class OfflineFirstHabitRepository @Inject constructor(
      *
      * **A refold, not a rebuild.** `rebuildProjections()` replays the
      * *in-memory* state, which after an out-of-band insert is precisely the
-     * thing that is wrong — `state` is non-null, so `initialised()`
-     * short-circuits and the command authority stays behind the log for the
-     * life of the process. Every derived table would still look right, and the
-     * first undo on an imported cell would report `CompletionNotFound` against
-     * a row the user is looking at.
+     * thing that is wrong: it would leave [state] behind the log.
      *
      * The refold is skipped outright when the insert added nothing and this
      * process has already folded — see [mergeLocked]. It cannot change what it
@@ -484,12 +487,9 @@ internal class OfflineFirstHabitRepository @Inject constructor(
      * Exactly these two, rather than the settings and the date: the cutoff
      * decides which day is "today" and when the next boundary falls, but it does
      * that inside [logicalDates] below, and no query binds it. Carrying the whole
-     * of [UserSettings] out of here would mean carrying a reminder time that the
-     * dedupe below is entitled to leave stale, and the mascot's `nearBoundary`
-     * now does read one. That is why the mood takes its settings from
-     * [moodContext] instead: this dedupe must keep swallowing a reminder-time
-     * edit, or every open screen re-runs the streak sweep and cancels its query
-     * over a setting no query binds.
+     * of [UserSettings] out of here would mean carrying a reminder time the
+     * dedupe below is entitled to leave stale, which is why the mood takes its
+     * settings from [moodContext] instead.
      *
      * Both observers share this so the two cannot drift apart. Holding the
      * settings for the life of a collection would be worse than it looks: a
@@ -525,10 +525,9 @@ internal class OfflineFirstHabitRepository @Inject constructor(
      * `nearBoundary` reads.
      *
      * A second subscription to the settings, deliberately. [readContext]'s
-     * dedupe is entitled to drop a reminder-time edit — it has to, or every open
-     * screen re-runs the streak sweep over a setting no query binds — so
-     * anything downstream of it carries a stale reminder time by construction.
-     * This is the fresh read, and it sits *inside* the query's `flatMapLatest`
+     * dedupe drops a reminder-time edit, so anything downstream of it carries a
+     * stale reminder time by construction. This is the fresh read, and it sits
+     * *inside* the query's `flatMapLatest`
      * rather than beside it, so an edit here reaches the snapshot through
      * `combine` without re-entering the block that sweeps.
      *
@@ -623,13 +622,9 @@ internal class OfflineFirstHabitRepository @Inject constructor(
         // on — throws on resume if the caller's job was cancelled while the
         // block ran, *even when the block finished*. Without NonCancellable a
         // tap cancelled mid-transaction could therefore commit the event and
-        // never advance the in-memory state. That does not self-heal: `state`
-        // is non-null by then, so `initialised()` short-circuits for the life
-        // of the process, leaving the command authority a whole event behind
-        // the log. An undo on that cell would report CompletionNotFound
-        // against a row the user can still see, and the next `applyDelta`
-        // would diff from a stale baseline. The KDoc above reasons about the
-        // opposite direction; this is the one that bites.
+        // leave `state` a whole event behind the log, so the next `applyDelta`
+        // would also diff from a stale baseline. The KDoc above reasons about
+        // the opposite direction; this is the one that bites.
         withContext(NonCancellable) {
             database.withTransaction {
                 events.insertAll(stamped.map { it.toEntity(codec) })
@@ -640,13 +635,11 @@ internal class OfflineFirstHabitRepository @Inject constructor(
             // place responsible for keeping a widget current (architecture §4),
             // and a tap whose scope dies right after the commit is exactly the
             // case that leaves the home screen showing the opposite of the log.
-            // The same reasoning as the zero-byte export, in the direction
-            // where NonCancellable can actually help — the work has started.
             //
             // It is also inside the mutex, and what it awaits is not free: the
             // Glance implementation does a DataStore read and a WorkManager
             // enqueue, so a slow session start delays the next command. Accepted
-            // rather than unnoticed. Taps are serialised through this mutex
+            // rather than unnoticed — taps are serialised through this mutex
             // anyway and the user has just tapped, whereas notifying outside the
             // lock means doing it at every committing call site and losing the
             // single-place property architecture §4 relies on.

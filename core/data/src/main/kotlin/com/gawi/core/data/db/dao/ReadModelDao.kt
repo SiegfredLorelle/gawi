@@ -98,9 +98,9 @@ internal interface ReadModelDao {
      * The management list is the one screen that has to show archived habits,
      * because unarchiving has to be reachable from somewhere. It is also the
      * one screen that shows no progress: PRD §6.6 scopes streaks to the Today
-     * view and habit detail — narrowed from three surfaces, the widget having
-     * been settled as minimal (docs/ux/widget.md §2) — so joining
-     * for them here would buy columns nothing draws.
+     * view and habit detail, the widget being deliberately minimal
+     * (docs/ux/widget.md §2), so joining for them here would buy columns nothing
+     * draws.
      *
      * Ordered by name rather than by `habit_id`, because this list is read to
      * find a habit rather than to work through one. `COLLATE NOCASE` so a
@@ -169,9 +169,8 @@ internal interface ReadModelDao {
      * January's distribution shows `fitness`. The log could answer otherwise —
      * `HabitUpdated` carries the old value — but the read model does not keep
      * it, and the reading taken here is that a tag describes the habit rather
-     * than the completion, so the current answer is the true one. Note this is a
-     * narrower guarantee than the archiving paragraph above may suggest: what
-     * archiving cannot do is remove effort, not that no edit can move it.
+     * than the completion, so the current answer is the true one. Archiving
+     * cannot remove effort; an edit can still move it.
      *
      * **Archived habits are included.** Effort spent is history, and archiving
      * a habit is a decision about the future — hiding its past completions here

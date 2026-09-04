@@ -16,12 +16,10 @@ import dagger.hilt.components.SingletonComponent
 /**
  * One accessor per dao, and nothing else.
  *
- * Split out of [DataModule] when the export codec and the app version took
- * that object past detekt's function limit — the same reason
- * `SettingsPickers.kt` left `SettingsScreen.kt`. It is a better line than it
- * sounds: everything here is a mechanical delegation to the database with no
- * decision in it, while what is left next door is entirely decisions about
- * scope and construction.
+ * Separate from [DataModule], which detekt's function limit would otherwise
+ * put this over. It is a better line than that makes it sound: everything here
+ * is a mechanical delegation to the database with no decision in it, while what
+ * is next door is entirely decisions about scope and construction.
  *
  * None of these is scoped. Room hands back the same dao instance every time,
  * so a `@Singleton` would be a claim about this module rather than about the

@@ -51,13 +51,10 @@ internal class ReminderJournal @Inject constructor(private val dataStore: DataSt
      * policy lives here, next to the KDoc that argues for it, and the caller
      * gets one answer from one read.
      *
-     * True for a stamp on [today] **or one day ahead of it**, and false for one
-     * further ahead than that. Both halves of that are `ExportJournal.daysSince`'s
-     * decision, re-made here because it is the same bug in the same shape.
-     *
-     * A day of tolerance, because this compares dates and a clock nudge across
-     * local midnight — reminded at 00:03, NTP pulls back to 23:57 — would
-     * otherwise re-arm a reminder that had just been posted.
+     * True for a stamp on [today] **or one day ahead of it** ([SKEW_TOLERANCE_DAYS]),
+     * and false for one further ahead than that. Both halves of that are
+     * `ExportJournal.daysSince`'s decision, re-made here because it is the same
+     * bug in the same shape.
      *
      * A stamp *further* ahead reads as no stamp at all, and that is not the same
      * as clamping it. A device whose clock was a month ahead when a reminder was
@@ -80,8 +77,8 @@ internal class ReminderJournal @Inject constructor(private val dataStore: DataSt
         val stored = dataStore.data.first().asMap()[LAST_REMINDED_EPOCH_DAY] as? Long
         stored != null && stored in today.toEpochDay()..(today.toEpochDay() + SKEW_TOLERANCE_DAYS)
     } catch (cause: IOException) {
-        // Suppressing rather than firing. See the class KDoc: this is the one
-        // decision in the app whose safe direction is silence.
+        // Suppressing rather than firing: this is the one decision in the app
+        // whose safe direction is silence.
         true
     }
 
@@ -94,8 +91,7 @@ internal class ReminderJournal @Inject constructor(private val dataStore: DataSt
      * nothing it could report. The residual is one duplicate reminder, and only
      * if the worker runs a second time that same day.
      */
-    // Suppressed rather than logged: there is no logger anywhere in this module,
-    // and the KDoc above is the record.
+    // Suppressed rather than logged: there is no logger anywhere in this module.
     @Suppress("SwallowedException")
     suspend fun record(date: LocalDate) {
         try {
@@ -109,9 +105,13 @@ internal class ReminderJournal @Inject constructor(private val dataStore: DataSt
         val LAST_REMINDED_EPOCH_DAY = longPreferencesKey("last_reminded_logical_date_epoch_day")
 
         /**
-         * How far ahead of [today] a stamp may be dated and still suppress.
-         * `ExportJournal` uses the same one for the same reason: a whole day
-         * ahead is jitter, two days is a wrong clock.
+         * How far ahead of a date a stamp may be and still suppress.
+         *
+         * This compares dates, so without the tolerance a clock nudge across
+         * local midnight — reminded at 00:03, NTP pulls back to 23:57 — would
+         * re-arm a reminder that had just been posted. `ExportJournal` uses the
+         * same one for the same reason: a whole day ahead is jitter, two days is
+         * a wrong clock.
          */
         const val SKEW_TOLERANCE_DAYS = 1L
     }

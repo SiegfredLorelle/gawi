@@ -20,27 +20,23 @@ import javax.inject.Singleton
  * scheduled wakes fall.
  *
  * **Here rather than in `:app`, even though architecture §2 gives `:app` the
- * WorkManager scheduling.** What `:app` owns is the worker, the channel and the
- * notification; what this owns is every rule behind them. Splitting it that way
- * is what keeps `:app` free of a clock, a cutoff and a second copy of the
- * now-or-never rule — the three things a reminder built entirely in `:app` would
- * have had to grow, and the third of which [Mascot.isOutstanding]'s KDoc names
- * as how the Today view's chip and this notification would come to disagree.
+ * WorkManager scheduling.** `:app` owns the worker, the channel and the
+ * notification; this owns every rule behind them, which is what keeps `:app`
+ * free of a clock, a cutoff and a second copy of the now-or-never rule — the
+ * last of which is how the Today view's chip and this notification would come
+ * to disagree ([Mascot.isOutstanding]).
  *
  * Nothing here decides *whether* to schedule; a caller asks how long until the
  * next wake and does what it likes with the answer. So this class holds no
  * WorkManager type and is testable on the JVM with a fake clock, which is where
  * PRD §6.1's criteria are actually pinned.
  *
- * **Public class, `internal` constructor.** This module's habit is an internal
- * implementation behind a public interface (`OfflineFirstHabitRepository` behind
- * `HabitRepository`), which is the right shape when there is a seam worth faking.
- * There is not one here: `:app` has no reason to substitute a different reminder
- * rule, and an interface with one implementation and one caller would be
- * ceremony. Splitting the visibility says the true thing instead — anyone may
- * *use* it, only `:core:data` may *build* it — and it is what keeps
- * [ReminderJournal] internal, which matters because that class's failure policy
- * is the opposite of the one next door and is not something to expose.
+ * **Public class, `internal` constructor.** There is no seam worth faking here
+ * — `:app` has no reason to substitute a different reminder rule — so the
+ * visibility says the true thing instead: anyone may *use* it, only
+ * `:core:data` may *build* it. That is what keeps [ReminderJournal] internal,
+ * which matters because its failure policy is the opposite of the one next door
+ * and is not something to expose.
  */
 @Singleton
 class ReminderCheck @Inject internal constructor(
@@ -59,54 +55,11 @@ class ReminderCheck @Inject internal constructor(
      * ([TodaySnapshot]). Reading the clock or the settings again here would be a
      * second, independently-resolved "today" that could disagree with the rows.
      *
-     * **Archived habits are filtered here, not trusted from the query.**
-     * [Mascot.isOutstanding] does not check `archived` the way `Mascot.mood` does,
-     * and `TodayUiMapper` filters explicitly for exactly this reason rather than
-     * relying on `observeToday`'s SQL. Both counts below are therefore local
-     * properties of this function.
-     *
      * The count comes from [Mascot.isOutstanding] and is not recomputed. The
      * daily case is obvious and the weekly one is not — a weekly habit is only
      * outstanding once the week has too few days left to still finish it — and a
      * notification that counted differently from the app-bar chip would be worse
      * than one that did not exist.
-     *
-     * **A reminder set equal to the day cutoff is refused outright**, and it has
-     * to be. [reminderOn] resolves that combination to the logical day's *start*
-     * rather than its end — its KDoc says so, and says a settings screen is where
-     * the combination should be prevented. Without this guard the wake at the top
-     * of every logical day would find nothing completed yet and post *"N of N left
-     * today"*, then stamp the day, so the evening would be silent as well: the
-     * worst of both. `:feature:settings` refuses the combination now, but a value
-     * already stored by an older build can still reach here, so refusing it in the
-     * layer that decides is what actually makes it safe.
-     *
-     * Note this makes such a configuration produce no reminder at all, which is
-     * why preventing it in the UI is the real fix and this is the backstop.
-     *
-     * **The threshold is re-checked, and that is not belt-and-braces.** A wake can
-     * be deferred — Doze, a powered-off device, a vendor battery policy — and one
-     * deferred past the day cutoff arrives inside the *next* logical day, where
-     * every habit is legitimately incomplete. Without this it would post *"5 of 5
-     * left today"* at 00:30 and, worse, stamp the journal for the new day, so the
-     * real reminder that evening would be suppressed by the one that fired by
-     * mistake. Silence in that window is not a missed reminder; the correctly
-     * armed one is still ahead.
-     *
-     * The threshold is [reminderOn]'s, so it is the same instant the mascot's
-     * `nearBoundary` uses and not a second copy of it. `nearBoundary`'s *upper*
-     * bound is deliberately not repeated here: it exists there to protect a caller
-     * holding a stale date, and [TodaySnapshot.today] is derived from
-     * [TodaySnapshot.now] in the same read, so the day boundary cannot be behind
-     * us and the check would be dead code.
-     *
-     * **The tolerance is asymmetric on purpose.** Late is rejected outright, above.
-     * Early is allowed a minute, because the two costs are not comparable: a wake
-     * a second early that is refused means no reminder *at all* that day — the
-     * next armed wake is tomorrow's — while a wake a minute early means a nudge a
-     * minute early, which nobody can perceive. WorkManager defers work and does
-     * not run it ahead of its delay, so this absorbs clock jitter between arming
-     * and waking rather than a scheduling behaviour.
      *
      * Ordered so that **nothing is stamped unless something is said**:
      *
@@ -125,25 +78,22 @@ class ReminderCheck @Inject internal constructor(
         val snapshot = repository.observeToday().first()
         if (snapshot.outsideTheReminderWindow()) return ReminderDecision.Silent
 
-        // Filtered here rather than trusted from the query, which is the call
-        // TodayUiMapper.toUiState already makes and says why: Mascot.mood drops
-        // archived habits itself, Mascot.isOutstanding does NOT, and doing it here
-        // too is what makes the agreement this function's property rather than
-        // observeToday's — which filters in SQL. This is the one caller taking the
-        // coupling that mapper declines, and if that query ever changed, an
-        // archived incomplete daily habit would become a phantom outstanding here
-        // while the Today chip stayed right: exactly the disagreement this class's
-        // KDoc exists to prevent.
+        // Filtered here rather than trusted from observeToday's SQL, so the
+        // agreement with the Today chip is this function's property rather than
+        // the query's: Mascot.mood drops archived habits itself,
+        // Mascot.isOutstanding does NOT, and TodayUiMapper.toUiState makes the
+        // same call for the same reason. If that query ever changed, an archived
+        // incomplete daily habit would become a phantom outstanding here while
+        // the chip stayed right.
         val live = snapshot.habits.filterNot { it.habit.archived }
         val outstanding = live.count { row ->
             Mascot.isOutstanding(row.toMoodState(), snapshot.today, snapshot.weekStart)
         }
 
-        // A `when` rather than three guard clauses, so the order these are decided
-        // in is one visible list instead of something a reader has to reconstruct
-        // from the sequence of early returns. The threshold check above stays an
-        // early return because it is the one that avoids work rather than ordering
-        // it.
+        // A `when` rather than three guard clauses, so the order these are
+        // decided in is one visible list rather than something a reader has to
+        // reconstruct from a sequence of early returns. The threshold check above
+        // stays an early return because it avoids work rather than ordering it.
         return when {
             outstanding == 0 -> ReminderDecision.Silent
 
@@ -159,19 +109,39 @@ class ReminderCheck @Inject internal constructor(
     /**
      * Whether now is not a moment this logical day's reminder may be posted at.
      *
-     * Two reasons, both of which mean "say nothing", and named here rather than
+     * Two reasons, both of which mean "say nothing", named here rather than
      * inlined as guard clauses so that neither can be read as the other's
-     * duplicate. The KDoc on [evaluate] argues both at length.
+     * duplicate.
      */
     private fun TodaySnapshot.outsideTheReminderWindow(): Boolean {
         val threshold = reminderOn(today, reminderTime, dayCutoff)
 
-        // A reminder set equal to the cutoff resolves to the day's *start*, so
-        // there is no end-of-day moment for it at all.
+        // A reminder set equal to the cutoff resolves to the day's *start*
+        // rather than its end (reminderOn), so there is no end-of-day moment for
+        // it at all. Without this the wake at the top of every logical day would
+        // find nothing completed yet and post "N of N left today", then stamp the
+        // day, leaving the evening silent as well: the worst of both.
+        // :feature:settings refuses the combination, but a value stored by an
+        // older build still reaches here, so refusing it in the layer that
+        // decides is what makes it safe. The cost is that such a configuration
+        // produces no reminder at all, which is why the UI is the real fix and
+        // this is the backstop.
         if (threshold == LocalDateTime.of(today, dayCutoff)) return true
 
-        // Woken before the threshold: either a drifted schedule, or a wake
-        // deferred so far that it landed in the following logical day.
+        // Woken before the threshold: a drifted schedule, or a wake deferred by
+        // Doze, a powered-off device or a vendor battery policy so far that it
+        // landed in the following logical day, where every habit is legitimately
+        // incomplete. Posting there would say "5 of 5 left today" at 00:30 and
+        // stamp the journal for the new day, suppressing the real reminder that
+        // evening. Silence in that window is not a missed reminder; the correctly
+        // armed wake is still ahead.
+        //
+        // The threshold is reminderOn's, the same instant the mascot's
+        // nearBoundary uses. That bound's *upper* edge is deliberately not
+        // repeated: it protects a caller holding a stale date, and
+        // TodaySnapshot.today is derived from TodaySnapshot.now in the same read,
+        // so the day boundary cannot be behind us and the check would be dead
+        // code.
         return now.isBefore(threshold.minus(EARLY_TOLERANCE))
     }
 
@@ -184,10 +154,9 @@ class ReminderCheck @Inject internal constructor(
      * read `now` to do it, and would then own a second reading of the clock that
      * could disagree with the one this was resolved against.
      *
-     * [reminderOn]'s third caller, which its KDoc has been naming since it was
-     * written: the mood's `nearBoundary`, the data layer's ticker, and this. A
-     * second copy of the shift it applies is how the worried face and the
-     * notification would come to fire at different hours.
+     * The shift [reminderOn] applies is taken from it rather than copied: a
+     * second copy is how the worried face and the notification would come to
+     * fire at different hours.
      *
      * Today's threshold if it is still ahead, otherwise tomorrow's. "Still ahead"
      * is strict, so a worker woken *exactly* on the threshold schedules the next
@@ -217,15 +186,13 @@ class ReminderCheck @Inject internal constructor(
      * `dayStart.plusDays(1)`, and consistent with [logicalDate]'s rule that a
      * wall time exactly at the cutoff begins the new day.
      *
-     * **It takes the same strictly-ahead fallback as [untilNextReminder].** The
-     * boundary of the date `now` resolves to is not always after `now`, and
-     * [logicalDate]'s own KDoc names the one place it is not: a cutoff strictly
-     * inside a DST fall-back's repeated hour makes "today" regress to "yesterday"
-     * for the rewound stretch. With a 01:30 cutoff and clocks going 02:00 back
-     * to 01:00, the second pass through 01:15 resolves to `D - 1`, whose
-     * boundary is 01:30 on `D` — an instant already behind us, because `atZone`
-     * takes the earlier of the repeated offsets. Without the fallback, once a
-     * year and for one hour, this would arm a wake in the past.
+     * **It takes the same strictly-ahead fallback as [untilNextReminder]**, for
+     * a different reason. A cutoff strictly inside a DST fall-back's repeated
+     * hour makes "today" regress to "yesterday" for the rewound stretch: with a
+     * 01:30 cutoff and clocks going 02:00 back to 01:00, the second pass through
+     * 01:15 resolves to `D - 1`, whose boundary is 01:30 on `D` — already behind
+     * us, because `atZone` takes the earlier of the repeated offsets. Without the
+     * fallback, once a year and for one hour, this would arm a wake in the past.
      */
     suspend fun untilNextCutoff(): Duration {
         val now = clock.now()
@@ -252,7 +219,16 @@ class ReminderCheck @Inject internal constructor(
     private fun LocalDateTime.atInstant(): Instant = atZone(clock.zone()).toInstant()
 
     private companion object {
-        /** How far ahead of the threshold a wake may arrive and still count. */
+        /**
+         * How far ahead of the threshold a wake may arrive and still count.
+         *
+         * Asymmetric with the outright rejection of a late wake, because the two
+         * costs are not comparable: a wake a second early that is refused means
+         * no reminder *at all* that day — the next armed wake is tomorrow's —
+         * while a minute early is a nudge nobody can perceive. WorkManager defers
+         * work and does not run it ahead of its delay, so this absorbs clock
+         * jitter between arming and waking rather than a scheduling behaviour.
+         */
         val EARLY_TOLERANCE: Duration = Duration.ofMinutes(1)
     }
 }

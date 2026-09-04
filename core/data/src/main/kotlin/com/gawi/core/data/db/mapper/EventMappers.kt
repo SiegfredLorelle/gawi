@@ -64,8 +64,8 @@ internal fun EncodedEvent.toEntity(): EventEntity = EventEntity(
  * off the device, not a corner case to tolerate.
  *
  * The id is still validated on the way through, because a non-canonical id in
- * *local* storage is corruption rather than foreign input, and this module has
- * been loud about that since the log was built.
+ * *local* storage is corruption rather than foreign input, and this module is
+ * deliberately loud about that.
  */
 internal fun EventEntity.toEncoded(): EncodedEvent = EncodedEvent(
     id = EventId(id),
