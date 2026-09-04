@@ -40,15 +40,9 @@ object Mascot {
      * instead of being masked by the recovery face. For a weekly habit that
      * means the first three days of the week its streak zeroed.
      *
-     * The 3 is a guess. It was flagged for the 30-day trial alongside PRD
-     * OQ-3, and PRD §8 records why that flag could never be acted on as
-     * written: Phase 0 draws three faces and folds [Mood.REGENERATING] onto
-     * neutral, so no amount of using the app distinguishes this window's
-     * effect from its absence. The trial itself was waived on 2026-08-23
-     * (PRD §5), which changes nothing here for that same reason. The fourth
-     * face landed and PRD §8's OQ-3 is decided as gills; this number is
-     * re-examined when gills are built (PRD §5, 1.0.0 step 3) and stays 3
-     * and a guess until then.
+     * The 3 is a guess. PRD §8's OQ-3 is decided as gills, so this number is
+     * re-examined when gills are built (PRD §5, 1.0.0 step 3) and stays 3 and
+     * a guess until then.
      */
     const val REGENERATING_WINDOW_DAYS = 3L
 
@@ -126,9 +120,8 @@ object Mascot {
      * records for the window. So a weekly habit whose streak zeroed this week is dated
      * its Monday and sorts below a daily habit that broke on the Wednesday. **That is
      * correct rather than a defect**: the weekly break did become visible on the
-     * Monday, so it is the older news of the two. Written down because a review read
-     * it the other way round, and the mixed-schedule case in `RecentlyBrokenHabitsTest`
-     * is what pins it.
+     * Monday, so it is the older news of the two. The mixed-schedule case in
+     * `RecentlyBrokenHabitsTest` pins it.
      *
      * **Answers without consulting the mood.** [Mood.THRIVING] outranks
      * [Mood.REGENERATING], so a finished day returns a non-empty list with nothing to

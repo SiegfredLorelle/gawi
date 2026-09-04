@@ -16,7 +16,6 @@ package com.gawi.core.domain.mascot
  * is what lets the precedence table be tested exhaustively rather than case by
  * remembered case.
  *
- * All four are drawn since 2026-08-25 (docs/ux/momo.md §3). `MvpMood`, which
- * folded them onto Phase 0's three faces, went with the placeholder it served.
+ * All four are drawn (docs/ux/momo.md §3).
  */
 enum class Mood { THRIVING, CONTENT, WORRIED, REGENERATING }
