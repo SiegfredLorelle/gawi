@@ -54,5 +54,5 @@ rules:
   scope-enum:
     - 2
     - always
-    - [app, domain, data, ui, today, habits, settings, widget, insights, ux,
-       gradle, quality, make, ci, deps, docs, stacks, repo, claude, arch, prd]
+    - [app, domain, data, ui, testing, today, habits, settings, widget, insights,
+       ux, gradle, quality, make, ci, deps, docs, stacks, repo, claude, arch, prd]
