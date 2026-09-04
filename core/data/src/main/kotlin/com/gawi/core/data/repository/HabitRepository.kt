@@ -28,9 +28,8 @@ import java.time.LocalDate
  *
  * Nothing above this interface knows events exist (architecture §4).
  */
-// One aggregate means one interface: a command per user action, plus the
-// queries a screen needs. Splitting it to satisfy a function count would
-// advertise an independence between reads and writes that does not exist.
+// A function count is not a reason to split what the KDoc above explains is
+// one aggregate: a command per user action, plus the queries a screen needs.
 @Suppress("TooManyFunctions")
 interface HabitRepository {
 
