@@ -4,7 +4,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.glance.EmittableImage
+import androidx.glance.action.ActionModifier
 import androidx.glance.action.actionParametersOf
+import androidx.glance.appwidget.CheckBoxColors
+import androidx.glance.appwidget.CheckboxDefaults
 import androidx.glance.appwidget.EmittableCheckBox
 import androidx.glance.appwidget.testing.unit.hasRunCallbackClickAction
 import androidx.glance.appwidget.testing.unit.isChecked
@@ -87,17 +90,51 @@ class WidgetRowTest {
     }
 
     /**
-     * The row's action names the habit. The glyph's own action is wrapped in
-     * Glance's `internal` `CompoundButtonAction`, which no matcher can read
-     * without reflection, so it is the device box in docs/running.md §4 that
-     * confirms a tap on the glyph writes the same thing as a tap on the name.
+     * The row's action names the habit, and the glyph carries one of its own.
+     *
+     * *Which* action the glyph carries is not asserted here: Glance wraps
+     * `onCheckedChange` in an `internal` `CompoundButtonAction`, and unwrapping
+     * it needs reflection into the library. That the glyph is wired at all is
+     * public, and it is the half that regresses silently — dropping
+     * `onCheckedChange` leaves a glyph that draws and does nothing. The device
+     * box in docs/running.md §4 confirms the tap writes the same thing as a tap
+     * on the name.
      */
     @Test
-    fun `the toggle is on the row, with the habit's id`() = render {
+    fun `the toggle is on the row with the habit's id, and the glyph is wired too`() = render {
         for (n in 1..2) {
             val parameters = actionParametersOf(HABIT_ID to habitId(n).value)
             onAllNodes(hasRunCallbackClickAction<ToggleHabitAction>(parameters)).assertCountEquals(1)
         }
+        onAllNodes(checkBoxWithAnAction()).assertCountEquals(2)
+    }
+
+    /**
+     * The glyph is drawn in the widget's own palette rather than the host's
+     * default, which is the 2.91:1 defect docs/running.md §4 records against
+     * API 29 and 30.
+     *
+     * The expected value is built inside the composition, because
+     * `CheckboxDefaults.colors` is `@Composable`; `CheckBoxColorsImpl` overrides
+     * equality, so the comparison is a real one. Deleting the `colors` argument
+     * in `TodayWidget` leaves the theme default here and turns this red.
+     * `WidgetPaletteTest` holds the two colours themselves to the contrast
+     * floor; this is what says the widget hands them over.
+     */
+    @Test
+    fun `the checkbox glyphs carry the widget palette`() = runGlanceAppWidgetUnitTest(RENDER_TIMEOUT) {
+        setContext(RuntimeEnvironment.getApplication())
+        setAppWidgetSize(DpSize(250.dp, 110.dp))
+        var expected: CheckBoxColors? = null
+        provideComposable {
+            expected = CheckboxDefaults.colors(
+                checkedColor = WidgetPalette.glyphChecked,
+                uncheckedColor = WidgetPalette.glyphUnchecked,
+            )
+            WidgetBody(WidgetContent.Ready(snapshot.toWidgetState()))
+        }
+        awaitIdle()
+        onAllNodes(checkBoxColoured(checkNotNull(expected))).assertCountEquals(2)
     }
 
     @Test
@@ -119,6 +156,17 @@ class WidgetRowTest {
 private val RENDER_TIMEOUT = 60.seconds
 
 private fun checkBox() = GlanceNodeMatcher<MappedNode>("is a checkbox") { it.value.emittable is EmittableCheckBox }
+
+/** A checkbox carrying an action of its own, whatever Glance wrapped it in. */
+private fun checkBoxWithAnAction() = GlanceNodeMatcher<MappedNode>("is a checkbox with an action") {
+    val checkBox = it.value.emittable as? EmittableCheckBox ?: return@GlanceNodeMatcher false
+    checkBox.modifier.findModifier<ActionModifier>() != null
+}
+
+/** A checkbox whose colours are [expected], compared through `CheckBoxColorsImpl`'s own equality. */
+private fun checkBoxColoured(expected: CheckBoxColors) = GlanceNodeMatcher<MappedNode>("is a checkbox coloured $expected") {
+    (it.value.emittable as? EmittableCheckBox)?.colors == expected
+}
 
 private fun checkBoxWithText() = GlanceNodeMatcher<MappedNode>("is a checkbox carrying text") {
     (it.value.emittable as? EmittableCheckBox)?.text?.isNotEmpty() == true
