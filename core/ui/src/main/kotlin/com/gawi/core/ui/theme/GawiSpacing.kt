@@ -15,9 +15,9 @@ import androidx.compose.ui.unit.dp
  *
  * **The type scale did not bring a spacing scale with it.** [GawiTypography]
  * moves the app to Outfit and touches no dimension, deliberately: it changes
- * the face and leaves Material's metrics alone, so there is no new rhythm here
- * for a spacing scale to be derived from. Dimensions are still what §8 of
- * docs/ux/visual-identity.md says they are — not part of that brief.
+ * the face and leaves Material's sizes and line heights alone, so there is no
+ * new rhythm here for a spacing scale to be derived from. Dimensions are still
+ * what §8 of docs/ux/visual-identity.md says they are — not part of that brief.
  */
 object GawiSpacing {
 

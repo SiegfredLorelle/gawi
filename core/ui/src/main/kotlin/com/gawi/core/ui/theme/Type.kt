@@ -89,9 +89,8 @@ internal val OutfitWeights = listOf(
  * (U+2699), `✎` (U+270E) and `✕` (U+2715). Outside the `cmap` they would fall
  * back to the platform face, so an app bar would mix two faces at one size —
  * `←` in Outfit directly beside `✎` in the system font. No tofu and not a
- * crash, but it is
- * the "looks like a design choice rather than a gap" failure this project keeps
- * naming, and the answer is icons rather than dingbats.
+ * crash, but it is the "looks like a design choice rather than a gap" failure
+ * this project keeps naming, and the answer is icons rather than dingbats.
  *
  * **Every character the app draws as an *icon* is a vendored vector**
  * (`GawiIcons`, docs/ux/visual-identity.md §7.5). **Not every character, and
