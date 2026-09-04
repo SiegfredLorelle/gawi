@@ -115,9 +115,10 @@ private data class Swatch(val hex: String, val label: String)
  * have to be spelled the way the palette spells it. `HabitState.color` is
  * unvalidated and [parseHabitColor] accepts six digits or eight, upper case or
  * lower, by design. So an imported `"#f22935"` is not a palette member and not
- * equal to the palette's `"#F22935"`: the row grows a leading swatch carrying the
- * lowercase value **and showed it selected**, while the identical colour sat
- * beside it unselected. Two swatches, one colour, the wrong one ticked.
+ * equal to the palette's `"#F22935"`: under a string comparison the row grows a
+ * leading swatch carrying the lowercase value **and shows it selected**, while
+ * the identical colour sits beside it unselected. Two swatches, one colour, the
+ * wrong one ticked.
  *
  * Comparing what the two *draw* also covers `"#FFF22935"`, the eight-digit
  * opaque form, which a case-insensitive comparison would still duplicate. A
@@ -235,8 +236,8 @@ internal fun SchedulePicker(form: HabitEditorUiState.Form, onEdit: (HabitEditorU
             FilterChip(
                 selected = weekly != null,
                 // Keeps the target it already has. Writing the default
-                // unconditionally meant tapping the already-selected chip
-                // silently knocked a Weekly(6) habit back to 3.
+                // unconditionally lets a tap on the already-selected chip
+                // silently knock a Weekly(6) habit back to 3.
                 onClick = {
                     onEdit(form.copy(schedule = ScheduleUi.Weekly(weekly?.timesPerWeek ?: DEFAULT_WEEKLY_TARGET)))
                 },

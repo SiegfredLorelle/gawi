@@ -68,8 +68,7 @@ internal fun messageFor(error: CommandError): Int = when (error) {
  * `CoroutineExceptionHandler`, so an exception out of a `launch` reaches the
  * thread's default handler: process death on a Save or an Archive tap rather
  * than a snackbar. Both read paths in this module are `.catch`-guarded for
- * precisely this failure mode; the write paths were not, which was the whole
- * asymmetry.
+ * precisely this failure mode, and this is the write paths' half of it.
  *
  * Returns `null` rather than a `Result`, because the caller has nothing to do
  * with the throwable beyond what has already been logged — it maps to one
