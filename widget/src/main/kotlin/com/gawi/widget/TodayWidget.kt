@@ -379,17 +379,13 @@ internal fun contentWidth() = LocalSize.current.width - (2 * WIDGET_PADDING).dp
  * So the glyph can carry the palette, in both schemes, without inventing the
  * flat literals this comment used to price.
  *
- * One more claim here has been retired: that pinning still would not make the
- * glyph assertable. `CheckBoxColors` does expose its provider only through an
- * `internal` accessor returning a memberless public interface — but the object
- * behind it has a public `getColor(context, isNightMode, isChecked)`, so one
- * reflective hop reaches it, which is the bargain `WidgetRowTest` already makes
- * for `CompoundButtonAction`. `WidgetTextColourTest` now measures both glyph
- * states in both themes, and removing the `colors` argument above turns it red.
- *
- * What a JVM test still cannot see is which translation path a real host takes,
- * which is where the defect lived, so docs/running.md §4 keeps its by-hand
- * toggle on API 29 or 30.
+ * `CheckBoxColors` exposes its providers only through an `internal` accessor,
+ * so what the tree drew the glyph with is not readable from a test without
+ * reflection into Glance, and the module does not do that. The glyph's two
+ * colours are held to the 4.5:1 floor at the palette instead
+ * (`WidgetPaletteTest`), and docs/running.md §4 keeps the by-hand toggle on
+ * API 29 or 30 — which is also the only place to see which translation path a
+ * real host takes, where the defect lived.
  */
 
 internal const val WIDGET_PADDING = 8

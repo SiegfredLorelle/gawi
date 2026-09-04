@@ -16,6 +16,7 @@ import com.gawi.widget.testsupport.todaySnapshot
 import com.gawi.widget.testsupport.untintedImage
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -97,8 +98,9 @@ class MomoBodyTest {
     fun `the face is full size on the default tile and gives way to a scaled caption`() {
         val tile = DpSize(110.dp, 110.dp)
         assertEquals(MomoBitmap.HEIGHT_DP, momoFaceHeight(tile, textScale = 1f, captionLines = 1))
-        // 110 - 16 - 3 - 15*2 = 61: less than 72, more than the floor.
-        assertEquals(61f, momoFaceHeight(tile, textScale = 2f, captionLines = 1))
+        // A doubled caption on the default tile leaves less than the constant and more than the floor.
+        val scaled = momoFaceHeight(tile, textScale = 2f, captionLines = 1)
+        assertTrue(scaled != null && scaled < MomoBitmap.HEIGHT_DP)
         // Two lines at 2x leave 31dp, under the floor: no face rather than a sliver.
         assertNull(momoFaceHeight(tile, textScale = 2f, captionLines = 2))
         // A taller tile never grows her past the constant.

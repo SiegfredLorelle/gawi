@@ -16,9 +16,9 @@ import com.gawi.widget.WidgetPalette
  * Shared by WidgetTextColourTest and StreakTextColourTest. Extracted here when
  * the second provider arrived rather than copied, for the reason contrastRatio's
  * own KDoc gives about itself: a second copy is how the two would drift apart
- * while both stayed green. What is NOT here is anything about a checkbox glyph —
- * only the Today widget has one, and reaching its colour needs a reflective hop
- * that belongs beside the argument for making it.
+ * while both stayed green. Nothing here reads a checkbox glyph: its colour sits
+ * behind an `internal` Glance accessor, so the glyph is measured at the palette
+ * in `WidgetPaletteTest` and on a device (docs/running.md §4).
  */
 
 /**
