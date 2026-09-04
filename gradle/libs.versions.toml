@@ -1,5 +1,5 @@
 [versions]
-agp = "9.3.2"
+agp = "9.4.0"
 kotlin = "2.4.10"
 ksp = "2.3.11"
 composeBom = "2026.08.00"
@@ -75,7 +75,7 @@ room = "2.8.4"
 datastore = "1.2.1"
 coroutines = "1.11.0"
 detekt = "1.23.8"
-spotless = "8.10.0"
+spotless = "8.10.1"
 # Consumed by the Spotless config in the root build file, not a plugin.
 ktlint = "1.8.0"
 junit = "4.13.2"
