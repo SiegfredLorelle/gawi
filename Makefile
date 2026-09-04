@@ -43,9 +43,10 @@ hooks: ## Install pre-commit git hooks (pre-commit + commit-msg)
 fmt: ## Format the codebase
 	./gradlew spotlessApply
 
-# The citation check runs first because it takes about a second and Gradle takes
-# minutes, so a stale `docs/` reference fails fast instead of at the end. It is a
-# script and not a Gradle task on purpose — see its header, and architecture §9.
+# The scripts run first because each takes about a second and Gradle takes
+# minutes, so a stale `docs/` reference or a forbidden call in a test fails fast
+# instead of at the end. Scripts and not Gradle tasks on purpose — see their
+# headers, and architecture §9.
 #
 # `:app:assembleDebug` is the only step here that packages. CI calls nothing but
 # `make`, and until 2026-09-02 none of fmt/lint/test merged a manifest, merged
@@ -66,6 +67,7 @@ fmt: ## Format the codebase
 # `test` staying plain `./gradlew test` (architecture §9).
 lint: ## Lint and type-check the codebase
 	./scripts/check-citations.sh
+	./scripts/check-tests.sh
 	./gradlew spotlessCheck detekt lint :app:assembleDebug
 
 test: ## Run the test suite

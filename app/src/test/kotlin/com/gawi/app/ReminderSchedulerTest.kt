@@ -292,7 +292,7 @@ class ReminderSchedulerTest {
         val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(WAKE_TIMEOUT_SECONDS)
         while (System.nanoTime() < deadline) {
             if (workManager.getWorkInfoById(id).get()?.state?.isFinished == true) return
-            Thread.sleep(POLL_MILLIS)
+            Thread.sleep(POLL_MILLIS) // bounded poll
         }
         error("$name did not finish within $WAKE_TIMEOUT_SECONDS s")
     }
