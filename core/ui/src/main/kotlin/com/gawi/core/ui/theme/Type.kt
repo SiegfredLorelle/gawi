@@ -86,9 +86,10 @@ internal val OutfitWeights = listOf(
  * **This font's `cmap` covers 360 characters, and that is a live constraint
  * even though nothing visibly fails on it.** Five glyphs the app would
  * otherwise draw as *text* are outside it: `☰` (U+2630), `◔` (U+25D4), `⚙`
- * (U+2699), `✎` (U+270E) and `✕` (U+2715). Outside the `cmap` they fall back to
- * the platform face, so an app bar mixes two faces at one size — `←` in Outfit
- * directly beside `✎` in the system font. No tofu and not a crash, but it is
+ * (U+2699), `✎` (U+270E) and `✕` (U+2715). Outside the `cmap` they would fall
+ * back to the platform face, so an app bar would mix two faces at one size —
+ * `←` in Outfit directly beside `✎` in the system font. No tofu and not a
+ * crash, but it is
  * the "looks like a design choice rather than a gap" failure this project keeps
  * naming, and the answer is icons rather than dingbats.
  *
