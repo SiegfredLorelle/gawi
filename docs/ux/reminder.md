@@ -360,7 +360,7 @@ are the user's to change in the channel's own settings.
 Quick-complete is PRD §4's explicit stretch goal, *"allowed to slip to Phase 1;
 documented so it isn't lost"*. §6.1.1's *"logging < 5 seconds"* is already
 satisfied by the widget, so a button here is a second path to a solved problem —
-and it would carry OQ-2 with it, which is still unanswered: Android caps three
+and it would carry OQ-2 with it, which was unanswered when the reminder shipped: Android caps three
 action buttons, and what to show when more than three habits remain is a real
 design question. **Answered 2026-09-03 (PRD §8, OQ-2): up to three buttons, one
 per habit left, each writing a completion under the widget's rules; four or more

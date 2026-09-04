@@ -104,7 +104,9 @@ Full guide with examples: `.github/COMMIT_CONVENTION.md`
   tests could not: type weight lighter than designed, a mood face drawn with
   its eyes closed, stars scaling where they should drift, and weeds lost on a
   gradient. A test pins what was built; only the canvas says what was meant.
-- **Versions live only in `gradle/libs.versions.toml`.** Convention plugins
+- **Dependency and tool versions live only in `gradle/libs.versions.toml`.**
+  App identity (`applicationId`, `versionCode`, `versionName`) is the app
+  module's own, per the convention plugin's comment. Convention plugins
   in `build-logic/` own build configuration; module build files only apply
   `gawi.*` plugin ids and declare dependencies. **One recorded exception**:
   `:feature:settings` names the repository's `licenses/` directory as an
