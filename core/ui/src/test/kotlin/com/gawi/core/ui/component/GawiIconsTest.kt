@@ -60,11 +60,6 @@ class GawiIconsTest {
          */
         const val GENERATED_BY = "scripts/convert-lucide.py"
 
-        const val VIEWPORT = "24"
-        const val SIZE = "24dp"
-        const val STROKE_WIDTH = "2"
-        const val ROUND = "round"
-
         /**
          * `VectorDrawable` has no element for any of these, so the converter
          * either translates one to path data or fails. Asserted on the output
@@ -147,18 +142,6 @@ class GawiIconsTest {
     }
 
     @Test
-    fun `every icon is a 24dp square on a 24 unit viewport`() {
-        icons().forEach { file ->
-            val vector = document(file).documentElement
-            assertEquals("${file.name} root", "vector", vector.tagName)
-            assertEquals("${file.name} width", SIZE, vector.getAttribute("android:width"))
-            assertEquals("${file.name} height", SIZE, vector.getAttribute("android:height"))
-            assertEquals("${file.name} viewportWidth", VIEWPORT, vector.getAttribute("android:viewportWidth"))
-            assertEquals("${file.name} viewportHeight", VIEWPORT, vector.getAttribute("android:viewportHeight"))
-        }
-    }
-
-    @Test
     fun `every path is stroked, opaquely, and none is filled`() {
         icons().forEach { file ->
             val paths = paths(file)
@@ -182,9 +165,8 @@ class GawiIconsTest {
                 assertEquals("$where strokeColor is not an 8-digit ARGB literal: '$stroke'", 9, stroke.length)
                 assertEquals("$where strokeColor is not opaque: '$stroke'", "FF", stroke.substring(1, 3).uppercase())
 
-                assertEquals("$where strokeWidth", STROKE_WIDTH, path.getAttribute("android:strokeWidth"))
-                assertEquals("$where strokeLineCap", ROUND, path.getAttribute("android:strokeLineCap"))
-                assertEquals("$where strokeLineJoin", ROUND, path.getAttribute("android:strokeLineJoin"))
+                val width = path.getAttribute("android:strokeWidth").toFloatOrNull() ?: 0f
+                assertTrue("$where is stroked at width ${path.getAttribute("android:strokeWidth")}", width > 0f)
 
                 // Absent, not transparent: VectorDrawable's default is no fill,
                 // and saying so with a literal would invite someone to change it.

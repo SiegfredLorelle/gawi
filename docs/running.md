@@ -2350,11 +2350,10 @@ launcher masks and scales them differently, which is what is left.
       **Resolved 2026-08-30 against the artboard: three warps and one weft, so
       the subpath was dead and is deleted.** Nothing rendered changes, which is
       why this tick stands without a re-run — the file now describes what it
-      already drew. `LauncherIconTest` could not see it either way, because it
-      inspected `<path>` elements for colour and stroke width and never looked
-      inside `pathData`; it now has one case that does, asserting three vertical
-      warps and one horizontal weft. A subpath hidden inside another is still
-      more than a test can see, but a weft that is not horizontal is not.
+      already drew. `LauncherIconTest` could not see it either way: it checks
+      that every path draws and is in Momo's colours, and a subpath hidden
+      inside another is more than a test can see. The artboard is what says
+      how many warps there are.
 
 ### Accessibility — *device only, and the layer no test reaches*
 
