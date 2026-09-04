@@ -37,10 +37,12 @@ private const val TAG = "ReminderWorker"
  *
  * **With one exception.** The guard rethrows cancellation, so a worker
  * WorkManager *stops* — a `REPLACE` from a settings edit, a quota, a constraint
- * — never reaches the arming call at all. That is safe rather than a hole, for
- * two separate reasons: a stop leaves the work enqueued for a retry, so this
- * runs again; and the `REPLACE` that caused the stop has itself just armed that
- * name. So the arming is near-unconditional rather than unconditional.
+ * — never reaches the arming call at all. That is safe rather than a hole, and
+ * the two kinds of stop are safe for different reasons. A quota or a constraint
+ * leaves the work enqueued for a retry, so this runs again. A `REPLACE` does
+ * not — it cancels — but the `REPLACE` that caused the stop has itself just
+ * armed that name. So the arming is near-unconditional rather than
+ * unconditional.
  */
 internal class ReminderWorker(context: Context, parameters: WorkerParameters) : CoroutineWorker(context, parameters) {
 
