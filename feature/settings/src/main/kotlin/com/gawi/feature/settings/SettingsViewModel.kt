@@ -34,8 +34,7 @@ import javax.inject.Inject
  * the three values that decide how both are interpreted, which is a different
  * job. Even the last-export age arrives already counted, from the class that
  * does own a clock, so there is still nothing here that has to be told what time
- * it is. (This paragraph used to claim the settings source was the only
- * injection, which stopped being true when export landed.)
+ * it is.
  *
  * The store is the single source of truth for what is drawn. There is no local
  * copy of a committed setting here, which is what stops the screen and the file
@@ -159,24 +158,21 @@ internal class SettingsViewModel @Inject constructor(
      * cutoff. `reminderOn`'s KDoc has always said that combination resolves to the
      * logical day's *start* rather than its end, and that *"a settings screen
      * offering the two as one control is where the combination should be
-     * prevented"*. Nothing prevented it, and until the reminder was built nothing
-     * visibly suffered — the cost was Momo looking worried all day, which reads as
-     * a mood rather than a bug. With a notification behind the same threshold it
-     * became a *"N of N left today"* posted at the top of every logical day, which
-     * also consumed that day's one reminder, so the evening was silent too.
-     * `ReminderCheck` refuses to act on such a value; this is what stops one being
-     * stored. Found by `/code-review`.
+     * prevented"*. Nothing prevents it, and with a notification behind the same
+     * threshold it becomes a *"N of N left today"* posted at the top of every
+     * logical day, which also consumes that day's one reminder, so the evening
+     * is silent too. `ReminderCheck` refuses to act on such a value; this is
+     * what stops one being stored.
      *
      * Guarded from **both** rows, because either can create the collision, and a
      * screen that refused it from one side and allowed it from the other would be
      * the more confusing of the two.
      *
-     * This is the first refusable settings write, which `SettingsMessage`'s KDoc
-     * used to argue could not exist: *"a fixed picker cannot express an invalid
-     * time"*. That reasoning was sound and incomplete — a picker cannot express an
-     * invalid time, but it can express a valid time that is invalid *against
-     * another setting*, which is a validation the store cannot do because it sees
-     * one field at a time.
+     * This is a refusable settings write, which *"a fixed picker cannot express
+     * an invalid time"* does not cover: a picker cannot express an invalid time,
+     * but it can express a valid time that is invalid *against another
+     * setting*, and that is a validation the store cannot do because it sees one
+     * field at a time.
      */
     private fun write(transform: (UserSettings) -> UserSettings?) {
         viewModelScope.launch {
