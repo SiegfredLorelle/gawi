@@ -60,15 +60,14 @@ private const val ROLLOVER_WORK = "gawi.reminder.day-rollover"
  * invariant that makes the chain sound is that **at least one direction always
  * replaces**, so every interleaving makes forward progress.
  *
- * Getting here took two wrong answers, both worth keeping because each looks
- * right on its own.
+ * Both symmetric policies fail, and each looks right on its own.
  *
- * **`REPLACE` on both** lost a day. A reminder wake deferred past the cutoff —
+ * **`REPLACE` on both** loses a day. A reminder wake deferred past the cutoff —
  * device off overnight — runs late, correctly decides to stay silent, and then
- * *replaced the overdue rollover work that was about to re-arm it*. Nothing was
- * left under the reminder's name and that whole day had none.
+ * *replaces the overdue rollover work that was about to re-arm it*. Nothing is
+ * left under the reminder's name and that whole day has none.
  *
- * **`KEEP` on both** looked like the fix and lost a day in two other orderings,
+ * **`KEEP` on both** looks like the fix and loses a day in two other orderings,
  * because `KEEP` no-ops against `RUNNING` as well as `ENQUEUED` — measured in
  * `EnqueueRunnable`'s bytecode, where the branch after the `KEEP` comparison tests
  * both states. When both wakes are overdue at once, which is the ordinary
@@ -82,21 +81,19 @@ private const val ROLLOVER_WORK = "gawi.reminder.day-rollover"
  *
  * [start] does not repair either, because the process was started *for* the
  * workers, so its first emission lands while both are still pending and no-ops too.
- * Both found by `/code-review`.
  *
  * The residual of `REPLACE` on the rollover side is cancelling a reminder run in
  * flight. That is only reachable when the two wakes coincide, and a reminder run
  * in that position decides `Silent` anyway — a wake that late is inside the
  * following logical day, which `ReminderCheck` refuses.
  *
- * **A KDoc here also claimed the coincidence was impossible, and that was wrong.**
- * It said the other name is provably not running, since the reminder falls strictly
- * inside a logical day and the cutoff ends it — and that a reminder set equal to the
- * cutoff would leave them "a whole day apart". Day `D + 1`'s start *is* day `D`'s
+ * **The coincidence is unreachable rather than impossible, and the difference
+ * matters.** A reminder falls strictly inside a logical day and the cutoff ends
+ * it, which reads as though a reminder set equal to the cutoff would leave the two
+ * wakes "a whole day apart". It would not: day `D + 1`'s start *is* day `D`'s
  * boundary, so equal times put both wakes on one instant. `:feature:settings`
- * refuses that combination now and `ReminderCheck` refuses to act on a stored one,
- * so it is unreachable rather than merely unlikely — but the reasoning was still
- * wrong and the policies above no longer depend on it being right.
+ * refuses that combination and `ReminderCheck` refuses to act on a stored one, so
+ * it is unreachable — but the policies above do not depend on that.
  *
  * The chain therefore alternates: 21:00 arms midnight, midnight arms 21:00. If
  * either link is ever lost — a cleared app, a WorkManager database migration —
@@ -132,10 +129,10 @@ class ReminderScheduler @Inject constructor(
      * `UserSettings` and moves neither, so reacting to it would re-enqueue both
      * works for nothing.
      *
-     * An edit re-arms **only the wake that moved** — see [replaceWhatMoved]. An
-     * earlier version replaced both on every edit, so changing the reminder time
-     * could cancel a `RolloverWorker` that happened to be running at that moment
-     * and lose its streak sweep and widget push. Found by `/code-review`.
+     * An edit re-arms **only the wake that moved** — see [replaceWhatMoved].
+     * Replacing both on every edit would let a change to the reminder time
+     * cancel a `RolloverWorker` that happened to be running at that moment,
+     * losing its streak sweep and widget push.
      */
     fun start() {
         scope.launch {
@@ -223,10 +220,10 @@ class ReminderScheduler @Inject constructor(
      * Play-policy scrutiny, and `setExpedited` would pull foreground-service
      * behaviour into a background nudge.
      *
-     * What the delay means, stated precisely because an earlier version of this
-     * said "flex window" and that is a different mechanism: these are
-     * `OneTimeWorkRequest`s, which have no flex interval — that belongs to periodic
-     * work. `setInitialDelay` makes a wake **eligible** once the delay has elapsed,
+     * What the delay means, stated precisely because a "flex window" is a
+     * different mechanism: these are `OneTimeWorkRequest`s, which have no flex
+     * interval — that belongs to periodic work. `setInitialDelay` makes a wake
+     * **eligible** once the delay has elapsed,
      * and nothing bounds how long after that it runs. WorkManager defers under Doze
      * and App Standby and will not wake the device to deliver one.
      *
