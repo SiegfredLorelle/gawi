@@ -61,8 +61,9 @@ Full guide with examples: `.github/COMMIT_CONVENTION.md`
 - **Modules**: `:app` (wiring, navigation), `:core:domain` (pure Kotlin/JVM),
   `:core:data` (Room, DataStore, repositories), `:core:ui` (theme, shared
   composables), `:feature:today`, `:feature:habits`, `:feature:insights`,
-  `:feature:settings` and `:widget` (Glance). **All nine exist** and `:widget` is
-  not a screen. `:feature:insights` is the newest — created 2026-08-24, and by the
+  `:feature:settings`, `:widget` (Glance) and `:core:testing` (shared test
+  helpers; its main source set is consumed only by test source sets). **All ten
+  exist** and `:widget` is not a screen. `:feature:insights` is the newest — created 2026-08-24, and by the
   end of that day holding all three surfaces `docs/ux/insights.md` gives it,
   across two screens: one per-habit, one top-level. **A new module is created together with its
   first real file, never empty**: an Android library always has test sources
@@ -121,7 +122,13 @@ Full guide with examples: `.github/COMMIT_CONVENTION.md`
   JVM unit tests, and a feature module's screen composable ships with a JVM
   Compose test under Robolectric in its own `test` source set — not
   `androidTest`. CI runs unit tests only; instrumented tests are a manual,
-  on-device activity.
+  on-device activity. **A test asserts a behaviour a user or a document names,
+  never an artefact of the implementation**: no exact pixel or ARGB constant,
+  no magic computed value, no reflection into a library, no XML attribute
+  string read off disk, no subpath count, and no second test of the same
+  thing. detekt refuses `Thread.sleep` and reflection by method name in test
+  sources. **Shared test helpers live in `:core:testing`** (pure-domain ones in
+  `core/domain/src/testFixtures`); a second copy of one is the defect.
 - Run `make fmt` before committing; `make lint` and `make test` before
   considering any change complete.
 

@@ -42,6 +42,7 @@ Now-in-Android convention: Gradle version catalog
 | `:core:domain` | Pure Kotlin/JVM: event types, projection logic, logical-date rules, streak computation, UUIDv7 generator, event and export JSON codecs |
 | `:core:data` | Repositories, event store, Room database + DAOs, DataStore settings and the last-export stamp, export/import plumbing and the CSV of completions, and the end-of-day reminder's decision (whether to remind, and when the next wake falls) |
 | `:core:ui` | Theme, shared composables, and presentation types shared by more than one feature |
+| `:core:testing` | Test helpers more than one module's tests need — fixtures, the fake repository, the dispatcher and animations-off rules, the WCAG contrast helper. Its **main** source set holds them and only **test** source sets consume it, so nothing in it ships |
 | `:feature:today` | Today view (app home screen, Momo's habitat) |
 | `:feature:habits` | Create/edit/archive habit, habit detail |
 | `:feature:insights` | Per-habit heatmap and completion-rate trends, tag effort distribution, and Phase 1.5's retrospective — **all three Phase 1 surfaces and the retrospective are built**; the review is the app-wide screen stepped back through the calendar, not a screen of its own |
@@ -50,7 +51,12 @@ Now-in-Android convention: Gradle version catalog
 
 Dependency rule: `feature → core`, `widget → core`, `app → everything`,
 `core:data → core:domain`, `core:ui → core:domain`, and `:core:domain` depends
-on nothing but the Kotlin stdlib and kotlinx-serialization.
+on nothing but the Kotlin stdlib and kotlinx-serialization. Test code has one
+more edge: `core:testing → core:data, core:ui` on its main source set, and
+every Android module's **test** source set → `core:testing`. `:core:domain`
+publishes its id and event builders as Gradle test fixtures instead, because a
+pure-JVM module cannot depend on an Android library; `:core:testing` re-exports
+them, and `:core:data`'s tests take them directly.
 
 ```mermaid
 graph TD
@@ -77,6 +83,9 @@ graph TD
     ui --> domain[":core:domain"]
     data --> domain
     widget --> domain
+
+    testing[":core:testing (test source sets only)"] --> data
+    testing --> ui
 ```
 
 The diagram is the permitted **direction**, not an exact edge list.
@@ -110,7 +119,8 @@ the dependency rule — in particular that domain logic never lands in a module
 where it can import Android.
 
 Built so far: `:app`, `:core:domain`, `:core:data`, `:core:ui`,
-`:feature:today`, `:feature:habits`, `:feature:settings` and — as of 2026-08-21
+`:feature:today`, `:feature:habits`, `:feature:settings`, `:feature:insights`,
+`:core:testing` (2026-09-04, the shared test helpers) and — as of 2026-08-21
 — **`:widget`**, which is the first module here that is not a screen. Its
 decisions are in [docs/ux/widget.md](ux/widget.md). It takes `:core:data` and
 `:core:domain`, and since 2026-08-25 `:core:ui` **for four things only**. Two
@@ -575,6 +585,23 @@ this app's was added — both versions declare the same four.
   the instrumented source set below**, which is where Room's invalidation does
   deliver — so the answer to this gap turned out not to be the `:core:data`
   test seam.
+- **What a test is for, and what it is not.** A test survives if it asserts a
+  behaviour a user or a document names; it goes if it asserts an artefact of
+  the implementation — an exact pixel or ARGB constant, a magic computed value,
+  a library's internals reached by reflection, an XML attribute string read off
+  disk, a subpath count — or duplicates another. The render tests keep
+  determinism and "something is drawn here, nothing there" with regions as
+  fractions of the canvas; the icon tests keep the facts that guard an
+  invisible failure (a layer missing, a path that draws nothing) and leave
+  sizes and scales to the artboard. detekt's `ForbiddenMethodCall` refuses
+  `Thread.sleep` and reflection by method name in test sources.
+- **`:core:testing`** holds every helper two or more modules' tests need:
+  fixtures (`habitState`, `todayHabit`, `todaySnapshot`, `FIXED_DATE`), the one
+  `FakeHabitRepository`, `MainDispatcherRule`, `AnimationsOffRule` and the WCAG
+  `contrastRatio` with its two floors. Robolectric is `compileOnly` there so
+  `:core:ui`'s tests stay Robolectric-free. Ids and events come from
+  `:core:domain`'s test fixtures (`src/testFixtures`), which it re-exports. A
+  second copy of any of these is the defect, not a convenience.
 - `:widget`: JVM unit tests, most of them without Robolectric. The read is a
   pure `TodaySnapshot` → rows mapper and the tap is a function of the
   repository, so both are testable without Glance, a device or a shadow. The
@@ -777,15 +804,12 @@ the one a first contribution hits immediately.
 
 **Source sets.** Every module has `src/main/kotlin` and `src/test/kotlin`.
 `app/src/androidTest/kotlin` is the only instrumented source set in the project;
-§8 owns the policy for what belongs there and why it is only `:app`. Test helpers
-shared between test classes go in a `testsupport/` package beside them — six of
-the eight modules have one, and the two that do not (`:app`, `:core:ui`) have
-five and four test files respectively, which is the honest threshold for
-bothering. `:core:ui` came close when the designed scheme landed and two test
-classes needed the same WCAG formula: the helper went in a plain `Contrast.kt`
-next to them in the same package instead, because a `testsupport/` package for
-one file two neighbours share is ceremony. It earns one when a third
-module-crossing helper appears.
+§8 owns the policy for what belongs there and why it is only `:app`. A test
+helper that only one module's tests use goes in a `testsupport/` package beside
+them. One that a second module's tests need goes in `:core:testing`'s main
+source set — or, when it is pure domain (an id, an event), in
+`core/domain/src/testFixtures`, which `:core:testing` re-exports. There is no
+third place, and a copy is not one.
 
 **The core modules are packaged by concept, not by layer.**
 
@@ -794,6 +818,7 @@ module-crossing helper appears.
 | `:core:domain` | `command/` `event/` `id/` `mascot/` `model/` `projection/` `rate/` `serialization/` (with `export/` and `wire/`) `streak/` `time/` |
 | `:core:data` | `backup/` `db/` (with `dao/`, `entity/`, `mapper/`) `di/` `model/` `projection/` `reminder/` `repository/` `settings/` `time/`, plus `ProjectionVersion.kt` at the package root |
 | `:core:ui` | `component/` `streak/` `theme/` |
+| `:core:testing` | one package, `com.gawi.core.testing`: `Fixtures.kt`, `FakeHabitRepository.kt`, `MainDispatcherRule.kt`, `AnimationsOffRule.kt`, `Contrast.kt` |
 
 Two of those need a word, because the same name appears twice. `projection/`
 exists in both `:core:domain` and `:core:data`: the domain one is the pure
@@ -839,5 +864,6 @@ pin without declaring anything at all, which is exactly how a comment in
 
 **And the rule that settles most cases.** If two modules need it, it belongs in
 `:core:*` and is never copied — §2 for which one, and `AGENTS.md`'s Conventions
-for the habit of looking before writing. Feature modules cannot see each other,
-so `:core:*` is not merely the tidy answer, it is the only one.
+for the habit of looking before writing; for test code that module is
+`:core:testing`. Feature modules cannot see each other, so `:core:*` is not
+merely the tidy answer, it is the only one.
