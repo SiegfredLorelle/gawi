@@ -151,6 +151,19 @@ Full guide with examples: `.github/COMMIT_CONVENTION.md`
   with bare `§N` references far below inheriting it, so re-anchor it into a
   surviving sentence and run `scripts/check-citations.sh` after every file, not
   every commit.
+- **Say it once, at the site that can break it.** A mechanism argued in a
+  class KDoc, again in a member's, and again inline is one fact costing three
+  paragraphs. Keep it where an edit would violate it; the other places get
+  nothing — a cross-reference is still a line, and three of them are how a
+  reader stops trusting any of them. The shape to watch is a long KDoc that
+  argues a mechanism living in the function below it, whose own comments then
+  argue it again.
+- **Keep the finding, not the search.** The trap stays, and so does why it is
+  a trap: a reader about to delete a redundant-looking argument has to be
+  stopped. How it was found does not — the decompiled bridge, the theory that
+  was ruled out, the pixel counts, the thing that was expected to happen and
+  did not. Git holds the investigation and `docs/… §N` holds the decision, so
+  the comment cites the section rather than restating what it settled.
 - Run `make fmt` before committing; `make lint` and `make test` before
   considering any change complete.
 
