@@ -131,10 +131,10 @@ private fun TextStyle.inOutfit(): TextStyle = copy(
  * The app's type: Material's scale, drawn in [Outfit].
  *
  * **The face, and one metric: positive tracking goes to zero.** Every size and
- * line height is still Material's baseline, untouched: the sizes are the part
- * all four feature modules have been drawing at since Phase 0, so they are the
- * only part already validated on a device, and moving the face and the scale
- * together would make any regression unattributable to either.
+ * line height is Material's baseline, untouched: the sizes are what all four
+ * feature modules draw at and the only part validated on a device, so moving
+ * the face and the scale together would make any regression unattributable to
+ * either.
  *
  * `letterSpacing` is the exception. Material's positive tracking sits only on
  * roles at 16sp and under — `bodyLarge`, `labelMedium` and `labelSmall` at 0.5,
