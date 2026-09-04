@@ -36,10 +36,11 @@ import com.gawi.core.ui.theme.GawiSpacing
  * own, reached from Today's app bar.
  *
  * One time control, at the top, scoping everything under it — not a picker per
- * card — and, since Phase 1.5, a stepper under the chips that walks that period
- * back through the calendar: the retrospective is this screen one period back
- * (docs/ux/insights.md §9), not a screen of its own. The per-habit history screen keeps its own month steppers and is
- * deliberately not governed from here: a month grid can only show a month.
+ * card — with a stepper under the chips that walks that period back through the
+ * calendar: the retrospective is this screen one period back
+ * (docs/ux/insights.md §9), not a screen of its own. The per-habit history
+ * screen keeps its own month steppers and is deliberately not governed from
+ * here: a month grid can only show a month.
  *
  * No `SnackbarHostState`: nothing here writes, so there is no rejection to
  * report.
@@ -63,9 +64,8 @@ internal fun InsightsScreen(state: InsightsUiState, actions: InsightsActions, mo
             // Room queries.
             InsightsUiState.Loading -> Box(Modifier.fillMaxSize().padding(insets))
 
-            // This screen's own copy, not the history screen's. It borrowed that
-            // one until review caught it, and the borrowed title says "Can't
-            // show this history" — a thing the reader did not open.
+            // This screen's own copy, not the history screen's, whose title says
+            // "Can't show this history" — a thing the reader did not open.
             InsightsUiState.Unavailable -> Notice(
                 title = stringResource(R.string.insights_read_failed_title),
                 body = stringResource(R.string.insights_read_failed_body),
@@ -104,9 +104,9 @@ private fun Overview(state: InsightsUiState.Overview, actions: InsightsActions, 
             //
             // No habit at all: a fresh install, and the commonest way to reach
             // this screen empty, since the app bar offers it before a first
-            // habit exists. This branch was missing until review caught it, and
-            // the archived copy below was being shown instead — telling a new
-            // user "every habit is archived", which was untrue.
+            // habit exists. Without this branch the archived copy below is what
+            // shows, telling a new user "every habit is archived", which is
+            // untrue.
             state.breakdown == Breakdown.HABITS && !state.hasAnyHabit -> Notice(
                 title = stringResource(R.string.insights_no_habits_yet_title),
                 body = stringResource(R.string.insights_no_habits_yet_body),
@@ -163,16 +163,15 @@ private fun Headline(state: InsightsUiState.Overview) {
 
 /**
  * Which calendar period the numbers describe, between the two arrows that walk
- * it — Phase 1.5's retrospective is this row (docs/ux/insights.md §9).
+ * it — the retrospective row of docs/ux/insights.md §9.
  *
  * **Both arrows disable rather than vanish** — later at the current period,
- * earlier once the period starts at or before the oldest habit's creation.
- * **The later arrow is disabled at the current period, not removed.** The
+ * earlier once the period starts at or before the oldest habit's creation. The
  * history grid drops its stepper at zero and leaves a footprint; here the label
  * sits between the two arrows and a vanishing one would shift it, so the button
- * stays, greyed to Material's disabled alpha, with its content description
- * kept. The clamp itself lives in the ViewModel, so a tap that got through
- * would still do nothing.
+ * stays, greyed to Material's disabled alpha, with its content description kept.
+ * The clamp itself lives in the ViewModel, so a tap that got through would still
+ * do nothing.
  */
 @Composable
 private fun PeriodStepper(label: PeriodLabelUi, canStepEarlier: Boolean, canStepLater: Boolean, actions: InsightsActions) {

@@ -70,10 +70,9 @@ internal fun HabitState.toMonthUiState(
  * **A month is clipped to [HabitState.createdOn], and dropped if it ends before
  * it.** Without that, a habit created three weeks into a month reads as though
  * it had missed the first three — a number that is arithmetically right and
- * accuses the user of days they were never offered. insights.md §4 recorded this
- * as a limitation with no fix; the fix is the creation date now being projected.
- * A null `createdOn` clips nothing, which is the only honest response to not
- * knowing.
+ * accuses the user of days they were never offered. insights.md §4 records this
+ * as a limitation; the projected creation date is what removes it. A null
+ * `createdOn` clips nothing, which is the only honest response to not knowing.
  */
 internal fun HabitState.toRateTrend(today: LocalDate, weekStart: DayOfWeek, completedDates: Set<LocalDate>): RateTrendUi = RateTrendUi(
     schedule = schedule.toLabelUi(),
@@ -92,11 +91,11 @@ private fun trendMonths(today: LocalDate): List<YearMonth> {
  * The first day the trend needs completions from.
  *
  * **Here rather than in the ViewModel, and derived from [TREND_MONTHS], because
- * the window read and the months drawn are one fact.** They were two constants
- * in two files — a `TREND_SPAN` of 4 beside a `TREND_MONTHS` of 5 — agreeing
- * only because 4 + 1 = 5, with nothing enforcing it.
+ * the window read and the months drawn are one fact.** Two constants in two
+ * files — a span of 4 beside a month count of 5 — would agree only because
+ * 4 + 1 = 5, with nothing enforcing it.
  *
- * What that would have cost is worse than a mismatch. Widen the trend by editing
+ * What that costs is worse than a mismatch. Widen the trend by editing
  * the month count alone and the oldest month is one nothing fetched, so
  * `Rates.completionRate` measures a *finished* month against an empty set:
  * `opportunities` is a full month, `completed` is zero, and `fraction` is null

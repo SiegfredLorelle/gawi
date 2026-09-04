@@ -146,7 +146,7 @@ private fun DayCell(cell: DayCellUi, modifier: Modifier = Modifier) {
             .background(ground, shape)
             .then(if (cell.isToday) Modifier.border(BorderStroke(CELL_RING, ring), shape) else Modifier)
             // Cleared and described by hand, like the strip's cells. Merged
-            // instead, the number stayed its own text and TalkBack 17 read it
+            // instead, the number stays its own text and TalkBack 17 reads it
             // after the description — "Thursday 20, not done. 20"
             // (docs/running.md §4); with neither, it is its own stop and says
             // "14" with no month, no weekday and no state.

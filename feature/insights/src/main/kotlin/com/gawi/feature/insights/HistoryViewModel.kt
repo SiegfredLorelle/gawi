@@ -37,10 +37,7 @@ import java.time.YearMonth
  * a canonical UUIDv7.
  *
  * Takes the logical date and the week start from
- * `HabitRepository.observeReadContext`, which hands both over together. It used
- * to take the date from the habit read and the week start from `SettingsSource`,
- * and that pairing was the one thing `readContext`'s own comment warns against:
- * two independently deduped copies of values that have to stay in step.
+ * `HabitRepository.observeReadContext`, which hands both over together.
  *
  * Reads only — docs/ux/insights.md §3. So there is no message channel, no
  * snackbar and no command path here, which is most of what habit detail's
@@ -137,8 +134,7 @@ internal class HistoryViewModel @AssistedInject constructor(
     private fun screenFor(habitId: HabitId, habit: HabitState?, context: ReadContext): Flow<HistoryUiState> {
         if (habit == null) return flowOf(HistoryUiState.Unavailable)
         // Asked of the mapper rather than computed here, so the window read and
-        // the months drawn cannot disagree — they were two constants until
-        // review pointed out that nothing held them in step.
+        // the months drawn cannot disagree.
         val trendFrom = trendWindowStart(context.today)
         val grid = monthOffset.flatMapLatest { offset ->
             val month = YearMonth.from(context.today).plusMonths(offset)
