@@ -76,7 +76,7 @@ source. Signing and shrinking are step 1 of the 1.0.0 road in PRD §5.
   picker, an image glyph for the widget's 32 dp control, the Momo widget's
   clickable experiment, a spoken weekly ratio.
 
-## [0.1.0-alpha.1] — 2026-08-24
+## 0.1.0-alpha.1 — 2026-08-24
 
 Phase 1, typography: the app draws in Outfit. Marks `2542bda`, the merged and
 re-verified state of the typography half of Phase 1, 13 commits past the
