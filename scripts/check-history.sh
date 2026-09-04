@@ -54,19 +54,38 @@ fi
 sources=$(find app core feature widget build-logic -type f -name '*.kt' \
     -path '*/src/main/*' -not -path '*/build/*' | sort)
 
+# A scan that found nothing to scan is not a pass. `find` writes to stderr and
+# keeps going when a root is missing, its status is swallowed by the command
+# substitution, and there is no `set -e` — so a renamed module directory would
+# otherwise print the success line below and exit 0. That is the same defect as
+# a gate going UP-TO-DATE, and quieter.
+found=$(printf '%s' "$sources" | grep -c .)
+if [ "$found" -lt 100 ]; then
+    echo "check-history: found $found source files, too few to be this repo —" >&2
+    echo "the module layout has moved and the scan roots need updating." >&2
+    exit 2
+fi
+
 failures=$(
     echo "$sources" | while IFS= read -r file; do
         [ -n "$file" ] || continue
         awk -v file="$file" '
-            # The comment part of a line: the whole line when the first non-space
-            # character opens or continues a block, and the tail after `//` or
-            # `/*` when a comment trails code — the second kind is rare here but
-            # it is still a comment, and a gate that cannot see it is a gate with
-            # a hole. Double-quoted strings are removed before that search so a
-            # `//` inside one is not read as an opener.
+            # The comment part of a line, in three cases: every line of an open
+            # `/* */` block, whatever it starts with; a line whose own first
+            # non-space character opens or continues one; and the tail after
+            # `//` or `/*` where a comment trails code. The last two are rare
+            # here, but a gate that cannot see them is a gate with a hole.
+            # Double-quoted strings are removed before that search so a `//`
+            # inside one is not read as an opener.
             {
-                if ($0 ~ /^[[:space:]]*(\/\/|\/\*|\*)/) {
+                if (in_block) {
+                    # Inside a `/* */` whose continuation lines need not be
+                    # starred, so its own first characters say nothing.
                     comment = $0
+                    if (index($0, "*/") > 0) in_block = 0
+                } else if ($0 ~ /^[[:space:]]*(\/\/|\/\*|\*)/) {
+                    comment = $0
+                    if ($0 ~ /^[[:space:]]*\/\*/ && index($0, "*/") == 0) in_block = 1
                 } else {
                     stripped = $0
                     gsub(/"([^"\\]|\\.)*"/, "", stripped)
@@ -76,12 +95,15 @@ failures=$(
                     else if (j > 0 && j < i) i = j
                     if (i == 0) next
                     comment = substr(stripped, i)
+                    # A `/*` trailing code opens a block too, unless it closes
+                    # on the same line. A `//` cannot: it ends at the newline.
+                    if (i == j && index(stripped, "*/") == 0) in_block = 1
                 }
 
                 line = tolower(comment)
                 why = ""
 
-                if (comment ~ /20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ &&
+                if (comment ~ /[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ &&
                     line !~ /measured/ && line !~ /seen on/) {
                     why = "dated, and the line does not say measured or seen on"
                 } else if (line ~ /used to/) {
