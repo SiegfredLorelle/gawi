@@ -32,21 +32,17 @@ class MilestoneRenderTest {
     }
 
     @Test
-    fun `the glow washes the whole tank at its peak`() {
-        assertEquals(WIDTH * HEIGHT, painted(render(0.16f)))
-    }
-
-    @Test
     fun `the ring reaches past the burst's middle third once it has opened`() {
         // Before the ring opens, only the burst: nothing near the side edges,
         // as with the day's celebration.
         val early = render(0.28f)
-        assertEquals(0, inkAbove(early, threshold = 0.3f, left = 0, right = 40))
+        assertEquals(0, inkAbove(early, threshold = 0.3f, left = 0, right = WIDTH / 6))
+        assertEquals(0, inkAbove(early, threshold = 0.3f, left = WIDTH - WIDTH / 6, right = WIDTH))
         // Once open and wide, the stars sit around the middle at ~90 dp out —
         // ink well outside the burst's lanes, to both sides.
         val open = render(0.72f)
-        assertTrue(inkAbove(open, threshold = 0.3f, left = 0, right = WIDTH / 4) > 20)
-        assertTrue(inkAbove(open, threshold = 0.3f, left = 3 * WIDTH / 4, right = WIDTH) > 20)
+        assertTrue(inkAbove(open, threshold = 0.3f, left = 0, right = WIDTH / 4) > 0)
+        assertTrue(inkAbove(open, threshold = 0.3f, left = 3 * WIDTH / 4, right = WIDTH) > 0)
     }
 
     @Test

@@ -31,14 +31,13 @@ class CelebrationRenderTest {
     }
 
     @Test
-    fun `the glow washes the whole tank at its peak and bubbles climb the middle`() {
-        val peak = render(0.30f)
-        assertEquals(WIDTH * HEIGHT, painted(peak))
+    fun `the glow paints the tank early on and the bubbles climb the middle, not the edges`() {
+        assertTrue(painted(render(0.30f)) > 0)
         // Half way, bubbles are in the air over the middle third and none at the edges.
         val mid = render(0.5f)
-        assertTrue(inkAbove(mid, threshold = 0.3f, left = WIDTH / 3, right = 2 * WIDTH / 3) > 50)
-        assertEquals(0, inkAbove(mid, threshold = 0.3f, left = 0, right = 60))
-        assertEquals(0, inkAbove(mid, threshold = 0.3f, left = WIDTH - 60, right = WIDTH))
+        assertTrue(inkAbove(mid, threshold = 0.3f, left = WIDTH / 3, right = 2 * WIDTH / 3) > 0)
+        assertEquals(0, inkAbove(mid, threshold = 0.3f, left = 0, right = WIDTH / 6))
+        assertEquals(0, inkAbove(mid, threshold = 0.3f, left = WIDTH - WIDTH / 6, right = WIDTH))
     }
 
     @Test

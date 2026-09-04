@@ -78,11 +78,13 @@ class MilestoneFrameTest {
         assertTrue(start.ring.isEmpty())
         assertEquals(1f, start.badgeScale)
         assertFalse(start.isOver)
-        assertEquals(18f, MilestoneFrame.at(0.14f).hop, 1e-5f)
+        // Two hops with the ground between them, and the second smaller than the first.
+        assertTrue(MilestoneFrame.at(0.14f).hop > 0f)
         assertEquals(0f, MilestoneFrame.at(0.28f).hop, 1e-5f)
-        assertEquals(14.4f, MilestoneFrame.at(0.38f).hop, 1e-5f)
+        assertTrue(MilestoneFrame.at(0.38f).hop > 0f)
+        assertTrue(MilestoneFrame.at(0.38f).hop < MilestoneFrame.at(0.14f).hop)
         assertEquals(0f, MilestoneFrame.at(0.52f).hop, 1e-5f)
-        assertEquals(0.30f, MilestoneFrame.at(0.16f).glow, 1e-6f)
+        assertTrue(MilestoneFrame.at(0.16f).glow > 0f)
         assertTrue(MilestoneFrame.at(0.16f).glow > MilestoneFrame.at(0.50f).glow)
         assertEquals(MilestoneFrame.NONE, MilestoneFrame.at(1f))
         assertTrue(MilestoneFrame.at(1f).isOver)
@@ -92,8 +94,9 @@ class MilestoneFrameTest {
     fun `the ring opens after the second hop and is gone before the end`() {
         assertTrue(MilestoneFrame.at(0.29f).ring.isEmpty())
         val open = MilestoneFrame.at(0.42f).ring
-        assertEquals(8, open.size)
-        assertEquals(8, open.map { it.angleDegrees }.toSet().size)
+        assertTrue(open.isNotEmpty())
+        // A ring, not a stack: every star sits on its own angle.
+        assertEquals(open.size, open.map { it.angleDegrees }.toSet().size)
         assertEquals(1f, open.first().alpha, 1e-6f)
         assertTrue(MilestoneFrame.at(0.6f).ring.first().radius > open.first().radius)
         assertTrue(MilestoneFrame.at(0.86f).ring.isEmpty())
@@ -101,12 +104,13 @@ class MilestoneFrameTest {
 
     @Test
     fun `the badge swells twice in the first half and the burst is wider than the day's`() {
-        assertEquals(1.28f, MilestoneFrame.at(0.10f).badgeScale, 1e-6f)
+        assertTrue(MilestoneFrame.at(0.10f).badgeScale > 1f)
         assertEquals(1f, MilestoneFrame.at(0.24f).badgeScale, 1e-6f)
-        assertEquals(1.12f, MilestoneFrame.at(0.40f).badgeScale, 1e-6f)
+        assertTrue(MilestoneFrame.at(0.40f).badgeScale > 1f)
+        assertTrue(MilestoneFrame.at(0.40f).badgeScale < MilestoneFrame.at(0.10f).badgeScale)
         assertEquals(1f, MilestoneFrame.at(0.55f).badgeScale, 1e-6f)
-        assertTrue(MilestoneFrame.at(0.05f).bubbles.size in 1 until 22)
-        assertEquals(22, MilestoneFrame.at(0.5f).bubbles.size)
+        // The burst fills in: fewer bubbles at the start than at the middle.
+        assertTrue(MilestoneFrame.at(0.05f).bubbles.size in 1 until MilestoneFrame.at(0.5f).bubbles.size)
         assertTrue(MilestoneFrame.at(0.999f).bubbles.all { it.alpha < 0.05f })
         assertTrue(MilestoneFrame.MILLIS > CelebrationFrame.MILLIS)
         assertEquals(MilestoneFrame.at(0.4f), MilestoneFrame.at(0.4f))

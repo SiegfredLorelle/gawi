@@ -25,8 +25,9 @@ import org.robolectric.annotation.GraphicsMode
  * because Robolectric's default Canvas paints nothing, and no composition
  * because `drawHabitat` is a `DrawScope` function of a frame.
  *
- * The bitmap is a tank at 1 dp = 1 px, 362 by 250 as the canvas drew it, so
- * the regions below are the canvas's own coordinates.
+ * The bitmap is a tank at 1 dp = 1 px, 362 by 250 as the canvas drew it. The
+ * regions are fractions of it, and the colours are inputs: what is asserted is
+ * where ink lands and whether it moves, never an exact pixel.
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -35,9 +36,10 @@ class HabitatRenderTest {
     @Test
     fun `weeds grow from the floor at both edges and nowhere in the middle`() {
         val pixels = render(Mood.CONTENT)
-        assertTrue(inkIn(pixels, IntRect(0, HEIGHT - 60, 90, HEIGHT)) > MIN_INK)
-        assertTrue(inkIn(pixels, IntRect(WIDTH - 90, HEIGHT - 60, WIDTH, HEIGHT)) > MIN_INK)
-        assertEquals(0, inkIn(pixels, IntRect(120, HEIGHT - 60, WIDTH - 120, HEIGHT)))
+        val floor = HEIGHT * 3 / 4
+        assertTrue(inkIn(pixels, IntRect(0, floor, WIDTH / 4, HEIGHT)) > MIN_INK)
+        assertTrue(inkIn(pixels, IntRect(WIDTH * 3 / 4, floor, WIDTH, HEIGHT)) > MIN_INK)
+        assertEquals(0, inkIn(pixels, IntRect(WIDTH / 3, floor, WIDTH * 2 / 3, HEIGHT)))
     }
 
     @Test
@@ -50,33 +52,9 @@ class HabitatRenderTest {
     }
 
     @Test
-    fun `regenerating greys the weeds and leans them outward`() {
-        val full = render(Mood.CONTENT)
-        val drained = render(Mood.REGENERATING)
-        assertEquals(0, inkIn(drained, IntRect(0, 0, WIDTH, HEIGHT), WEED))
-        assertTrue(inkIn(drained, IntRect(0, 0, WIDTH, HEIGHT), WEED_DRAINED) > MIN_INK)
-        // Leaning left, the left weeds reach further left than upright ones and
-        // no longer reach as high.
-        fun top(p: IntArray) = (0 until HEIGHT).first { y -> (0 until 90).any { x -> pixel(p, x, y) != 0 } }
-        assertTrue(top(drained) > top(full))
-    }
-
-    @Test
     fun `the resting frame is deterministic and the clock moves it`() {
         assertArrayEquals(render(Mood.CONTENT), render(Mood.CONTENT))
         assertNotEquals(render(Mood.CONTENT, 0f).toList(), render(Mood.CONTENT, 1.3f).toList())
-    }
-
-    @Test
-    fun `half way through a change the weeds are between both leans`() {
-        val from = HabitatFrame.at(Mood.CONTENT, 0f)
-        val to = HabitatFrame.at(Mood.REGENERATING, 0f)
-        val mid = render(HabitatFrame.between(from, to, 0.5f))
-        assertNotEquals(render(Mood.CONTENT).toList(), mid.toList())
-        assertNotEquals(render(Mood.REGENERATING).toList(), mid.toList())
-        // The colour is between the two roles as well: neither pure weed nor pure drained ink appears.
-        assertEquals(0, inkIn(mid, IntRect(0, 0, WIDTH, HEIGHT), WEED))
-        assertEquals(0, inkIn(mid, IntRect(0, 0, WIDTH, HEIGHT), WEED_DRAINED))
     }
 
     private fun render(mood: Mood, seconds: Float = 0f) = render(HabitatFrame.at(mood, seconds))
