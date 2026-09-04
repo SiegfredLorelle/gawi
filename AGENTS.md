@@ -132,6 +132,25 @@ Full guide with examples: `.github/COMMIT_CONVENTION.md`
   types, which is published from that module's `src/testFixtures` and
   re-exported: ids and events from `:core:domain`, the WCAG contrast helper
   from `:core:ui`. A second copy of one is the defect.
+- **Comments keep what the code cannot say** (`scripts/check-history.sh`, in
+  `make lint`): the mechanism, the invariant, the reason a shape was chosen,
+  and the `docs/… §N` it answers to. **History is git's, not the comment's** —
+  no dates, no "used to", no "a review said", no "this KDoc was wrong", no "an
+  earlier version". The script is the mechanical half: it refuses those phrases
+  and any `YYYY-MM-DD` in a `src/main` comment. **A date is exempt only where
+  it stamps a hardware measurement**, and `measured` or `seen on` must sit on
+  the same line as the date — the gate reads one line at a time, and wrapping
+  will otherwise separate them.
+- **A comment does not retell the code.** If the declaration under it already
+  says it, the sentence goes; no script can catch this one. Explain what the
+  reader cannot see — why the mutex is not reentrant, what breaks if the
+  argument is removed, which of two plausible readings is the wrong one. **Two
+  traps when trimming.** A sentence phrased as history is sometimes the only
+  statement of a live invariant — rewrite it in the present tense, never delete
+  it. And the anchoring `docs/… §N` often sits inside the paragraph being cut,
+  with bare `§N` references far below inheriting it, so re-anchor it into a
+  surviving sentence and run `scripts/check-citations.sh` after every file, not
+  every commit.
 - Run `make fmt` before committing; `make lint` and `make test` before
   considering any change complete.
 
