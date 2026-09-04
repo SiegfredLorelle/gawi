@@ -55,6 +55,41 @@ class FixturesTest {
         assertEquals(listOf("read"), flow.first().habits.map { it.habit.name })
     }
 
+    /**
+     * The other half of the rule the two cases above pin: what a screen *asked
+     * for* is recorded when it asks, so a flow built and never collected still
+     * counts. `InsightsViewModelTest` and `HistoryViewModelTest` assert exact
+     * call sequences and counts against that.
+     */
+    @Test
+    fun `what was asked for is recorded at the call, not at the collection`() = runTest {
+        val repository = FakeHabitRepository()
+
+        repository.observeHabit(habitId(1))
+        repository.observeTagEffort(FIXED_DATE, FIXED_DATE)
+
+        assertEquals(listOf(habitId(1)), repository.observedIds)
+        assertEquals(listOf(FIXED_DATE..FIXED_DATE), repository.ranges)
+    }
+
+    /** And the answer is still decided at collection, for every read and not just today's. */
+    @Test
+    fun `a ranged read set up after the flow is built still answers with it`() = runTest {
+        val repository = FakeHabitRepository()
+        val flow = repository.observeCompletedDates(habitId(1), FIXED_DATE, FIXED_DATE)
+
+        repository.completedDates = mapOf(FIXED_DATE to "done")
+
+        assertEquals(mapOf(FIXED_DATE to "done"), flow.first())
+    }
+
+    @Test
+    fun `a member named unreachable that does not exist is refused at construction`() {
+        val thrown = runCatching { FakeHabitRepository(unreachable = setOf("observeHabitdetail")) }.exceptionOrNull()
+
+        assertEquals(true, thrown?.message?.startsWith("no such member: [observeHabitdetail]"))
+    }
+
     @Test
     fun `a member named unreachable is loud rather than quietly answering`() = runTest {
         val repository = FakeHabitRepository(unreachable = setOf("observeHabitDetail"))
