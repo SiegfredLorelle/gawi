@@ -6,8 +6,8 @@ import java.time.YearMonth
 import java.time.temporal.IsoFields
 
 /**
- * The period the Insights screen reports on — docs/ux/insights.md §7's last open
- * question, settled 2026-08-24.
+ * The period the Insights screen reports on — settled as docs/ux/insights.md
+ * §7's last open question.
  *
  * **Calendar periods, not trailing windows.** "Month" is this calendar month,
  * not the last thirty days. Two reasons, and the second is why it is not a
