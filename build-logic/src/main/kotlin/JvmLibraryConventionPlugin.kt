@@ -12,6 +12,12 @@ class JvmLibraryConventionPlugin : Plugin<Project> {
         with(target) {
             pluginManager.apply("org.jetbrains.kotlin.jvm")
             pluginManager.apply("java-library")
+            // A `src/testFixtures` source set, published to consumers as
+            // `testFixtures(project(...))`. A pure-JVM module cannot depend on
+            // an Android library, so :core:domain's test builders cannot live
+            // in :core:testing; this is how they reach it and every other
+            // module from one file. Empty for any JVM module that has none.
+            pluginManager.apply("java-test-fixtures")
             val jdk = catalogVersion("jdk")
             extensions.configure<JavaPluginExtension> {
                 sourceCompatibility = JavaVersion.toVersion(jdk)
