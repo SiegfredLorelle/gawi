@@ -26,8 +26,8 @@ import androidx.compose.ui.text.style.TextAlign
  * [spoken] is a column's whole announcement when the visible label is not
  * enough on its own — the trend's initials — and it *replaces* the two texts
  * rather than preceding them: merged under a description, TalkBack 17 read
- * both, *"August, 30 active days. 30. capital A"* (2026-09-02, docs/running.md
- * §4). Null when the two texts already say it, so the rate card's rows keep
+ * both, *"August, 30 active days. 30. capital A"* (docs/running.md §4). Null
+ * when the two texts already say it, so the rate card's rows keep
  * announcing as they did.
  */
 @Composable
