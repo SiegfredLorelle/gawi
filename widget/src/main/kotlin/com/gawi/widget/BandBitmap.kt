@@ -10,12 +10,12 @@ import androidx.core.graphics.createBitmap
 /**
  * The woven day band, rasterised as two masks (docs/ux/widget.md §7).
  *
- * **Why masks and not boxes.** The first cut drew one Glance `Box` per habit
- * with a `Spacer` between each — 2N−1 children in one `Row` — and Glance caps a
- * container at ten children: past five habits it truncates the row and logs an
- * error, so the band silently showed five segments for a six-habit day. Caught
- * on review. A bitmap has no child count, so the band is drawn here the way
- * [BitmapText] draws a string, at whatever N the day has.
+ * **Why masks and not boxes.** A Glance `Box` per habit with a `Spacer` between
+ * each is 2N−1 children in one `Row`, and Glance caps a container at ten: past
+ * five habits it truncates the row and logs an error, so the band would silently
+ * show five segments for a six-habit day. A bitmap has no child count, so the
+ * band is drawn here the way [BitmapText] draws a string, at whatever N the day
+ * has.
  *
  * **Why two masks and not one picture.** The two fills are day/night
  * `ColorProvider`s and a bitmap can be tinted with exactly one, so the woven
@@ -37,8 +37,7 @@ import androidx.core.graphics.createBitmap
  * place in the pitch, so `left = widthPx - index · pitch - segment`. **Not**
  * `widthPx - (index + 1) · pitch`, which is off by a whole `gap`: it ends index 0
  * at `widthPx - gap` rather than flush, and puts the last segment flush against
- * the near edge, undoing the edge behaviour the 48-habit fix below was written
- * to get right.
+ * the near edge, undoing the edge behaviour the arithmetic below gets right.
  *
  * What the flag cannot fix is where it comes from. Glance composes in **our**
  * process, so the only direction available is the app's, and it can in principle
@@ -46,7 +45,7 @@ import androidx.core.graphics.createBitmap
  * two agree. Where they do not, this is worse than the §2 caveat it resembles
  * rather than the same: a name with no strong character laying out LTR is a
  * *fallback*, while a host that inflates LTR under an RTL configuration would
- * mirror this band **alone** and invert a picture that had been right. Not
+ * mirror this band **alone** and invert a picture that is right. Not
  * reachable today — no `localeConfig`, no in-app language — and docs/ux/widget.md
  * §8 carries it. Distinct from [BitmapText], which settles direction from the
  * text itself through `FIRSTSTRONG_LTR` and so needs nothing passed in.
@@ -55,11 +54,10 @@ import androidx.core.graphics.createBitmap
  * takes its width: a gap between segments, each a full-height pill. Every habit
  * is placed from its share of the width — `index · width / n` — so the last one
  * ends at the edge at any N, and the gap gives way before the segment does: it
- * shrinks to nothing rather than the segment going under a pixel. The first cut
- * floored the segment and kept the gap, which let the *advance* outrun the
- * bitmap and clip the tail from about 48 habits — the truncation the masks
- * were written to remove, found on the PR. Tagged with the density for the
- * reason [BitmapText.render] gives.
+ * shrinks to nothing rather than the segment going under a pixel. Flooring the
+ * segment and keeping the gap instead lets the *advance* outrun the bitmap and
+ * clips the tail from about 48 habits — the same truncation the masks remove.
+ * Tagged with the density for the reason [BitmapText.render] gives.
  */
 internal object BandBitmap {
 

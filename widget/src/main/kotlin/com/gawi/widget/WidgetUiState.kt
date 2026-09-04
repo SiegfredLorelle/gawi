@@ -46,8 +46,7 @@ internal data class WidgetUiState(val rows: List<WidgetRow>, val mood: Mood)
  * Three states rather than a nullable [WidgetUiState], because "not read yet"
  * and "could not be read" have to look different: collapsing them would flash
  * the failure copy on every cold render, and drawing an empty list for a broken
- * database is the failure-towards-silence the export nudge took three review
- * rounds to stamp out.
+ * database is the failure-towards-silence `ExportJournal` is arranged against.
  */
 internal sealed interface WidgetContent {
 
@@ -151,18 +150,16 @@ private fun fitsLargeBody(size: DpSize, textScale: Float): Boolean = size.width 
 /**
  * The least height, in dp, at which Momo is drawn.
  *
- * The provider's `minHeight` is 110dp — one grid cell on every launcher
- * measured when this was written — and two cells landed at 220 or more, so 170
- * seemed to separate the two without depending on any one launcher's cell
- * size. ~~Without depending~~ — **it does depend, measured 2026-08-29**: the
- * API 37 Pixel launcher on a small phone gives two rows 132dp, so a 3×2
- * placement there never clears this gate and a third row is what shows the
- * face. The rule is about dp of room, which is the property that matters, and
- * docs/running.md §4 records which side of it each launcher lands on. Above
- * it, [MomoBitmap]'s
- * 72dp face still leaves at least 82dp for rows after the padding — one full
- * 48dp row (`ROW_HEIGHT`) and most of a second — so Momo never displaces every
- * habit. Rather than a resize breakpoint from the
+ * A rule about dp of room, which is the property that matters, and **not a
+ * proxy for a cell count**: the provider's `minHeight` is 110dp, one grid cell
+ * on every launcher checked, but two cells are not reliably 220. The API 37
+ * Pixel launcher on a small phone gives two rows 132dp (measured 2026-08-29),
+ * so a 3×2 placement there never clears this gate and a third row is what shows
+ * the face. docs/running.md §4 records which side each launcher lands on.
+ *
+ * Above the gate [MomoBitmap]'s 72dp face still leaves at least 82dp for rows
+ * after the padding — one full 48dp row (`ROW_HEIGHT`) and most of a second —
+ * so Momo never displaces every habit. Rather than a resize breakpoint from the
  * provider xml, because the API 31 attributes that would express one are a
  * `res/xml-v31` variant this widget does not carry (visual-identity §7.4).
  */
@@ -211,24 +208,10 @@ internal fun Mood.description(): Int = when (this) {
  * under `warningsAsErrors`. Being a function also makes it reachable from a
  * test, which is how the failure branch is covered.
  *
- * **A transient failure is retried, because a widget cannot re-subscribe for
- * itself.** `catch` terminates a flow, so without the retry one throw would end
- * collection for the life of the Glance session — and the push cannot repair
- * that, since `update` on a live session never re-enters `provideGlance`
- * ([TodayWidget]). A screen recovers when its `WhileSubscribed` window lapses
- * and it re-subscribes; nothing does that for a widget. That is the one place
- * the two-mechanism argument does not hold on its own, so a bounded retry closes
- * it. Kept short and finite: while retrying nothing is emitted, so the widget
- * shows [WidgetContent.Loading], which draws nothing.
- *
- * A *persistent* failure still lands on [WidgetContent.Unavailable] and stays
- * there, which is correct — there is nothing else to show. How long it stays is
- * not something this code can promise: it clears when the Glance session ends,
- * or when the provider's update period next gets through (docs/ux/widget.md §4).
- *
- * The `catch` sits after the `map`, so a failed read replaces the whole content
- * rather than one row. Cancellation is never retried and never caught as a
- * failure.
+ * The `catch` sits after the `map` — [retryThenFail] — so a failed read replaces
+ * the whole content rather than one row, and a persistent failure lands on
+ * [WidgetContent.Unavailable] and stays there until the Glance session ends or
+ * the provider's update period next gets through (docs/ux/widget.md §4).
  */
 internal fun HabitRepository.widgetContent(): Flow<WidgetContent> = observeToday()
     .map<TodaySnapshot, WidgetContent> { WidgetContent.Ready(it.toWidgetState()) }
@@ -237,12 +220,19 @@ internal fun HabitRepository.widgetContent(): Flow<WidgetContent> = observeToday
 /**
  * The bounded retry and the terminal fallback, shared by every widget read.
  *
- * Shared rather than copied because the argument above is the expensive part and
- * it is identical for both providers: a widget cannot re-subscribe for itself, so
- * a bare `catch` would end collection for the life of the session. The *values*
- * differ — each provider has its own "unavailable" — which is what [failure] is.
- * A change to the retry policy therefore cannot apply to one widget and not the
- * other.
+ * **A transient failure is retried, because a widget cannot re-subscribe for
+ * itself.** `catch` terminates a flow, so without the retry one throw would end
+ * collection for the life of the Glance session — and the push cannot repair
+ * that, since `update` on a live session never re-enters `provideGlance`
+ * ([TodayWidget]). A screen recovers when its `WhileSubscribed` window lapses
+ * and it re-subscribes; nothing does that for a widget. That is the one place
+ * the two-mechanism argument does not hold on its own, so a bounded retry closes
+ * it. Kept short and finite: while retrying nothing is emitted, so the widget
+ * draws nothing. Cancellation is never retried and never caught as a failure.
+ *
+ * Shared rather than copied, so a change to the policy cannot apply to one
+ * widget and not the other. Only the *values* differ — each provider has its own
+ * "unavailable", which is what [failure] is.
  */
 internal fun <T> Flow<T>.retryThenFail(failure: T): Flow<T> = this
     .retryWhen { cause, attempt -> cause !is CancellationException && attempt < READ_RETRIES && delayThenRetry() }

@@ -20,7 +20,7 @@ import java.util.Locale
  * One habit as the streak widget draws it: a name, and its streak.
  *
  * The streak is a [StreakUi], not an `Int`, and that is the whole reason this
- * module now imports from `:core:ui`. `StreakUi` is sealed by *unit* because
+ * module imports from `:core:ui`. `StreakUi` is sealed by *unit* because
  * docs/ux/today-view.md §5 says a count of days and a count of weeks must never
  * be styled as the same number; an `Int` here would drop the distinction at the
  * module edge and leave the widget to reinvent it, which is precisely the drift
@@ -249,8 +249,8 @@ private const val AS_OF_SKELETON = "EEEdMMM"
  * `observeToday()` and nothing new, which is what makes this widget cheap:
  * `TodayHabit` already carries a `StreakSnapshot` and its habit's `Schedule` —
  * both halves of `toUi` — and `TodaySnapshot` carries the logical date the "as
- * of" line needs. docs/ux/visual-identity.md §7.4 had priced a read this
- * repository does not serve; it serves it.
+ * of" line needs, so docs/ux/visual-identity.md §7.4's streak read costs no
+ * query of its own.
  *
  * The retry and the fallback are [retryThenFail]'s, whose KDoc carries why a
  * widget read needs them at all.
@@ -262,14 +262,12 @@ internal fun HabitRepository.streakContent(): Flow<StreakContent> = observeToday
 /**
  * The snapshot as streak rows. Pure, so it is tested without Glance or a device.
  *
- * **Query order, and no sorting.** The mock on the canvas happens to read as
- * sorted and the widget deliberately is not: ordering by the numeral means
- * comparing a count of days against a count of weeks, which is the unsound
- * comparison the one-headline-number direction was rejected for. Sorting within
- * each unit and interleaving the groups would be arbitrary in a different way. So
- * this shows what the Today screen shows, in the order it shows it — the same
- * rule [toWidgetState] follows, and for the same reason: the widget has no view
- * about which habits matter.
+ * **Query order, and no sorting**, however sorted the canvas mock happens to
+ * read. Ordering by the numeral means comparing a count of days against a count
+ * of weeks, which is unsound; sorting within each unit and interleaving the
+ * groups is arbitrary in a different way. So this shows what the Today screen
+ * shows, in the order it shows it — the same rule [toWidgetState] follows, and
+ * for the same reason: the widget has no view about which habits matter.
  *
  * Habits with no history are kept rather than filtered. They draw an em dash, and
  * dropping them would make the widget's list silently disagree with Today's.

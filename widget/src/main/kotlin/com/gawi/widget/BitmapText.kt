@@ -33,8 +33,7 @@ import kotlin.math.ceil
  * Measured on 2026-08-24 (docs/ux/visual-identity.md §2), and the measurement
  * still stands. What a host *will* draw faithfully is a bitmap, so the text is
  * drawn here, in this process, with the typeface the app uses, and shipped as
- * pixels. §5 concluded that this was "not worth it for a checkbox list"; §2
- * records that conclusion reversed, and this file is the result.
+ * pixels.
  *
  * **Why white ink and a tint.** The bitmap carries shape only. Colour arrives
  * through `ColorFilter.tint` on the `Image`, from [WidgetPalette], and what that
@@ -43,8 +42,8 @@ import kotlin.math.ceil
  * background does; on 29–30 there is no resource path for an image tint at all,
  * so Glance resolves the provider in this process at translation time.
  *
- * That asymmetry is what shipped a defect, and the numbers are kept because
- * they are the argument for the palette. **Mix the two provider kinds and,
+ * That asymmetry is the argument for the palette, and the numbers below are
+ * why it is worth one. **Mix the two provider kinds and,
  * below 31, a night-mode change does not leave the whole widget stale
  * together** — measured on API 29 and 30 on 2026-08-28, the same to the decimal
  * on each. A resource-backed background is re-resolved by the host on its own
@@ -54,7 +53,7 @@ import kotlin.math.ceil
  * use, and the unit every figure here is in — the name falls to **1.31:1**
  * against its own ground and the checkbox to **1.60:1**. The same run found the
  * glyph below the floor in dark mode even freshly rendered, at 2.91:1 checked
- * and 1.60:1 unchecked, a second defect the toggle hides.
+ * and 1.60:1 unchecked — a second failure the toggle hides.
  *
  * All three colours take one kind of provider, so they are translated by the
  * same path and cannot disagree ([WidgetPalette] has the mechanism). Below 31 a
@@ -190,10 +189,10 @@ internal object BitmapText {
      * The layout is built at the text's own width, not at [maxWidthPx], and that
      * is load-bearing for RTL: `ALIGN_NORMAL` puts a right-to-left line at the
      * *right* edge of the layout, so a layout as wide as the room drawn into a
-     * bitmap as wide as the text would paint every glyph off the canvas. Review
-     * caught that in the first cut; the height comes from the layout for the same
-     * kind of reason — a fallback glyph (an emoji, a script outside Outfit) can
-     * be taller than Outfit's own metrics and would be clipped by them.
+     * bitmap as wide as the text would paint every glyph off the canvas. The
+     * height comes from the layout for the same kind of reason — a fallback glyph
+     * (an emoji, a script outside Outfit) can be taller than Outfit's own metrics
+     * and would be clipped by them.
      *
      * [densityDpi] is the density [paint] and [maxWidthPx] were computed at, and
      * the bitmap is tagged with it. An untagged bitmap carries
@@ -201,7 +200,7 @@ internal object BitmapText {
      * `BitmapDrawable` scales by `targetDensity / bitmap.density` — so under a
      * non-default Display size the text would be rasterised at the current
      * density and then scaled a second time, blurry and past the room it was
-     * clamped to. Review caught it; docs/running.md's widget block checks it.
+     * clamped to. docs/running.md's widget block checks it.
      */
     internal fun render(text: String, paint: TextPaint, maxWidthPx: Int, densityDpi: Int, maxLines: Int = 1): Bitmap? {
         if (text.isBlank() || maxWidthPx <= 0) return null
