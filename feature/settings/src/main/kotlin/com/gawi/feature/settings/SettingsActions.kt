@@ -12,9 +12,7 @@ import java.time.LocalTime
  * inside detekt's parameter limit — which fires *at* six, not above it — and
  * adding a fourth setting does not re-thread every call site and test.
  *
- * **This used to say six properties was the last one that fits, because the
- * constructor threshold is seven. That was false for this declaration and the
- * correction is worth keeping.** The threshold is indeed seven, but detekt's
+ * **The constructor threshold is seven, and it does not bind here.** detekt's
  * `LongParameterList` sets `ignoreDataClasses` true by default, so the rule
  * never applies to a `data class` at all. Measured rather than reasoned about:
  * seven properties and eight both pass, and the same seven fire the rule the

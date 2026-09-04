@@ -13,9 +13,8 @@ import kotlinx.coroutines.ensureActive
  * configuration. Same shape as the other two modules' message types, and
  * deliberately not shared with them.
  *
- * It used to be true that there was only ever one message here, and the reason
- * it was true is the reason it no longer is. `SettingsSource.update` is not a
- * command: it validates nothing and refuses nothing, because a fixed picker
+ * `SettingsSource.update` is not a command: it validates nothing and refuses
+ * nothing, because a fixed picker
  * cannot express an invalid time or a day that is not a day, so the only way a
  * settings write fails is by throwing and every throw reads the same. Import is
  * the first thing on this screen whose *input the user chooses*, and so the

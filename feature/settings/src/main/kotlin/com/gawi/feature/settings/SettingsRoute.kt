@@ -170,10 +170,9 @@ private fun Context.notificationsAllowed(): Boolean = NotificationManagerCompat.
  * `shouldShowRequestPermissionRationale` is `false` in **two** unrelated states:
  * before the permission has ever been requested, and after it has been refused
  * for good. It is `true` only in between. So it cannot answer "will the dialog
- * appear?" on a fresh install, and an earlier version of this file used it that
- * way — which would have sent every first-time user straight to system settings
- * instead of showing them the dialog, for the single most common path through
- * this row.
+ * appear?" on a fresh install. Used that way it would send every first-time
+ * user straight to system settings instead of showing them the dialog, for the
+ * single most common path through this row.
  *
  * Used where the ambiguity is already resolved: in the request callback, the
  * "never asked" reading is impossible, so `false` there means exactly one thing.
@@ -218,7 +217,7 @@ private fun Context.openNotificationSettings() {
     // app this app does not ship, and a device or work profile without a Settings
     // activity for one of them is a bare ActivityNotFoundException out of a click
     // handler — a crash on tapping a row, which is the failure every other path in
-    // this module absorbs. Found by /code-review.
+    // this module absorbs.
     //
     // The fallback is the app's own details page, which carries a notifications
     // entry on every version this app supports. If neither resolves there is

@@ -41,10 +41,10 @@ internal fun UserSettings.toUiState(
 /**
  * The name of a day, as a string resource — the spelled-out form.
  *
- * `:core:ui`'s, since 2026-08-24: the seven names were here and the history
- * grid's spoken cell labels needed the same seven, and copy two features draw
- * belongs in `:core:ui` (AGENTS.md). The reasoning for resources over
- * `DayOfWeek.getDisplayName` moved with them, including the one that decided it
+ * `:core:ui`'s: the history grid's spoken cell labels need the same seven
+ * names, and copy two features draw belongs in `:core:ui` (AGENTS.md). The
+ * reasoning for resources over `DayOfWeek.getDisplayName` lives with them,
+ * including the one that decides it
  * — `getDisplayName` varies with the JVM's locale *data*, so what the picker
  * read would depend on which machine rendered it.
  *
