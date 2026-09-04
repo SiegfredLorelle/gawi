@@ -10,10 +10,14 @@
 #                     (a CoroutineWorker finishing on its own dispatcher, a
 #                     launcher host rendering) mark the line `// bounded poll`
 #                     and carry a loud timeout; nothing else may.
-#   - getMethod, getDeclaredMethod, getDeclaredField, declaredConstructors
+#   - getMethod, getDeclaredMethod, getDeclaredField, declaredConstructors,
+#     .methods, declaredMethods
 #                     reflection into a library or a constructor shape. What a
 #                     library keeps internal is not a behaviour, and a
 #                     constructor's parameter list is the Hilt graph's to check.
+#                     The `.methods` pair is listed because it is the way round
+#                     a banned `getMethod`: the matcher removed from this module
+#                     read a mangled accessor as `javaClass.methods.single { … }`.
 #                     Class.forName and getDeclaredConstructor() are not listed:
 #                     probing whether a class is on the classpath, or
 #                     instantiating a receiver the merged manifest declares, is
@@ -36,7 +40,7 @@ if [ ! -f docs/architecture.md ]; then
     exit 2
 fi
 
-FORBIDDEN='Thread\.sleep\(|\.getMethod\(|getDeclaredMethod\(|getDeclaredField\(|declaredConstructors'
+FORBIDDEN='Thread\.sleep\(|\.getMethod\(|getDeclaredMethod\(|getDeclaredField\(|declaredConstructors|\.methods\b|declaredMethods'
 failures=0
 
 while IFS= read -r file; do
@@ -53,7 +57,14 @@ while IFS= read -r file; do
         echo "check-tests: $file:${hit%%:*}: $(printf '%s' "$line" | sed 's/^[[:space:]]*//')"
         failures=$((failures + 1))
     done < <(grep -nE "$FORBIDDEN" "$file" || true)
-done < <(find app core feature widget -type f -name '*.kt' \( -path '*/src/test/*' -o -path '*/src/androidTest/*' -o -path '*/src/testFixtures/*' \) -not -path '*/build/*' | sort)
+# :core:testing keeps its helpers in `main`, because only test source sets
+# consume it — so the rule has to reach that directory by name or the module
+# that exists to hold shared test code would be the one place exempt from it.
+done < <(
+    find app core feature widget -type f -name '*.kt' \
+        \( -path '*/src/test/*' -o -path '*/src/androidTest/*' -o -path '*/src/testFixtures/*' -o -path 'core/testing/src/main/*' \) \
+        -not -path '*/build/*' | sort
+)
 
 if [ "$failures" -gt 0 ]; then
     echo "check-tests: $failures line(s) reach past behaviour into the implementation" >&2
