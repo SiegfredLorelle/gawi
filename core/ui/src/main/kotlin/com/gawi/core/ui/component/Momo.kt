@@ -65,7 +65,7 @@ import kotlin.math.sin
  *
  * **A Robolectric test that composes this must set
  * `Settings.Global.ANIMATOR_DURATION_SCALE` to 0 before the activity launches**
- * — `AnimationsOffRule` in `:feature:today`'s and `:app`'s test sets does it —
+ * — `AnimationsOffRule` in `:core:testing` does it —
  * or `waitForIdle` never returns: [rememberFrameClock] is a permanent awaiter
  * on the frame clock, and the timeout it produces names nothing here.
  */

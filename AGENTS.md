@@ -63,9 +63,9 @@ Full guide with examples: `.github/COMMIT_CONVENTION.md`
   composables), `:feature:today`, `:feature:habits`, `:feature:insights`,
   `:feature:settings`, `:widget` (Glance) and `:core:testing` (shared test
   helpers; its main source set is consumed only by test source sets). **All ten
-  exist** and `:widget` is not a screen. `:feature:insights` is the newest — created 2026-08-24, and by the
-  end of that day holding all three surfaces `docs/ux/insights.md` gives it,
-  across two screens: one per-habit, one top-level. **A new module is created together with its
+  exist** and `:widget` is not a screen. `:core:testing` is the newest, and the
+  only one that is not part of the app: its main source set is consumed by test
+  source sets alone. **A new module is created together with its
   first real file, never empty**: an Android library always has test sources
   configured for its unit-test variant, so Gradle fails its test task with "no
   tests discovered" until there is a real test in it. That is a rule for the
