@@ -33,8 +33,8 @@ import kotlin.math.ceil
  * Measured on 2026-08-24 (docs/ux/visual-identity.md §2), and the measurement
  * still stands. What a host *will* draw faithfully is a bitmap, so the text is
  * drawn here, in this process, with the typeface the app uses, and shipped as
- * pixels. §2 calls that "not worth it for a checkbox list"; §5 has the trade
- * that overrides it.
+ * pixels. §5 concluded that this was "not worth it for a checkbox list"; §2
+ * records that conclusion reversed, and this file is the result.
  *
  * **Why white ink and a tint.** The bitmap carries shape only. Colour arrives
  * through `ColorFilter.tint` on the `Image`, from [WidgetPalette], and what that

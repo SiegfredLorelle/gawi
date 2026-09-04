@@ -21,9 +21,9 @@ import com.gawi.core.ui.theme.gawiRole
  * as the widget set's debt to clear and costs two ways out — three more
  * accessors, or reading a composed `GawiTheme` in a Robolectric test. Deriving
  * is neither: it removes the second copy rather than guarding it, so there is
- * no drift left to detect. Note that §2 says "there is no mechanism that would
- * let it be one"; that reads as correct but is not — a Glance tree cannot take
- * a Compose *theme*, and a plain `Color` is not a theme.
+ * no drift left to detect. §2 says "there is no mechanism that would let it be
+ * one", which reads as correct and is not: a Glance tree cannot take a Compose
+ * *theme*, but a plain `Color` is not a theme.
  *
  * **Why day/night providers, and not the pinned literals the docs ask for.**
  * The bug this fixes is a disagreement between two colours, so pinning one
