@@ -7,6 +7,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.LayoutDirection
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -29,6 +30,29 @@ class MilestoneRenderTest {
     fun `nothing is drawn before it starts or after it ends`() {
         assertEquals(0, painted(render(0f)))
         assertEquals(0, painted(render(1f)))
+    }
+
+    /**
+     * The glow is a wash over the *whole* tank, measured at the edge sixth and
+     * by weight rather than by area — the same shape as
+     * `CelebrationRenderTest`, and for the same reason: it peaks early and
+     * thins rather than stopping, so an area count reads alike at both ends.
+     *
+     * The edge sixth holds nothing else at any progress. The burst's lanes span
+     * x 81 to 281 of 362 (`MilestoneLanes`), and the ring reaches at most 110dp
+     * from a centre at x 181, so neither enters it — which is why the case
+     * below can use the same region to say "no ring here yet".
+     *
+     * Measured: without this, deleting `drawMilestoneGlow` left the whole file
+     * green. Every other case here reads at `threshold = 0.3f`, and the glow
+     * peaks at alpha 76 of 255, so it sits under the bar everywhere they look.
+     */
+    @Test
+    fun `the glow washes the edges early and thins towards the end`() {
+        val edge = IntRect(0, 0, WIDTH / 6, HEIGHT)
+        val peak = weightIn(render(0.16f), edge)
+        assertTrue(peak > 0)
+        assertTrue(weightIn(render(0.9f), edge) < peak)
     }
 
     @Test
@@ -60,6 +84,13 @@ class MilestoneRenderTest {
     }
 
     private fun painted(alphas: IntArray) = alphas.count { it > 0 }
+
+    /** Total alpha inside [region], which is how heavily it is washed rather than how much of it is touched. */
+    private fun weightIn(alphas: IntArray, region: IntRect): Int {
+        var total = 0
+        for (y in region.top until region.bottom) for (x in region.left until region.right) total += alphas[y * WIDTH + x]
+        return total
+    }
 
     private fun inkAbove(alphas: IntArray, threshold: Float, left: Int, right: Int): Int {
         var n = 0
