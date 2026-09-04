@@ -3,8 +3,8 @@
 # Every `<doc> §N` citation in Kotlin source names a document and a section that
 # exist, and no single file uses one section number for two different documents.
 #
-# This exists because the comments here cite `docs/` heavily — 336 citations
-# across 122 files — and nothing verified any of them. That is not hypothetical:
+# This exists because the comments here cite `docs/` heavily — 631 citations
+# across 211 files — and nothing verified any of them. That is not hypothetical:
 # the comment above `robolectric` in gradle/libs.versions.toml pointed at a
 # `:core:data/robolectric.properties` that has never existed, and was believed
 # for a phase. A citation is only worth writing if a stale one is noisy.
@@ -16,12 +16,13 @@
 # `make test` skipped 70 of its 71 suites and still exited 0. A script cannot go
 # UP-TO-DATE. That is worth more here than idiom.
 #
-# **What it deliberately does not check: dates.** A regex cannot tell "measured
-# on 2026-08-22" (legitimate — it stamps how stale a hardware measurement is)
-# from "added 2026-08-21" (changelog that git already owns). Seven of the
-# sixteen dated comments in this repo are the first kind. Automating that
-# judgement would produce false positives and quiet pressure to delete good
-# content, so it stays a judgement.
+# **Dates are not this script's to check: see check-history.sh.** A regex cannot
+# tell "measured on 2026-08-22" (legitimate — it stamps how stale a hardware
+# measurement is) from "added 2026-08-21" (changelog that git already owns), and
+# for a long time that was the argument for not gating them at all. What makes
+# the gate possible is that the writer marks the exemption rather than the
+# script inferring it: a dated comment line passes only if it also says
+# `measured` or `seen on`.
 #
 # **Known limit.** Only citations with a recognised document token are checked.
 # A bare `§4` is unresolvable from text alone and is legitimate prose when the
