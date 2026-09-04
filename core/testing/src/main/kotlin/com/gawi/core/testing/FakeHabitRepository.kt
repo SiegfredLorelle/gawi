@@ -53,6 +53,17 @@ data class Completion(val habitId: HabitId, val logicalDate: LocalDate, val note
  * query for a retro strip it discards. Naming it here is a red test rather
  * than a slow screen.
  *
+ * **When each half happens.** What a screen *asked for* is recorded when it
+ * asks — [guard], [observedIds], [ranges] — because that is a question about
+ * the call. What the fake *answers* is decided when the flow is collected, so
+ * a test can configure it after building the subject: a ViewModel that maps a
+ * read in a property initialiser calls it before `@Before` has finished.
+ * Recording deliberately stays at call time: a screen behind
+ * `stateIn(WhileSubscribed)` re-collects the same flow on every new
+ * subscriber, and a `combine` sibling that throws cancels the rest before they
+ * collect — under collect-time recording the first would double-count and the
+ * second would erase records on exactly the failure paths those tests cover.
+ *
  * Suppressed at the declaration: the interface it implements carries the same
  * suppression for the same reason, which is a command per user action.
  */
@@ -73,6 +84,12 @@ class FakeHabitRepository(
     private val unreachable: Set<String> = emptySet(),
 ) : HabitRepository {
 
+    init {
+        // A typo would otherwise disable the guard with no signal.
+        val unknown = unreachable - MEMBERS
+        require(unknown.isEmpty()) { "no such member: $unknown; expected some of $MEMBERS" }
+    }
+
     private fun guard(member: String) {
         if (member in unreachable) error("$member is not this screen's to call")
     }
@@ -92,14 +109,16 @@ class FakeHabitRepository(
      * freeze it on the hot path and leave the test waiting on an emission that
      * never comes.
      */
-    override fun observeToday(): Flow<TodaySnapshot> = flow {
+    override fun observeToday(): Flow<TodaySnapshot> {
         guard("observeToday")
-        if (snapshot == null && failWith == null) {
-            emitAll(snapshots)
-        } else {
-            reads++
-            failWith?.let { if (reads <= failTimes) throw it }
-            emit(snapshot ?: todaySnapshot())
+        return flow {
+            if (snapshot == null && failWith == null) {
+                emitAll(snapshots)
+            } else {
+                reads++
+                failWith?.let { if (reads <= failTimes) throw it }
+                emit(snapshot ?: todaySnapshot())
+            }
         }
     }
 
@@ -125,9 +144,9 @@ class FakeHabitRepository(
         this.habits.emit(habits)
     }
 
-    override fun observeAllHabits(): Flow<List<HabitState>> = flow {
+    override fun observeAllHabits(): Flow<List<HabitState>> {
         guard("observeAllHabits")
-        emitAll(listFailure?.let { flow<List<HabitState>> { throw it } } ?: allHabits?.let { flowOf(it) } ?: habits)
+        return flow { emitAll(listFailure?.let { flow<List<HabitState>> { throw it } } ?: allHabits?.let { flowOf(it) } ?: habits) }
     }
 
     // ----- One habit
@@ -157,14 +176,16 @@ class FakeHabitRepository(
     override fun observeHabit(habitId: HabitId): Flow<TodayHabit?> {
         guard("observeHabit")
         observedIds += habitId
-        return habitFailure?.let { flow<TodayHabit?> { throw it } } ?: flowOf(configured(habitId))
+        return flow { emitAll(habitFailure?.let { flow<TodayHabit?> { throw it } } ?: flowOf(configured(habitId))) }
     }
 
     override fun observeHabitDetail(habitId: HabitId): Flow<HabitDetail?> {
         guard("observeHabitDetail")
         observedIds += habitId
-        val detail = configured(habitId)?.let { HabitDetail(habit = it, today = today, recent = recent) }
-        return habitFailure?.let { flow<HabitDetail?> { throw it } } ?: flowOf(detail)
+        return flow {
+            val detail = configured(habitId)?.let { HabitDetail(habit = it, today = today, recent = recent) }
+            emitAll(habitFailure?.let { flow<HabitDetail?> { throw it } } ?: flowOf(detail))
+        }
     }
 
     // ----- Ranged reads
@@ -193,8 +214,12 @@ class FakeHabitRepository(
         guard("observeCompletedDates")
         observedIds += habitId
         ranges += from..to
-        return completionsFailure?.let { flow<Map<LocalDate, String?>> { throw it } }
-            ?: flowOf(completedDates.filterKeys { day -> day in from..to })
+        return flow {
+            emitAll(
+                completionsFailure?.let { flow<Map<LocalDate, String?>> { throw it } }
+                    ?: flowOf(completedDates.filterKeys { day -> day in from..to }),
+            )
+        }
     }
 
     /** Per-tag totals over any window, unless [tagEffortByWindow] names the window. */
@@ -209,7 +234,9 @@ class FakeHabitRepository(
     override fun observeTagEffort(from: LocalDate, to: LocalDate): Flow<List<TagEffort>> {
         guard("observeTagEffort")
         ranges += from..to
-        return effortFailure?.let { flow<List<TagEffort>> { throw it } } ?: flowOf(tagEffortByWindow[from..to] ?: tagEffort)
+        return flow {
+            emitAll(effortFailure?.let { flow<List<TagEffort>> { throw it } } ?: flowOf(tagEffortByWindow[from..to] ?: tagEffort))
+        }
     }
 
     /** Completions across every habit, filtered to the window for the reason [completedDates] is. */
@@ -218,13 +245,15 @@ class FakeHabitRepository(
     override fun observeCompletionDatesByHabit(from: LocalDate, to: LocalDate): Flow<Map<HabitId, Set<LocalDate>>> {
         guard("observeCompletionDatesByHabit")
         ranges += from..to
-        return flowOf(
-            completionsByHabit
-                .mapValues { (_, dates) -> dates.filter { it in from..to }.toSet() }
-                // Absent rather than empty, matching the real read: a habit with
-                // nothing in the window is not a habit with an empty set.
-                .filterValues { it.isNotEmpty() },
-        )
+        return flow {
+            emit(
+                completionsByHabit
+                    .mapValues { (_, dates) -> dates.filter { it in from..to }.toSet() }
+                    // Absent rather than empty, matching the real read: a habit
+                    // with nothing in the window is not a habit with an empty set.
+                    .filterValues { it.isNotEmpty() },
+            )
+        }
     }
 
     // ----- Read context
@@ -240,7 +269,10 @@ class FakeHabitRepository(
     /** Set to fail the context read; the real one fails if settings cannot be read. */
     var contextFailure: Throwable? = null
 
-    override fun observeReadContext(): Flow<ReadContext> = contextFailure?.let { cause -> flow { throw cause } } ?: context.asSharedFlow()
+    override fun observeReadContext(): Flow<ReadContext> {
+        guard("observeReadContext")
+        return flow { emitAll(contextFailure?.let { cause -> flow<ReadContext> { throw cause } } ?: context.asSharedFlow()) }
+    }
 
     // ----- Commands
 
@@ -349,5 +381,17 @@ class FakeHabitRepository(
     private companion object {
         /** Far from the ids tests hand out, so a create's answer cannot collide with a fixture. */
         const val MINTED_ID_TAIL = 99
+
+        /**
+         * Every member [unreachable] may name. `refreshStreaks` and
+         * `rebuildProjections` are absent because they are loud for everyone,
+         * no screen having a use for either.
+         */
+        val MEMBERS = setOf(
+            "observeToday", "observeAllHabits", "observeHabit", "observeHabitDetail",
+            "observeCompletedDates", "observeTagEffort", "observeCompletionDatesByHabit",
+            "observeReadContext", "createHabit", "updateHabit", "archiveHabit",
+            "unarchiveHabit", "addCompletion", "undoCompletion", "updateNote",
+        )
     }
 }
