@@ -14,8 +14,8 @@ import kotlinx.coroutines.ensureActive
  * deliberately not shared with them.
  *
  * `SettingsSource.update` is not a command: it validates nothing and refuses
- * nothing, because a fixed picker
- * cannot express an invalid time or a day that is not a day, so the only way a
+ * nothing, because a fixed picker cannot express an invalid time or a day that
+ * is not a day, so the only way a
  * settings write fails is by throwing and every throw reads the same. Import is
  * the first thing on this screen whose *input the user chooses*, and so the
  * first that can be refused rather than only thrown at — which is what the
