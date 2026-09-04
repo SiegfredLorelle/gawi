@@ -33,7 +33,7 @@ import androidx.compose.ui.graphics.Color
  * `secondaryContainer` would have shown lavender through a teal app, and §4.1
  * makes `outline` semantic rather than decorative.
  *
- * **`tertiary` is not §3's value, and this is the correction.** §3 lists
+ * **`tertiary` is not §3's value.** §3 lists
  * `#C9A227`, which is 2.31:1 on this surface — and `tertiary` is drawn as plain
  * text (a week streak in `StreakBadge`), so WCAG's 4.5:1 applies to it. §4.1's
  * own requirement is that `tertiary` step *darker* than `primary` in light mode,
@@ -112,10 +112,10 @@ internal val GawiLightColors: ColorScheme = lightColorScheme(
  * staying above 4.5:1 on this surface.
  *
  * `secondaryContainer` is darker than a straight mirror of the light scheme
- * would make it, and that came out of a device pass rather than a table. It is a
- * *ground*: `RetroStrip` fills today's cell with it and then draws the weekday
- * letter in `onSurfaceVariant` on top. At the lighter value that pair measured
- * 4.24:1 — a real text failure, on the one cell every user looks at every day.
+ * would make it, because it is a *ground*: `RetroStrip` fills today's cell with
+ * it and then draws the weekday letter in `onSurfaceVariant` on top. At the
+ * lighter value that pair measures 4.24:1 — a real text failure, on the one cell
+ * every user looks at every day.
  * Recessive content needs a dark enough ground to be recessive *on*, which a
  * mid-tone container does not give. The cost is that today's cell reads as a
  * slightly subtler fill: 1.59:1 against `surface` rather than 1.96:1, still more
@@ -192,10 +192,9 @@ internal val GawiDarkColors: ColorScheme = darkColorScheme(
  * `WidgetPalette` with only `surface` pinned to its original would mean
  * retuning `onSurface`, `primary` or `outline` here moves the app's checkboxes
  * and leaves the widget's glyph where it was, with every test in `:widget`
- * still green — docs/ux/visual-identity.md §7.4 named that as the widget set's debt
- * to clear, and §2 claimed no mechanism could reduce the two copies to one.
- * A plain [Color] is not a theme, which is why one can: the widget now derives
- * its `ColorProvider`s from these values and holds no hex of its own.
+ * still green — the debt docs/ux/visual-identity.md §7.4 names. A plain [Color]
+ * is not a theme, which is what makes one copy possible at all: the widget
+ * derives its `ColorProvider`s from these values and holds no hex of its own.
  *
  * Only the roles a reproducing surface actually draws are listed. Adding an
  * entry is a deliberate widening of that edge, not a convenience.

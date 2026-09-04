@@ -39,9 +39,7 @@ object HabitPalette {
      * case or lower, on purpose, and `HabitColor.kt` says why: the value is
      * unvalidated off the event log, no command checks it and no projection
      * normalises it. An import replays what an export held, so requiring a
-     * format would mean rewriting somebody's colour on the way in — the same
-     * thing the next paragraph refuses to do on a retune, arriving by a
-     * different door.
+     * format would mean rewriting somebody's colour on the way in.
      *
      * Retuning this list migrates nothing, and must not: a colour lives as raw
      * hex in an append-only log, and rewriting history to restyle it is the

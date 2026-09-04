@@ -14,44 +14,32 @@ import androidx.compose.ui.semantics.semantics
 /**
  * An icon button, named for assistive technology.
  *
- * **This was `GlyphButton`, and it drew a character.** Its KDoc argued that
- * `material-icons-extended` was the wrong trade for four arrows and a pencil,
- * which was true of that dependency and is still true. What it did not survive
- * is the reason the characters had to go: five of the ones the app drew — `☰`,
- * `◔`, `⚙`, `✎`, `✕` — are outside Outfit's `cmap`, so they fell back to the
- * platform face and an app bar rendered two typefaces at one size. The trade
- * that replaced it is neither of those: ten vendored path files, no dependency
- * at all ([GawiIcons], docs/ux/visual-identity.md §7.5).
+ * **A vendored vector rather than a character**, ten path files against no
+ * dependency at all ([GawiIcons], docs/ux/visual-identity.md §7.5). Drawing
+ * these as text is what the face cannot take: `☰`, `◔`, `⚙`, `✎` and `✕` are
+ * all outside Outfit's `cmap`, so each falls back to the platform face and an
+ * app bar renders two typefaces at one size. `material-icons-extended` is the
+ * other way to get vectors, and the wrong trade for four arrows and a pencil.
  *
- * **The label is still required, and for a sharper reason than before.** A `←`
- * was not a word; a vector is not even text. The control has no accessible name
- * of its own either way, so [labelRes] is not optional and the description is
- * set by hand.
+ * **[labelRes] is not optional.** A vector is not text, so the control has no
+ * accessible name of its own and the description has to be set by hand.
  *
  * **The `Icon` is deliberately unnamed.** `contentDescription = null` on it,
- * with the name on the enclosing button's `semantics` instead. Naming both
- * would announce the control twice under TalkBack, and putting it on the button
- * is what keeps every existing `onNodeWithContentDescription` lookup — in
- * `TodayScreenTest`, `AppNavigationTest` and `WriteJourneyTest` — pointing at
- * the same node it always did. The icon swap is invisible to them, which is the
- * property that made it safe.
+ * with the name on the enclosing button's `semantics` instead: naming both
+ * announces the control twice under TalkBack, and the button is the node an
+ * `onNodeWithContentDescription` lookup should find.
  *
- * **[enabled] is here because `:feature:habits` had already written it.** The
- * weekly-target stepper needs its `−` and `+` to go dead at the schedule's
- * bounds, and it had a private `StepperButton` that was this composable plus
- * that one parameter. Absorbing it is `core/ui/component/`'s whole purpose —
- * the same rule that moved this file here when a third caller appeared, and
- * that the habit icon badge, written three times, is the cautionary tale for.
+ * **[enabled] is for a caller whose button goes dead at a bound**, as the
+ * weekly-target stepper's `−` and `+` do at the schedule's.
  *
  * Takes a resource id rather than a resolved string, unlike [Notice]. A caller
  * hands over its own copy either way; an id keeps the `stringResource` call on
- * this side, which is what every existing call site already does.
+ * this side.
  *
  * The default tint is `LocalContentColor`, so an app bar's icons take the app
  * bar's colour without being told. Do not pass `Color.Unspecified` to get
- * around a contrast question — that disables the filter rather than choosing a
- * colour, and this project has already shipped one assertion that passed
- * because of exactly that.
+ * around a contrast question: that disables the filter rather than choosing a
+ * colour, and an assertion against it passes on nothing.
  */
 @Composable
 fun GawiIconButton(@DrawableRes icon: Int, @StringRes labelRes: Int, enabled: Boolean = true, onClick: () -> Unit) {

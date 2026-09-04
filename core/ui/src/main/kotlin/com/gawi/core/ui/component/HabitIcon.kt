@@ -20,19 +20,17 @@ import com.gawi.core.ui.theme.glyphColorOn
  * A habit's icon on its colour — the one place a habit's colour appears
  * (docs/ux/today-view.md §5).
  *
- * The icon is drawn as text because `HabitState.icon` has no vocabulary yet: it
- * is a bare string off the event log, and the create form that will give it one
- * does not exist. Text is right if that turns out to be an emoji and is a
- * visible placeholder if it does not, which beats inventing a registry here.
+ * The icon is drawn as text because `HabitState.icon` is a bare string off the
+ * event log with no vocabulary behind it. Text is right if that string is an
+ * emoji and is a visible placeholder if it is not, which beats inventing a
+ * registry here.
  *
  * **Shared rather than duplicated**, for the reason
  * [com.gawi.core.ui.theme.parseHabitColor] gives for itself: three copies of a
- * contrast decision is three answers to "what colour is legible on this". The
- * Today row, the habits list and habit detail all drew this separately, so
- * changing [glyphColorOn]'s contract or either fallback below meant changing
- * three files, and fixing two of the three would have looked exactly like
- * fixing it. That is not hypothetical here — the widget shipped a whole phase
- * drawing near-black text on a near-black background (docs/ux/widget.md §5).
+ * contrast decision is three answers to "what colour is legible on this", and
+ * fixing two of the three looks exactly like fixing it. The hazard is not
+ * hypothetical — docs/ux/widget.md §5 records near-black text drawn on a
+ * near-black background.
  *
  * [tint] is nullable because the stored colour is unvalidated and may not parse;
  * null falls back to the theme's `secondaryContainer`, which is how a habit with

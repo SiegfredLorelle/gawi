@@ -26,11 +26,10 @@ import androidx.compose.runtime.Composable
  *
  * Not *everything* drawn is Outfit. What comes from this font's `cmap` is text
  * that is not an icon: `RetroStrip`'s day marks and the editor's selection
- * tick. [Outfit]'s KDoc has the audit and the characters it covers, and it is
- * not repeated here, because a claim repeated in four files is one that drifts
- * in three of them. The app in Outfit against `:widget` in the system sans is
- * the divergence that rasterising the widget's text closes, and
- * docs/ux/visual-identity.md §5 records the trade.
+ * tick. [Outfit]'s KDoc has the characters that `cmap` covers. The app in
+ * Outfit against `:widget` in the system sans is the divergence that
+ * rasterising the widget's text closes, and docs/ux/visual-identity.md §5
+ * records the trade.
  *
  * A habit's own colour is per-row and comes from the event log, not from here;
  * [HabitPalette] is what the editor offers and [glyphColorOn] decides what is
