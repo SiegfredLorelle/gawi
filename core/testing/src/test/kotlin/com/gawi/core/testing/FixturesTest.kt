@@ -28,6 +28,42 @@ class FixturesTest {
         assertEquals(listOf(habitId(1), habitId(2)), repository.observedIds)
     }
 
+    /**
+     * A ViewModel that maps `observeToday()` in a property initialiser builds
+     * the flow before a test has configured the fake. Deciding hot-or-cold at
+     * call time would freeze it on the hot path and leave the test waiting on
+     * an emission that never comes, so the decision belongs at collection.
+     */
+    @Test
+    fun `a failure set after the flow is built still reaches the collector`() = runTest {
+        val repository = FakeHabitRepository()
+        val flow = repository.observeToday()
+
+        repository.failWith = IllegalStateException("settings unreadable")
+
+        assertEquals("settings unreadable", runCatching { flow.first() }.exceptionOrNull()?.message)
+    }
+
+    /** The same for a snapshot: set it late and the read is still the cold one. */
+    @Test
+    fun `a snapshot set after the flow is built is what the collector sees`() = runTest {
+        val repository = FakeHabitRepository()
+        val flow = repository.observeToday()
+
+        repository.snapshot = todaySnapshot(habits = listOf(todayHabit(name = "read")))
+
+        assertEquals(listOf("read"), flow.first().habits.map { it.habit.name })
+    }
+
+    @Test
+    fun `a member named unreachable is loud rather than quietly answering`() = runTest {
+        val repository = FakeHabitRepository(unreachable = setOf("observeHabitDetail"))
+
+        val thrown = runCatching { repository.observeHabitDetail(habitId(1)).first() }.exceptionOrNull()
+
+        assertEquals("observeHabitDetail is not this screen's to call", thrown?.message)
+    }
+
     @Test
     fun `a completion and its undo are both recorded, in order and by direction`() = runTest {
         val repository = FakeHabitRepository()

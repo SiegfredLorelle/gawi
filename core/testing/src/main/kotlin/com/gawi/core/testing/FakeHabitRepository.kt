@@ -14,6 +14,7 @@ import com.gawi.core.domain.testing.habitId
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
@@ -39,8 +40,18 @@ data class Completion(val habitId: HabitId, val logicalDate: LocalDate, val note
  * first [failTimes] of them, which is how a test tells a transient failure
  * from a permanent one.
  *
- * **Every unused member is loud.** Reaching one from a screen is a mistake
- * worth failing the test that made it, so none returns a quiet default.
+ * **What a screen must not reach, it names.** The four per-module fakes this
+ * replaces each threw on every member their own screen did not use, so a
+ * screen that started calling a new one failed loudly. One fake for every
+ * screen cannot do that by default, so it is opt-in: [unreachable] takes the
+ * member names this test's subject must not call, and calling one fails the
+ * test that made it. `refreshStreaks` and `rebuildProjections` are loud for
+ * everyone, no screen having a use for either.
+ *
+ * The case that made this worth keeping: the history screen must read
+ * [observeHabit] and not [observeHabitDetail], which would run a completions
+ * query for a retro strip it discards. Naming it here is a red test rather
+ * than a slow screen.
  *
  * Suppressed at the declaration: the interface it implements carries the same
  * suppression for the same reason, which is a command per user action.
@@ -58,7 +69,13 @@ class FakeHabitRepository(
      * difference the read's retry exists for.
      */
     private val failTimes: Int = Int.MAX_VALUE,
+    /** Member names this test's subject must not call. See the note above. */
+    private val unreachable: Set<String> = emptySet(),
 ) : HabitRepository {
+
+    private fun guard(member: String) {
+        if (member in unreachable) error("$member is not this screen's to call")
+    }
 
     // ----- Today
 
@@ -68,10 +85,18 @@ class FakeHabitRepository(
     var reads = 0
         private set
 
-    override fun observeToday(): Flow<TodaySnapshot> = if (snapshot == null && failWith == null) {
-        snapshots
-    } else {
-        flow {
+    /**
+     * Hot or cold is decided when the flow is *collected*, not when it is built.
+     * A ViewModel that maps `observeToday()` in a property initialiser calls
+     * this before a test has set [failWith] or [snapshot]; deciding here would
+     * freeze it on the hot path and leave the test waiting on an emission that
+     * never comes.
+     */
+    override fun observeToday(): Flow<TodaySnapshot> = flow {
+        guard("observeToday")
+        if (snapshot == null && failWith == null) {
+            emitAll(snapshots)
+        } else {
             reads++
             failWith?.let { if (reads <= failTimes) throw it }
             emit(snapshot ?: todaySnapshot())
@@ -100,8 +125,10 @@ class FakeHabitRepository(
         this.habits.emit(habits)
     }
 
-    override fun observeAllHabits(): Flow<List<HabitState>> =
-        listFailure?.let { flow<List<HabitState>> { throw it } } ?: allHabits?.let { flowOf(it) } ?: habits
+    override fun observeAllHabits(): Flow<List<HabitState>> = flow {
+        guard("observeAllHabits")
+        emitAll(listFailure?.let { flow<List<HabitState>> { throw it } } ?: allHabits?.let { flowOf(it) } ?: habits)
+    }
 
     // ----- One habit
 
@@ -128,11 +155,13 @@ class FakeHabitRepository(
     private fun configured(habitId: HabitId): TodayHabit? = habit?.takeIf { it.habit.id == habitId }
 
     override fun observeHabit(habitId: HabitId): Flow<TodayHabit?> {
+        guard("observeHabit")
         observedIds += habitId
         return habitFailure?.let { flow<TodayHabit?> { throw it } } ?: flowOf(configured(habitId))
     }
 
     override fun observeHabitDetail(habitId: HabitId): Flow<HabitDetail?> {
+        guard("observeHabitDetail")
         observedIds += habitId
         val detail = configured(habitId)?.let { HabitDetail(habit = it, today = today, recent = recent) }
         return habitFailure?.let { flow<HabitDetail?> { throw it } } ?: flowOf(detail)
@@ -161,6 +190,7 @@ class FakeHabitRepository(
     var completionsFailure: Throwable? = null
 
     override fun observeCompletedDates(habitId: HabitId, from: LocalDate, to: LocalDate): Flow<Map<LocalDate, String?>> {
+        guard("observeCompletedDates")
         observedIds += habitId
         ranges += from..to
         return completionsFailure?.let { flow<Map<LocalDate, String?>> { throw it } }
@@ -177,6 +207,7 @@ class FakeHabitRepository(
     var effortFailure: Throwable? = null
 
     override fun observeTagEffort(from: LocalDate, to: LocalDate): Flow<List<TagEffort>> {
+        guard("observeTagEffort")
         ranges += from..to
         return effortFailure?.let { flow<List<TagEffort>> { throw it } } ?: flowOf(tagEffortByWindow[from..to] ?: tagEffort)
     }
@@ -185,6 +216,7 @@ class FakeHabitRepository(
     var completionsByHabit: Map<HabitId, Set<LocalDate>> = emptyMap()
 
     override fun observeCompletionDatesByHabit(from: LocalDate, to: LocalDate): Flow<Map<HabitId, Set<LocalDate>>> {
+        guard("observeCompletionDatesByHabit")
         ranges += from..to
         return flowOf(
             completionsByHabit
@@ -241,24 +273,28 @@ class FakeHabitRepository(
     }
 
     override suspend fun createHabit(metadata: HabitMetadata): CommandResult<HabitId> {
+        guard("createHabit")
         failIfAsked()
         created += metadata
         return resultOf(mintedId)
     }
 
     override suspend fun updateHabit(habitId: HabitId, metadata: HabitMetadata): CommandResult<Unit> {
+        guard("updateHabit")
         failIfAsked()
         updated += habitId to metadata
         return result
     }
 
     override suspend fun archiveHabit(habitId: HabitId): CommandResult<Unit> {
+        guard("archiveHabit")
         failIfAsked()
         archived += habitId
         return result
     }
 
     override suspend fun unarchiveHabit(habitId: HabitId): CommandResult<Unit> {
+        guard("unarchiveHabit")
         failIfAsked()
         unarchived += habitId
         return result
@@ -281,12 +317,14 @@ class FakeHabitRepository(
         get() = completions.filter { it.undo }.map { it.habitId to it.logicalDate }
 
     override suspend fun addCompletion(habitId: HabitId, logicalDate: LocalDate, note: String?): CommandResult<Unit> {
+        guard("addCompletion")
         failIfAsked()
         completions += Completion(habitId, logicalDate, note, undo = false)
         return result
     }
 
     override suspend fun undoCompletion(habitId: HabitId, logicalDate: LocalDate): CommandResult<Unit> {
+        guard("undoCompletion")
         failIfAsked()
         completions += Completion(habitId, logicalDate, undo = true)
         return result
@@ -296,6 +334,7 @@ class FakeHabitRepository(
     val notes = mutableListOf<Triple<HabitId, LocalDate, String>>()
 
     override suspend fun updateNote(habitId: HabitId, logicalDate: LocalDate, text: String): CommandResult<Unit> {
+        guard("updateNote")
         failIfAsked()
         notes += Triple(habitId, logicalDate, text)
         return result
