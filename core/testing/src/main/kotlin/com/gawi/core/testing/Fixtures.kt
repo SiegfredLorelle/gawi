@@ -145,8 +145,14 @@ fun habitDetail(
 fun todaySnapshot(
     habits: List<TodayHabit> = emptyList(),
     today: LocalDate = FIXED_DATE,
-    now: LocalDateTime = today.atTime(9, 0),
-    reminderTime: LocalTime = LocalTime.of(21, 0),
+    now: LocalDateTime = today.atTime(MORNING_HOUR, 0),
+    reminderTime: LocalTime = LocalTime.of(REMINDER_HOUR, 0),
     dayCutoff: LocalTime = LocalTime.MIDNIGHT,
     weekStart: DayOfWeek = DayOfWeek.MONDAY,
 ): TodaySnapshot = TodaySnapshot(habits, today, now, reminderTime, dayCutoff, weekStart)
+
+/** Mid-morning, well clear of the midnight cutoff and the evening reminder. */
+private const val MORNING_HOUR = 9
+
+/** The default reminder time, as the settings screen offers it. */
+private const val REMINDER_HOUR = 21
