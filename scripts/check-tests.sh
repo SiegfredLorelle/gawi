@@ -10,14 +10,23 @@
 #                     (a CoroutineWorker finishing on its own dispatcher, a
 #                     launcher host rendering) mark the line `// bounded poll`
 #                     and carry a loud timeout; nothing else may.
-#   - getMethod, getDeclaredMethod, getDeclaredField, declaredConstructors,
-#     .methods, declaredMethods
+#   - the java.lang.Class lookups, in both spellings
 #                     reflection into a library or a constructor shape. What a
 #                     library keeps internal is not a behaviour, and a
 #                     constructor's parameter list is the Hilt graph's to check.
-#                     The `.methods` pair is listed because it is the way round
-#                     a banned `getMethod`: the matcher removed from this module
-#                     read a mangled accessor as `javaClass.methods.single { … }`.
+#                     Kotlin reads a Java getter as a property, so every one of
+#                     these has two spellings and the list needs both: the
+#                     matcher removed from this module read a mangled accessor
+#                     as `javaClass.methods.single { … }`, and banning only that
+#                     form would let it back in as `javaClass.getMethods()`.
+#                     `kotlin.reflect` is the same hole through another package,
+#                     so `declaredMemberFunctions` and `memberProperties` are
+#                     listed too.
+#
+#                     `getDeclaredConstructor()` — singular, no arguments — is
+#                     deliberately NOT here: it instantiates a receiver the
+#                     merged manifest declares, which is a question about the
+#                     app. `Class.forName` is out for the same reason.
 #                     Class.forName and getDeclaredConstructor() are not listed:
 #                     probing whether a class is on the classpath, or
 #                     instantiating a receiver the merged manifest declares, is
@@ -40,7 +49,7 @@ if [ ! -f docs/architecture.md ]; then
     exit 2
 fi
 
-FORBIDDEN='Thread\.sleep\(|\.getMethod\(|getDeclaredMethod\(|getDeclaredField\(|declaredConstructors|\.methods\b|declaredMethods'
+FORBIDDEN='Thread\.sleep\(|\.getMethod\(|[gG]etDeclaredMethods?\(|[gG]etMethods\(|[gG]etDeclaredFields?\(|[gG]etFields\(|[gG]etDeclaredConstructors\(|declaredConstructors|declaredFields|\.methods\b|\.fields\b|declaredMethods|declaredMemberFunctions|declaredMemberProperties|memberProperties'
 failures=0
 
 while IFS= read -r file; do
