@@ -765,7 +765,7 @@ Deviations and notes:
   holds §8's test rule: no `Thread.sleep` and no reflection by method name in a
   test source set, the two bounded polls marked on the line.
   `scripts/check-history.sh` (2026-09-05) is the third, and holds AGENTS.md's
-  comments rule over `src/main` Kotlin: no `YYYY-MM-DD` and none of eight
+  comments rule over `src/main` Kotlin: no `YYYY-MM-DD` and none of eleven
   narrative phrasings in a comment, with one exemption the writer opts into —
   a date passes where the same line says `measured` or `seen on`, because how
   stale a hardware measurement is cannot be read off anything else. It runs
