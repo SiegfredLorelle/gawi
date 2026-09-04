@@ -3,16 +3,25 @@ package com.gawi.core.data.backup
 import android.net.Uri
 import com.gawi.core.data.db.dao.CompletionExportDao
 import com.gawi.core.data.db.dao.CompletionExportRow
+import com.gawi.core.data.settings.settingsDataStore
+import com.gawi.core.data.testsupport.FakeDeviceClock
+import com.gawi.core.data.testsupport.TestStore
+import com.gawi.core.domain.testing.metadata
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
 import java.io.ByteArrayOutputStream
+import java.io.File
 import java.io.IOException
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -58,6 +67,11 @@ class CompletionCsvArchiveTest {
     /** Robolectric, not a plain JVM test: off it, `Uri.parse` returns null here. */
     private val destination: Uri = Uri.parse("content://documents/gawi-completions.csv")
 
+    private val clock = FakeDeviceClock()
+
+    @get:Rule
+    val folder = TemporaryFolder()
+
     private val document = RecordingDocument()
 
     /** How many times the provider was asked to open the document for writing. */
@@ -92,6 +106,43 @@ class CompletionCsvArchiveTest {
         archiveOver(FakeCompletionExportDao(listOf(CompletionExportRow("read", "2026-08-20", null)))).exportTo(destination)
 
         assertTrue("a leaked stream may never flush to the provider", document.closed)
+    }
+
+    /**
+     * **The load-bearing negative: a CSV export must not settle the 30-day
+     * backup nudge.** A CSV holds no events, so nothing can be rebuilt from it,
+     * and letting one stamp the journal would silence the warning for a month
+     * over a file that could not restore anything (PRD §5).
+     *
+     * Asserted against a real [ExportJournal] over a real store rather than
+     * against the constructor's parameter list. A constructor test could be
+     * satisfied by a class that takes the journal and happens not to call it,
+     * and it says nothing about a future call path; this reads the journal
+     * either side of a real export, so it fails wherever the stamp is added.
+     * Measured: giving the archive an `ExportJournal` and calling `record()`
+     * turns this red on its own message.
+     */
+    @Test
+    fun `a csv export leaves the export nudge exactly where it was`() = runTest {
+        val store = TestStore.create(clock = clock)
+        try {
+            val journal = ExportJournal(
+                dataStore = settingsDataStore(scope = backgroundScope) { File(folder.root, "settings.preferences_pb") },
+                events = store.database.eventDao(),
+                clock = clock,
+            )
+            store.repository.createHabit(metadata(name = "read"))
+            val before = journal.observe().first()
+
+            archiveOver(FakeCompletionExportDao(listOf(CompletionExportRow("read", "2026-08-20", null)))).exportTo(destination)
+
+            val after = journal.observe().first()
+            assertEquals("a CSV is not a backup and must not stamp the journal", before.daysSinceExport, after.daysSinceExport)
+            assertNull("nothing has ever been exported here", after.daysSinceExport)
+            assertTrue("the log still has something to lose", after.hasEvents)
+        } finally {
+            store.close()
+        }
     }
 
     @Test

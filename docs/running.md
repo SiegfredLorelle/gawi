@@ -818,8 +818,9 @@ does with the file.
       says, write a CSV, and return: the value line and the help line are both
       unchanged. A CSV holds no events, so treating one as a backup would
       silence the warning for a month over a file that could not restore
-      anything. `SettingsDataViewModelTest` asserts this at the level a user
-      would notice; this confirms it through the real graph.
+      anything. `CompletionCsvArchiveTest` reads a real journal either side of
+      a real export and `SettingsDataViewModelTest` asserts what the row says;
+      this confirms it through the real graph.
 
 - [ ] **All three Data rows go dead together.** Start a CSV export of a large
       log and, while it runs, confirm **Export a copy** and **Import a file**
