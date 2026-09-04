@@ -33,8 +33,8 @@ import kotlin.math.ceil
  * Measured on 2026-08-24 (docs/ux/visual-identity.md §2), and the measurement
  * still stands. What a host *will* draw faithfully is a bitmap, so the text is
  * drawn here, in this process, with the typeface the app uses, and shipped as
- * pixels. Decided on 2026-08-25, reversing §2's earlier "not worth it for a
- * checkbox list"; §5 has the trade.
+ * pixels. §2 calls that "not worth it for a checkbox list"; §5 has the trade
+ * that overrides it.
  *
  * **Why white ink and a tint.** The bitmap carries shape only. Colour arrives
  * through `ColorFilter.tint` on the `Image`, from [WidgetPalette], and what that
@@ -43,26 +43,25 @@ import kotlin.math.ceil
  * background does; on 29–30 there is no resource path for an image tint at all,
  * so Glance resolves the provider in this process at translation time.
  *
- * That asymmetry is what shipped a defect, and the numbers are kept because they
- * are the argument for the palette. This paragraph used to claim a night-mode
- * change below 31 left the whole widget stale together. **Measured on API 29 and
- * 30 on 2026-08-28, the same to the decimal on each, it did not**: the
- * background was resource-backed, so the host re-resolved it on its own while
- * this tint and the checkbox glyph kept the last render's baked value. A toggle
- * left the widget illegible rather than stale, until the next render repaired it.
- * Re-measured against the unfixed build on API 29 the same day, as WCAG ratios
- * — the unit the tests use, and the unit every figure here is in, because the
- * first pass reported these on a scale it never named — the name fell to
- * **1.31:1** against its own ground and the checkbox to **1.60:1**. The same run
- * found the glyph below the floor in dark mode even freshly rendered, at 2.91:1
- * checked and 1.60:1 unchecked, which is a second defect the toggle was hiding.
+ * That asymmetry is what shipped a defect, and the numbers are kept because
+ * they are the argument for the palette.
+ * **Measured on API 29 and 30 on 2026-08-28, the same to the decimal on each**:
+ * below 31 a night-mode change does not leave the whole widget stale together.
+ * A resource-backed background is re-resolved by the host on its own, while
+ * this tint and the checkbox glyph keep the last render's baked value, so a
+ * toggle leaves the widget illegible rather than stale until the next render
+ * repairs it. Re-measured against the unfixed build on API 29, as WCAG ratios —
+ * the unit the tests use, and the unit every figure here is in — the name fell
+ * to **1.31:1** against its own ground and the checkbox to **1.60:1**. The same
+ * run found the glyph below the floor in dark mode even freshly rendered, at
+ * 2.91:1 checked and 1.60:1 unchecked, a second defect the toggle was hiding.
  *
- * Fixed by giving all three colours one kind of provider, so they are translated
- * by the same path and cannot disagree ([WidgetPalette] has the mechanism).
- * Below 31 a toggle now leaves the widget stale *together* and readable, which is
- * what docs/running.md §4 expected of it before it was measured: 16.59:1 for the
- * name in light and 14.82:1 in dark, unchanged across a toggle either way, and
- * on 31 and up the whole widget still follows one within about two seconds.
+ * All three colours take one kind of provider, so they are translated by the
+ * same path and cannot disagree ([WidgetPalette] has the mechanism). Below 31 a
+ * toggle leaves the widget stale *together* and readable, which is what
+ * docs/running.md §4 expects of it: 16.59:1 for the name in light and 14.82:1
+ * in dark, unchanged across a toggle either way, and on 31 and up the whole
+ * widget follows one within about two seconds.
  *
  * **Why `setFontVariationSettings` and not `Typeface.create`.** `outfit.ttf` is
  * one variable file whose `fvar` default is `wght` 100, Thin — `Type.kt`
@@ -128,11 +127,10 @@ internal object BitmapText {
      * reserves room for the result in dp: the ink scales and the dp does not.
      * [StreakWidget] scales its slots to match.
      *
-     * **`letterSpacing` is left at `Paint`'s 0em default, and since 2026-08-30
-     * that is the app's value too** — `Type.kt` zeroes Material's positive
-     * tracking, and its KDoc has the measurement. This side has always drawn at
-     * 0em; for a phase the two surfaces claimed to match at the same nominal
-     * 16sp and did not. Setting a Material figure here would reopen that, so the
+     * **`letterSpacing` is left at `Paint`'s 0em default, and that is the app's
+     * value too** — `Type.kt` zeroes Material's positive tracking, and its KDoc
+     * has the measurement. Setting a Material figure here would make the two
+     * surfaces differ at the same nominal 16sp, so the
      * omission is deliberate and `BitmapTextTest` pins it.
      */
     internal fun outfitPaint(context: Context, textSizeSp: Float = TEXT_SIZE_SP, weight: Int = OUTFIT_WEIGHT_NORMAL): OutfitPaint {
@@ -154,25 +152,20 @@ internal object BitmapText {
      * setting says 2. Anything reserving dp room for sp ink has to scale by what
      * the text actually does.
      *
-     * **Probed at [TEXT_SIZE_SP] rather than at 1sp, and review caught that the
-     * difference is the whole point.** `FontScaleConverter`'s curve is defined per
-     * text size and its table starts at 8sp; below that it interpolates from the
-     * origin and is effectively linear. So a 1sp probe returns ≈`fontScale` —
-     * exactly the number this KDoc says not to read — and the first version of
-     * this function did that while claiming otherwise. Measured under
-     * Robolectric at `fontScale = 2.0`: the 1sp probe gave 2.0, and this gives
-     * 1.75 against a paint of 28.0px and ink growth of 1.74–1.8× for the widest
-     * numerals. The old value erred safe, since over-reserving a slot only
-     * ellipsises a habit name early — but it was not what it said it was.
+     * **Probed at [TEXT_SIZE_SP] rather than at 1sp, and the difference is the
+     * whole point.** `FontScaleConverter`'s curve is defined per text size and
+     * its table starts at 8sp; below that it interpolates from the origin and is
+     * effectively linear, so a 1sp probe returns ≈`fontScale`, exactly the
+     * value ruled out above. Measured under Robolectric at
+     * `fontScale = 2.0`: the 1sp probe gives 2.0, and this gives 1.75 against a
+     * paint of 28.0px and ink growth of 1.74–1.8× for the widest numerals.
      *
      * [textSizeSp] is the size the caller actually draws, because the ratio is
      * a function of it: Android 14's curve grows small text more than large, so
-     * 12sp resolves nearer 2.0× where 16sp resolves at 1.75. Until 2026-08-29
-     * one size served every caller, since the only thing reserving dp was the
-     * streak widget's 16sp numeral; the large Today body's width gate and the
-     * Momo widget's face both reserve for [CAPTION_SIZE_SP] ink now and pass
-     * it, or they would under-reserve by the gap between the two curves. Found
-     * on the PR.
+     * 12sp resolves nearer 2.0× where 16sp resolves at 1.75. One size cannot
+     * serve every caller: the large Today body's width gate and the Momo
+     * widget's face both reserve for [CAPTION_SIZE_SP] ink and must pass it, or
+     * they under-reserve by the gap between the two curves.
      *
      * Floored at 1: shrinking the text does not make a widget's cells wider in
      * any way the user asked for.

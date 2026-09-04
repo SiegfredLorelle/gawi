@@ -116,23 +116,23 @@ internal fun repositoryFrom(context: Context): HabitRepository =
  * above it, which is a value on the body and not a branch here. The choice is
  * tested; this is only the drawing.
  *
- * Every string here is an [OutfitText] — a bitmap in the app's face, tinted from
- * [WidgetPalette] — rather than a Glance `Text`, since 2026-08-25. [BitmapText]
- * has why a bitmap and what it costs. The colour history is one bug twice: the
- * default text colour was not theme-aware while the background was, which drew
- * near-black on `#303030` at 1.59:1 on a Nothing A059 on 2026-08-22; then the
- * *fix* was theme-aware in a way the background was not below API 31, which is
- * the 2026-08-28 measurement in [BitmapText]. Both were a mismatch between two
- * colours, which is why this surface now takes both of them from one place.
+ * Every string here is an [OutfitText] — a bitmap in the app's face, tinted
+ * from [WidgetPalette] — rather than a Glance `Text`. [BitmapText] has why a
+ * bitmap and what it costs. The colour trap is one bug in two shapes: a default
+ * text colour that is not theme-aware while the background is draws near-black
+ * on `#303030` at 1.59:1, measured on a Nothing A059 on 2026-08-22; and a fix
+ * that is theme-aware in a way the background is not below API 31 is the
+ * measurement [BitmapText] records. Both are a mismatch between two colours,
+ * which is why this surface takes both of them from one place.
  * `WidgetTextColourDarkTest` and its light twin measure every ratio drawn here,
  * the glyph included.
  *
- * **There is no `GlanceTheme { }` here any more**, removed 2026-08-28 with the
- * palette. Nothing under it read `GlanceTheme.colors` once all three colours
- * came from [WidgetPalette] — the `CheckboxDefaults.colors(checked, unchecked)`
- * overload does not consult the theme, only the no-argument one does — so it was
- * a wrapper that did nothing except suggest the widget still draws on Glance's
- * default theme, which is the one thing this change is about not doing.
+ * **There is no `GlanceTheme { }` here.** Nothing under it would read
+ * `GlanceTheme.colors` once all three colours come from [WidgetPalette] — the
+ * `CheckboxDefaults.colors(checked, unchecked)` overload does not consult the
+ * theme, only the no-argument one does — so it would be a wrapper that did
+ * nothing except suggest the widget still draws on Glance's default theme,
+ * which is the one thing this arrangement is about not doing.
  */
 @Composable
 internal fun WidgetBody(content: WidgetContent) {
@@ -182,13 +182,12 @@ internal fun WidgetBody(content: WidgetContent) {
  * habit truncated the band at six.
  *
  * **"In the rows' own order" is a claim about the picture as well as the list,
- * and holds in either direction since 2026-08-30.** It did not before: with a
- * Hebrew system locale the rows mirrored — the glyph moves to the right edge —
- * and the band did not, so the first habit's segment landed where a
- * right-to-left reader stops rather than where they start (measured on a
- * launcher, docs/running.md §4). [WovenBand] now reads the direction and
- * [BandBitmap] mirrors on it. Stated here because the sentence above is the one
- * that reads as covering it.
+ * and it holds in either direction.** Without that, a Hebrew system locale
+ * mirrors the rows — the glyph moves to the right edge — while the band does
+ * not, so the first habit's segment lands where a right-to-left reader stops
+ * rather than where they start (measured on a launcher, docs/running.md §4).
+ * [WovenBand] reads the direction and [BandBitmap] mirrors on it. Stated here
+ * because the sentence above is the one that reads as covering it.
  *
  * The copy is caption-sized and semibold, as the canvas drew it, and it gets the
  * width the pill and the gap leave. Three lines, not the canvas's one: at the
@@ -289,27 +288,23 @@ private fun BandMask(mask: Bitmap, tint: ColorProvider, width: Dp) {
  * or without an action behind it, so a glyph without its own callback would flip
  * on screen and write nothing.
  *
- * **The name and the state are the Row's description, since 2026-09-02, and
- * here is why they cannot be the checkbox's.** The first cut put the name on the
- * `CheckBox` as its `contentDescription`, meaning to keep TalkBack pairing it
- * with the checked state the way `CheckBox(text = …)` did. On the Nothing A059
- * (TalkBack 17) each row was two stops: *"Read. In list, double tap to
- * activate"* on the row and *"not checked. Check box, double tap to toggle"* on
- * the glyph — the name reached the row and never the box. Glance's
- * `glance_check_box.xml` is a `FrameLayout` around the real `CheckBox`;
- * `applyModifiers` describes the wrapper while the toggle goes to the control
- * inside, and TalkBack folds a described non-focusable wrapper into the nearest
- * focusable ancestor, which is this row. So the description survived — on a
- * view nothing stops at. The row now says name and state itself
- * (`widget_today_row_description`, the streak widget's pattern, which the same
- * device read as *"Water, 7 days"*), and the box keeps the bare name so a host
- * that does attach it to the control gets *"Read, checked"* rather than an
- * unlabelled box — bare, not name and state, or that host would say the state
- * twice. The glyph's own stop still says only its state: Glance has no way to
- * take a `CheckBox` out of the accessibility tree, and an empty description
- * would be an empty string on the wrapper. Two stops per row remain; the first
- * is now complete. docs/running.md §4 has the measurement, and [ROW_HEIGHT] the
- * other half of what the Scanner found.
+ * **The name and the state are the Row's description, and here is why they
+ * cannot be the checkbox's.** Glance's `glance_check_box.xml` is a
+ * `FrameLayout` around the real `CheckBox`; `applyModifiers` describes the
+ * wrapper while the toggle goes to the control inside, and TalkBack folds a
+ * described non-focusable wrapper into the nearest focusable ancestor, which is
+ * this row. A name put on the `CheckBox` as its `contentDescription` therefore
+ * survives on a view nothing stops at, and never reaches the glyph. So the row
+ * says name and state itself (`widget_today_row_description`, the streak
+ * widget's pattern, read on a Nothing A059 with TalkBack 17 as *"Water, 7
+ * days"*), and the box keeps the bare name so a host that does attach it to the
+ * control gets *"Read, checked"* rather than an unlabelled box — bare, not name
+ * and state, or that host would say the state twice. The glyph's own stop says
+ * only its state: Glance has no way to take a `CheckBox` out of the
+ * accessibility tree, and an empty description would be an empty string on the
+ * wrapper. Two stops per row, the first of them complete. docs/running.md §4
+ * has the measurement, and [ROW_HEIGHT] the other half of what the Scanner
+ * found.
  */
 @Composable
 private fun HabitRows(rows: List<WidgetRow>) {
@@ -354,30 +349,26 @@ private fun HabitRows(rows: List<WidgetRow>) {
 internal fun contentWidth() = LocalSize.current.width - (2 * WIDGET_PADDING).dp
 
 /*
- * The checkbox glyph is pinned, since 2026-08-28, and this records what changed
- * — because for two phases this comment argued the opposite, and the argument
- * was sound at the time rather than lazy.
+ * The checkbox glyph is pinned, and this is why it has to be.
  *
  * Left unset, the glyph takes Glance's `res/color/glance_default_check_box.xml`:
  * `?android:attr/colorControlActivated` when checked and `colorControlNormal`
- * otherwise, theme attributes with no `-night` variant. That was read as "the
- * host resolves it in the launcher's theme", and on API 31 and up it is very
- * nearly that. **Below 31 it is not**, and that is the correction the API 29/30
- * pass forced: `CheckBoxTranslator` branches at 31, and under it the glyph is
+ * otherwise, theme attributes with no `-night` variant. On API 31 and up the
+ * host very nearly does resolve that in the launcher's theme. **Below 31 it
+ * does not**: `CheckBoxTranslator` branches at 31, and under it the glyph is
  * resolved in *our* process and baked into the `RemoteViews` as one colour. The
- * selector never reaches the host, so its missing `-night` variant was never the
+ * selector never reaches the host, so its missing `-night` variant is not the
  * cause. [WidgetPalette] has the full path-by-path account and the measurements;
  * it is not repeated here, because two copies of it would drift.
  *
- * The other half of the old argument was that no provider could be handed to a
- * checkbox at all: `CheckboxDefaults.colors(checkedColor = GlanceTheme.colors.primary, …)`
+ * A provider can be handed to a checkbox, with one restriction.
+ * `CheckboxDefaults.colors(checkedColor = GlanceTheme.colors.primary, …)`
  * compiles and throws `IllegalArgumentException: Cannot provide resource-backed
  * ColorProviders to CheckBoxColors` from `CheckedUncheckedColorProvider.<init>`.
- * That was too strong a reading of a true observation. The guard rejects
- * **resource-backed** providers only — every `GlanceTheme` colour is one, which
- * is why every attempt hit it — and a day/night provider is not resource-backed.
- * So the glyph can carry the palette, in both schemes, without inventing the
- * flat literals this comment used to price.
+ * The guard rejects **resource-backed** providers only — every `GlanceTheme`
+ * colour is one, which is why every attempt through the theme hits it — and a
+ * day/night provider is not resource-backed. So the glyph can carry the
+ * palette, in both schemes, without inventing flat literals.
  *
  * `CheckBoxColors` exposes its providers only through an `internal` accessor,
  * so what the tree drew the glyph with is not readable from a test without

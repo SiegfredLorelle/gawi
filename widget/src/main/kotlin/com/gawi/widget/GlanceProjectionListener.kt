@@ -19,9 +19,9 @@ import javax.inject.Inject
  * **Switches dispatcher here, not at the call site.** The interface promises the
  * repository a main-safe callback, and the caller's dispatcher is whatever
  * tapped — `viewModelScope` is `Main.immediate`. Putting the switch in the class
- * that touches the platform is the fix `/code-review` arrived at when nothing on
- * the export path left the caller's dispatcher; the alternative is every call
- * site remembering.
+ * that touches the platform keeps it in one place — nothing on the export path
+ * leaves the caller's dispatcher — where the alternative is every call site
+ * remembering.
  *
  * **A failure is absorbed, and it catches `Throwable` rather than `Exception`.**
  * The write it follows has already committed, so throwing here would report a

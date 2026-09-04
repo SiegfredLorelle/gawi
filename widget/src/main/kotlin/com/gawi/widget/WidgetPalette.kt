@@ -13,32 +13,30 @@ import com.gawi.core.ui.theme.gawiRole
  * values. What it does *not* have to do is retype them: `GawiRole` publishes the
  * roles a reproducing surface draws, and every value below is read from there.
  *
- * **This used to be eight hand-typed literals, and that was the debt.** Four
- * roles in two schemes, of which only `surface`'s pair was pinned to its
- * original, by a test-source-only import of `gawiWindowBackground`. The other
- * three roles had no accessor, so retuning
- * `onSurface`, `primary` or `outline` in `core/ui/theme/Color.kt` moved the
- * app's checkboxes and left the widget's glyph behind with every test in this
- * module still green. docs/ux/visual-identity.md §7.4 named that as the widget
- * set's debt to clear and costed two ways out — three more accessors, or reading
- * a composed `GawiTheme` in a Robolectric test. Deriving is neither: it removes
- * the second copy rather than guarding it, so there is no longer a drift to
- * detect. §2's claim that "there is no mechanism that would let it be one" was
- * wrong, and wrong in a way that reads as correct — a Glance tree cannot take a
- * Compose *theme*, but a plain `Color` is not a theme.
+ * **Every value derives rather than being retyped.** Hand-typed literals are
+ * the debt this avoids: four roles in two schemes, and with no accessor for
+ * `onSurface`, `primary` or `outline`, retuning one in `core/ui/theme/Color.kt`
+ * moves the app's checkboxes and leaves the widget's glyph behind with every
+ * test in this module still green. docs/ux/visual-identity.md §7.4 names that
+ * as the widget set's debt to clear and costs two ways out — three more
+ * accessors, or reading a composed `GawiTheme` in a Robolectric test. Deriving
+ * is neither: it removes the second copy rather than guarding it, so there is
+ * no drift left to detect. Note that §2 says "there is no mechanism that would
+ * let it be one"; that reads as correct but is not — a Glance tree cannot take
+ * a Compose *theme*, and a plain `Color` is not a theme.
  *
- * **Why day/night providers, and not the pinned literals the docs asked for
- * until 2026-08-28.** The bug this fixes is a disagreement between two colours,
- * so pinning one side cannot fix it — and a single flat literal cannot clear
- * 4.5:1 against both a light and a dark ground at once, because that needs a
- * relative luminance at or below 0.17 against `#F4FBFA` and at or above 0.229
- * against `#0E1A1C`. What went wrong on API 29 and 30 was an asymmetry of
- * translation paths, measured on emulators of both levels and read out of
+ * **Why day/night providers, and not the pinned literals the docs ask for.**
+ * The bug this fixes is a disagreement between two colours, so pinning one
+ * side cannot fix it — and a single flat literal cannot clear 4.5:1 against
+ * both a light and a dark ground at once, because that needs a relative
+ * luminance at or below 0.17 against `#F4FBFA` and at or above 0.229 against
+ * `#0E1A1C`. What breaks on API 29 and 30 is an asymmetry of translation
+ * paths, measured on emulators of both levels and read out of
  * `glance-appwidget` 1.1.1 to confirm it:
  *
  *  - A background from a *resource* provider becomes
  *    `setViewBackgroundColorResource`, which the **host** resolves in its own
- *    theme — so it followed a night-mode toggle on its own, immediately.
+ *    theme — so it follows a night-mode toggle on its own, immediately.
  *  - An image tint has no resource path below API 31 at all, and the checkbox
  *    glyph below 31 goes through `getColor(context)` the same way, so both were
  *    resolved in *our* process at translation and kept the last render's value.

@@ -26,7 +26,7 @@ import com.gawi.core.domain.mascot.Mood
 
 /**
  * Momo alone, on her ground — the Momo widget of docs/ux/visual-identity.md
- * §7.4, built 2026-08-29 as the last of that set (docs/ux/widget.md §7).
+ * §7.4, the last of that set (docs/ux/widget.md §7).
  *
  * **Mood only, no rows, no number.** The canvas's argument for it: the tank as
  * a glanceable object answers "how am I doing" without a value that can rot, so
@@ -126,10 +126,10 @@ internal fun MomoBody(content: WidgetContent) {
 }
 
 /**
- * The one word drawn under the face — the caption the design canvas chose
- * 2026-08-29 over the full sentence (which clips at 110dp) and over no caption
- * (which leaves a greyscale viewer no word). TalkBack does not read these:
- * the face carries the full [description] once, and the word is decorative.
+ * The one word drawn under the face — the caption the design canvas chose over
+ * the full sentence (which clips at 110dp) and over no caption (which leaves a
+ * greyscale viewer no word). TalkBack does not read these: the face carries the
+ * full [description] once, and the word is decorative.
  */
 @StringRes
 internal fun Mood.caption(): Int = when (this) {
