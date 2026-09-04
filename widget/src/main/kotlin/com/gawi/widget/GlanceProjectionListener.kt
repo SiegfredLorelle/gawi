@@ -18,10 +18,9 @@ import javax.inject.Inject
  *
  * **Switches dispatcher here, not at the call site.** The interface promises the
  * repository a main-safe callback, and the caller's dispatcher is whatever
- * tapped — `viewModelScope` is `Main.immediate`. Putting the switch in the class
- * that touches the platform keeps it in one place — nothing on the export path
- * leaves the caller's dispatcher — where the alternative is every call site
- * remembering.
+ * tapped — `viewModelScope` is `Main.immediate`. This class owns the switch
+ * because it is the one that touches the platform, so the promise is kept in a
+ * single place; the alternative is every call site remembering to make it.
  *
  * **A failure is absorbed, and it catches `Throwable` rather than `Exception`.**
  * The write it follows has already committed, so throwing here would report a
