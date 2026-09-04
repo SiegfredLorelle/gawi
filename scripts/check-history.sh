@@ -51,23 +51,37 @@ fi
 
 # Production sources only. Test sources are check-tests.sh's, and a test that
 # names the date it pinned a behaviour on is not the same defect.
-sources=$(find app core feature widget -type f -name '*.kt' \
+sources=$(find app core feature widget build-logic -type f -name '*.kt' \
     -path '*/src/main/*' -not -path '*/build/*' | sort)
 
 failures=$(
     echo "$sources" | while IFS= read -r file; do
         [ -n "$file" ] || continue
         awk -v file="$file" '
-            # A comment line: the first non-space character opens or continues
-            # one. Enough for this codebase, where every block comment is
-            # left-aligned with a leading asterisk.
-            $0 !~ /^[[:space:]]*(\/\/|\/\*|\*)/ { next }
-
+            # The comment part of a line: the whole line when the first non-space
+            # character opens or continues a block, and the tail after `//` or
+            # `/*` when a comment trails code — the second kind is rare here but
+            # it is still a comment, and a gate that cannot see it is a gate with
+            # a hole. Double-quoted strings are removed before that search so a
+            # `//` inside one is not read as an opener.
             {
-                line = tolower($0)
+                if ($0 ~ /^[[:space:]]*(\/\/|\/\*|\*)/) {
+                    comment = $0
+                } else {
+                    stripped = $0
+                    gsub(/"([^"\\]|\\.)*"/, "", stripped)
+                    i = index(stripped, "//")
+                    j = index(stripped, "/*")
+                    if (i == 0) i = j
+                    else if (j > 0 && j < i) i = j
+                    if (i == 0) next
+                    comment = substr(stripped, i)
+                }
+
+                line = tolower(comment)
                 why = ""
 
-                if ($0 ~ /20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ &&
+                if (comment ~ /20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ &&
                     line !~ /measured/ && line !~ /seen on/) {
                     why = "dated, and the line does not say measured or seen on"
                 } else if (line ~ /used to/) {
