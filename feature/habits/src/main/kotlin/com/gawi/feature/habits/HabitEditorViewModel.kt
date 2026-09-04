@@ -28,9 +28,8 @@ internal sealed interface HabitEditorEvent {
      * A new habit exists, and this is its id.
      *
      * Separate from [Saved] because the two outcomes go different places, and
-     * because this is what `createHabit`'s minted id was always for — its KDoc
-     * says it returns the id "so the caller can navigate to it", and until
-     * habit detail existed there was nowhere to navigate. `:app` sends this to
+     * because this is what `createHabit`'s minted id is for — its KDoc says it
+     * returns the id "so the caller can navigate to it". `:app` sends this to
      * detail and an edit back to where it came from; the screen only reports
      * which happened.
      */

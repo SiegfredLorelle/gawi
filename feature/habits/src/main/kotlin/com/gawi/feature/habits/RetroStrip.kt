@@ -112,15 +112,15 @@ private fun RowScope.RetroCell(cell: RetroCellUi, onCell: (RetroCellUi) -> Unit,
             },
         )
         // A note is otherwise invisible: it reaches the cell but only the sheet
-        // reads it, so an annotated day looked exactly like a bare one and the
-        // long-press had nothing advertising it. A text glyph rather than a
-        // drawn dot, like the tick above — but **not** because no icon pack is
-        // a dependency: :core:ui carries a vendored set
-        // (docs/ux/visual-identity.md §7.5). The reasons that hold: these
-        // three are state marks in a grid rather than pictures of an action,
-        // they are sized by the type scale rather than by a 24dp box, and a
-        // text node is what lets a test see the marker at all. Turning them
-        // into icons is a live question, not a settled no.
+        // reads it, so an annotated day looks exactly like a bare one and the
+        // long-press has nothing advertising it. A text glyph rather than a
+        // drawn dot, like the tick above, and not for want of an icon set —
+        // :core:ui carries a vendored one (docs/ux/visual-identity.md §7.5).
+        // The reasons that hold: these three are state marks in a grid rather
+        // than pictures of an action, they are sized by the type scale rather
+        // than by a 24dp box, and a text node is what lets a test see the
+        // marker at all. Turning them into icons is a live question, not a
+        // settled no.
         // The spoken label carries the same fact; see cellAction.
         Text(
             text = if (cell.hasNote) NOTE_GLYPH else "",
@@ -222,7 +222,7 @@ private fun Modifier.cellAction(cell: RetroCellUi, onCell: (RetroCellUi) -> Unit
         // Clearing merges as well as it clears: without either, the one cell
         // this section exists to explain is four TalkBack stops — its
         // description, then the weekday, the date and the glyph — where every
-        // other cell is one. With merging alone it was one stop that read all
+        // other cell is one. With merging alone it is one stop that reads all
         // four after the description.
         clearAndSetSemantics {
             contentDescription = description
