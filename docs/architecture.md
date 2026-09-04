@@ -734,7 +734,7 @@ The template's Makefile contract maps to Gradle as:
 |---|---|
 | `make setup` | `./gradlew help` warm-up (wrapper fetches everything) + git hooks |
 | `make fmt` | Spotless (ktlint) apply |
-| `make lint` | `scripts/check-citations.sh` and `scripts/check-tests.sh`, then Spotless check + detekt + Android Lint + `:app:assembleDebug` |
+| `make lint` | `scripts/check-history.sh`, `scripts/check-citations.sh` and `scripts/check-tests.sh`, then Spotless check + detekt + Android Lint + `:app:assembleDebug` |
 | `make test` | `./gradlew test` (module-generic: JVM modules' `test` plus Android modules' unit tests; a new module can never be silently skipped) |
 | `make itest` | `./gradlew :app:connectedDebugAndroidTest` — needs a device; not called by CI (see below) |
 | `make run` | `./gradlew :app:installDebug` + `adb shell am start` (see below) |
@@ -756,14 +756,20 @@ Deviations and notes:
 - **`make lint` gained a repo-local step**, `scripts/check-citations.sh`. It is a
   step inside an existing target rather than a new one, so `ci.yml` needs no
   change and stays stack-blind — it calls `make lint` and does not have to know
-  what this repo lints. What it checks: comments here cite `docs/` heavily (336
-  citations across 122 files) and nothing verified any of them, which is how the
+  what this repo lints. What it checks: comments here cite `docs/` heavily (627
+  citations across 212 files) and nothing verified any of them, which is how the
   `robolectric` comment in `gradle/libs.versions.toml` came to name a
   `robolectric.properties` path that had never existed. It also refuses a bare
   `§N` in a file that uses that number for two different documents.
   `scripts/check-tests.sh` (2026-09-04) sits beside it with the same shape and
   holds §8's test rule: no `Thread.sleep` and no reflection by method name in a
   test source set, the two bounded polls marked on the line.
+  `scripts/check-history.sh` (2026-09-05) is the third, and holds AGENTS.md's
+  comments rule over `src/main` Kotlin: no `YYYY-MM-DD` and none of eight
+  narrative phrasings in a comment, with one exemption the writer opts into —
+  a date passes where the same line says `measured` or `seen on`, because how
+  stale a hardware measurement is cannot be read off anything else. It runs
+  first of the three, and refuses to pass when it finds too few files to scan.
 - **`make lint` gained a second step, `:app:assembleDebug`** (2026-09-02). Same
   shape as the citation check — inside an existing target, so `ci.yml` is
   untouched. What it closes: CI ran `setup`, `lint` and `test`, and none of the
@@ -872,7 +878,7 @@ twenty-five files, which would be a sign the feature itself should split.
 | `build-logic/` | Convention plugins. Owns build configuration; module build files only apply `gawi.*` ids and declare dependencies — with one recorded exception: `:feature:settings` names `licenses/` as an assets source set in its own build file, because a convention plugin for one module's one directory would be the heavier way to say it (docs/ux/settings.md §9) |
 | `config/detekt/detekt.yml` | Overrides on top of detekt's bundled defaults |
 | `config/robolectric/robolectric.properties` | **The Robolectric SDK level, for every module.** Attached to each Android module's unit-test resources by `build-logic/src/main/kotlin/gawi/KotlinAndroid.kt` |
-| `scripts/` | Repo-local tooling. `check-citations.sh` and `check-tests.sh` are checks and `make lint` runs them (§9); `convert-lucide.py` is a generator for :core:ui's icon drawables, run by hand and deliberately not wired into `make` — it needs the network and regenerates checked-in files, which is not what a lint target should do |
+| `scripts/` | Repo-local tooling. `check-history.sh`, `check-citations.sh` and `check-tests.sh` are checks and `make lint` runs them (§9); `convert-lucide.py` is a generator for :core:ui's icon drawables, run by hand and deliberately not wired into `make` — it needs the network and regenerates checked-in files, which is not what a lint target should do |
 | `docs/` | `prd.md` what and why, this file how, `running.md` on a device, `ux/` per-screen decisions, `stacks/kotlin-android.md` the template wiring |
 | `licenses/` | Third-party licence texts for bundled assets. Outside `res/`, which takes font files and XML families only — and a resource filename cannot carry uppercase letters, so `OFL.txt` there is a build error rather than good citizenship. `:feature:settings` declares this directory as an assets source set, so the APK carries each file under its own name and the Licences screen reads it from there (docs/ux/settings.md §9) |
 
