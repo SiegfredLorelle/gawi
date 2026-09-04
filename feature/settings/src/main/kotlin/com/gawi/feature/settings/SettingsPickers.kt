@@ -147,8 +147,8 @@ internal fun ThemeDialog(selected: ThemeMode, onConfirm: (ThemeMode) -> Unit, on
 /**
  * One option in a [ChoiceDialog]: the value it stands for, and its name.
  *
- * The pair rather than a `label: (T) -> Int` beside the list, which is what
- * this was until detekt's six-parameter limit — and the better shape anyway,
+ * The pair rather than a `label: (T) -> Int` beside the list, which would put
+ * the dialog past detekt's six-parameter limit — and is the better shape anyway,
  * since an option and its name cannot then be supplied separately and get out
  * of step.
  */
@@ -160,9 +160,7 @@ internal data class Choice<out T>(val value: T, @param:StringRes val label: Int)
  * Generic because the week start and the theme are the same dialog over
  * different sets, and the accessibility decisions in it — the [selectableGroup]
  * below, the [Role.RadioButton] and the touch-target floor on each row — are
- * exactly the kind that get made once and then hand-copied slightly wrong. It
- * was `WeekStartDialog` alone until the theme picker arrived, which is the
- * two-copies threshold AGENTS.md names.
+ * exactly the kind that get made once and then hand-copied slightly wrong.
  *
  * [T] is stored by `rememberSaveable`'s default saver, which is why both call
  * sites pass an enum: an enum is `Serializable` and so goes into a `Bundle`
