@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
  *
  * Type-safe routes: each destination is a `@Serializable` class rather than a
  * string template, so an argument that changes shape is a compile error instead
- * of a null at runtime. kotlinx-serialization was already a project dependency
+ * of a null at runtime. kotlinx-serialization is already a project dependency
  * for the event log's wire format, which is what makes this the cheap option.
  *
  * Namespaced inside one interface rather than declared as seven top-level types,

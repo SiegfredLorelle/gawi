@@ -31,9 +31,9 @@ import com.gawi.feature.today.TodayRoute
  * architecture §2 uses for the heatmap living outside `:feature:habits`.
  *
  * Cancelling pops, and so does saving an edit. Creating does not: it goes on to
- * the new habit's detail screen, which is what `createHabit`'s minted id was
- * always for. Keeping the three as separate callbacks is what made that a change
- * here rather than one inside `:feature:habits`.
+ * the new habit's detail screen, which is what `createHabit`'s minted id is for.
+ * Keeping the three as separate callbacks is what keeps where each one lands a
+ * decision here rather than inside `:feature:habits`.
  */
 @Composable
 internal fun GawiNavHost(navController: NavHostController = rememberNavController()) {
