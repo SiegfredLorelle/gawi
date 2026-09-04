@@ -15,17 +15,15 @@ import kotlinx.coroutines.flow.Flow
 internal interface EventDao {
 
     /**
-     * Appends events. Conflicts abort rather than being ignored: the MVP log
-     * has a single writer behind one mutex, so a repeated event id is a bug in
-     * this module and not a merge to absorb. Phase 2's foreign-event append is
-     * where dedupe-by-uuid belongs, and it will want its own entry point.
+     * Appends events. Conflicts abort rather than being ignored: this log has a
+     * single writer behind one mutex, so a repeated event id is a bug in this
+     * module and not a merge to absorb. Absorbing one is [insertMerging]'s job.
      */
     @Insert
     suspend fun insertAll(events: List<EventEntity>)
 
     /**
-     * Appends foreign events, skipping every id the log already holds — the
-     * dedupe-by-uuid that [insertAll]'s KDoc reserved an entry point for, and
+     * Appends foreign events, skipping every id the log already holds, which is
      * what makes an import a merge rather than a replace.
      *
      * IGNORE and never REPLACE. The id *is* the event's identity, so a row

@@ -49,7 +49,7 @@ internal fun settingsDataStore(
 )
 
 /**
- * [UserSettings] in DataStore, which is where architecture §3 always put them.
+ * [UserSettings] in DataStore, which is where architecture §3 puts them.
  *
  * Times are stored as a second-of-day, the week start as its ISO number and
  * the theme as [ThemeMode.code], because all three survive a locale change and
@@ -82,10 +82,9 @@ internal fun settingsDataStore(
  * repository's own dedupe is on the `(settings, logical date)` pair, so an
  * unchanged re-emission would otherwise churn the query under an open screen.
  *
- * `current()` is inherited: DataStore reads the file once and then serves from
- * memory, so of the four command-path calls — one of them inside the append
- * transaction, under the repository's mutex — only the first in a process
- * touches disk.
+ * `current()` is cheap after the first call: DataStore reads the file once and
+ * then serves from memory, which is what makes it safe on the command path —
+ * including inside the append transaction, under the repository's mutex.
  */
 @Singleton
 class DataStoreSettingsSource @Inject constructor(private val dataStore: DataStore<Preferences>) : SettingsSource {

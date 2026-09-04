@@ -18,47 +18,19 @@ import javax.inject.Inject
  * inside the call rather than saving it for later. No permission, no
  * `FileProvider`, no `<queries>`, so the manifest is untouched again.
  *
- * **Three rules are shared with [ContentResolverEventArchive] and deliberately
- * duplicated rather than extracted.** They are `NonCancellable`, the `"wt"`
- * mode, and encoding before the document is opened. Why there is no shared
- * writer: two reasons, and the second is the one that decides it.
+ * **`NonCancellable`, `"wt"` and encoding before the document opens are shared
+ * with [ContentResolverEventArchive] and deliberately duplicated rather than
+ * extracted.** That class is argued at length about the *backup*, where a
+ * truncated file is one the user later trusts with their whole history;
+ * generalising that argument so a spreadsheet convenience could share it would
+ * make it less true rather than more reusable. It also has no JVM test, so the
+ * shared writer is a refactor with no safety net until the JSON path gets a
+ * behavioural test of its own (docs/ux/settings.md §8).
  *
- * The first is the weaker. That class has **no JVM test at all**, so
- * refactoring it is verified only on a device, and reaching into the one
- * untested class on the recovery path to serve a caller whose stakes are lower
- * is the wrong direction. `CompletionCsvArchiveTest` substitutes a
- * `ContentResolver` for *this* class and the same Robolectric shadow would
- * work there, so the cost of starting is low. What holds is the sequencing:
- * the JSON path gets its own behavioural test **first**, and only then is
- * extracting a shared writer a change with a safety net under it
- * (docs/ux/settings.md §8).
- *
- * The second is that its reasoning is **about the backup**, at length and for
- * good cause: a truncated JSON is a file the user will later trust with their
- * whole history. A truncated CSV costs a second tap. Generalising forty lines
- * of argument about the only recovery path, so that a spreadsheet convenience
- * could share it, would make that argument less true rather than more
- * reusable.
- *
- * So the rules are restated here with what differs about them:
- *
- * **`NonCancellable`.** `viewModelScope` dies when the settings destination
- * leaves the back stack, and `"wt"` has already truncated the document by then.
- * Same mechanism as the backup, smaller consequence — what is left is a
- * half-written spreadsheet rather than a plausibly-named empty backup. It stays
- * because a partial file is still a worse answer than a complete one, and
- * because the same caveat applies: this cannot protect work that never starts,
- * so leaving the screen fast enough still leaves a zero-length file (see
- * docs/ux/settings.md §8).
- *
- * **`"wt"` and never `"w"`.** Plain `"w"` is not required to truncate and some
- * providers do not, so overwriting a longer file leaves the old tail behind —
- * here that means rows from a previous export appearing under the new ones,
- * which is worse in a spreadsheet than in JSON because it parses fine.
- *
- * **The rows are read and encoded before the document is opened**, because
- * opening it is the destructive step. A read that throws then leaves the file
- * the user picked untouched.
+ * What differs is only the consequence. Leaving the screen mid-write leaves a
+ * half-written spreadsheet rather than a plausibly-named empty backup, and a
+ * provider that does not truncate leaves last export's rows under this one's —
+ * worse in a spreadsheet than in JSON, because it parses fine.
  *
  * **No `ExportJournal`.** Not an omission — see [CompletionCsvArchive]. This
  * class cannot stamp the last-export time because it was never given the thing

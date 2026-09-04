@@ -15,7 +15,7 @@ package com.gawi.core.data.settings
  * `:app`'s business, since only the Activity knows the system's setting.
  */
 enum class ThemeMode(val code: Int) {
-    /** Follow the device's dark setting — the default, and what the app always did before this existed. */
+    /** Follow the device's dark setting, which is the default. */
     SYSTEM(0),
     LIGHT(1),
     DARK(2),

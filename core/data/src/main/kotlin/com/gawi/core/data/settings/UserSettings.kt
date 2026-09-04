@@ -21,12 +21,10 @@ import java.time.LocalTime
  * purpose: it is "use the device zone", which
  * [com.gawi.core.data.time.DeviceClock] already supplies per call.
  *
- * The 30-day nudge's `lastExportedAt` is deliberately not a field here either,
- * and that reverses what docs/ux/settings.md §8 predicted. Two reasons, both in
- * [com.gawi.core.data.backup.ExportJournal]'s KDoc: this type is dedupe-compared
- * to decide whether to re-run the Today query, and the nudge needs a second
- * signal that is not a preference at all. These are what the user set; when an
- * export last happened is a record of what the app did.
+ * The 30-day nudge's `lastExportedAt` is deliberately not a field here, for the
+ * two reasons [com.gawi.core.data.backup.ExportJournal]'s KDoc gives. These are
+ * what the user set; when an export last happened is a record of what the app
+ * did.
  *
  * [theme] *is* a fourth field, and it passes both tests the export stamp
  * failed. It is something the user set, and it changes about as often as the

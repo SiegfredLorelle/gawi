@@ -84,11 +84,10 @@ interface HabitRepository {
      * and nothing dated beyond that. What the editor wants, since a form is
      * about what a habit *is*.
      *
-     * Kept beside [observeHabitDetail] rather than folded into it. An earlier
-     * revision replaced this one outright on the grounds that there should be
-     * exactly one way to ask for a single habit; that was the wrong cut. The two
-     * ask different questions — this one "what is this habit", the other "what
-     * is this habit, on what day, with which recent cells" — and answering the
+     * Kept beside [observeHabitDetail] rather than folded into it, however
+     * strongly one-way-to-ask-for-a-habit argues otherwise. The two ask
+     * different questions — this one "what is this habit", the other "what is
+     * this habit, on what day, with which recent cells" — and answering the
      * first through the second makes the editor run and *wait on* a completions
      * query it discards, because `combine` withholds its first emission until
      * every source has emitted. Both are built on one private row query, so the

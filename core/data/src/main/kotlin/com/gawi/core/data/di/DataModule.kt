@@ -77,8 +77,7 @@ internal object DataModule {
      * to what wrote it — provenance for a human holding a broken backup, and the
      * only thing there is to go on when `allowBackup` is off and that file is
      * the only copy. The Settings screen's About section shows the same value
-     * (docs/ux/settings.md §9), so the app does read it back now; nothing
-     * *decides* on it.
+     * (docs/ux/settings.md §9); nothing *decides* on it.
      */
     @Provides
     @Singleton

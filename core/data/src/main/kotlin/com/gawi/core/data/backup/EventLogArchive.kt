@@ -33,12 +33,6 @@ data class AppVersion(val value: String)
  * testable against plain bytes. This project hand-writes every fake and has no
  * mocking library; substituting a `ContentResolver` would mean reaching for a
  * Robolectric shadow, which nothing here does yet.
- *
- * The two directions are deliberately asymmetric. [import] takes a stream and
- * neither opens nor closes it, because reading a document destroys nothing.
- * [encode] hands bytes back rather than taking a stream, because opening a
- * document for writing truncates it — so the caller has to own the moment that
- * becomes irreversible, and should leave it as late as possible.
  */
 internal class EventLogArchive @Inject constructor(
     private val events: EventDao,
@@ -60,9 +54,10 @@ internal class EventLogArchive @Inject constructor(
      *
      * Bytes rather than a stream, and asymmetric with [import] on purpose.
      * Reading a document destroys nothing, so an import can stream and stay
-     * cancellable. Writing one truncates it the instant it opens, so this hands
-     * the finished bytes back and lets the caller decide when to make that
-     * irreversible — which it should do last.
+     * cancellable and need neither open nor close it. Writing one truncates it
+     * the instant it opens, so this hands the finished bytes back and lets the
+     * caller own the moment that becomes irreversible — which it should leave as
+     * late as possible.
      */
     suspend fun encode(): ByteArray {
         val log = events.loadAll().map { it.toEncoded() }
@@ -76,9 +71,9 @@ internal class EventLogArchive @Inject constructor(
      * as well as JSON, because an export round-tripped through a cloud drive
      * comes back mistyped and a filter that hides someone's own backup is the
      * worse failure. The cost is that it now shows essentially everything, so
-     * the likeliest wrong tap is a large file — and this was the one path here
-     * where that was a crash rather than a refusal, because `OutOfMemoryError`
-     * is an `Error` and the guard the caller wraps this in catches `Exception`.
+     * the likeliest wrong tap is a large file — and without the ceiling that is
+     * a crash rather than a refusal, because `OutOfMemoryError` is an `Error`
+     * and the guard the caller wraps this in catches `Exception`.
      *
      * The ceiling is a sanity check and **not** a memory guarantee: the parsed
      * tree is several times the size of the text, so a file just under it is
