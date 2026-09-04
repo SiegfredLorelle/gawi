@@ -4,10 +4,10 @@ import app.cash.turbine.test
 import com.gawi.core.data.backup.AppVersion
 import com.gawi.core.data.settings.ThemeMode
 import com.gawi.core.data.settings.UserSettings
+import com.gawi.core.testing.MainDispatcherRule
 import com.gawi.feature.settings.testsupport.FakeCompletionCsvArchive
 import com.gawi.feature.settings.testsupport.FakeEventArchive
 import com.gawi.feature.settings.testsupport.FakeSettingsSource
-import com.gawi.feature.settings.testsupport.MainDispatcherRule
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Rule

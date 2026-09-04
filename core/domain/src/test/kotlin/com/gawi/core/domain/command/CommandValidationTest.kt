@@ -6,11 +6,11 @@ import com.gawi.core.domain.model.Schedule
 import com.gawi.core.domain.projection.HabitMetadata
 import com.gawi.core.domain.projection.ProjectedState
 import com.gawi.core.domain.projection.Projector
-import com.gawi.core.domain.testsupport.completionAdded
-import com.gawi.core.domain.testsupport.event
-import com.gawi.core.domain.testsupport.eventId
-import com.gawi.core.domain.testsupport.habitCreated
-import com.gawi.core.domain.testsupport.habitId
+import com.gawi.core.domain.testing.completionAdded
+import com.gawi.core.domain.testing.event
+import com.gawi.core.domain.testing.eventId
+import com.gawi.core.domain.testing.habitCreated
+import com.gawi.core.domain.testing.habitId
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

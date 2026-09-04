@@ -10,6 +10,9 @@ import com.gawi.core.domain.id.EventId
 import com.gawi.core.domain.id.UuidV7Generator
 import com.gawi.core.domain.model.HabitId
 import com.gawi.core.domain.model.Schedule
+import com.gawi.core.domain.testing.habitCreated
+import com.gawi.core.domain.testing.habitUpdated
+import com.gawi.core.domain.testing.uuid
 import java.time.Instant
 import java.time.LocalDate
 import kotlin.random.Random

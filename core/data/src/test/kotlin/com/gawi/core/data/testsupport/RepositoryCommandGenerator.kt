@@ -3,6 +3,7 @@ package com.gawi.core.data.testsupport
 import com.gawi.core.domain.command.CommandResult
 import com.gawi.core.domain.model.HabitId
 import com.gawi.core.domain.model.Schedule
+import com.gawi.core.domain.testing.metadata
 import kotlin.random.Random
 
 /**

@@ -32,5 +32,8 @@ dependencies {
     // Plain JVM, no Robolectric: the colour rules here are arithmetic over a
     // string, which is why parseHabitColor is hand-rolled instead of calling
     // android.graphics.Color and dragging a framework into this module's tests.
+    // :core:testing keeps Robolectric compileOnly for the same reason, so the
+    // WCAG helper arrives here without it.
     testImplementation(libs.junit)
+    testImplementation(project(":core:testing"))
 }

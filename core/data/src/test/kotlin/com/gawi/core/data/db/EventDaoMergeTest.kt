@@ -4,7 +4,7 @@ import android.database.sqlite.SQLiteConstraintException
 import androidx.room.Room
 import com.gawi.core.data.db.dao.ROW_NOT_INSERTED
 import com.gawi.core.data.db.entity.EventEntity
-import com.gawi.core.data.testsupport.uuid
+import com.gawi.core.domain.testing.uuid
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals

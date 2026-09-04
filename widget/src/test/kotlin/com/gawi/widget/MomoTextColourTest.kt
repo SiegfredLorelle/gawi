@@ -4,13 +4,13 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.glance.appwidget.testing.unit.GlanceAppWidgetUnitTest
 import androidx.glance.appwidget.testing.unit.runGlanceAppWidgetUnitTest
+import com.gawi.core.domain.testing.habitId
+import com.gawi.core.testing.todayHabit
+import com.gawi.core.testing.todaySnapshot
 import com.gawi.widget.testsupport.RenderProbe
 import com.gawi.widget.testsupport.anyText
 import com.gawi.widget.testsupport.drawnOn
-import com.gawi.widget.testsupport.habitId
 import com.gawi.widget.testsupport.illegibleText
-import com.gawi.widget.testsupport.todayHabit
-import com.gawi.widget.testsupport.todaySnapshot
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner

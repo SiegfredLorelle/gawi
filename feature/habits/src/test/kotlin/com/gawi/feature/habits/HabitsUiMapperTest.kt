@@ -2,16 +2,16 @@ package com.gawi.feature.habits
 
 import androidx.compose.ui.graphics.Color
 import com.gawi.core.domain.model.Schedule
+import com.gawi.core.domain.testing.habitId
+import com.gawi.core.testing.FIXED_DATE
+import com.gawi.core.testing.broken
+import com.gawi.core.testing.daysAgo
+import com.gawi.core.testing.habitDetail
+import com.gawi.core.testing.habitState
+import com.gawi.core.testing.running
+import com.gawi.core.testing.todayHabit
 import com.gawi.core.ui.streak.StreakUi
 import com.gawi.core.ui.theme.HabitPalette
-import com.gawi.feature.habits.testsupport.TODAY
-import com.gawi.feature.habits.testsupport.broken
-import com.gawi.feature.habits.testsupport.daysAgo
-import com.gawi.feature.habits.testsupport.habitDetail
-import com.gawi.feature.habits.testsupport.habitId
-import com.gawi.feature.habits.testsupport.habitState
-import com.gawi.feature.habits.testsupport.running
-import com.gawi.feature.habits.testsupport.todayHabit
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -230,7 +230,7 @@ class HabitsUiMapperTest {
         val strip = habitDetail().toDetailUiState().strip
 
         assertEquals((0L..4L).map { daysAgo(it) }.reversed(), strip.map { it.date })
-        assertEquals(TODAY, strip.last().date)
+        assertEquals(FIXED_DATE, strip.last().date)
         assertTrue(strip.last().isToday)
     }
 
@@ -247,7 +247,7 @@ class HabitsUiMapperTest {
 
         assertFalse(strip.getValue(daysAgo(4)).open)
         assertTrue(strip.getValue(daysAgo(3)).open)
-        assertTrue(strip.getValue(TODAY).open)
+        assertTrue(strip.getValue(FIXED_DATE).open)
         assertEquals(1, strip.values.count { !it.open })
     }
 
@@ -285,7 +285,7 @@ class HabitsUiMapperTest {
     fun `exactly one cell is today`() {
         val strip = habitDetail().toDetailUiState().strip
 
-        assertEquals(listOf(TODAY), strip.filter { it.isToday }.map { it.date })
+        assertEquals(listOf(FIXED_DATE), strip.filter { it.isToday }.map { it.date })
     }
 
     /**

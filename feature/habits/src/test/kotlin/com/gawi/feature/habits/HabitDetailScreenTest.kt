@@ -23,10 +23,10 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.dp
 import com.gawi.core.domain.model.HabitId
+import com.gawi.core.testing.FIXED_DATE
 import com.gawi.core.ui.date.weekdayLetter
 import com.gawi.core.ui.streak.StreakUi
 import com.gawi.core.ui.theme.GawiTheme
-import com.gawi.feature.habits.testsupport.TODAY
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -215,7 +215,7 @@ class HabitDetailScreenTest {
     // ---- the retro strip and the honesty prompt ----
 
     private fun cellLabel(back: Long, shut: Boolean = false, done: Boolean = false, hasNote: Boolean = false): String {
-        val day = TODAY.minusDays(back).dayOfMonth
+        val day = FIXED_DATE.minusDays(back).dayOfMonth
         val id = when {
             shut -> R.string.habits_strip_shut
             done -> R.string.habits_strip_done
@@ -277,7 +277,7 @@ class HabitDetailScreenTest {
         compose.onNodeWithContentDescription(cellLabel(back = 2)).performClick()
         compose.onNodeWithText(string(R.string.habits_retro_confirm)).performClick()
 
-        assertEquals(TODAY.minusDays(2) to false, written)
+        assertEquals(FIXED_DATE.minusDays(2) to false, written)
         compose.onNodeWithText(string(R.string.habits_retro_body)).assertDoesNotExist()
     }
 
@@ -310,7 +310,7 @@ class HabitDetailScreenTest {
     fun undoingAPastDay_promptsAsWell() {
         var written: Pair<LocalDate, Boolean>? = null
         render(
-            detail(strip = strip(completed = setOf(TODAY.minusDays(2)))),
+            detail(strip = strip(completed = setOf(FIXED_DATE.minusDays(2)))),
             NO_ACTIONS.copy(onToggle = { _, date, completed -> written = date to completed }),
         )
 
@@ -319,7 +319,7 @@ class HabitDetailScreenTest {
         compose.onNodeWithText(string(R.string.habits_retro_confirm)).performClick()
 
         // completed = true, so the ViewModel undoes rather than adds.
-        assertEquals(TODAY.minusDays(2) to true, written)
+        assertEquals(FIXED_DATE.minusDays(2) to true, written)
     }
 
     /**
@@ -335,7 +335,7 @@ class HabitDetailScreenTest {
 
         compose.onNodeWithContentDescription(cellLabel(back = 0)).performClick()
 
-        assertEquals(TODAY to false, written)
+        assertEquals(FIXED_DATE to false, written)
         compose.onNodeWithText(string(R.string.habits_retro_body)).assertDoesNotExist()
     }
 
@@ -348,7 +348,7 @@ class HabitDetailScreenTest {
      */
     @Test
     fun theNoteAction_isOfferedOnlyOnACompletedOpenDay() {
-        render(detail(strip = strip(completed = setOf(TODAY.minusDays(2), TODAY.minusDays(4)))))
+        render(detail(strip = strip(completed = setOf(FIXED_DATE.minusDays(2), FIXED_DATE.minusDays(4)))))
 
         // Completed and open: the label ends with the note action.
         compose.onNodeWithContentDescription(cellLabel(back = 2, done = true)).assertIsDisplayed()
@@ -391,7 +391,7 @@ class HabitDetailScreenTest {
      */
     @Test
     fun aDayWithANote_announcesIt() {
-        render(detail(strip = strip(completed = setOf(TODAY.minusDays(2)), notes = mapOf(TODAY.minusDays(2) to "went far"))))
+        render(detail(strip = strip(completed = setOf(FIXED_DATE.minusDays(2)), notes = mapOf(FIXED_DATE.minusDays(2) to "went far"))))
 
         compose.onNodeWithContentDescription(cellLabel(back = 2, done = true, hasNote = true)).assertIsDisplayed()
     }
@@ -399,7 +399,7 @@ class HabitDetailScreenTest {
     /** And a completed day without one does not claim to have a note. */
     @Test
     fun aCompletedDayWithoutANote_doesNotClaimOne() {
-        render(detail(strip = strip(completed = setOf(TODAY.minusDays(2)))))
+        render(detail(strip = strip(completed = setOf(FIXED_DATE.minusDays(2)))))
 
         compose.onNodeWithContentDescription(cellLabel(back = 2, done = true)).assertIsDisplayed()
     }
@@ -415,8 +415,8 @@ class HabitDetailScreenTest {
         render(
             detail(
                 strip = strip(
-                    completed = setOf(TODAY.minusDays(1), TODAY.minusDays(2)),
-                    notes = mapOf(TODAY.minusDays(2) to "went far"),
+                    completed = setOf(FIXED_DATE.minusDays(1), FIXED_DATE.minusDays(2)),
+                    notes = mapOf(FIXED_DATE.minusDays(2) to "went far"),
                 ),
             ),
         )
@@ -427,7 +427,7 @@ class HabitDetailScreenTest {
     /** None at all when nothing is annotated. */
     @Test
     fun theNoteMarker_isAbsentWhenNoDayCarriesANote() {
-        render(detail(strip = strip(completed = setOf(TODAY.minusDays(1)))))
+        render(detail(strip = strip(completed = setOf(FIXED_DATE.minusDays(1)))))
 
         compose.onAllNodesWithText(NOTE_MARKER, useUnmergedTree = true).assertCountEquals(0)
     }
@@ -443,7 +443,7 @@ class HabitDetailScreenTest {
      */
     @Test
     fun anOpenCell_isACheckboxThatReportsItsState() {
-        render(detail(strip = strip(completed = setOf(TODAY.minusDays(2)))))
+        render(detail(strip = strip(completed = setOf(FIXED_DATE.minusDays(2)))))
 
         compose.onNodeWithContentDescription(cellLabel(back = 1))
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Checkbox))
@@ -462,7 +462,7 @@ class HabitDetailScreenTest {
      */
     @Test
     fun theNoteAction_isALongClickOnlyWhereItIsOffered() {
-        render(detail(strip = strip(completed = setOf(TODAY.minusDays(2)))))
+        render(detail(strip = strip(completed = setOf(FIXED_DATE.minusDays(2)))))
 
         val offered = compose.onNodeWithContentDescription(cellLabel(back = 2, done = true))
             .fetchSemanticsNode().config[SemanticsActions.OnLongClick]
@@ -494,7 +494,7 @@ class HabitDetailScreenTest {
      */
     @Test
     fun aCell_speaksItsLabelAndNothingElse() {
-        render(detail(strip = strip(completed = setOf(TODAY.minusDays(2)))))
+        render(detail(strip = strip(completed = setOf(FIXED_DATE.minusDays(2)))))
 
         compose.onNodeWithContentDescription(cellLabel(back = 1))
             .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Text))
@@ -546,13 +546,13 @@ class HabitDetailScreenTest {
         )
 
         /**
-         * Five cells ending on [TODAY], with `today - 4` shut, exactly as the
+         * Five cells ending on [FIXED_DATE], with `today - 4` shut, exactly as the
          * mapper builds them. Built here rather than by calling the mapper so a
          * screen test stays a statement about drawing and not about mapping.
          */
         fun strip(completed: Set<LocalDate> = emptySet(), notes: Map<LocalDate, String> = emptyMap(), archived: Boolean = false) =
             (0L..4L).reversed().map { back ->
-                val date = TODAY.minusDays(back)
+                val date = FIXED_DATE.minusDays(back)
                 RetroCellUi(
                     date = date,
                     dayLabel = weekdayLetter(DayOfWeek.MONDAY),

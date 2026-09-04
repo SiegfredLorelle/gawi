@@ -2,11 +2,11 @@ package com.gawi.feature.insights
 
 import app.cash.turbine.test
 import com.gawi.core.data.model.TagEffort
-import com.gawi.feature.insights.testsupport.FakeHabitRepository
-import com.gawi.feature.insights.testsupport.MainDispatcherRule
-import com.gawi.feature.insights.testsupport.habitId
-import com.gawi.feature.insights.testsupport.habitState
-import com.gawi.feature.insights.testsupport.thisMonth
+import com.gawi.core.domain.testing.habitId
+import com.gawi.core.testing.FakeHabitRepository
+import com.gawi.core.testing.MainDispatcherRule
+import com.gawi.core.testing.habitState
+import com.gawi.core.testing.thisMonth
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -27,7 +27,8 @@ class InsightsViewModelTest {
     @get:Rule
     val mainDispatcher = MainDispatcherRule()
 
-    private val repository = FakeHabitRepository()
+    // Cold and empty until a test says otherwise: the screen reads every habit at once, and Loading is not what these assert.
+    private val repository = FakeHabitRepository().apply { allHabits = emptyList() }
 
     private fun insights() = InsightsViewModel(repository)
 

@@ -17,10 +17,10 @@ import androidx.glance.testing.unit.MappedNode
 import androidx.glance.testing.unit.hasContentDescription
 import androidx.glance.testing.unit.hasContentDescriptionEqualTo
 import androidx.glance.unit.Dimension
-import com.gawi.widget.testsupport.habitId
+import com.gawi.core.domain.testing.habitId
+import com.gawi.core.testing.todayHabit
+import com.gawi.core.testing.todaySnapshot
 import com.gawi.widget.testsupport.isDescribed
-import com.gawi.widget.testsupport.todayHabit
-import com.gawi.widget.testsupport.todaySnapshot
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner

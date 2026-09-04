@@ -1,11 +1,6 @@
 package com.gawi.core.data.db.mapper
 
 import com.gawi.core.data.db.entity.EventEntity
-import com.gawi.core.data.testsupport.completionAdded
-import com.gawi.core.data.testsupport.event
-import com.gawi.core.data.testsupport.eventId
-import com.gawi.core.data.testsupport.habitCreated
-import com.gawi.core.data.testsupport.habitId
 import com.gawi.core.domain.event.CompletionNoteUpdated
 import com.gawi.core.domain.event.CompletionTombstoned
 import com.gawi.core.domain.event.Event
@@ -16,6 +11,11 @@ import com.gawi.core.domain.event.HabitUpdated
 import com.gawi.core.domain.model.Schedule
 import com.gawi.core.domain.serialization.EventCodec
 import com.gawi.core.domain.serialization.EventCodecException
+import com.gawi.core.domain.testing.completionAdded
+import com.gawi.core.domain.testing.event
+import com.gawi.core.domain.testing.eventId
+import com.gawi.core.domain.testing.habitCreated
+import com.gawi.core.domain.testing.habitId
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Test

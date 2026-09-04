@@ -1,7 +1,7 @@
 package com.gawi.feature.settings
 
 import app.cash.turbine.test
-import com.gawi.feature.settings.testsupport.MainDispatcherRule
+import com.gawi.core.testing.MainDispatcherRule
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

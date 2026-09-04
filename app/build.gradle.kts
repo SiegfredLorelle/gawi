@@ -60,6 +60,8 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
 
     testImplementation(libs.junit)
+    // Shared test helpers: fixtures, the fake repository and the rules.
+    testImplementation(project(":core:testing"))
     testImplementation(libs.kotlinx.coroutines.test)
 
     // The journey tests. Robolectric supplies the framework, Hilt supplies the

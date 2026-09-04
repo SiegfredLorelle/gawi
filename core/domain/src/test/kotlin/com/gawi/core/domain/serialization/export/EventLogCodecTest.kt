@@ -2,11 +2,11 @@ package com.gawi.core.domain.serialization.export
 
 import com.gawi.core.domain.serialization.EncodedPayload
 import com.gawi.core.domain.serialization.EventCodec
-import com.gawi.core.domain.testsupport.completionAdded
-import com.gawi.core.domain.testsupport.eventId
-import com.gawi.core.domain.testsupport.habitCreated
-import com.gawi.core.domain.testsupport.habitId
-import com.gawi.core.domain.testsupport.uuid
+import com.gawi.core.domain.testing.completionAdded
+import com.gawi.core.domain.testing.eventId
+import com.gawi.core.domain.testing.habitCreated
+import com.gawi.core.domain.testing.habitId
+import com.gawi.core.domain.testing.uuid
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray

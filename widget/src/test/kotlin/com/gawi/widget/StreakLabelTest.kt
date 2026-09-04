@@ -1,8 +1,8 @@
 package com.gawi.widget
 
+import com.gawi.core.testing.WCAG_TEXT_FLOOR
+import com.gawi.core.testing.contrastRatio
 import com.gawi.core.ui.streak.StreakUi
-import com.gawi.widget.testsupport.MIN_CONTRAST
-import com.gawi.widget.testsupport.contrastRatio
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
@@ -157,7 +157,7 @@ class StreakLabelTest {
         )
         for ((name, ink) in inks) {
             val ratio = contrastRatio(ink.getColor(context), ground)
-            assertTrue("the $name ink is $ratio:1 on the widget ground, below $MIN_CONTRAST", ratio >= MIN_CONTRAST)
+            assertTrue("the $name ink is $ratio:1 on the widget ground, below $WCAG_TEXT_FLOOR", ratio >= WCAG_TEXT_FLOOR)
         }
     }
 

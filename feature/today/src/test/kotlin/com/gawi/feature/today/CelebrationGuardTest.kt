@@ -15,7 +15,7 @@ import org.robolectric.RobolectricTestRunner
  * the screen opened is not celebrated, and a day finished while watching is.
  *
  * **Why this is not in `TodayScreenTest`.** That class runs under
- * [AnimationsOffRule], and `CelebrationState.see` only animates when the gate is
+ * `AnimationsOffRule`, and `CelebrationState.see` only animates when the gate is
  * on — so every "no celebration" assertion there passes whatever the guard does,
  * which is exactly what `with animations off finishing the day draws no
  * celebration` pins on purpose. Here the gate is a *parameter*, passed `true`

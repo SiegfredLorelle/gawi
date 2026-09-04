@@ -2,11 +2,11 @@ package com.gawi.feature.insights
 
 import com.gawi.core.domain.model.Schedule
 import com.gawi.core.domain.projection.HabitState
+import com.gawi.core.testing.FIXED_DATE
+import com.gawi.core.testing.THIS_MONTH
+import com.gawi.core.testing.habitState
+import com.gawi.core.testing.thisMonth
 import com.gawi.core.ui.date.weekdayLetter
-import com.gawi.feature.insights.testsupport.THIS_MONTH
-import com.gawi.feature.insights.testsupport.TODAY
-import com.gawi.feature.insights.testsupport.habitState
-import com.gawi.feature.insights.testsupport.thisMonth
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -31,7 +31,7 @@ class HistoryUiMapperTest {
         month: YearMonth = THIS_MONTH,
         weekStart: DayOfWeek = DayOfWeek.MONDAY,
         completed: Map<LocalDate, String?> = emptyMap(),
-        today: LocalDate = TODAY,
+        today: LocalDate = FIXED_DATE,
         habit: HabitState = habitState(),
     ): HistoryUiState.Month = habit.toMonthUiState(
         month = month,
@@ -47,7 +47,7 @@ class HistoryUiMapperTest {
     private fun trend(
         habit: HabitState = habitState(),
         completed: Set<LocalDate> = emptySet(),
-        today: LocalDate = TODAY,
+        today: LocalDate = FIXED_DATE,
         weekStart: DayOfWeek = DayOfWeek.MONDAY,
     ): RateTrendUi = habit.toRateTrend(today, weekStart, completed)
 
@@ -255,7 +255,7 @@ class HistoryUiMapperTest {
         val points = trend().points
 
         assertEquals(points.size, 5)
-        assertEquals(THIS_MONTH.minusMonths((points.size - 1).toLong()).atDay(1), trendWindowStart(TODAY))
+        assertEquals(THIS_MONTH.minusMonths((points.size - 1).toLong()).atDay(1), trendWindowStart(FIXED_DATE))
         // And it holds on a date in a different month, so this is not the
         // fixture's calendar agreeing with itself.
         val november = LocalDate.parse("2026-11-09")
@@ -272,7 +272,7 @@ class HistoryUiMapperTest {
      */
     @Test
     fun `a trend with no rate at all has nothing to plot`() {
-        val newborn = habitState(createdOn = TODAY)
+        val newborn = habitState(createdOn = FIXED_DATE)
 
         assertFalse(trend(habit = newborn).plottable)
         // One month with a number is enough — the sparkline draws it as a dot.

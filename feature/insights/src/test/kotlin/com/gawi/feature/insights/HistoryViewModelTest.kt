@@ -1,13 +1,13 @@
 package com.gawi.feature.insights
 
 import app.cash.turbine.test
-import com.gawi.feature.insights.testsupport.FakeHabitRepository
-import com.gawi.feature.insights.testsupport.MainDispatcherRule
-import com.gawi.feature.insights.testsupport.TODAY
-import com.gawi.feature.insights.testsupport.habitId
-import com.gawi.feature.insights.testsupport.habitState
-import com.gawi.feature.insights.testsupport.thisMonth
-import com.gawi.feature.insights.testsupport.todayHabit
+import com.gawi.core.domain.testing.habitId
+import com.gawi.core.testing.FIXED_DATE
+import com.gawi.core.testing.FakeHabitRepository
+import com.gawi.core.testing.MainDispatcherRule
+import com.gawi.core.testing.habitState
+import com.gawi.core.testing.thisMonth
+import com.gawi.core.testing.todayHabit
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -46,7 +46,7 @@ class HistoryViewModelTest {
      * times the grid is stepped — the whole reason the offset is collected
      * around the grid query alone rather than in the outer combine.
      */
-    private val trendWindow = LocalDate.parse("2026-04-01")..TODAY
+    private val trendWindow = LocalDate.parse("2026-04-01")..FIXED_DATE
 
     /** Every window asked for, with the trend's taken out. */
     private fun gridRanges() = repository.ranges.filter { it != trendWindow }
@@ -70,7 +70,7 @@ class HistoryViewModelTest {
     @Test
     fun `a habit opens on the month containing today`() = runTest {
         theHabit()
-        repository.completions = mapOf(thisMonth(3) to null)
+        repository.completedDates = mapOf(thisMonth(3) to null)
 
         historyFor(habitId(1).value).uiState.test {
             assertEquals(HistoryUiState.Loading, awaitItem())
@@ -129,7 +129,7 @@ class HistoryViewModelTest {
     @Test
     fun `stepping earlier reads the month before, and offers the way back`() = runTest {
         theHabit()
-        repository.completions = mapOf(thisMonth(3) to null, LocalDate.parse("2026-07-09") to null)
+        repository.completedDates = mapOf(thisMonth(3) to null, LocalDate.parse("2026-07-09") to null)
 
         val viewModel = historyFor(habitId(1).value)
         viewModel.uiState.test {

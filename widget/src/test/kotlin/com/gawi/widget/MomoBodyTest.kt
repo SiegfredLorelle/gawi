@@ -6,13 +6,13 @@ import androidx.glance.appwidget.testing.unit.GlanceAppWidgetUnitTest
 import androidx.glance.appwidget.testing.unit.runGlanceAppWidgetUnitTest
 import androidx.glance.testing.unit.assertHasContentDescriptionEqualTo
 import com.gawi.core.domain.mascot.Mood
+import com.gawi.core.domain.testing.habitId
+import com.gawi.core.testing.todayHabit
+import com.gawi.core.testing.todaySnapshot
 import com.gawi.widget.testsupport.anyText
 import com.gawi.widget.testsupport.describedText
 import com.gawi.widget.testsupport.drawnOn
-import com.gawi.widget.testsupport.habitId
 import com.gawi.widget.testsupport.silentUntintedImage
-import com.gawi.widget.testsupport.todayHabit
-import com.gawi.widget.testsupport.todaySnapshot
 import com.gawi.widget.testsupport.untintedImage
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull

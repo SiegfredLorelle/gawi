@@ -7,10 +7,10 @@ import com.gawi.core.data.backup.ExportStatus
 import com.gawi.core.data.backup.ImportResult
 import com.gawi.core.data.settings.ThemeMode
 import com.gawi.core.data.settings.UserSettings
+import com.gawi.core.testing.MainDispatcherRule
 import com.gawi.feature.settings.testsupport.FakeCompletionCsvArchive
 import com.gawi.feature.settings.testsupport.FakeEventArchive
 import com.gawi.feature.settings.testsupport.FakeSettingsSource
-import com.gawi.feature.settings.testsupport.MainDispatcherRule
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals

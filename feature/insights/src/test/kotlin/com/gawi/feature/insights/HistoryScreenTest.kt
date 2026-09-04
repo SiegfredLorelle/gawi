@@ -15,13 +15,13 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import com.gawi.core.domain.model.Schedule
+import com.gawi.core.testing.FIXED_DATE
+import com.gawi.core.testing.THIS_MONTH
+import com.gawi.core.testing.habitState
+import com.gawi.core.testing.thisMonth
 import com.gawi.core.ui.date.weekdayLetter
 import com.gawi.core.ui.date.weekdayName
 import com.gawi.core.ui.theme.GawiTheme
-import com.gawi.feature.insights.testsupport.THIS_MONTH
-import com.gawi.feature.insights.testsupport.TODAY
-import com.gawi.feature.insights.testsupport.habitState
-import com.gawi.feature.insights.testsupport.thisMonth
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -73,16 +73,16 @@ class HistoryScreenTest {
         val habit = habitState(name = name, schedule = schedule)
         return habit.toMonthUiState(
             month = month,
-            today = TODAY,
+            today = FIXED_DATE,
             weekStart = DayOfWeek.MONDAY,
             completedDates = completed,
-            rate = habit.toRateTrend(TODAY, DayOfWeek.MONDAY, completed.keys),
+            rate = habit.toRateTrend(FIXED_DATE, DayOfWeek.MONDAY, completed.keys),
         )
     }
 
     /** A trend with nothing to say in any month — every point a dash. */
-    private fun dashes(): RateTrendUi = habitState(createdOn = TODAY.plusDays(1))
-        .toRateTrend(TODAY, DayOfWeek.MONDAY, emptySet())
+    private fun dashes(): RateTrendUi = habitState(createdOn = FIXED_DATE.plusDays(1))
+        .toRateTrend(FIXED_DATE, DayOfWeek.MONDAY, emptySet())
 
     private fun render(state: HistoryUiState, actions: HistoryActions = NO_ACTIONS) {
         compose.setContent {

@@ -1,4 +1,4 @@
-package com.gawi.app
+package com.gawi.core.testing
 
 import android.provider.Settings
 import org.junit.rules.ExternalResource
@@ -14,10 +14,10 @@ import org.robolectric.RuntimeEnvironment
  *
  * A rule rather than a `@Before`, and ordered **before** any compose rule:
  * `createAndroidComposeRule` launches the activity inside the rule, so a
- * `@Before` runs after the first composition — and only passed while Today
- * happened to still be loading. A copy of `:feature:today`'s: two copies, because no shared test
- * module exists and one for this would be more machinery than the
- * duplication. Change both.
+ * `@Before` runs after the first composition.
+ *
+ * Needs Robolectric on the consumer's test classpath; this module has it as
+ * compileOnly so that consumers without it are not handed it.
  */
 class AnimationsOffRule : ExternalResource() {
     private var previous: Float = 1f

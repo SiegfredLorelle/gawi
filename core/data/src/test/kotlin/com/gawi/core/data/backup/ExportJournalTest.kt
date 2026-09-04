@@ -14,7 +14,7 @@ import com.gawi.core.data.settings.UserSettings
 import com.gawi.core.data.settings.settingsDataStore
 import com.gawi.core.data.testsupport.FakeDeviceClock
 import com.gawi.core.data.testsupport.TestStore
-import com.gawi.core.data.testsupport.metadata
+import com.gawi.core.domain.testing.metadata
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow

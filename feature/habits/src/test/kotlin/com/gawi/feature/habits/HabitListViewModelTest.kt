@@ -3,10 +3,10 @@ package com.gawi.feature.habits
 import app.cash.turbine.test
 import com.gawi.core.domain.command.CommandError
 import com.gawi.core.domain.command.CommandResult
-import com.gawi.feature.habits.testsupport.FakeHabitRepository
-import com.gawi.feature.habits.testsupport.MainDispatcherRule
-import com.gawi.feature.habits.testsupport.habitId
-import com.gawi.feature.habits.testsupport.habitState
+import com.gawi.core.domain.testing.habitId
+import com.gawi.core.testing.FakeHabitRepository
+import com.gawi.core.testing.MainDispatcherRule
+import com.gawi.core.testing.habitState
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -38,7 +38,7 @@ class HabitListViewModelTest {
     fun `no habits becomes the empty state`() = runTest {
         viewModel.uiState.test {
             assertEquals(HabitListUiState.Loading, awaitItem())
-            repository.emit(emptyList())
+            repository.emitHabits(emptyList())
             assertEquals(HabitListUiState.Empty, awaitItem())
             cancelAndIgnoreRemainingEvents()
         }
@@ -48,7 +48,7 @@ class HabitListViewModelTest {
     fun `habits arrive split into active and archived`() = runTest {
         viewModel.uiState.test {
             assertEquals(HabitListUiState.Loading, awaitItem())
-            repository.emit(
+            repository.emitHabits(
                 listOf(
                     habitState(id = habitId(1), name = "read"),
                     habitState(id = habitId(2), name = "swim", archived = true),

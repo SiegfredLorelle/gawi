@@ -1,4 +1,4 @@
-package com.gawi.core.domain.testsupport
+package com.gawi.core.domain.testing
 
 import com.gawi.core.domain.event.CompletionAdded
 import com.gawi.core.domain.event.Event
@@ -8,8 +8,18 @@ import com.gawi.core.domain.event.HabitUpdated
 import com.gawi.core.domain.id.EventId
 import com.gawi.core.domain.model.HabitId
 import com.gawi.core.domain.model.Schedule
+import com.gawi.core.domain.projection.HabitMetadata
 import java.time.Instant
 import java.time.LocalDate
+
+/*
+ * Deterministic ids, envelopes and payloads for every module's tests.
+ *
+ * Test fixtures rather than test sources, so the same builders reach :core:data
+ * directly and every Android module through :core:testing, which re-exports
+ * them. This module is pure JVM and cannot depend on an Android library, which
+ * is why these live here and the read-model builders live there.
+ */
 
 /** Deterministic canonical UUID whose numeric tail is [n] — ordered like n. */
 fun uuid(n: Int): String = "00000000-0000-7000-8000-" + n.toString(16).padStart(12, '0')
@@ -39,3 +49,6 @@ fun habitUpdated(habit: HabitId, name: String = "read", schedule: Schedule = Sch
 
 fun completionAdded(habit: HabitId, date: String, note: String? = null): CompletionAdded =
     CompletionAdded(habit, LocalDate.parse(date), note)
+
+fun metadata(name: String = "read", schedule: Schedule = Schedule.Daily, tag: String? = null): HabitMetadata =
+    HabitMetadata(name = name, icon = "book", color = "#aabbcc", schedule = schedule, tag = tag)

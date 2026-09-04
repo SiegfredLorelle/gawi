@@ -4,8 +4,8 @@ import com.gawi.core.data.db.entity.ProjectionMetaEntity
 import com.gawi.core.data.testsupport.FakeDeviceClock
 import com.gawi.core.data.testsupport.FakeSettingsSource
 import com.gawi.core.data.testsupport.TestStore
-import com.gawi.core.data.testsupport.metadata
 import com.gawi.core.domain.command.CommandResult
+import com.gawi.core.domain.testing.metadata
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After

@@ -5,11 +5,11 @@ import com.gawi.core.data.model.TagEffort
 import com.gawi.core.domain.model.HabitId
 import com.gawi.core.domain.model.Schedule
 import com.gawi.core.domain.projection.HabitState
+import com.gawi.core.domain.testing.habitId
+import com.gawi.core.testing.FIXED_DATE
+import com.gawi.core.testing.habitState
+import com.gawi.core.testing.thisMonth
 import com.gawi.core.ui.streak.StreakUi
-import com.gawi.feature.insights.testsupport.TODAY
-import com.gawi.feature.insights.testsupport.habitId
-import com.gawi.feature.insights.testsupport.habitState
-import com.gawi.feature.insights.testsupport.thisMonth
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -26,7 +26,7 @@ import java.time.LocalDate
  */
 class InsightsUiMapperTest {
 
-    private val context = ReadContext(today = TODAY, weekStart = DayOfWeek.MONDAY)
+    private val context = ReadContext(today = FIXED_DATE, weekStart = DayOfWeek.MONDAY)
 
     /** Every parameter defaulted, so a test names only the field it is about. */
     @Suppress("LongParameterList")
@@ -38,7 +38,7 @@ class InsightsUiMapperTest {
         tagEffort: List<TagEffort> = emptyList(),
         previousTagEffort: List<TagEffort> = emptyList(),
         back: Int = 0,
-        today: LocalDate = TODAY,
+        today: LocalDate = FIXED_DATE,
     ) = overviewOf(
         period,
         back,
@@ -171,7 +171,7 @@ class InsightsUiMapperTest {
     fun `a habit newer than the period has no rate`() {
         val state = overview(
             period = Period.MONTH,
-            habits = listOf(habitState(createdOn = TODAY.plusMonths(2))),
+            habits = listOf(habitState(createdOn = FIXED_DATE.plusMonths(2))),
         )
 
         assertEquals(null, state.habits.single().percent)
@@ -274,7 +274,7 @@ class InsightsUiMapperTest {
     fun `the trend sums to the headline, future-dated completions included`() {
         val state = overview(
             period = Period.QUARTER,
-            completions = mapOf(habitId(1) to setOf(LocalDate.parse("2026-07-01"), thisMonth(3), TODAY.plusDays(1))),
+            completions = mapOf(habitId(1) to setOf(LocalDate.parse("2026-07-01"), thisMonth(3), FIXED_DATE.plusDays(1))),
         )
 
         assertEquals(state.activeDays, state.trend.sumOf { it.activeDays })
