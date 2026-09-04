@@ -11,6 +11,7 @@ import com.gawi.core.domain.mascot.Mood
 import com.gawi.core.ui.component.MomoFrame
 import com.gawi.core.ui.component.drawMomo
 import org.junit.Assert.assertArrayEquals
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -67,7 +68,7 @@ class MomoRenderTest {
 
     @Test
     fun `regenerating drains the colour and keeps its lightness`() {
-        val body = { mood: Mood -> pixel(render(mood), 130, 100) }
+        val body = { mood: Mood -> pixel(render(mood), WIDTH / 2, HEIGHT / 2) }
         val full = body(Mood.CONTENT)
         val drained = body(Mood.REGENERATING)
         // Less spread between channels is less colour.
@@ -95,6 +96,24 @@ class MomoRenderTest {
         assertArrayEquals(render(Mood.CONTENT), renderBetween(Mood.CONTENT, Mood.WORRIED, 0f))
         assertArrayEquals(render(Mood.WORRIED), renderBetween(Mood.CONTENT, Mood.WORRIED, 1f))
         assertArrayEquals(render(Mood.REGENERATING), renderBetween(Mood.THRIVING, Mood.REGENERATING, 1f))
+    }
+
+    /**
+     * One body, not two: the belly is the same opaque colour half way through a
+     * change as it is when settled. Two translucent bodies drawn over each
+     * other read darker or lighter, which is exactly what the first cut's
+     * crossfade did (docs/ux/momo.md §3) — and it is invisible to the
+     * ends-meet case above, which only looks at t=0 and t=1.
+     *
+     * The belly is sampled at the centre of the design space rather than at a
+     * coordinate copied off the drawing.
+     */
+    @Test
+    fun `half way through a mood change the body is drawn once`() {
+        val mid = renderBetween(Mood.CONTENT, Mood.WORRIED, 0.5f)
+        assertEquals(pixel(render(Mood.CONTENT), WIDTH / 2, HEIGHT / 2), pixel(mid, WIDTH / 2, HEIGHT / 2))
+        assertNotEquals(render(Mood.CONTENT).toList(), mid.toList())
+        assertNotEquals(render(Mood.WORRIED).toList(), mid.toList())
     }
 
     @Test

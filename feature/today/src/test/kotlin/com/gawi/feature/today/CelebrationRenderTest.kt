@@ -7,6 +7,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.LayoutDirection
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -30,9 +31,27 @@ class CelebrationRenderTest {
         assertEquals(0, painted(render(1f)))
     }
 
+    /**
+     * The glow is a wash over the *whole* tank, so it is measured at the edge
+     * where the burst never reaches, and by weight rather than by area: it
+     * peaks early and thins towards the end, so an area count would read the
+     * same at both.
+     *
+     * Asserting on the painted count over the whole canvas would prove nothing:
+     * lane 0 of the burst is airborne early, so bubble ink alone satisfies
+     * "something is painted" and deleting `drawCelebrationGlow` leaves such a
+     * case green. Measured.
+     */
     @Test
-    fun `the glow paints the tank early on and the bubbles climb the middle, not the edges`() {
-        assertTrue(painted(render(0.30f)) > 0)
+    fun `the glow washes the edges early and thins towards the end`() {
+        val edge = IntRect(0, 0, WIDTH / 6, HEIGHT)
+        val peak = weightIn(render(0.30f), edge)
+        assertTrue(peak > 0)
+        assertTrue(weightIn(render(0.9f), edge) < peak)
+    }
+
+    @Test
+    fun `the bubbles climb the middle, not the edges`() {
         // Half way, bubbles are in the air over the middle third and none at the edges.
         val mid = render(0.5f)
         assertTrue(inkAbove(mid, threshold = 0.3f, left = WIDTH / 3, right = 2 * WIDTH / 3) > 0)
@@ -55,6 +74,13 @@ class CelebrationRenderTest {
     }
 
     private fun painted(alphas: IntArray) = alphas.count { it > 0 }
+
+    /** Total alpha inside [region], which is how heavily it is washed rather than how much of it is touched. */
+    private fun weightIn(alphas: IntArray, region: IntRect): Int {
+        var total = 0
+        for (y in region.top until region.bottom) for (x in region.left until region.right) total += alphas[y * WIDTH + x]
+        return total
+    }
 
     /** Pixels above [threshold] alpha in the columns [left, right) — the bubbles, once the glow has faded below it. */
     private fun inkAbove(alphas: IntArray, threshold: Float, left: Int, right: Int): Int {

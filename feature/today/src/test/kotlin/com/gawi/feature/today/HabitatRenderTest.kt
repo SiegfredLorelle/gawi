@@ -51,6 +51,41 @@ class HabitatRenderTest {
         assertEquals(0, inkIn(regenerating, IntRect(0, 0, WIDTH, HEIGHT), BUBBLE))
     }
 
+    /**
+     * The two things a regenerating frame does to the weeds, and both are
+     * relations over colours *this test hands in*: `HabitatColours` is the
+     * test's own, so asserting which of the two appears says the drained
+     * colour is the one drawn, not that the palette holds some literal.
+     *
+     * Without this, ignoring `frame.drained` and `frame.droop` in `drawHabitat`
+     * leaves every other case here green — the survivors draw CONTENT, where
+     * both are zero. Measured.
+     */
+    @Test
+    fun `regenerating greys the weeds and leans them outward`() {
+        val whole = IntRect(0, 0, WIDTH, HEIGHT)
+        val full = render(Mood.CONTENT)
+        val drained = render(Mood.REGENERATING)
+        assertEquals(0, inkIn(drained, whole, WEED))
+        assertTrue(inkIn(drained, whole, WEED_DRAINED) > MIN_INK)
+        // Leaning outward, the left weeds no longer reach as high.
+        fun top(p: IntArray) = (0 until HEIGHT).first { y -> (0 until WIDTH / 4).any { x -> pixel(p, x, y) != 0 } }
+        assertTrue(top(drained) > top(full))
+    }
+
+    /** Half way through the change the weeds are between both leans, and in neither pure colour. */
+    @Test
+    fun `half way through a change the weeds are between both leans`() {
+        val from = HabitatFrame.at(Mood.CONTENT, 0f)
+        val to = HabitatFrame.at(Mood.REGENERATING, 0f)
+        val mid = render(HabitatFrame.between(from, to, 0.5f))
+        val whole = IntRect(0, 0, WIDTH, HEIGHT)
+        assertNotEquals(render(Mood.CONTENT).toList(), mid.toList())
+        assertNotEquals(render(Mood.REGENERATING).toList(), mid.toList())
+        assertEquals(0, inkIn(mid, whole, WEED))
+        assertEquals(0, inkIn(mid, whole, WEED_DRAINED))
+    }
+
     @Test
     fun `the resting frame is deterministic and the clock moves it`() {
         assertArrayEquals(render(Mood.CONTENT), render(Mood.CONTENT))
