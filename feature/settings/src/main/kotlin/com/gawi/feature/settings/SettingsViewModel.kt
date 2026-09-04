@@ -158,8 +158,8 @@ internal class SettingsViewModel @Inject constructor(
      * cutoff. `reminderOn`'s KDoc has always said that combination resolves to the
      * logical day's *start* rather than its end, and that *"a settings screen
      * offering the two as one control is where the combination should be
-     * prevented"*. Nothing prevents it, and with a notification behind the same
-     * threshold it becomes a *"N of N left today"* posted at the top of every
+     * prevented"*. The store does not prevent it, and with a notification behind
+     * the same threshold it becomes a *"N of N left today"* posted at the top of every
      * logical day, which also consumes that day's one reminder, so the evening
      * is silent too. `ReminderCheck` refuses to act on such a value; this is
      * what stops one being stored.
