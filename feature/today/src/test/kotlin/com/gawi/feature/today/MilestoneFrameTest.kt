@@ -1,6 +1,7 @@
 package com.gawi.feature.today
 
 import com.gawi.core.domain.model.HabitId
+import com.gawi.core.domain.testing.habitId
 import com.gawi.core.ui.streak.StreakUi
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -119,7 +120,7 @@ class MilestoneFrameTest {
     private companion object {
         val READ =
             HabitRowUi(
-                HabitId("00000000-0000-7000-8000-000000000001"),
+                habitId(1),
                 "read",
                 "R",
                 null,
@@ -129,7 +130,7 @@ class MilestoneFrameTest {
             )
         val WALK =
             HabitRowUi(
-                HabitId("00000000-0000-7000-8000-000000000002"),
+                habitId(2),
                 "walk",
                 "W",
                 null,
@@ -139,7 +140,7 @@ class MilestoneFrameTest {
             )
         val NEW =
             HabitRowUi(
-                HabitId("00000000-0000-7000-8000-000000000003"),
+                habitId(3),
                 "new",
                 "N",
                 null,

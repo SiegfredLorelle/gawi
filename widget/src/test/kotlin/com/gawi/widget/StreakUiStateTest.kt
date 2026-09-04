@@ -6,6 +6,8 @@ import com.gawi.core.domain.model.Schedule
 import com.gawi.core.domain.streak.StreakSnapshot
 import com.gawi.core.domain.testing.habitId
 import com.gawi.core.testing.FIXED_DATE
+import com.gawi.core.testing.broken
+import com.gawi.core.testing.running
 import com.gawi.core.testing.todayHabit
 import com.gawi.core.testing.todaySnapshot
 import com.gawi.core.ui.streak.StreakUi
@@ -32,8 +34,8 @@ class StreakUiStateTest {
     fun `a daily habit's run is counted in days and a weekly one in weeks`() {
         val state = todaySnapshot(
             habits = listOf(
-                todayHabit(id = habitId(1), name = "read", schedule = daily, streak = run(4)),
-                todayHabit(id = habitId(2), name = "gym", schedule = weekly, streak = run(4)),
+                todayHabit(id = habitId(1), name = "read", schedule = daily, streak = running(4)),
+                todayHabit(id = habitId(2), name = "gym", schedule = weekly, streak = running(4)),
             ),
         ).toStreakState()
 
@@ -50,8 +52,8 @@ class StreakUiStateTest {
     fun `the same count in different units is not the same streak`() {
         val state = todaySnapshot(
             habits = listOf(
-                todayHabit(id = habitId(1), schedule = daily, streak = run(3)),
-                todayHabit(id = habitId(2), schedule = weekly, streak = run(3)),
+                todayHabit(id = habitId(1), schedule = daily, streak = running(3)),
+                todayHabit(id = habitId(2), schedule = weekly, streak = running(3)),
             ),
         ).toStreakState()
 
@@ -76,9 +78,9 @@ class StreakUiStateTest {
     fun `rows keep query order even when that is not descending`() {
         val state = todaySnapshot(
             habits = listOf(
-                todayHabit(id = habitId(1), name = "small", streak = run(1)),
-                todayHabit(id = habitId(2), name = "big", streak = run(40)),
-                todayHabit(id = habitId(3), name = "middling", streak = run(7)),
+                todayHabit(id = habitId(1), name = "small", streak = running(1)),
+                todayHabit(id = habitId(2), name = "big", streak = running(40)),
+                todayHabit(id = habitId(3), name = "middling", streak = running(7)),
             ),
         ).toStreakState()
 
@@ -189,12 +191,8 @@ class StreakUiStateTest {
         return (body as StreakBodyContent.Rows).layout
     }
 
-    private fun run(count: Int) = StreakSnapshot(current = count, previous = 0, brokenOn = null)
-
     private companion object {
         /** The device default, spelled out where a test is not about font scaling. */
         const val SCALE_1 = 1f
     }
-
-    private fun broken(previous: Int) = StreakSnapshot(current = 0, previous = previous, brokenOn = FIXED_DATE.minusDays(2))
 }

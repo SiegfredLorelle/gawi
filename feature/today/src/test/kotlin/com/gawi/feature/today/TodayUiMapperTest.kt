@@ -5,6 +5,8 @@ import com.gawi.core.domain.model.Schedule
 import com.gawi.core.domain.streak.StreakSnapshot
 import com.gawi.core.domain.testing.habitId
 import com.gawi.core.testing.FIXED_DATE
+import com.gawi.core.testing.broken
+import com.gawi.core.testing.running
 import com.gawi.core.testing.todayHabit
 import com.gawi.core.testing.todaySnapshot
 import com.gawi.core.ui.streak.StreakUi
@@ -19,13 +21,14 @@ class TodayUiMapperTest {
     private val daily = Schedule.Daily
     private val weekly = Schedule.Weekly(3)
 
-    private fun brokeOn(day: LocalDate) = StreakSnapshot(current = 0, previous = 4, brokenOn = day)
+    /** A run of four lost on [day] — the shared builder, named for what these tests vary. */
+    private fun brokeOn(day: LocalDate) = broken(previous = 4, brokenOn = day)
 
     @Test
     fun `an unfinished day still shows its live streak`() {
         // §5: a row unchecked at 09:00 must not read 0. An unfinished current
         // day has not broken the streak, it has only not extended it.
-        val row = todayHabit(completedToday = false, streak = StreakSnapshot(current = 4, previous = 0, brokenOn = null))
+        val row = todayHabit(completedToday = false, streak = running(4))
         assertEquals(StreakUi.Days(4), row.toRowUi().streak)
     }
 

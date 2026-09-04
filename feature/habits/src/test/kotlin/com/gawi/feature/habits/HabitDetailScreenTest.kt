@@ -23,6 +23,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.dp
 import com.gawi.core.domain.model.HabitId
+import com.gawi.core.domain.testing.habitId
 import com.gawi.core.testing.FIXED_DATE
 import com.gawi.core.ui.date.weekdayLetter
 import com.gawi.core.ui.streak.StreakUi
@@ -505,8 +506,8 @@ class HabitDetailScreenTest {
     }
 
     private companion object {
-        val HABIT = HabitId("00000000-0000-7000-8000-000000000001")
-        val OTHER = HabitId("00000000-0000-7000-8000-000000000002")
+        val HABIT = habitId(1)
+        val OTHER = habitId(2)
 
         val NO_ACTIONS = HabitDetailActions(
             onEdit = {},

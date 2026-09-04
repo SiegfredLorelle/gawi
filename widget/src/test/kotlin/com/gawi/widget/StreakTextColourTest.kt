@@ -8,6 +8,8 @@ import com.gawi.core.domain.model.Schedule
 import com.gawi.core.domain.streak.StreakSnapshot
 import com.gawi.core.domain.testing.habitId
 import com.gawi.core.testing.FIXED_DATE
+import com.gawi.core.testing.broken
+import com.gawi.core.testing.running
 import com.gawi.core.testing.todayHabit
 import com.gawi.core.testing.todaySnapshot
 import com.gawi.widget.testsupport.RenderProbe
@@ -81,7 +83,7 @@ abstract class StreakTextColourContract {
      */
     @Test
     fun `the as-of line is legible`() = runGlanceAppWidgetUnitTest(RENDER_TIMEOUT) {
-        val single = todaySnapshot(habits = listOf(todayHabit(name = "read", streak = run(3))))
+        val single = todaySnapshot(habits = listOf(todayHabit(name = "read", streak = running(3))))
         val probe = renderWithProbe(COMPACT, single.toStreakState())
 
         // A name, a numeral, and the date.
@@ -107,16 +109,12 @@ abstract class StreakTextColourContract {
 
     private fun mixedRows(): StreakUiState = todaySnapshot(
         habits = listOf(
-            todayHabit(id = habitId(1), name = "read", streak = run(12)),
-            todayHabit(id = habitId(2), name = "gym", schedule = Schedule.Weekly(timesPerWeek = 3), streak = run(3)),
+            todayHabit(id = habitId(1), name = "read", streak = running(12)),
+            todayHabit(id = habitId(2), name = "gym", schedule = Schedule.Weekly(timesPerWeek = 3), streak = running(3)),
             todayHabit(id = habitId(3), name = "stretch", streak = broken(9)),
             todayHabit(id = habitId(4), name = "sketch", streak = StreakSnapshot.NONE),
         ),
     ).toStreakState()
-
-    private fun run(count: Int) = StreakSnapshot(current = count, previous = 0, brokenOn = null)
-
-    private fun broken(previous: Int) = StreakSnapshot(current = 0, previous = previous, brokenOn = FIXED_DATE.minusDays(2))
 }
 
 /**

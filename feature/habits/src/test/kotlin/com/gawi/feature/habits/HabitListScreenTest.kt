@@ -11,6 +11,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.gawi.core.domain.model.HabitId
+import com.gawi.core.domain.testing.habitId
 import com.gawi.core.ui.theme.GawiTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -248,7 +249,7 @@ class HabitListScreenTest {
 
         /** Daily and active. */
         val READ = HabitListRowUi(
-            id = HabitId("00000000-0000-7000-8000-000000000001"),
+            id = habitId(1),
             name = "read",
             icon = "📖",
             iconTint = null,
@@ -258,7 +259,7 @@ class HabitListScreenTest {
 
         /** Weekly and active, so the schedule line has both forms to tell apart. */
         val SWIM = HabitListRowUi(
-            id = HabitId("00000000-0000-7000-8000-000000000002"),
+            id = habitId(2),
             name = "swim",
             icon = "🏃",
             iconTint = null,
@@ -268,7 +269,7 @@ class HabitListScreenTest {
 
         /** Archived, and the only row that is. */
         val OLD = HabitListRowUi(
-            id = HabitId("00000000-0000-7000-8000-000000000003"),
+            id = habitId(3),
             name = "journal",
             icon = "✍️",
             iconTint = null,
