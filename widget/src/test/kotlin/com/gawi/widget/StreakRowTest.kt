@@ -9,6 +9,7 @@ import com.gawi.core.domain.model.Schedule
 import com.gawi.core.domain.streak.StreakSnapshot
 import com.gawi.core.domain.testing.habitId
 import com.gawi.core.testing.FIXED_DATE
+import com.gawi.core.testing.running
 import com.gawi.core.testing.todayHabit
 import com.gawi.core.testing.todaySnapshot
 import com.gawi.widget.testsupport.anyText
@@ -31,8 +32,8 @@ class StreakRowTest {
 
     private val snapshot = todaySnapshot(
         habits = listOf(
-            todayHabit(id = habitId(1), name = "read", streak = run(12)),
-            todayHabit(id = habitId(2), name = "gym", schedule = Schedule.Weekly(timesPerWeek = 3), streak = run(3)),
+            todayHabit(id = habitId(1), name = "read", streak = running(12)),
+            todayHabit(id = habitId(2), name = "gym", schedule = Schedule.Weekly(timesPerWeek = 3), streak = running(3)),
         ),
     )
 
@@ -62,7 +63,7 @@ class StreakRowTest {
     /** Even with more rows than fit, so the pinned footer is what is being checked. */
     @Test
     fun `the date survives more rows than the widget can show`() {
-        val many = todaySnapshot(habits = (1..12).map { todayHabit(id = habitId(it), name = "habit $it", streak = run(it)) })
+        val many = todaySnapshot(habits = (1..12).map { todayHabit(id = habitId(it), name = "habit $it", streak = running(it)) })
         val expected = "as of " + formatAsOf(FIXED_DATE, RuntimeEnvironment.getApplication().resources.configuration.locales[0])
         render(COMPACT, many.toStreakState()) { onAllNodes(hasContentDescription(expected)).assertCountEquals(1) }
     }
@@ -110,8 +111,6 @@ class StreakRowTest {
             awaitIdle()
             block()
         }
-
-    private fun run(count: Int) = StreakSnapshot(current = count, previous = 0, brokenOn = null)
 }
 
 /** Aligned with the module's other render tests: Robolectric's first case is slow under load. */

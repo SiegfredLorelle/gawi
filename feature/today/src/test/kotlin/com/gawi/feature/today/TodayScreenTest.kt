@@ -157,7 +157,7 @@ class TodayScreenTest {
         val rows = listOf(
             READ.copy(streak = StreakUi.Days(3)),
             WALK.copy(streak = StreakUi.Weeks(1)),
-            WALK.copy(id = HabitId("00000000-0000-7000-8000-000000000003"), name = "stretch", streak = StreakUi.Days(1)),
+            WALK.copy(id = habitId(3), name = "stretch", streak = StreakUi.Days(1)),
         )
         compose.setContent { GawiTheme { TodayScreen(HABITS.copy(rows = rows), NO_ACTIONS, SnackbarHostState()) } }
         compose.onNode(hasScrollAction()).performScrollToNode(hasText("stretch"))
@@ -873,7 +873,7 @@ class TodayScreenTest {
 
         /** Completed, so a tap on it must report `true`. */
         val READ = HabitRowUi(
-            id = HabitId("00000000-0000-7000-8000-000000000001"),
+            id = habitId(1),
             name = "read",
             icon = "R",
             iconTint = null,
@@ -884,7 +884,7 @@ class TodayScreenTest {
 
         /** Outstanding, and the row the tap test clicks. */
         val WALK = HabitRowUi(
-            id = HabitId("00000000-0000-7000-8000-000000000002"),
+            id = habitId(2),
             name = "walk",
             icon = "W",
             iconTint = null,

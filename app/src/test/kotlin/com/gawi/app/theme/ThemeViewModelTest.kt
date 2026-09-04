@@ -4,18 +4,14 @@ import android.app.UiModeManager
 import com.gawi.core.data.settings.SettingsSource
 import com.gawi.core.data.settings.ThemeMode
 import com.gawi.core.data.settings.UserSettings
-import kotlinx.coroutines.Dispatchers
+import com.gawi.core.testing.MainDispatcherRule
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
-import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -46,11 +42,8 @@ class ThemeViewModelTest {
     private val appliedNightMode: Int
         get() = shadowOf(context.getSystemService(UiModeManager::class.java)).applicationNightMode
 
-    @Before
-    fun setMainDispatcher() = Dispatchers.setMain(UnconfinedTestDispatcher())
-
-    @After
-    fun resetMainDispatcher() = Dispatchers.resetMain()
+    @get:Rule
+    val mainDispatcher = MainDispatcherRule()
 
     @Test
     fun `the stored mode is what the app draws`() = runTest {
