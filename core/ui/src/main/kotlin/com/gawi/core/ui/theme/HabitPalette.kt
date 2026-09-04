@@ -29,8 +29,8 @@ object HabitPalette {
     /**
      * Uppercase and six digits, and **that is a rule about these values only** —
      * a convention that keeps what this object owns canonical, not something the
-     * editor's correctness rests on. It used to be the latter, and the editor is
-     * better for no longer needing it: `ColorPicker` compares what two hexes
+     * editor's correctness rests on. The editor does not need it to be:
+     * `ColorPicker` compares what two hexes
      * *draw* rather than how they are spelled, so a value off the log that means
      * a palette colour is treated as one however it arrived.
      *

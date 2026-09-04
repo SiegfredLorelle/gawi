@@ -60,9 +60,9 @@ fun glyphColorOn(tint: Color, background: Color): Color =
 /**
  * Above this, a background is light enough to want dark text on it.
  *
- * **This is the crossover, not the midpoint, and the difference was a defect.**
- * It used to be `0.5f`, which is the middle of the luminance range and reads as
- * the obvious answer. It is not: WCAG contrast against black is
+ * **This is the crossover, not the midpoint.** `0.5f` is the middle of the
+ * luminance range and reads as the obvious answer. It is not the crossover:
+ * WCAG contrast against black is
  * `(L + 0.05) / 0.05` and against white is `1.05 / (L + 0.05)`, and those are
  * equal where `(L + 0.05)² = 0.0525` — that is, at `√0.0525 - 0.05`, the value
  * below. Black wins above it and white wins below it.

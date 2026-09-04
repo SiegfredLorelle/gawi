@@ -1,7 +1,7 @@
 // The whole file is timing and amplitude constants, transcribed from the motion
 // page that decided them (docs/ux/momo.md §3). Naming each — "the seconds a
 // content float takes" — would alias the table to invented words and put the
-// numbers a reviewer wants to compare one indirection further from the doc.
+// numbers a reader wants to compare one indirection further from the doc.
 // Narrowed to this file and MomoDrawing.kt, never widened in
 // config/detekt/detekt.yml, for the reason Color.kt gives.
 @file:Suppress("MagicNumber")
@@ -189,7 +189,7 @@ fun rememberMoodTransition(mood: Mood, animationsOn: Boolean): MoodTransitionSta
 
 /**
  * The per-mood timings, in seconds and design-space units (docs/ux/momo.md
- * §3). The values are the Momo Motion page's, approved 2026-08-25.
+ * §3). The values are the Momo Motion page's.
  */
 data class MomoMotion(
     /** One float cycle: down and back. The worried fidget reuses it. */

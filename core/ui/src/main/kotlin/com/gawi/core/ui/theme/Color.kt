@@ -188,11 +188,11 @@ internal val GawiDarkColors: ColorScheme = darkColorScheme(
  * Those surfaces have to draw the same colours from their own values, so the
  * only question is whether the second copy is derived or typed out again.
  *
- * **It used to be typed out again, and that was the debt.** `WidgetPalette`
- * held six literals of which only `surface` was pinned to its original, so
- * retuning `onSurface`, `primary` or `outline` here moved the app's checkboxes
- * and left the widget's glyph where it was, with every test in `:widget` still
- * green — docs/ux/visual-identity.md §7.4 named that as the widget set's debt
+ * **Typing it out again is the debt this avoids.** Six literals in
+ * `WidgetPalette` with only `surface` pinned to its original would mean
+ * retuning `onSurface`, `primary` or `outline` here moves the app's checkboxes
+ * and leaves the widget's glyph where it was, with every test in `:widget`
+ * still green — docs/ux/visual-identity.md §7.4 named that as the widget set's debt
  * to clear, and §2 claimed no mechanism could reduce the two copies to one.
  * A plain [Color] is not a theme, which is why one can: the widget now derives
  * its `ColorProvider`s from these values and holds no hex of its own.
@@ -222,8 +222,8 @@ enum class GawiRole {
     /**
      * A ground, not an ink: Momo's tank colour on a widget — the Momo widget's
      * whole background and the pill behind her face on the large Today body
-     * (docs/ux/widget.md §7). Added 2026-08-29; the first role in this list
-     * that nothing draws text *in*.
+     * (docs/ux/widget.md §7). The first role in this list that nothing draws
+     * text *in*.
      */
     PrimaryContainer,
 
@@ -251,8 +251,8 @@ enum class GawiRole {
  * Every *ink* role listed clears WCAG 4.5:1 against [GawiRole.Surface] in the
  * matching scheme, which is what makes deriving safe for text: light 16.59,
  * 7.63, 5.56, 7.36 and 5.18; dark 14.82, 8.32, 10.44, 7.34 and 5.31, in the
- * order the first five ink entries are declared. The three added 2026-08-29
- * are a ground, its ink and a fill: [GawiRole.OnPrimaryContainer] clears 4.5:1
+ * order the first five ink entries are declared. The last three are a ground,
+ * its ink and a fill: [GawiRole.OnPrimaryContainer] clears 4.5:1
  * on [GawiRole.PrimaryContainer] (light 10.10, dark 6.37) and
  * [GawiRole.OutlineVariant] sits 3:1 or more from [GawiRole.Primary] (light
  * 3.78, dark 6.34), which is the non-text floor for a pair of fills whose

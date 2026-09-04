@@ -13,12 +13,10 @@ import androidx.compose.ui.unit.dp
  * the few measurements the screens actually use, named where more than one
  * place needs to agree on them, and nothing inferred from them.
  *
- * **The type scale arrived on 2026-08-24 and this did not change with it**,
- * which resolves the "arrives with the type scale or not at all" this KDoc used
- * to end on — the answer was "not at all". [GawiTypography] moved the app to
- * Outfit and touched no dimension, deliberately: it changed the face and left
- * Material's metrics alone, so there was no new rhythm here for a spacing scale
- * to be derived from. Dimensions are still what §8 of
+ * **The type scale did not bring a spacing scale with it.** [GawiTypography]
+ * moves the app to Outfit and touches no dimension, deliberately: it changes
+ * the face and leaves Material's metrics alone, so there is no new rhythm here
+ * for a spacing scale to be derived from. Dimensions are still what §8 of
  * docs/ux/visual-identity.md says they are — not part of that brief.
  */
 object GawiSpacing {

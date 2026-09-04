@@ -10,11 +10,11 @@ import com.gawi.core.ui.R
  *
  * The drawn forms are each surface's own: a bare `3` on a Today row, `3w` over a
  * caption on habit detail. A screen reader cannot tell those apart, and TalkBack
- * 17 read a Today badge as *"1"*, *"7"* and *"1 w"* (docs/running.md §4,
- * 2026-09-02). The spoken form says the unit — *"3 days in a row"*, *"1 week in
+ * 17 reads a Today badge as *"1"*, *"7"* and *"1 w"* (docs/running.md §4).
+ * The spoken form says the unit — *"3 days in a row"*, *"1 week in
  * a row"*, *"Streak broken, was 12 days"* — and it is here rather than in either
- * feature because both draw it (AGENTS.md's `:core:ui` rule, caught at the
- * second copy this time rather than the third). The widget keeps its own
+ * feature because both draw it (AGENTS.md's `:core:ui` rule). The widget keeps
+ * its own
  * `spokenLabel`: its rows carry nothing but a name and a number, so *"7 days"*
  * is enough there and the phrase would be noise.
  *
