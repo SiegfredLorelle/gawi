@@ -67,8 +67,7 @@ internal sealed interface TodayUiState {
  * (docs/ux/today-view.md §1).
  *
  * A model rather than four more parameters, for the reason [HabitRowUi] gives:
- * `MascotPanel` was already at five and detekt's `LongParameterList` fires at
- * six. It is built at the call site rather than carried on [TodayUiState]
+ * `MascotPanel` is at five and detekt's `LongParameterList` fires at six. It is built at the call site rather than carried on [TodayUiState]
  * because [TodayUiState.Empty] has no rows to count and would carry two zeroes.
  */
 internal data class MascotUi(
