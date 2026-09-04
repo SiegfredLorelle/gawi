@@ -98,8 +98,8 @@ private fun RowScope.RetroCell(cell: RetroCellUi, onCell: (RetroCellUi) -> Unit,
             text = if (cell.completed) DONE_GLYPH else EMPTY_GLYPH,
             style = MaterialTheme.typography.labelLarge,
             // Three states rather than two, and `outline` is only the shut one.
-            // An unfinished open day used to share `outline` with a shut day, so
-            // the strike-through and the border carried that distinction alone —
+            // An unfinished open day sharing `outline` with a shut day leaves
+            // the strike-through and the border carrying that distinction alone —
             // and on today's filled cell `outline` measured 2.70:1 in dark mode,
             // because `outline` is Material's role for a *border* and this is
             // text. `onSurfaceVariant` is the role for recessive content, clears
@@ -114,10 +114,9 @@ private fun RowScope.RetroCell(cell: RetroCellUi, onCell: (RetroCellUi) -> Unit,
         // A note is otherwise invisible: it reaches the cell but only the sheet
         // reads it, so an annotated day looked exactly like a bare one and the
         // long-press had nothing advertising it. A text glyph rather than a
-        // drawn dot, like the tick above — but **not** for the reason this
-        // comment used to give. "No icon pack is a dependency" stopped being
-        // true on 2026-08-24, when :core:ui gained a vendored set
-        // (docs/ux/visual-identity.md §7.5). The reasons that survive it: these
+        // drawn dot, like the tick above — but **not** because no icon pack is
+        // a dependency: :core:ui carries a vendored set
+        // (docs/ux/visual-identity.md §7.5). The reasons that hold: these
         // three are state marks in a grid rather than pictures of an action,
         // they are sized by the type scale rather than by a 24dp box, and a
         // text node is what lets a test see the marker at all. Turning them
@@ -175,9 +174,9 @@ private fun Modifier.cellSurface(cell: RetroCellUi): Modifier {
  * gestures. The checkbox role and the toggle's own semantics are restated by
  * hand so what assistive technology hears does not change.
  *
- * `clearAndSetSemantics` rather than `semantics`, since 2026-09-02, and the
- * order of the two modifiers is load-bearing. On a device (TalkBack 17, Nothing
- * A059, docs/running.md §4) a merged node with a description was read as the
+ * `clearAndSetSemantics` rather than `semantics`, and the order of the two
+ * modifiers is load-bearing. On a device (TalkBack 17, Nothing A059,
+ * docs/running.md §4) a merged node with a description is read as the
  * description *and then* every child text — *"Day 30, not done. Mark done.
  * capital S. 30. Middle dot. Check box"* — so the four drawn texts are cleared
  * from the tree. Compose clears every semantics modifier *after* the clearing
