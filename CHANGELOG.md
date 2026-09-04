@@ -13,7 +13,7 @@ says what the next tag will be is [docs/prd.md](docs/prd.md) §5.
 Nothing yet. Next is the cleanup pass, then release signing, on the road to
 1.0.0 — the first tag with an installable build attached.
 
-## [0.2.0] — 2026-09-03
+## [0.2.0] — 2026-09-04
 
 Marks the tip of main once the release branch merged: 201 commits of work
 past `v0.1.0-alpha.1` (30 feat, 38 fix, 24 test, 7 refactor, 5 build, 2 style,
@@ -104,6 +104,5 @@ UUIDv7 ids, no network permission and Auto Backup off. The 30-day personal
 trial that was to close Phase 0 was waived the same day and Phase 1 started.
 
 [Unreleased]: https://github.com/SiegfredLorelle/gawi/compare/v0.2.0...HEAD
-[0.2.0]: https://github.com/SiegfredLorelle/gawi/compare/v0.1.0-alpha.1...v0.2.0
-[0.1.0-alpha.1]: https://github.com/SiegfredLorelle/gawi/compare/v0.0.1...v0.1.0-alpha.1
+[0.2.0]: https://github.com/SiegfredLorelle/gawi/releases/tag/v0.2.0
 [0.0.1]: https://github.com/SiegfredLorelle/gawi/releases/tag/v0.0.1
