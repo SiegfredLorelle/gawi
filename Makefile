@@ -48,11 +48,11 @@ fmt: ## Format the codebase
 # instead of at the end. Scripts and not Gradle tasks on purpose — see their
 # headers, and architecture §9.
 #
-# `:app:assembleDebug` is the only step here that packages. CI calls nothing but
-# `make`, and until 2026-09-02 none of fmt/lint/test merged a manifest, merged
-# resources or dexed anything, so a green run said nothing about whether the app
-# still built into an APK — a packaging regression waited for the next
-# `make run`. Debug and not release: release is unsigned and R8 is deferred
+# `:app:assembleDebug` is the only step here that packages, and CI calls nothing
+# but `make`. Without it nothing in fmt/lint/test merges a manifest, merges
+# resources or dexes anything, so a green run would say nothing about whether
+# the app still builds into an APK and a packaging regression would wait for the
+# next `make run`. Debug and not release: release is unsigned and R8 is deferred
 # (docs/running.md §3), so assembling it would prove nothing more.
 #
 # It is listed last for the reader, not the scheduler. Gradle takes command-line
