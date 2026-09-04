@@ -42,10 +42,10 @@ internal data class StreakRow(val name: String, val streak: StreakUi)
  * staleness is not bounded by the user doing nothing — on the one surface with no
  * live query. Dating it turns a possible lie into a stale-but-true reading.
  *
- * A date rather than a time, settled on the canvas 2026-08-29: the number only
- * changes at the day cutoff, so a fresh-looking clock time on a stale render
- * would claim a precision the value does not have. It would also be a fact about
- * the widget's last render rather than about the streak.
+ * A date rather than a time, settled on the canvas: the number only changes at
+ * the day cutoff, so a fresh-looking clock time on a stale render would claim a
+ * precision the value does not have. It would also be a fact about the widget's
+ * last render rather than about the streak.
  */
 internal data class StreakUiState(val rows: List<StreakRow>, val asOf: LocalDate)
 

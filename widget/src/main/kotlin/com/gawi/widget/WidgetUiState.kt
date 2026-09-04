@@ -68,8 +68,9 @@ internal sealed interface WidgetContent {
  *
  * This exists so the choice is a value rather than a branch inside a composable.
  * Which copy a broken database gets is exactly the kind of rule a later edit can
- * invert by accident — swapping two `Message` calls used to be a one-character
- * change no test could catch — and it is now decided in [body], which is tested.
+ * invert by accident — swapping two `Message` calls would otherwise be a
+ * one-character change no test could catch — so it is decided in [body], which
+ * is tested.
  */
 internal sealed interface WidgetBodyContent {
 
@@ -240,8 +241,8 @@ internal fun HabitRepository.widgetContent(): Flow<WidgetContent> = observeToday
  * it is identical for both providers: a widget cannot re-subscribe for itself, so
  * a bare `catch` would end collection for the life of the session. The *values*
  * differ — each provider has its own "unavailable" — which is what [failure] is.
- * Extracted 2026-08-29 with the streak widget rather than duplicated, so a change
- * to the retry policy cannot apply to one widget and not the other.
+ * A change to the retry policy therefore cannot apply to one widget and not the
+ * other.
  */
 internal fun <T> Flow<T>.retryThenFail(failure: T): Flow<T> = this
     .retryWhen { cause, attempt -> cause !is CancellationException && attempt < READ_RETRIES && delayThenRetry() }

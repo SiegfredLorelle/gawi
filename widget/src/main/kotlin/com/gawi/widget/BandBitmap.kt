@@ -25,13 +25,13 @@ import androidx.core.graphics.createBitmap
  * translation path — the property [WidgetPalette] exists for.
  *
  * **Direction is the caller's to resolve, and `mirrored` is where it arrives.**
- * Until 2026-08-30 nothing carried it: segments were placed from the left at any
- * N, so index 0 sat at the bitmap's left edge whether the host read one way or
- * the other — while the `Row` around the band *is* mirrored by the host. Seen on
- * a launcher (docs/running.md §4): the first row's glyph at the right edge with
- * its woven segment at the left, the band reading backwards against the rows it
- * repeats. `BandBitmapTest` stayed green throughout, because the geometry was
- * right and only the reading order was wrong.
+ * Without it, segments are placed from the left at any N, so index 0 sits at
+ * the bitmap's left edge whether the host reads one way or the other — while
+ * the `Row` around the band *is* mirrored by the host. Seen on a launcher
+ * (docs/running.md §4): the first row's glyph at the right edge with its woven
+ * segment at the left, the band reading backwards against the rows it repeats.
+ * The geometry is not what breaks, so `BandBitmapTest` stays green either way
+ * unless it asserts the reading order.
  *
  * Mirroring is about the bitmap's centre — each segment keeps its width and its
  * place in the pitch, so `left = widthPx - index · pitch - segment`. **Not**

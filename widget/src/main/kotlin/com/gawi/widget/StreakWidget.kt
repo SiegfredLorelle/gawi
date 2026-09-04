@@ -41,8 +41,8 @@ import java.time.LocalDate
  * decision.** A single headline streak has to rank habits, and the only ordering
  * available compares a count of days against a count of weeks — the comparison
  * `StreakUi` is a sealed type specifically to prevent. Showing each habit in its
- * own unit never has to answer it. Settled on the design canvas 2026-08-29 against
- * a drawn alternative; [toStreakState] carries why the rows are not sorted.
+ * own unit never has to answer it. Settled on the design canvas against a drawn
+ * alternative; [toStreakState] carries why the rows are not sorted.
  *
  * **Read-only, deliberately.** There is no tap target. A widget that wrote would
  * have to re-read the log first, because a stale drawn logical date writes a
