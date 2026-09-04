@@ -42,9 +42,6 @@ import java.time.LocalDate
  * Habits branch for why — and §1's chip is the part that survived: once the tank
  * has scrolled off, the app bar carries the mood and the remaining count in its
  * place — and the milestone line in the count's place for the length of a run.
- * That was deferred until the data path underneath this had run on a
- * device, because a scroll animation and a mood state machine on the same
- * unproven screen is the wrong thing to debug first. It has, on four.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,8 +55,8 @@ internal fun TodayScreen(state: TodayUiState, actions: TodayActions, snackbarHos
     // than on every frame of a scroll that does not change it.
     val chipVisible by remember { derivedStateOf { listState.firstVisibleItemIndex > 0 } }
     // Hoisted for the same reason as the list state, and one level higher. The
-    // celebration's memory has to outlive the mascot item,
-    // which is why it was never in the tank; it has to outlive the *branch* as
+    // celebration's memory has to outlive the mascot item, which is why it does
+    // not live in the tank; it has to outlive the *branch* as
     // well, because the chip in the bar above reads the milestone from it and
     // the bar is the list's sibling. `Loading` and `Unavailable` have no mood —
     // rememberCelebration says why the null matters rather than a stand-in.

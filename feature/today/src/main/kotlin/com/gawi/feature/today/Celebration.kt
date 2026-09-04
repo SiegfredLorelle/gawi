@@ -184,15 +184,15 @@ internal class CelebrationState {
  * the subscription, and says itself that recovery is the screen re-subscribing,
  * which emits `Habits` again. `TodayRoute` composes `TodayScreen` for every
  * state, so this object survives `Habits` to `Unavailable` and back with its
- * `previous` intact, and returning to a finished day celebrates. The old
- * per-branch state could not: `Unavailable` disposed `HabitList` and the motion
- * with it, so coming back was a first sighting.
+ * `previous` intact, and returning to a finished day celebrates. Per-branch
+ * state would not reach it: `Unavailable` disposes `HabitList` and the motion
+ * with it, so coming back is a first sighting.
  *
  * Left standing rather than reset. Either reading is defensible — the day may
  * have been finished by the very tick that raced the failure, in which case the
  * celebration is owed — and reaching it needs a Room, codec or settings failure
  * and then a recovery, which is not worth a forget-path on this class. Recorded
- * because the hoist changed it and nobody chose it.
+ * as a consequence of the hoist rather than as a choice.
  *
  * **A second path reaches the same replay without touching the null at all.**
  * `Empty` has a mood: `Mascot.mood` answers `CONTENT` for a list with nothing
@@ -200,8 +200,8 @@ internal class CelebrationState {
  * and the first `Habits` mood after it is judged against `CONTENT`. When that
  * mood is `THRIVING` — one live habit, not outstanding today, a Mon/Wed/Fri
  * habit seen on a Tuesday — `celebrates` fires the day's celebration for a day
- * on which nothing was ticked. The per-branch state could not do this either:
- * `Empty` built its own motion, so crossing into `Habits` was a first sighting.
+ * on which nothing was ticked. Per-branch state would not reach this either:
+ * `Empty` builds its own motion, so crossing into `Habits` is a first sighting.
  *
  * Nothing reaches it today, and that is navigation's doing rather than this
  * class's. Every way a habit can appear leaves the screen first — `onAddHabit`

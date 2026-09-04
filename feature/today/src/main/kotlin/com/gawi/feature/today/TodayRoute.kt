@@ -18,11 +18,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
  * surface — and why `:core:ui` can still be an implementation dependency here.
  * What this screen reports is what happened to it; `:app` decides where it goes.
  *
- * `hiltViewModel()` rather than `viewModel()`. The two resolved the same factory
- * while this was the only screen and the store owner was the `@AndroidEntryPoint`
- * activity. With a back stack the owner is the destination instead, which is the
- * one case where they differ — and scoping the ViewModel to the destination is
- * what stops it outliving the screen it belongs to.
+ * `hiltViewModel()` rather than `viewModel()`. With a back stack the store owner
+ * is the destination rather than the `@AndroidEntryPoint` activity, which is the
+ * one case where the two resolve different factories — and scoping the ViewModel
+ * to the destination is what stops it outliving the screen it belongs to.
  */
 @Composable
 fun TodayRoute(onAddHabit: () -> Unit, onManageHabits: () -> Unit, onOpenInsights: () -> Unit, onOpenSettings: () -> Unit) {
