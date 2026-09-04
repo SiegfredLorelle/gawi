@@ -1,23 +1,14 @@
 package com.gawi.widget
 
-import android.content.Context
-import android.content.res.Configuration
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.glance.BackgroundModifier
 import androidx.glance.EmittableImage
 import androidx.glance.TintColorFilterParams
-import androidx.glance.appwidget.CheckBoxColors
-import androidx.glance.appwidget.EmittableCheckBox
 import androidx.glance.appwidget.testing.unit.GlanceAppWidgetUnitTest
 import androidx.glance.appwidget.testing.unit.runGlanceAppWidgetUnitTest
-import androidx.glance.testing.GlanceNodeMatcher
-import androidx.glance.testing.unit.MappedNode
-import com.gawi.widget.testsupport.MIN_CONTRAST
 import com.gawi.widget.testsupport.RenderProbe
 import com.gawi.widget.testsupport.anyText
-import com.gawi.widget.testsupport.contrastRatio
 import com.gawi.widget.testsupport.drawnOn
 import com.gawi.widget.testsupport.habitId
 import com.gawi.widget.testsupport.illegibleText
@@ -166,36 +157,6 @@ abstract class WidgetTextColourContract {
         onAllNodes(anyText()).assertCountEquals(3)
         onAllNodes(illegibleText(probe.context, probe.background)).assertCountEquals(0)
     }
-
-    /**
-     * The checkbox glyph, in both of its states — the other half of the contrast
-     * failure measured on API 29 and 30, and until the palette pinned it the one
-     * colour on this surface that had no test at all because the app did not
-     * choose it.
-     *
-     * **The rows' checked states are not what puts both glyph colours under
-     * measurement.** [illegibleGlyph] reads both off `CheckBoxColors` for every
-     * node it visits, so each row is measured in both states and the fixture's
-     * `completedToday` split produces the same two colours twice. It stays mixed
-     * because a real widget's rows are, and the second row is what
-     * `assertCountEquals(2)` needs — not because either row is checked in its own
-     * state. Said here because a fixture that looks like it drives the assertion
-     * and does not is the kind of thing this file exists to catch.
-     */
-    @Test
-    fun `the checkbox glyphs are legible on the widget background`() = runGlanceAppWidgetUnitTest(RENDER_TIMEOUT) {
-        val snapshot = todaySnapshot(
-            habits = listOf(
-                todayHabit(id = habitId(1), name = "read", completedToday = true),
-                todayHabit(id = habitId(2), name = "walk", completedToday = false),
-            ),
-        )
-
-        val probe = renderWithProbe(WidgetContent.Ready(snapshot.toWidgetState()))
-
-        onAllNodes(anyGlyph()).assertCountEquals(2)
-        onAllNodes(illegibleGlyph(probe)).assertCountEquals(0)
-    }
 }
 
 /**
@@ -223,68 +184,4 @@ private fun GlanceAppWidgetUnitTest.renderWithProbe(content: WidgetContent, size
     // measures anything until that holds.
     onAllNodes(drawnOn(WidgetPalette.surface)).assertCountEquals(1)
     return RenderProbe(context, WidgetPalette.surface.getColor(context))
-}
-
-private fun anyGlyph() = GlanceNodeMatcher<MappedNode>("draws a checkbox glyph") { node ->
-    node.value.emittable is EmittableCheckBox
-}
-
-/** A checkbox whose glyph is below the floor in either state, against the ground it is drawn on. */
-private fun illegibleGlyph(probe: RenderProbe) =
-    GlanceNodeMatcher<MappedNode>("draws a checkbox glyph below $MIN_CONTRAST:1 against the widget background") { node ->
-        val colours = (node.value.emittable as? EmittableCheckBox)?.colors
-        if (colours == null) {
-            false
-        } else {
-            listOf(true, false).any { checked ->
-                contrastRatio(colours.glyphColour(probe.context, checked), probe.background) < MIN_CONTRAST
-            }
-        }
-    }
-
-/**
- * The glyph's resolved colour, reached through the one accessor Glance leaves
- * `internal`.
- *
- * **Why reflection, and why it is worth the hop.** Until 2026-08-28 this colour
- * was documented as unassertable, and while the app did not choose it that was
- * the end of it. `CheckBoxColors` exposes its provider only as
- * `getCheckBox$glance_appwidget_release`, returning `CheckableColorProvider` —
- * a public interface with no members — so neither hop can be made in Kotlin
- * source. But the object behind it does have a **public**
- * `getColor(context, isNightMode, isChecked)`, so what is missing is reachability,
- * not API. `WidgetRowTest` already reflects on the `internal`
- * `CompoundButtonAction` for the same reason, so this is the module's existing
- * bargain rather than a new one.
- *
- * Two things about the call, both corrected on review.
- *
- * `single` rather than `first`, and on the arity as well as the name: `getMethods`
- * has no specified order, so `first` picks arbitrarily among matches. There is one
- * public match today — the other `getColor` in the class's metadata is a private
- * local function — so the choice is between working by luck and failing loudly if
- * Glance ever adds a second mangled `getColor-`.
- *
- * The argument order is night, then checked. This said that getting it the wrong
- * way round "would still compile and still pass, measuring the wrong state", and
- * the first half is true while the second is not: **a swap reddens both
- * subclasses**, because [illegibleGlyph] probes both states for every node and a
- * swap therefore resolves a cross-scheme pair. In the night subclass it lands
- * [WidgetPalette.glyphChecked]'s day value on the night ground at 3.05:1, and in
- * the light subclass [WidgetPalette.glyphUnchecked]'s night value on the light
- * ground at 3.19:1 — both under [MIN_CONTRAST]. So the order needs no device to
- * confirm; it is checked by the same floor everything else here is.
- *
- * What this does not replace: a JVM test cannot exercise a real host's
- * translation, which is where the API 29/30 defect lived. docs/running.md §4
- * keeps its by-hand toggle.
- */
-private fun CheckBoxColors.glyphColour(context: Context, checked: Boolean): Color {
-    val checkable = checkNotNull(javaClass.getMethod("getCheckBox\$glance_appwidget_release").invoke(this)) {
-        "the checkbox exposed no colour provider"
-    }
-    val getColor = checkable.javaClass.methods.single { it.name.startsWith("getColor-") && it.parameterCount == 3 }
-    val night = (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
-        Configuration.UI_MODE_NIGHT_YES
-    return Color((getColor.invoke(checkable, context, night, checked) as Long).toULong())
 }

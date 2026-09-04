@@ -19,10 +19,13 @@ import org.robolectric.RuntimeEnvironment
  * [WidgetPalette] is legible in both schemes, and is genuinely two schemes.
  *
  * **Why this exists next to `WidgetTextColourTest`.** That test measures what the
- * widget draws, and since 2026-08-28 it reaches the checkbox glyph too. This one
- * measures the palette the widget draws *from*, independent of any tree — so a
- * colour is covered here even in a state no render test happens to compose, and
- * the polarity check below has nothing to do with drawing at all.
+ * widget draws. This one measures the palette the widget draws *from*,
+ * independent of any tree — so a colour is covered here even in a state no
+ * render test composes, and the polarity check below has nothing to do with
+ * drawing at all. The checkbox glyphs are covered only here: Glance exposes a
+ * `CheckBoxColors`' providers through an `internal` accessor, so what the tree
+ * drew them with is not readable without reflection, and the device box in
+ * docs/running.md §4 is what confirms the drawn glyph.
  *
  * Grown with the streak widget on 2026-08-29: `caption`, `streakWeeks` and the
  * two names that share a role with the checkbox glyphs. `streakWeeks` matters

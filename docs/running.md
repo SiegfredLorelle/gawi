@@ -894,11 +894,11 @@ Decisions and reasoning are in [docs/ux/widget.md](ux/widget.md).
       (checked) from Glance's own selector — and this check is what caught the
       consequence: on API 29 it resolved to the platform accent and sat at
       2.91:1 against a background this app picked, freshly rendered. The app
-      chooses it now, from `WidgetPalette`, and a JVM test does see it after all
-      (`WidgetTextColourTest` measures both states in both themes, via the one
-      reflective hop `TodayWidget.kt` explains). Confirm by eye anyway that both
-      states stand out: what no JVM test can reach is how a real launcher
-      translates the colour, which is where the defect lived.
+      chooses it now, from `WidgetPalette`, and `WidgetPaletteTest` holds both
+      states in both themes to the 4.5:1 floor. Confirm by eye that both states
+      stand out: no JVM test reads what the tree drew the glyph with, and none
+      can see how a real launcher translates the colour, which is where the
+      defect lived.
       **Unticked on purpose, and here is the split.** The emulator half has run
       twice — 2026-08-28 on API 29 and 30, by eye and by sampling the rendered
       pixels — and it is what found the 2.91:1 glyph above. What the tick waits

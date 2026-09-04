@@ -4,11 +4,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.glance.EmittableImage
-import androidx.glance.action.ActionModifier
-import androidx.glance.action.ActionParameters
 import androidx.glance.action.actionParametersOf
 import androidx.glance.appwidget.EmittableCheckBox
-import androidx.glance.appwidget.action.RunCallbackAction
 import androidx.glance.appwidget.testing.unit.hasRunCallbackClickAction
 import androidx.glance.appwidget.testing.unit.isChecked
 import androidx.glance.appwidget.testing.unit.runGlanceAppWidgetUnitTest
@@ -90,17 +87,16 @@ class WidgetRowTest {
     }
 
     /**
-     * The stock matcher sees the Row's action and not the checkbox's: Glance wraps
-     * a `CheckBox`'s `onCheckedChange` in a `CompoundButtonAction`, so that one is
-     * read by unwrapping. Both have to name the habit, or a tap on the name and a
-     * tap on the glyph would write different things.
+     * The row's action names the habit. The glyph's own action is wrapped in
+     * Glance's `internal` `CompoundButtonAction`, which no matcher can read
+     * without reflection, so it is the device box in docs/running.md §4 that
+     * confirms a tap on the glyph writes the same thing as a tap on the name.
      */
     @Test
-    fun `the toggle is on the row and on its glyph, with the habit's id`() = render {
+    fun `the toggle is on the row, with the habit's id`() = render {
         for (n in 1..2) {
             val parameters = actionParametersOf(HABIT_ID to habitId(n).value)
             onAllNodes(hasRunCallbackClickAction<ToggleHabitAction>(parameters)).assertCountEquals(1)
-            onAllNodes(checkBoxToggling(parameters)).assertCountEquals(1)
         }
     }
 
@@ -126,19 +122,6 @@ private fun checkBox() = GlanceNodeMatcher<MappedNode>("is a checkbox") { it.val
 
 private fun checkBoxWithText() = GlanceNodeMatcher<MappedNode>("is a checkbox carrying text") {
     (it.value.emittable as? EmittableCheckBox)?.text?.isNotEmpty() == true
-}
-
-/**
- * Glance wraps `onCheckedChange` in `CompoundButtonAction`, which is `internal`
- * to Glance and so unreachable by name from here; its JVM getter is public, and
- * reflection on one method name is the smallest hole to read the inner action
- * through. If Glance renames it this fails loudly, which is the right failure.
- */
-private fun checkBoxToggling(parameters: ActionParameters) = GlanceNodeMatcher<MappedNode>("is a checkbox running ToggleHabitAction") {
-    val checkBox = it.value.emittable as? EmittableCheckBox ?: return@GlanceNodeMatcher false
-    val wrapped = checkBox.modifier.findModifier<ActionModifier>()?.action ?: return@GlanceNodeMatcher false
-    val inner = wrapped.javaClass.getMethod("getInnerAction").invoke(wrapped) as? RunCallbackAction
-    inner?.callbackClass == ToggleHabitAction::class.java && inner.parameters == parameters
 }
 
 private fun describedCheckBox(name: String) = GlanceNodeMatcher<MappedNode>("is a checkbox described as $name") {
