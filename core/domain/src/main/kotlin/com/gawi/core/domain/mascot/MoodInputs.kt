@@ -19,14 +19,13 @@ import java.time.LocalTime
  * job — this module has no business holding display text.
  *
  * docs/ux/today-view.md §4 describes the mood as a function of "the projected
- * state", which was written before the read model existed. Taking that
- * literally now would mean re-deriving every habit's streak and week count
- * inside the mood function, duplicating work the data layer has already done
- * and cached — and it would put the function out of reach of the UI, which
- * holds rows and not a `ProjectedState`. So the input is this row instead,
- * which the data layer's `TodayHabit` maps onto field for field with no
- * recomputation. It is still a pure function of a projection of the projected
- * state.
+ * state", and this row is that function's input rather than the state itself.
+ * Taking §4 literally would mean re-deriving every habit's streak and week
+ * count inside the mood function, duplicating work the data layer has already
+ * done and cached — and it would put the function out of reach of the UI, which
+ * holds rows and not a `ProjectedState`. The data layer's `TodayHabit` maps
+ * onto this field for field with no recomputation, so it is still a pure
+ * function of a projection of the projected state.
  *
  * [archived] is carried rather than assumed. Rule 0 of the precedence table is
  * about non-archived habits, and enforcing that here is what stops a caller
