@@ -289,9 +289,9 @@ letting one reset the 30-day warning would silence it for a month on the
 strength of a file that would be no use — the exact failure §8's rule about
 resolving towards nudging exists to prevent. That is enforced where it cannot be
 forgotten rather than remembered: the CSV archive is **not given the journal at
-all**, which `CompletionCsvArchiveWiringTest` asserts against the constructor,
-and `csvHelp` takes no `ExportRecency`, so the row has no way to show a nudge
-even by accident.
+all** — it has no constructor parameter that could stamp one — and `csvHelp`
+takes no `ExportRecency`, so the row has no way to show a nudge even by
+accident. `SettingsDataViewModelTest` asserts the consequence.
 
 **A UTF-8 byte order mark is written, and the import path strips one.** The two
 directions disagree about the same three bytes and that is deliberate. Excel
