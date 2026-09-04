@@ -290,9 +290,8 @@ private fun HabitHeader(state: HabitDetailUiState.Detail) {
  * in a row"*, *"Streak broken, was 4 weeks"* — because the drawn `3w` and
  * `was 4w` read as "3 w" on TalkBack 17, and the broken form is three stops
  * (docs/running.md §4). `clearAndSetSemantics`, so the texts are drawn and not
- * read
- * after the description. The no-completions line is already words and keeps
- * its text.
+ * read after the description. The no-completions line is already words and
+ * keeps its text.
  */
 @Composable
 private fun StreakPanel(streak: StreakUi, modifier: Modifier = Modifier) {

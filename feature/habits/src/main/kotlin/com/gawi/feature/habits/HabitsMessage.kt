@@ -22,9 +22,9 @@ internal data class HabitsMessage(@StringRes val text: Int)
  *
  * All six are reachable since habit detail's retro strip landed. `BlankName`
  * comes from create and update and `HabitNotFound` from update, archive and
- * unarchive; the other four are completion errors, which the retro strip is
- * what makes reachable. The `when` is exhaustive rather than defaulted
- * so that adding a seventh error is a compile error and not a silent fallback.
+ * unarchive; the other four are completion errors, reachable through the retro
+ * strip. The `when` is exhaustive rather than defaulted so that adding a
+ * seventh error is a compile error and not a silent fallback.
  *
  * `RetroWindowExceeded` should be unreachable *in practice* rather than in
  * principle: the strip draws the day outside the window shut and gives it no

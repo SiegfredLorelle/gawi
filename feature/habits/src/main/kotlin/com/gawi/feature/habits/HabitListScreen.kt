@@ -129,12 +129,12 @@ private fun HabitList(state: HabitListUiState.Habits, actions: HabitListActions,
  * **The button is named for its row** — "Archive Read", "Bring back Read" —
  * because Accessibility Scanner on a device lists fourteen buttons all
  * announcing *"Archive"* otherwise, seen on 2026-09-02 (docs/running.md §4).
- * The description is
- * `semantics`, not `clearAndSetSemantics`: `Button` adds its role and `Surface`
- * its click *after* the caller's modifier on the same node, and a clearing
- * modifier discards everything after it. The drawn word is cleared instead, so
- * it is not read a second time after the description, and the description
- * leads with it so the name a reader hears begins with the label they see.
+ * The description is `semantics`, not `clearAndSetSemantics`: `Button` adds its
+ * role and `Surface` its click *after* the caller's modifier on the same node,
+ * and a clearing modifier discards everything after it. The drawn word is
+ * cleared instead, so it is not read a second time after the description, and
+ * the description leads with it so the name a reader hears begins with the
+ * label they see.
  */
 @Composable
 private fun HabitManageRow(row: HabitListRowUi, actions: HabitListActions, modifier: Modifier = Modifier) {
