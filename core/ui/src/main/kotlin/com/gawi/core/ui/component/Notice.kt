@@ -18,8 +18,8 @@ import com.gawi.core.ui.theme.GawiSpacing
  * copy and this stays usable from a module whose resources it cannot see.
  *
  * Shared because both feature modules draw it, for the same two states, and
- * because an empty state saying the wrong thing is a bug this project has
- * already shipped once (docs/ux/today-view.md §4's rule 0).
+ * because an empty state saying the wrong thing is the failure
+ * docs/ux/today-view.md §4's rule 0 exists to prevent.
  */
 @Composable
 fun Notice(title: String, body: String, modifier: Modifier = Modifier) {
