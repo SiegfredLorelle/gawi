@@ -57,8 +57,8 @@ internal fun TodayScreen(state: TodayUiState, actions: TodayActions, snackbarHos
     // more. derivedStateOf so the bar recomposes when the answer changes rather
     // than on every frame of a scroll that does not change it.
     val chipVisible by remember { derivedStateOf { listState.firstVisibleItemIndex > 0 } }
-    // Hoisted for the same reason as the list state, and one level higher than
-    // it used to sit. The celebration's memory has to outlive the mascot item,
+    // Hoisted for the same reason as the list state, and one level higher. The
+    // celebration's memory has to outlive the mascot item,
     // which is why it was never in the tank; it has to outlive the *branch* as
     // well, because the chip in the bar above reads the milestone from it and
     // the bar is the list's sibling. `Loading` and `Unavailable` have no mood —
@@ -127,14 +127,14 @@ internal fun TodayScreen(state: TodayUiState, actions: TodayActions, snackbarHos
                 modifier = Modifier.fillMaxSize().padding(insets),
             )
 
-            // The panel scrolls with what is under it, in both states. It used to
-            // sit above the list as a fixed header; a 250dp tank (docs/ux/momo.md
-            // §4) above an unscrollable column leaves a small screen, or a large
+            // The panel scrolls with what is under it, in both states. Fixed
+            // above the list as a header, a 250dp tank (docs/ux/momo.md §4)
+            // above an unscrollable column leaves a small screen, or a large
             // font scale, with the button or the second row below the fold. §1
             // already accepted Momo leaving the screen on a long list, and the
-            // collapse into an app-bar chip is the mitigation it named: built
-            // 2026-08-31, carrying the milestone line since 2026-09-01. What is
-            // still open in §1 is not whether the chip exists but *when* it
+            // collapse into an app-bar chip is the mitigation it names, the
+            // milestone line included. What is still open in §1 is not whether
+            // the chip exists but *when* it
             // appears — the trigger is the panel leaving the viewport entirely,
             // which on a short list never happens.
             is TodayUiState.Empty -> {
@@ -230,9 +230,9 @@ private fun EmptyToday(onAddHabit: () -> Unit, modifier: Modifier = Modifier) {
  *
  * Settings draws `settings`, and means what it looks like.
  *
- * All three were characters until 2026-08-24, and the reason they are not is
- * that all three — `☰`, `◔`, `⚙` — are outside Outfit's cmap, so they fell
- * back to the platform face and this row rendered two typefaces at one size.
+ * None of the three is a character, because all three — `☰`, `◔`, `⚙` — are
+ * outside Outfit's cmap, so they fall back to the platform face and this row
+ * would render two typefaces at one size.
  * docs/ux/visual-identity.md §7.5 records the replacement. The by-hand check
  * in docs/running.md §4 is still owed, but what it is looking for has moved:
  * not a tofu box, which a vector cannot draw, but whether the strokes read at

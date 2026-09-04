@@ -27,7 +27,7 @@ import kotlin.math.cos
  * One [tempo] per mood rather than a period per part: it scales the canvas's
  * 5.2 s weed sway and its 7.4–10 s bubble rises together, so the habitat
  * cannot drift out of step with itself. The numbers are the Habitat & motion
- * page's defaults, approved 2026-08-26.
+ * page's defaults.
  */
 internal data class HabitatMotion(
     /** Multiplies every period; 1 is the Momo motion boards' own timing. */

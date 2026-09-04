@@ -69,7 +69,7 @@ internal data class CelebrationFrame(
             )
         }
 
-        /** The Habitat & motion page's defaults, approved 2026-08-26. */
+        /** The Habitat & motion page's defaults. */
         private const val HOP = 14f
         private const val GLOW = 0.22f
         private const val BURST_ALPHA = 0.85f
@@ -178,9 +178,9 @@ internal class CelebrationState {
  * mood, which is exactly the cold start the guard is for.
  *
  * **It skips the sighting without clearing `previous`, and that shows on one
- * path.** A review reasoned that the cold start is the *only* way through the
- * null, because `Loading` is nothing but `stateIn`'s initial value. That holds
- * for `Loading` and not for `Unavailable`: `TodayViewModel`'s `catch` terminates
+ * path.** The cold start is not the *only* way through the null. That reading
+ * holds for `Loading`, which is nothing but `stateIn`'s initial value, and not
+ * for `Unavailable`: `TodayViewModel`'s `catch` terminates
  * the subscription, and says itself that recovery is the screen re-subscribing,
  * which emits `Habits` again. `TodayRoute` composes `TodayScreen` for every
  * state, so this object survives `Habits` to `Unavailable` and back with its
