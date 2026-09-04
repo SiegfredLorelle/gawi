@@ -30,7 +30,10 @@ class HistoryViewModelTest {
     @get:Rule
     val mainDispatcher = MainDispatcherRule()
 
-    private val repository = FakeHabitRepository()
+    // The history screen must take the lean single-habit read. observeHabitDetail
+    // would work and would run a completions query for a retro strip this screen
+    // discards, so naming it here makes that a red test rather than a slow screen.
+    private val repository = FakeHabitRepository(unreachable = setOf("observeHabitDetail"))
 
     private fun historyFor(rawHabitId: String) = HistoryViewModel(rawHabitId, repository)
 
