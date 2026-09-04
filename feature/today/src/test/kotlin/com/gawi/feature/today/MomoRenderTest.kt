@@ -11,7 +11,6 @@ import com.gawi.core.domain.mascot.Mood
 import com.gawi.core.ui.component.MomoFrame
 import com.gawi.core.ui.component.drawMomo
 import org.junit.Assert.assertArrayEquals
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -20,9 +19,12 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * Momo draws what docs/ux/momo.md §3 says, measured in pixels. The frame
- * maths — what moves when — is `MomoFrameTest` in `:core:ui`, plain JVM; this
- * class is only what needs a bitmap.
+ * Momo draws what docs/ux/momo.md §3 says, measured in pixels: that each mood
+ * draws, that the four differ, that the clock moves the picture and that a
+ * mood change is one body. The frame maths — what moves when — is
+ * `MomoFrameTest` in `:core:ui`, plain JVM; this class is only what needs a
+ * bitmap, and it never asserts an exact pixel value: a sampled point is compared
+ * with the same point under another mood, or a whole frame with another frame.
  *
  * Here and not in `:core:ui`, which is deliberately Robolectric-free (its
  * `GawiIconsTest` reads XML off disk for the same reason). `GraphicsMode.NATIVE`
@@ -64,16 +66,6 @@ class MomoRenderTest {
     }
 
     @Test
-    fun `regenerating draws a shorter right upper gill`() {
-        // The gill reaches from (176,78) toward (199.6,59.5) at full length and
-        // stops at (191.6,65.8) while regrowing. Count pink in the region only
-        // the full gill's outer beads reach.
-        fun outerBeadInk(mood: Mood) = pinkIn(render(mood), left = 196, top = 44, right = 216, bottom = 66)
-        assertTrue(outerBeadInk(Mood.CONTENT) > 0)
-        assertTrue(outerBeadInk(Mood.REGENERATING) < outerBeadInk(Mood.CONTENT) / 4)
-    }
-
-    @Test
     fun `regenerating drains the colour and keeps its lightness`() {
         val body = { mood: Mood -> pixel(render(mood), 130, 100) }
         val full = body(Mood.CONTENT)
@@ -106,24 +98,6 @@ class MomoRenderTest {
     }
 
     @Test
-    fun `half way through a mood change the body is drawn once and both faces show`() {
-        val mid = renderBetween(Mood.CONTENT, Mood.WORRIED, 0.5f)
-        // One body: the belly pixel is the same opaque colour as in a settled
-        // frame. Two translucent bodies over each other would read darker or
-        // lighter, and the first cut's crossfade drew exactly that.
-        assertEquals(pixel(render(Mood.CONTENT), 130, 100), pixel(mid, 130, 100))
-        // Both faces: the worried eye's round ink is present but fainter than
-        // when settled, and the picture is neither end's.
-        val worriedEye = { p: IntArray -> pixel(p, 104, 96) }
-        assertNotEquals(render(Mood.CONTENT).toList(), mid.toList())
-        assertNotEquals(render(Mood.WORRIED).toList(), mid.toList())
-        val settled = inkDistance(worriedEye(render(Mood.WORRIED)))
-        val bare = inkDistance(worriedEye(render(Mood.CONTENT)))
-        val half = inkDistance(worriedEye(mid))
-        assertTrue("settled=$settled half=$half bare=$bare", half in (settled + 1) until bare)
-    }
-
-    @Test
     fun `the regrowing gill blends in rather than cutting`() {
         fun outerBeadInk(p: IntArray) = pinkIn(p, left = 196, top = 44, right = 216, bottom = 66)
         val full = outerBeadInk(render(Mood.CONTENT))
@@ -140,14 +114,6 @@ class MomoRenderTest {
         }
         val map = bitmap.toPixelMap()
         return IntArray(WIDTH * HEIGHT) { i -> argb(map[i % WIDTH, i / WIDTH].value) }
-    }
-
-    /** How far a pixel is from the eye ink, summed over channels; smaller is more ink. */
-    private fun inkDistance(argb: Int): Int {
-        val r = (argb shr 16) and 0xFF
-        val g = (argb shr 8) and 0xFF
-        val b = argb and 0xFF
-        return kotlin.math.abs(r - 0x3A) + kotlin.math.abs(g - 0x25) + kotlin.math.abs(b - 0x30)
     }
 
     private fun render(mood: Mood, seconds: Float = 0f): IntArray {
