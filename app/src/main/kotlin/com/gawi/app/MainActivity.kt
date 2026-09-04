@@ -20,12 +20,6 @@ import dagger.hilt.android.AndroidEntryPoint
 /**
  * The only activity, holding the only navigation graph.
  *
- * There was deliberately no host here while Today was the only screen: a graph
- * with one destination is a router with one route, and nothing could have got
- * its back-stack model right or wrong. The habits screens are the second and
- * third destinations, so the question is now a real one and
- * [com.gawi.app.navigation.Destination] is the answer to it.
- *
  * Single-activity, and the graph stays in `:app` (architecture §2). No feature
  * module depends on navigation, so no screen can route itself; each reports
  * what happened and [GawiNavHost] decides where that goes.
