@@ -264,10 +264,12 @@ class SettingsDataViewModelTest {
      * **The negative this whole row depends on.**
      *
      * A CSV holds no events, so it cannot restore anything, so it must not
-     * settle the 30-day nudge. `:core:data` enforces that structurally — the CSV
-     * archive is not given the journal at all — and this asserts the claim at
-     * the level a user would notice: a log with something in it and no backup
-     * still says so after a CSV has been written.
+     * settle the 30-day nudge. `:core:data` enforces that where it cannot be
+     * forgotten — the CSV archive is not given the journal at all, and
+     * `CompletionCsvArchiveTest` reads a real one either side of a real export
+     * — and this asserts the claim at the level a user would notice: a log with
+     * something in it and no backup still says so after a CSV has been
+     * written.
      */
     @Test
     fun `a csv export does not settle the export nudge`() = runTest {
