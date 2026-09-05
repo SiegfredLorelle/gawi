@@ -201,10 +201,11 @@ private fun AsOfLine(asOf: LocalDate) {
  * Sized to the widest string each form can produce **at a text scale of 1**,
  * measured rather than estimated (`StreakSlotTest` holds the numbers): the full
  * form's worst case is "99 weeks" at 66dp and the compact form's is "99w" at
- * 30dp. Each slot is that measured width and no more, because a 2dp margin over
- * it is not a margin. Reserving rather than measuring at draw time keeps the
- * column aligned down the widget, and the remainder is what the name ellipsises
- * inside.
+ * 30dp. Each slot sits clear above that rather than at it, because two or three
+ * dp over a measured width is not a margin and the numeral is the one thing on
+ * this row that must never ellipsise. Reserving rather than measuring at draw
+ * time keeps the column aligned down the widget, and the remainder is what the
+ * name ellipsises inside.
  *
  * Both are multiplied by the font scale at the call site. They have to be: the
  * numeral is drawn in sp and the slot is declared in dp, so leaving them fixed
