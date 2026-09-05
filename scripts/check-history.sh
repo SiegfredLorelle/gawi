@@ -128,7 +128,7 @@ failures=$(
                 } else if (line ~ /previously said/) {
                     why = "\"previously said\""
                 } else if (line ~ /an earlier (version|revision|cut)/) {
-                    why = "\"an earlier version\""
+                    why = "\"an earlier version/revision/cut\""
                 } else if (line ~ /first cut/) {
                     why = "\"first cut\""
                 } else if (line ~ /on review/) {
