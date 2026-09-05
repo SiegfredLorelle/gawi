@@ -14,9 +14,14 @@
 #   - "/code-review"     likewise. The finding is worth keeping; the fact that
 #                        a review produced it is not.
 #   - "this KDoc"        a comment correcting an earlier version of itself.
-#   - "an earlier version"
+#   - "previously said"  the same, pointed at a comment somewhere else.
+#   - "an earlier version", "an earlier revision", "an earlier cut"
+#   - "first cut"        the shape before this one is the diff's to describe.
+#   - "on review"        as "a review": who found it is the pull request's.
 #   - "was wrong"        the same, in the voice of a confession.
 #   - "coderabbit"       a bot's name in a comment dates it to the bot.
+#   - "since Phase N"    a roadmap marker dates the sentence to a phase, and
+#                        the phase is the one thing about it that will move.
 #
 # **The one exemption: a measurement.** "Contrast measured 1.59:1 on a Nothing
 # A059 on 2026-08-22" has to carry its date, because the reader's question is
@@ -30,12 +35,18 @@
 # is true and is why the exemption is a token the writer opts into rather than
 # a pattern the script infers.
 #
-# **What it deliberately does not check.** "no longer", "previously" and "the
-# fix" all have honest present-tense uses here — a mechanism that no longer
-# needs a guard, a value previously computed at the call site — and gating
-# them would cost more good sentences than it saved bad ones. The other half
-# of the rule, that a comment must not retell the code beneath it, is not
-# checkable at all and lives in AGENTS.md as a rule for the writer.
+# **What it deliberately does not check.** "no longer", "previously", "the old"
+# and "the fix" all have honest present-tense uses here — a mechanism that no
+# longer needs a guard, a value previously computed at the call site, the old
+# run's teardown — and gating them would cost more good sentences than it saved
+# bad ones. "previously said" is gated and "previously" is not, which is the
+# line: reporting what another comment said is never a mechanism.
+#
+# The rest of the rule is not checkable at all and lives in AGENTS.md as rules
+# for the writer: that a comment must not retell the code beneath it, that it
+# says a thing once at the site an edit would break, and that it keeps the
+# finding rather than the search that produced it. Every phrasing above was
+# found by a sweep applying those three, which is where the list comes from.
 #
 # **Why a script and not a Gradle task**: see check-citations.sh. A task
 # caches, and a gate that passes by being UP-TO-DATE has verified nothing.
@@ -114,12 +125,20 @@ failures=$(
                     why = "\"/code-review\""
                 } else if (line ~ /this kdoc/) {
                     why = "\"this KDoc\""
-                } else if (line ~ /an earlier version/) {
-                    why = "\"an earlier version\""
+                } else if (line ~ /previously said/) {
+                    why = "\"previously said\""
+                } else if (line ~ /an earlier (version|revision|cut)/) {
+                    why = "\"an earlier version/revision/cut\""
+                } else if (line ~ /first cut/) {
+                    why = "\"first cut\""
+                } else if (line ~ /on review/) {
+                    why = "\"on review\""
                 } else if (line ~ /was wrong/) {
                     why = "\"was wrong\""
                 } else if (line ~ /coderabbit/) {
                     why = "\"CodeRabbit\""
+                } else if (line ~ /since phase/) {
+                    why = "\"since Phase N\""
                 }
 
                 if (why == "") next

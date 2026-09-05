@@ -11,8 +11,7 @@ import java.time.LocalDate
  * week start), and they are handed out **together** on purpose. A screen that
  * took the date from one flow and the week start from another would hold two
  * independently-deduped copies of a pair the read model keeps in step — which is
- * the disagreement `OfflineFirstHabitRepository.readContext` exists to prevent,
- * and which one screen had until this type was exposed.
+ * the disagreement `OfflineFirstHabitRepository.readContext` exists to prevent.
  *
  * A screen cannot resolve either value for itself: that needs a clock, a zone
  * and the cutoff, and a stale answer lands inside the retro window, which

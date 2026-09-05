@@ -16,11 +16,9 @@ import com.gawi.core.ui.R
  *
  * Declared before [Outfit] because it initialises it — top-level properties run
  * in declaration order, and the other way round reads this as null and throws
- * during class init. An earlier revision said it "leaves the family empty",
- * which is wrong twice: the null read comes first, and an empty family is not
- * constructible anyway — `FontListFontFamily` throws "At least one font should
- * be passed to FontFamily". Both failure modes are loud, so the ordering is a
- * smaller hazard than that wording implied.
+ * during class init. A small hazard rather than a silent one: an empty family
+ * is not constructible either (`FontListFontFamily` throws "At least one font
+ * should be passed to FontFamily"), so both orderings fail loudly.
  */
 internal val OutfitWeights = listOf(
     FontWeight.Normal,
@@ -39,38 +37,22 @@ internal val OutfitWeights = listOf(
  * single asset rather than one file per weight.
  *
  * **`variationSettings` is load-bearing. Do not delete it as redundant, however
- * convincing the argument looks.** It looks very convincing: decompile
- * `ui-text-android:1.12.0` and `Font(resId, weight, …)`'s `$default` bridge
- * plainly builds `FontVariation.Settings(weight, style)` from the declared
- * weight, so passing the axis by hand reads as duplicated work. **It does not
- * survive a device.** Measured 2026-08-24 and reproduced: with the argument
- * removed the entire app renders at this file's `fvar` default, which is
- * **100** — its name table reads "Outfit Thin" — hairline everywhere, 3,799
- * differing pixels on one screen against the same build with the argument
- * present.
+ * convincing the argument looks** — and it looks convincing, because a
+ * `Font(resId, weight, …)` bridge really does build
+ * `FontVariation.Settings(weight, style)` from the declared weight. That bridge
+ * belongs to a function this call does not reach. `FontKt` declares *three*
+ * `Font()` overloads for a resource id and only the third accepts variation
+ * settings; `Font(resId, weight)` binds to the **first**, whose body constructs
+ * `ResourceFont` without touching `FontVariation` at all, so the settings end up
+ * empty rather than derived. Passing the argument is what selects the overload
+ * that builds them.
  *
- * **The mechanism is overload resolution, and it is worth naming precisely,
- * because the bytecode that makes the argument look redundant is real — it just
- * belongs to a function this call does not reach.** `FontKt` declares *three*
- * `Font()` overloads for a resource id: `(resId, weight, style)`,
- * `(… , loadingStrategy)`, and `(… , loadingStrategy, variationSettings)`. Only
- * the third accepts variation settings. `Font(resId, weight)` binds to the
- * **first**, whose body constructs `ResourceFont` without touching
- * `FontVariation` at all, so the settings are empty rather than derived. Loading
- * then runs `ResourcesCompat.getFont(context, resId)`, which hands back the
- * variable face at its `fvar` default with nothing instanced, and
- * `setFontVariationSettings` afterwards has nothing to apply. The
- * `Font-…$default` bridge that *does* build `Settings(weight, style)` is the
- * third overload's, and passing the argument is what selects it.
- *
- * That also rules out the axis theory — that the derived settings name an
- * `ital` axis this font lacks, and an unsupported axis voids the string.
- * `FontVariation.italic(0f)` added explicitly is pixel-identical to
- * weight-only, so the axes are not the variable; the overload is. **The hazard
- * is not "a redundant argument" but "deleting an argument silently changes
- * which function you call".**
- * [GawiTypographyTest] asserts every entry names `wght`, so the deletion fails
- * a test rather than shipping a thin app.
+ * **So the hazard is not "a redundant argument" but "deleting an argument
+ * silently changes which function you call".** Without it the whole app renders
+ * at this file's `fvar` default of **100** — its name table reads "Outfit Thin"
+ * — hairline everywhere, measured on 2026-08-24. [GawiTypographyTest] asserts
+ * every entry names `wght`, so the deletion fails a test rather than shipping a
+ * thin app.
  *
  * **Four weights, because that is what the app can *request*, not what it
  * writes.** Material's fifteen roles ask for W400 and W500, and no source in
@@ -92,34 +74,27 @@ internal val OutfitWeights = listOf(
  * crash, but it is the "looks like a design choice rather than a gap" failure
  * this project keeps naming, and the answer is icons rather than dingbats.
  *
- * **Every character the app draws as an *icon* is a vendored vector**
- * (`GawiIcons`, docs/ux/visual-identity.md §7.5). **Not every character, and
- * the difference matters here.** Four things still draw text from this `cmap`:
- * `RetroStrip`'s `✓`, `·` and `•`, and the `✓` `HabitEditorPickers` puts on the
- * selected colour swatch. Each sits inside a control and carries its *state*
- * rather than being an affordance — the swatch is a `Role.RadioButton` always,
- * and the day cell a `Role.Checkbox` **only while the day is open**, since the
- * shut branch is `disabled()` and every cell of an archived habit is shut. So
- * the number stays written down for those four as much as for the next
- * character someone reaches for. Being state marks rather than pictures of an
- * action is why §7.5 leaves them alone. Neither "nothing is a control" nor "the
- * cell is a `Role.Checkbox`" without its condition is true, and an absolute is
- * the shape of sentence that gets this limit deleted.
+ * **Most characters the app draws as an *icon* are vendored vectors**
+ * (`GawiIcons`, docs/ux/visual-identity.md §7.5), but not all: `RetroStrip`'s
+ * `✓`, `·` and `•` and the `✓` on `HabitEditorPickers`' selected swatch still
+ * draw text from this `cmap`. Each sits inside a control and carries its
+ * *state* rather than being an affordance — the swatch is a `Role.RadioButton`
+ * always, the day cell a `Role.Checkbox` **only while the day is open**, since
+ * the shut branch is `disabled()` and every cell of an archived habit is shut.
+ * That is why §7.5 leaves them alone, and why the limit stays written down for
+ * them as much as for the next character someone reaches for.
  *
- * **What the audit found present**, so nobody re-runs it: `←`, `‹`, `›`, `✓`,
- * `•`, `−` (U+2212) and `·` (U+00B7). `−` is the one worth checking rather than
- * assuming: `WeeklyTargetStepper` draws it beside an ASCII `+`, both
- * `titleLarge`, in one `Row`, and were it absent that would be a two-face pair
- * at one size, adjacent, and more visible than the app-bar case. It is present,
- * and that pair is two icons now regardless.
+ * **Present in the face**, so nobody re-checks: `←`, `‹`, `›`, `✓`, `•`, `−`
+ * (U+2212) and `·` (U+00B7). `−` is the one worth confirming rather than
+ * assuming, because `WeeklyTargetStepper` draws it beside an ASCII `+` at one
+ * size in one `Row`, where a fallback would be more visible than the app-bar
+ * case.
  *
  * **The habit-icon emoji are a different question and not an omission here.**
  * `HabitPalette`'s twelve icons are outside this `cmap` too, and always will be:
  * Android draws colour emoji through its own emoji font, which no text face
- * substitutes for — docs/ux/visual-identity.md §4.2 already covers that, along
- * with its consequence for tint. A sweep of every non-widget main source finds
- * 36 distinct non-ASCII characters in all; the remainder are in KDoc and
- * comments (`√`, `≡`, `≥`) and are never drawn.
+ * substitutes for — docs/ux/visual-identity.md §4.2 covers that and its
+ * consequence for tint.
  */
 internal val Outfit = FontFamily(OutfitWeights.map(::outfitAt))
 
@@ -156,46 +131,27 @@ private fun TextStyle.inOutfit(): TextStyle = copy(
  * The app's type: Material's scale, drawn in [Outfit].
  *
  * **The face, and one metric: positive tracking goes to zero.** Every size and
- * line height is still Material's baseline, untouched: the sizes are the part
- * all four feature modules have been drawing at since Phase 0, so they are the
- * only part already validated on a device, and moving the face and the scale
- * together would make any regression unattributable to either.
+ * line height is Material's baseline, untouched: the sizes are what all four
+ * feature modules draw at and the only part validated on a device, so moving
+ * the face and the scale together would make any regression unattributable to
+ * either.
  *
- * `letterSpacing` is the exception, and the change was made while looking at a
- * screen. Of the three candidates — keep, halve, zero — the two that decide it
- * were built and compared, with halving settled on the numbers below rather
- * than by installing it. Material's own values are probed rather than
- * remembered, and positive tracking sits only on roles at 16sp and under —
- * `bodyLarge`, `labelMedium` and `labelSmall` at 0.5, `bodySmall` 0.4,
- * `titleMedium` and `bodyMedium` 0.2, `titleSmall` and `labelLarge` 0.1. Every
- * role at 22sp and over is already 0 except `displayLarge`, which is −0.2 (not
- * −0.25), and those are left exactly as they are.
+ * `letterSpacing` is the exception. Material's positive tracking sits only on
+ * roles at 16sp and under — `bodyLarge`, `labelMedium` and `labelSmall` at 0.5,
+ * `bodySmall` 0.4, `titleMedium` and `bodyMedium` 0.2, `titleSmall` and
+ * `labelLarge` 0.1 — so those are the only roles this touches. Every role at
+ * 22sp and over is already 0 except `displayLarge`, which is −0.2 (not −0.25),
+ * and those are left exactly as they are.
  *
- * **What it is worth, measured.** Material's tracking is drawn for Roboto and
- * Outfit is the wider face, so the correction is downward either way; the
- * question was how far. Two builds of the same commit were installed on an API
- * 37 emulator at density 320 and font scale 1.0, and the same Settings nodes
- * read back from `uiautomator dump` on each — the same node on both sides, not a
- * container against its child. *Notifications are off, so this reminder will not
- * arrive.* goes 656px → 634px, and 656 was the container's full width, so that
- * line had been sitting flush against its bounds and now has 22px of slack.
- * *Day is nearly over at* goes 313 → 292, *Week starts on* 226 → 212, *Day
- * starts at* 200 → 187, *Appearance* 157 → 154. The app bar's *Settings* is
- * unchanged at 155, which is the ≥22sp roles keeping Material's values.
+ * **Zero rather than halved, and the widget is what decides it.** `BitmapText`
+ * never sets `Paint.letterSpacing`, so `:widget` draws at 0em at the same
+ * nominal 16sp this module calls `bodyLarge`. The two surfaces claimed to match
+ * and did not, so zeroing here closes a divergence rather than opening one.
  *
- * **What did not happen, recorded because it was expected to.** No wrapped
- * paragraph on that screen lost a line: all three keep their height across the
- * two builds. The gain is horizontal slack, not reflow, at least at this scale
- * and width. Halving rather than zeroing would be the same move at half the
- * distance. Nothing was *added* to the roles already at zero or below: negative
- * tracking buys a few px on a heading and nothing at all on the streak numeral,
- * because a one-glyph string has no gaps to track.
- *
- * **The argument that settled it is the widget.** `BitmapText` never sets
- * `Paint.letterSpacing`, so `:widget` has been drawing at 0em since it was
- * built, at the same nominal 16sp this module calls `bodyLarge`. The two
- * surfaces claimed to match and did not. Zeroing here closes a divergence that
- * already existed rather than opening one.
+ * What it buys is horizontal slack and not reflow: measured on 2026-08-24
+ * against the same build without it, the affected Settings rows narrow by up to
+ * 22px — enough to lift the longest off its container bounds — while no wrapped
+ * paragraph loses or gains a line and the ≥22sp app-bar title is unchanged.
  *
  * **The family is set on all fifteen roles, though §5 names ten.** The ten in
  * §5's table are the roles this app actually draws, and that list is what makes
@@ -208,20 +164,15 @@ private fun TextStyle.inOutfit(): TextStyle = copy(
  * **The licence is in the repo, not in the APK.** `licenses/Outfit-OFL.txt`
  * is the OFL text, and it is deliberately not under `res/` — that directory
  * takes font files and XML families only, and a resource filename cannot carry
- * uppercase letters, so an `OFL.txt` in there is a build error. §5 said
- * otherwise and has been corrected. What is **not** yet true is that a user can
- * read it: nothing packages `licenses/` into the artifact and the app has no
- * about-or-licences surface, so a release currently distributes Outfit with only
- * the notice in the font's own `name` table (IDs 0, 13 and 14).
+ * uppercase letters, so an `OFL.txt` in there is a build error.
  *
- * Review split on whether that is already compliant, so here is the clause
- * rather than a judgement. OFL 1.1 §2 allows the notice "as stand-alone text
- * files, human-readable headers or in the appropriate machine-readable metadata
- * fields within text or binary files **as long as those fields can be easily
- * viewed by the user**". The `name` table is such a field; inside an APK it is
- * not easily viewable by anyone without extraction tooling, which is the half
- * that fails. So this is not "probably fine" — it is **owed before a public
- * release**, and it is a release gate rather than a merge gate.
+ * What is **not** yet true is that a user can read it: nothing packages
+ * `licenses/` into the artifact, so a release distributes Outfit with only the
+ * notice in the font's own `name` table (IDs 0, 13 and 14). OFL 1.1 §2 allows
+ * the notice in machine-readable metadata fields "**as long as those fields can
+ * be easily viewed by the user**", and inside an APK that one cannot be, which
+ * is the half that fails. So this is **owed before a public release** — a
+ * release gate rather than a merge gate.
  *
  * **The widget does not get this `Typography`, and draws in the face anyway.**
  * A `RemoteViews` tree resolves only the platform's generic family names,

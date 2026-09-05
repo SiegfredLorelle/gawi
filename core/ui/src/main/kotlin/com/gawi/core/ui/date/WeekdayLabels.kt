@@ -13,8 +13,7 @@ import java.time.DayOfWeek
  *
  * Returns an id rather than a `String` so no caller has to name `:core:ui`'s
  * `R` class, and so this stays callable from a mapper with no composition
- * around it. That is what `:feature:habits` already did with its own copy; this
- * is that copy, moved once a second surface needed it.
+ * around it.
  *
  * **A letter cannot identify a day on its own** — `T` and `S` each name two —
  * so anything that has to *say* a weekday takes [weekdayName] instead. Where
@@ -37,8 +36,7 @@ fun weekdayLetter(day: DayOfWeek): Int = when (day) {
  * The form for anything read aloud or read on its own: the week-start picker's
  * options, and the history grid's spoken cell labels. Shared for the same reason
  * [weekdayLetter] is — two features draw these seven names, and anything drawn
- * by more than one belongs here (AGENTS.md). The habit icon badge, written three
- * times before it was shared, is why that rule is worded as strongly as it is.
+ * by more than one belongs here (AGENTS.md).
  *
  * Exhaustive rather than defaulted, so this is a compile error if `java.time`
  * ever grows an eighth day. It costs nothing to hold.

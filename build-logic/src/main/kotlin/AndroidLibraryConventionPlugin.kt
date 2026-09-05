@@ -16,7 +16,7 @@ import org.gradle.kotlin.dsl.configure
  * [AndroidApplicationConventionPlugin] says the same thing about `:app`'s.
  *
  * Recorded here because a reader of this file cannot see that comment, and the
- * omission has been read as an oversight more than once.
+ * omission otherwise reads as an oversight.
  */
 class AndroidLibraryConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {

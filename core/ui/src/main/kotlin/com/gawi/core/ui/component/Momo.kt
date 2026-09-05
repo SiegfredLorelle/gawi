@@ -48,13 +48,13 @@ import kotlin.math.sin
  * duration scale* set to off, read by [rememberAnimationsEnabled], because a
  * viewer who turned animations off should not have to find a second switch.
  *
- * **A mood change is one Momo, not two** (docs/ux/momo.md §3). The first cut
- * crossfaded two whole drawings, and because each mood floats at its own
- * tempo the two bodies sat at different heights while both were visible. Now
- * the body, tail and gills are drawn once from [MomoFrame.between] — the two
- * moods' frames at the same instant, interpolated by a progress that runs
- * over [MomoMotion.TRANSITION_MILLIS] — and only the face, its extras and the
- * regrowing gill crossfade. With animations off the change is a cut, because a
+ * **A mood change is one Momo, not two** (docs/ux/momo.md §3). The body, tail
+ * and gills are drawn once from [MomoFrame.between] — the two moods' frames at
+ * the same instant, interpolated by a progress that runs over
+ * [MomoMotion.TRANSITION_MILLIS] — and only the face, its extras and the
+ * regrowing gill crossfade. Crossfading two whole drawings instead would show
+ * two bodies at different heights while both were visible, because each mood
+ * floats at its own tempo. With animations off the change is a cut, because a
  * fade is an animation too.
  *
  * The composable carries no description of its own. The copy line beside it
@@ -97,9 +97,9 @@ fun Momo(transition: MoodTransitionState, animationsOn: Boolean, modifier: Modif
 fun Momo(transition: MoodTransitionState, seconds: State<Float>, modifier: Modifier = Modifier) {
     // fillMaxSize is load-bearing: the caller sizes the box, and a Canvas with
     // no size of its own measures 0 x 0 — which is a tank with nothing in it,
-    // while every test that only asked whether the node existed stayed green.
-    // Caught on the emulator. The clock and the progress are read in here and
-    // not above, so a frame redraws this Canvas and recomposes nothing.
+    // while every test that only asked whether the node existed stays green.
+    // The clock and the progress are read in here and not above, so a frame
+    // redraws this Canvas and recomposes nothing.
     Canvas(modifier.fillMaxSize().testTag("momo:${transition.to}")) {
         val t = transition.current
         val s = seconds.value
@@ -252,8 +252,8 @@ data class MomoFrame(
     /**
      * The second sparkle, a third of a cycle behind the first. Its own field
      * because the lag has to be applied to the clock, not to [sparkle]'s value:
-     * a wave is not injective, so no arithmetic on the value recovers the phase,
-     * and the first cut's `(sparkle + 0.667) % 1` snapped twice a cycle.
+     * a wave is not injective, so no arithmetic on the value recovers the
+     * phase, and `(sparkle + 0.667) % 1` snaps twice a cycle.
      */
     val sparkleLag: Float,
     /** Worried's sweat bead, 0..1 through its fall; null when there is none. */
@@ -368,8 +368,8 @@ object MomoPalette {
  * *encoded* channels — because that filter is what the approved canvas applied
  * (docs/ux/momo.md §3), and it keeps the encoded lightness. `luminance()`
  * would not: it linearises first, so mixing it into sRGB components lands on a
- * grey about a fifth darker, and the first cut dimmed Momo by that much without
- * anyone choosing to. The tank's own drain is what carries the dimming.
+ * grey about a fifth darker, which dims Momo by that much with nobody choosing
+ * to. The tank's own drain is what carries the dimming.
  */
 internal fun Color.saturated(amount: Float): Color {
     if (amount >= 1f) return this

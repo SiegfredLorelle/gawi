@@ -22,12 +22,10 @@ import androidx.compose.ui.platform.LocalContext
  * (docs/running.md §4). `false` until it has been read, so the first frame of
  * anything is its resting frame and never a stray moving one.
  *
- * One reader rather than one per animated thing, for a reason a test found:
- * a frame loop is a permanent awaiter on the frame clock, so a Robolectric
- * composition with any loop running is never idle. `AnimationsOffRule` in
- * `:core:testing` zeroes the scale before the activity launches; every loop
- * gated here goes quiet with it, and a loop
- * gated on anything else would hang every screen test that composes it.
+ * One reader rather than one per animated thing. `AnimationsOffRule` in
+ * `:core:testing` zeroes the scale before the activity launches, and every loop
+ * gated here goes quiet with it; a loop gated on anything else would hang every
+ * screen test that composes it — see [rememberFrameClock].
  *
  * [animated] is the caller's own override — a preview or a still surface
  * passes `false` — and it wins over the setting.

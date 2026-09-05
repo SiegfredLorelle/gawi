@@ -33,19 +33,12 @@ import javax.inject.Singleton
  * AppCompat activity and `AppCompatDelegate.setDefaultNightMode` would not
  * reach a `ComponentActivity` anyway.
  *
- * **What 29 and 30 lose is one flash of the starting window,
- * measured 2026-08-28 on an emulator of each.** With Dark chosen and the
- * system in light, nine cold starts per level sampled off a `screenrecord`
- * showed the light `#F4FBFA` window before the dark app replaced it: 66–331 ms
- * on API 30,
- * and 317–448 ms on API 29, which holds it more than twice as long and is the
- * one place the two differ.
- * `ThemeViewModel.theme` does start `null` and resolve to the *system* scheme,
- * but the read beats the first composed frame: a light-scheme content frame
- * appeared only with the page cache dropped, in four runs of six on each
- * level, and never in the warm ones. And the Recents snapshot does not hold
- * the system's scheme at all — it is a screenshot of the window, so it shows
- * what was drawn. On 31 and up none of it applies: the override is already in
+ * **What 29 and 30 lose is one flash of the starting window.**
+ * It measured 2026-08-28 at 66–331 ms on API 30 and at 317–448 ms on API 29,
+ * which holds it more than twice as long and is the one place the two differ. What they do not
+ * lose is a wrong *content* frame: `ThemeViewModel.theme` starts `null` and
+ * resolves to the system scheme, but the read beats the first composed frame
+ * except on a cold cache. On 31 and up none of it applies — the override is in
  * the configuration before the process starts, so `isSystemInDarkTheme()` is
  * right on the first frame and the `null` start costs nothing.
  * docs/ux/settings.md §8 carries the numbers.
@@ -101,13 +94,8 @@ class ApplicationNightMode @Inject constructor(@ApplicationContext private val c
     }
 
     private fun ThemeMode.nightMode(): Int = when (this) {
-        // AUTO, for the reason the KDoc gives at length: it is the only mode
-        // whose implementation means "inherit", and there is no call that
-        // removes an override outright.
         ThemeMode.SYSTEM -> UiModeManager.MODE_NIGHT_AUTO
-
         ThemeMode.LIGHT -> UiModeManager.MODE_NIGHT_NO
-
         ThemeMode.DARK -> UiModeManager.MODE_NIGHT_YES
     }
 

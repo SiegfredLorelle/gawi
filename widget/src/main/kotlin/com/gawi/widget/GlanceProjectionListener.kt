@@ -30,13 +30,13 @@ import javax.inject.Inject
  * lost when it happens is a redraw, which the provider's own update period and
  * the next write both recover.
  *
- * `Throwable` is not overreach here, it is the measured requirement. An earlier
- * version of this file caught `Exception` and a `NoClassDefFoundError` — an
- * `Error` — escaped it, propagated out of `appendLocked` and killed a habit
- * creation that had already been written to the log; the editor sat there
- * looking as though Save were dead. Found by `WriteJourneyTest` on a device,
- * which is the only kind of test that constructs the real Glance object at all.
- * Cancellation is still rethrown, so the widened catch costs nothing else.
+ * `Throwable` is not overreach here, it is the measured requirement: a
+ * `NoClassDefFoundError` — an `Error`, not an `Exception` — escapes a narrower
+ * catch, propagates out of `appendLocked` and kills a habit creation already
+ * written to the log, leaving the editor looking as though Save were dead. Only
+ * a device test constructs the real Glance object at all, so `WriteJourneyTest`
+ * is what sees it. Cancellation is still rethrown, so the widened catch costs
+ * nothing else.
  *
  * `updateAll` resolves the placed widgets, so this is close to free when there
  * are none — which is the common case, and the reason no "is one placed?" guard
@@ -45,10 +45,9 @@ import javax.inject.Inject
  * **Every provider in this module has to be named here.** A provider left out
  * still renders when its session starts for other reasons, so it does not look
  * broken — it just stops following writes made in the app, for the life of that
- * session, which is indistinguishable from a widget nobody placed. That is the
- * cost docs/ux/visual-identity.md §7.4 forgot to price when it costed a second
- * widget, and `ProjectionRefreshTest` is what keeps the list honest as more are
- * added.
+ * session, which is indistinguishable from a widget nobody placed — a cost
+ * docs/ux/visual-identity.md §7.4's pricing of a second widget does not carry.
+ * `ProjectionRefreshTest` keeps the list honest as more are added.
  */
 private const val TAG = "GlanceProjection"
 
@@ -63,21 +62,19 @@ internal class GlanceProjectionListener @Inject constructor(@ApplicationContext 
             // measured NoClassDefFoundError on androidx/work/CoroutineWorker
             // came from (widget/build.gradle.kts). That throw happens before any
             // per-widget catch can exist, so this cannot be folded into
-            // refreshEach — review suggested exactly that, and it would reopen
-            // the failure this file was written to close.
+            // refreshEach.
             try {
                 refreshEach(refreshedWidgets().map { widget -> suspend { widget.updateAll(context) } }) { e ->
                     // Logged rather than silently dropped. A permanently broken
                     // push — WorkManager failing to start, a corrupt Glance
                     // store — is otherwise indistinguishable from nobody having
                     // placed a widget, which is the failure shape
-                    // ProjectionListenerTest exists to rule out and which
-                    // already cost one debugging round.
+                    // ProjectionListenerTest exists to rule out.
                     Log.w(TAG, "the widget refresh failed after a committed write", e)
                 }
             } catch (e: Throwable) {
                 // Rethrows cancellation and nothing else. Deliberately wider
-                // than Exception; the KDoc above says which Error did escape.
+                // than Exception; the KDoc above names the Error that escapes.
                 currentCoroutineContext().ensureActive()
                 Log.w(TAG, "the widget list could not be built", e)
             }
@@ -89,14 +86,13 @@ internal class GlanceProjectionListener @Inject constructor(@ApplicationContext 
  * Runs every [updates] entry, reporting failures instead of letting one stop the
  * rest.
  *
- * **Why this is a function rather than a loop in place.** While there was one
- * provider the question could not arise; with two, a single `try` around the loop
- * means the first provider's failure silently suppresses every provider after
- * it — the freeze [GlanceProjectionListener]'s KDoc calls indistinguishable from
- * a widget nobody placed, arriving by the very mechanism meant to prevent it.
- * Caught on review, and `ProjectionRefreshTest` would have stayed green through
- * it because it pins the *list* and not the isolation. So the loop is a seam a
- * JVM test can drive with an update that throws — `RefreshIsolationTest`.
+ * **Why this is a function rather than a loop in place.** A single `try` around
+ * the loop means the first provider's failure silently suppresses every provider
+ * after it — the freeze [GlanceProjectionListener]'s KDoc calls
+ * indistinguishable from a widget nobody placed, arriving by the very mechanism
+ * meant to prevent it. `ProjectionRefreshTest` pins the *list* and not the
+ * isolation, so the loop is a seam a JVM test can drive with an update that
+ * throws — `RefreshIsolationTest`.
  *
  * Cancellation is rethrown through the same `ensureActive()` idiom the rest of
  * this module uses ([toggleHabit]); a failure of one update is not a reason to

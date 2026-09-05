@@ -37,8 +37,8 @@ import com.gawi.core.domain.mascot.Mood
  * **It reads what the Today widget reads.** [widgetContent] — the same flow,
  * the same three states, the same `Mascot.mood` over the same snapshot — and
  * this body takes what it needs from the state: the mood, and whether there are
- * any rows. A parallel `MomoContent` type was written first and deleted on
- * review as a copy of `WidgetContent` with two fields fewer.
+ * any rows. A parallel `MomoContent` type would be `WidgetContent` with two
+ * fields fewer.
  *
  * **Her ground is `primaryContainer`, flat.** The Today screen paints the tank
  * as a gradient; a `RemoteViews` background is one colour, and flat was decided
@@ -151,9 +151,9 @@ internal fun Mood.caption(): Int = when (this) {
  * direction the cost argument in [MomoBitmap] allows: the bitmap never grows
  * with the host, it only gives way to the text.
  *
- * **The reservation matches what is drawn, line for line** — the PR review found
- * the first cut reserving one line and drawing up to three. A mood word is one
- * line and ellipsises past it, which never happens on the 110dp tile (94 − 3 −
+ * **The reservation matches what is drawn, line for line**, and that is the
+ * thing to re-check when either moves. A mood word is one line and ellipsises
+ * past it, which never happens on the 110dp tile (94 − 3 −
  * 30 leaves 61dp of face at 2×). The no-habits copy is two lines
  * ([EMPTY_COPY_LINES]), and when those leave less than [MIN_FACE_DP] the face
  * goes rather than a sliver of her or a clipped word — reachable only in that

@@ -61,11 +61,11 @@ internal fun overviewOf(
  * together.
  *
  * [window] rides along for a narrower reason than convenience. The rates are
- * measured over a window and the rows were read over a window, and those have
- * to be the same one. They were computed twice — once by the ViewModel to issue
- * the reads, once per habit inside the mapper — from the same inputs, so they
- * could not actually differ. Carrying the one that was used makes that
- * structural rather than a coincidence two call sites have to keep up.
+ * measured over a window and the rows were read over a window, and those have to
+ * be the same one. Computing it twice — once in the ViewModel to issue the
+ * reads, once per habit inside the mapper — leaves the two agreeing only because
+ * their inputs do. Carrying the one that was used makes it structural rather
+ * than a coincidence two call sites have to keep up.
  *
  * [previousTagEffort] is the one read that is not over [window]: the same tag
  * query over the period before it, which is all the focus sentence needs.
@@ -109,9 +109,8 @@ private fun Period.labelOf(window: ClosedRange<LocalDate>): PeriodLabelUi = when
  * dates are counted as the headline counts them, with no clip at today, so the
  * two are one figure at two resolutions and must sum; a future-dated completion
  * (a fast clock, an import) is therefore in both. Dropping its month would put
- * it in the headline and in no column — the off-by-one the first cut had from
- * the other direction. It is a `filter`, not a `takeWhile`, so a month with data
- * behind an empty un-begun one survives too.
+ * it in the headline and in no column. It is a `filter`, not a `takeWhile`, so
+ * a month with data behind an empty un-begun one survives too.
  *
  * **One point is not a line.** A Month period always has one; a quarter in its
  * first month and a year in January have one too, so the rule is the count of

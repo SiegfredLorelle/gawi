@@ -119,7 +119,7 @@ internal fun MascotPanel(mascot: MascotUi, motion: TodayMotion, modifier: Modifi
  * a `LazyColumn` item, so once the chip is up the panel is *disposed*, not
  * merely off-screen: `HabitList` says so where it hoists the motion state, and
  * `chip_carriesTheMoodAndTheRemainingCount` proves it, since its
- * `assertDoesNotExist` could not pass on a panel that was still composed. The
+ * `assertDoesNotExist` cannot pass on a panel that is still composed. The
  * two nodes never coexist, so there is no double read to avoid.
  *
  * What that leaves is a silence, and it is chosen rather than inherited: a tick
@@ -128,8 +128,7 @@ internal fun MascotPanel(mascot: MascotUi, motion: TodayMotion, modifier: Modifi
  * The row's own checkbox announces its state change, so the tick is not
  * feedback-free. A live region fires when its node *appears* as well as when it
  * changes, so every scroll past the tank would speak the whole sentence — a poor
- * trade for a surface §1 calls "deliberately small". And no emulator image here
- * has TalkBack, so a live region would be shipped unheard. `chip_isNotALiveRegion`
+ * trade for a surface §1 calls "deliberately small". `chip_isNotALiveRegion`
  * pins the choice; today-view §1 keeps it open for a device that can verify it.
  *
  * **What is shown and what is spoken are different strings, and the description
@@ -156,8 +155,8 @@ internal fun MascotPanel(mascot: MascotUi, motion: TodayMotion, modifier: Modifi
  * that `HabitList` owned one level *below* the app bar, a rung crossed while
  * scrolled down would be neither drawn nor spoken. Replacing rather than
  * joining because the width this bar does not have is the same width the mood
- * line was already denied — and because the panel's own treatment of the line
- * is a swap, not an addition.
+ * line is denied — and because the panel's own treatment of the line is a swap,
+ * not an addition.
  *
  * The **spoken** half of that swap is not the drawn one, and here the two are
  * different *strings* rather than the same one in different slots. The label is
@@ -168,12 +167,11 @@ internal fun MascotPanel(mascot: MascotUi, motion: TodayMotion, modifier: Modifi
  * label would drop both the sentence and the count from the announcement, which
  * is the defect the paragraph above records, arrived at from the other side.
  *
- * That truncation is worth dwelling on, because **no test could see it**: a
+ * That truncation is worth dwelling on, because **no test can see it**: a
  * Compose assertion that a string is present passes on a node drawing it
- * clipped, so `chip_carriesTheMilestoneLine` was green on a chip nobody could
- * read. It took ticking a rung on a device. What a test *can* hold is the
- * negative, and that test now also asserts the panel's sentence is absent from
- * the bar.
+ * clipped, so `chip_carriesTheMilestoneLine` stays green on a chip nobody can
+ * read. What a test *can* hold is the negative, and that one also asserts the
+ * panel's sentence is absent from the bar.
  *
  * What is still open in today-view §6 is the *announcing*, not the carrying: a
  * description change on a non-live node is not spoken, so a rung crossed while

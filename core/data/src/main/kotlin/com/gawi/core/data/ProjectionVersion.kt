@@ -12,9 +12,9 @@ package com.gawi.core.data
  * rule that fills them changes, so Room sees nothing wrong and leaves rows in
  * place that current code would never have written.
  *
- * **2, since `HabitState.createdOn`.** That change moved a column *and* changed
- * what fills it, so it needed both versions bumped — the migration adds the
- * column and this replays the log to populate it. A schema bump on its own would
- * have left every habit's start date null.
+ * **It stands at 2 because of `HabitState.createdOn`**, a change that moved a
+ * column *and* changed what fills it, so both versions had to move: the
+ * migration adds the column and this replays the log to populate it. A schema
+ * bump on its own leaves every habit's start date null.
  */
 internal const val PROJECTION_VERSION = 2

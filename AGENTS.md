@@ -135,9 +135,10 @@ Full guide with examples: `.github/COMMIT_CONVENTION.md`
 - **Comments keep what the code cannot say** (`scripts/check-history.sh`, in
   `make lint`): the mechanism, the invariant, the reason a shape was chosen,
   and the `docs/… §N` it answers to. **History is git's, not the comment's** —
-  no dates, no "used to", no "a review said", no "this KDoc was wrong", no "an
-  earlier version". The script is the mechanical half: it refuses those phrases
-  and any `YYYY-MM-DD` in a `src/main` comment. **A date is exempt only where
+  no dates, no "used to", no "a review said", no "caught on review", no "this
+  KDoc was wrong", no "an earlier version", no "the first cut", no "since Phase
+  N". The script is the mechanical half: it refuses those phrases and any
+  `YYYY-MM-DD` in a `src/main` comment. **A date is exempt only where
   it stamps a hardware measurement**, and `measured` or `seen on` must sit on
   the same line as the date — the gate reads one line at a time, and wrapping
   will otherwise separate them.
@@ -151,6 +152,19 @@ Full guide with examples: `.github/COMMIT_CONVENTION.md`
   with bare `§N` references far below inheriting it, so re-anchor it into a
   surviving sentence and run `scripts/check-citations.sh` after every file, not
   every commit.
+- **Say it once, at the site that can break it.** A mechanism argued in a
+  class KDoc, again in a member's, and again inline is one fact costing three
+  paragraphs. Keep it where an edit would violate it; the other places get
+  nothing — a cross-reference is still a line, and three of them are how a
+  reader stops trusting any of them. The shape to watch is a long KDoc that
+  argues a mechanism living in the function below it, whose own comments then
+  argue it again.
+- **Keep the finding, not the search.** The trap stays, and so does why it is
+  a trap: a reader about to delete a redundant-looking argument has to be
+  stopped. How it was found does not — the decompiled bridge, the theory that
+  was ruled out, the pixel counts, the thing that was expected to happen and
+  did not. Git holds the investigation and `docs/… §N` holds the decision, so
+  the comment cites the section rather than restating what it settled.
 - Run `make fmt` before committing; `make lint` and `make test` before
   considering any change complete.
 

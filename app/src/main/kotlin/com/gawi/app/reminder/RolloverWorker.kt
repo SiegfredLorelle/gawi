@@ -31,11 +31,10 @@ private const val TAG = "RolloverWorker"
  *    one just changed. Pushing first would redraw the old streaks and then leave
  *    the new ones unpushed until something else committed.
  *
- * **Calling the listener directly makes it a third caller**, which its KDoc
- * previously said it had none of: it is called from `appendLocked` and
- * `mergeLocked`, *"not from `rebuildProjections`… not from `sweepStreaks`"*. That
- * paragraph also says what a consumer needing to follow a rollover must do, and
- * this is it. `:app` resolves the interface rather than a `:widget` type, so the
+ * **Calling the listener directly makes this its third caller**, and the one
+ * that follows the *absence* of a commit rather than a commit — the case its
+ * KDoc names when it says a consumer needing to follow a rollover must observe
+ * or be woken for itself. `:app` resolves the interface rather than a `:widget` type, so the
  * module rule (`widget → core`) is untouched — the Glance implementation is
  * reached through the binding `:widget` already provides.
  *

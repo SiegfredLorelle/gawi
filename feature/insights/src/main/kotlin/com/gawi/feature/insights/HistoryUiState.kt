@@ -96,7 +96,7 @@ internal data class RateTrendUi(val schedule: ScheduleLabelUi, val points: List<
      * A habit created today has five dashes and no line, and an empty plot area
      * above the labels reads as a chart that failed to draw rather than as a
      * chart with nothing in it. So the plot is omitted and the labelled dashes
-     * carry the whole message — which they already did.
+     * carry the whole message.
      *
      * Here rather than in the composable because it is a decision about the
      * data, and one a screenshot is the only other way to catch. One point is

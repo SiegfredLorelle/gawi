@@ -34,7 +34,7 @@ object GawiIcons {
     /** Up navigation, in five app bars. Not the month pager — see [ChevronLeft]. */
     @DrawableRes val ArrowLeft = R.drawable.ic_arrow_left
 
-    /** Insights. Lucide `chart-pie`, which is what `◔` was reaching for. */
+    /** Insights. Lucide `chart-pie`. */
     @DrawableRes val ChartPie = R.drawable.ic_chart_pie
 
     /** A step back through a range, not a screen. */
@@ -47,13 +47,13 @@ object GawiIcons {
     @DrawableRes val Close = R.drawable.ic_close
 
     /**
-     * Manage habits. Lucide `list-checks` rather than `menu`: `☰` implied a
+     * Manage habits. Lucide `list-checks` rather than `menu`: a `☰` implies a
      * navigation drawer this app does not have, and the destination is a list
      * of things you tick.
      */
     @DrawableRes val ListChecks = R.drawable.ic_list_checks
 
-    /** Decrement. Replaces `−` (U+2212), which Outfit did have. */
+    /** Decrement. A vector to match [Plus], not because the face lacks `−`. */
     @DrawableRes val Minus = R.drawable.ic_minus
 
     /** Edit. */

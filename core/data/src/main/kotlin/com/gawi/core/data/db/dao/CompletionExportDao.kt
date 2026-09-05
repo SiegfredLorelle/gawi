@@ -39,9 +39,7 @@ internal interface CompletionExportDao {
      * A blank first column would be worse than an unfriendly one.
      *
      * **Archived habits are included.** Their completions are history and this
-     * is a view of history. That makes this the second read after
-     * `ReadModelDao.observeAllHabits` that does not filter archived, for an
-     * unrelated reason.
+     * is a view of history.
      *
      * Ordered by date first because that is how a spreadsheet is read, then by
      * name `COLLATE NOCASE` so a capitalised habit does not sort into its own

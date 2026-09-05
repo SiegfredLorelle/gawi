@@ -16,8 +16,8 @@ import com.gawi.core.data.db.entity.HabitStreakEntity
 import com.gawi.core.data.db.entity.ProjectionMetaEntity
 
 /**
- * The one database: an append-only `events` table, and — as the projection
- * lands — the derived tables the UI reads through `Flow` queries.
+ * The one database: an append-only `events` table, and the derived tables the
+ * UI reads through `Flow` queries.
  *
  * Two rules govern schema change here, and they are not the same rule:
  *

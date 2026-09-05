@@ -140,10 +140,9 @@ private fun SettingsList(state: SettingsUiState.Settings, actions: SettingsActio
  *
  * Split out of [SettingsList] rather than nested in it, because the two do
  * different jobs: that one lays out rows, this one is a `when` over view state.
- * They were one function until the reminder row grew its notification notice and
- * pushed it past detekt's `LongMethod` — which is the sort of limit worth taking
- * the hint from rather than raising, since the seam it pointed at was already
- * there.
+ * Together they are past detekt's `LongMethod` — the sort of limit worth taking
+ * the hint from rather than raising, since the seam it points at is a real
+ * one.
  *
  * [onClose] is called before the action, in every branch, so a confirm cannot
  * leave the dialog up if the write throws.
@@ -238,15 +237,14 @@ private fun AppearanceSection(theme: ThemeMode, onOpen: () -> Unit) {
  * row uses the same shape to say the opposite — what it does *not* reach — for
  * the reason [AppearanceSection] gives.
  *
- * **[value] is nullable, and that replaced a second near-identical composable.**
- * docs/ux/settings.md §6 argued the Data section's rows must not be this one
- * with an empty value, because the middle line is `titleMedium` in the primary
- * colour and means "this is what it is set to" — the rows above teach that before a
- * reader reaches the fourth. The argument holds and is why null draws no middle
- * line at all rather than an empty one: the import row has nothing to put there
- * and never will. What changed is that the export row now *does* have a stored
- * value, so keeping two composables would have meant maintaining the same
- * `Column` twice to express one difference.
+ * **[value] is nullable, which is what lets one composable serve both kinds of
+ * row.** docs/ux/settings.md §6 argues the Data section's rows must not be this
+ * one with an empty value, because the middle line is `titleMedium` in the
+ * primary colour and means "this is what it is set to" — the rows above teach
+ * that before a reader reaches the fourth. That is why null draws no middle line
+ * at all rather than an empty one: the import row has nothing to put there and
+ * never will. The export row does have a stored value, so a second composable
+ * would mean maintaining the same `Column` twice to express one difference.
  *
  * [activity] carries both "can this be tapped" and "is this the row that is
  * busy". See [RowActivity] for why they are one parameter and not two.
