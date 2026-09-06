@@ -56,9 +56,9 @@ internal fun TodayScreen(state: TodayUiState, actions: TodayActions, snackbarHos
     val chipVisible by remember { derivedStateOf { listState.firstVisibleItemIndex > 0 } }
     // Hoisted for the same reason as the list state, and one level higher. The
     // celebration's memory has to outlive the mascot item, which is why it does
-    // not live in the tank; it has to outlive the *branch* as
-    // well, because the chip in the bar above reads the milestone from it and
-    // the bar is the list's sibling. `Loading` and `Unavailable` have no mood —
+    // not live in the tank; it has to outlive the *branch* as well, because the
+    // chip in the bar above reads the milestone from it and the bar is the
+    // list's sibling. `Loading` and `Unavailable` have no mood —
     // rememberCelebration says why the null matters rather than a stand-in.
     val mood = when (state) {
         is TodayUiState.Habits -> state.mood
