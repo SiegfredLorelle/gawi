@@ -44,8 +44,9 @@ data class Completion(val habitId: HabitId, val logicalDate: LocalDate, val note
  * throw on every member that module's screen does not use, so a screen reaching
  * a new one fails loudly; one fake shared by every screen cannot do that by
  * default. So the guard is opt-in: [unreachable] takes the member names this
- * test's subject must not call, and calling one fails the test that made it. `refreshStreaks` and `rebuildProjections` are loud for
- * everyone, no screen having a use for either.
+ * test's subject must not call, and calling one fails the test that made it.
+ * `refreshStreaks` and `rebuildProjections` are loud for everyone, no screen
+ * having a use for either.
  *
  * The case that made this worth keeping: the history screen must read
  * [observeHabit] and not [observeHabitDetail], which would run a completions
