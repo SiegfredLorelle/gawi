@@ -768,7 +768,8 @@ Deviations and notes:
   comments rule over `src/main` Kotlin: no `YYYY-MM-DD` and none of eleven
   narrative phrasings in a comment, with one exemption the writer opts into —
   a date passes where the same line says `measured` or `seen on`, because how
-  stale a hardware measurement is cannot be read off anything else. It runs
+  stale a measurement is cannot be read off anything else — and what is measured
+  here is as often a launcher, an API level or a third-party reader as a phone. It runs
   first of the three, and refuses to pass when it finds too few files to scan.
 - **`make lint` gained a second step, `:app:assembleDebug`** (2026-09-02). Same
   shape as the citation check — inside an existing target, so `ci.yml` is
