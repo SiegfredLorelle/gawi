@@ -33,15 +33,15 @@ import javax.inject.Singleton
  * AppCompat activity and `AppCompatDelegate.setDefaultNightMode` would not
  * reach a `ComponentActivity` anyway.
  *
- * **What 29 and 30 lose is one flash of the starting window.**
- * It measured 2026-08-28 at 66–331 ms on API 30 and at 317–448 ms on API 29,
- * which holds it more than twice as long and is the one place the two differ. What they do not
- * lose is a wrong *content* frame: `ThemeViewModel.theme` starts `null` and
- * resolves to the system scheme, but the read beats the first composed frame
- * except on a cold cache. On 31 and up none of it applies — the override is in
- * the configuration before the process starts, so `isSystemInDarkTheme()` is
- * right on the first frame and the `null` start costs nothing.
- * docs/ux/settings.md §8 carries the numbers.
+ * **What 29 and 30 lose is one flash of the starting window.** It was
+ * measured 2026-08-28 at 66–331 ms on API 30 and at 317–448 ms on API 29,
+ * which holds it more than twice as long and is the one place the two differ.
+ * What they do not lose is a wrong *content* frame: `ThemeViewModel.theme`
+ * starts `null` and resolves to the system scheme, but the read beats the first
+ * composed frame except on a cold cache. On 31 and up none of it applies — the
+ * override is in the configuration before the process starts, so
+ * `isSystemInDarkTheme()` is right on the first frame and the `null` start
+ * costs nothing. docs/ux/settings.md §8 carries the numbers.
  *
  * **`MODE_NIGHT_AUTO` is how "follow the system" is expressed, and the platform
  * documents it as something else.** There is no call that *clears* a per-app
