@@ -114,11 +114,12 @@ object Mascot {
      * answer cannot flicker between two equally recent breaks.
      *
      * **The sort key is not one unit**, for the reason [REGENERATING_WINDOW_DAYS]
-     * records: a weekly habit whose streak zeroed this week is dated its Monday and
-     * sorts below a daily habit that broke on the Wednesday. **That is correct
-     * rather than a defect** — the weekly break did become visible on the Monday,
-     * so it is the older news of the two. The mixed-schedule case in
-     * `RecentlyBrokenHabitsTest` pins it.
+     * records: a weekly habit whose streak zeroed this week is dated the day
+     * that week began — the configured [MoodInputs.weekStart], not necessarily a
+     * Monday — and so sorts below a daily habit that broke later in the same
+     * week. **That is correct rather than a defect**: the weekly break did
+     * become visible at the week's start, so it is the older news of the two.
+     * The mixed-schedule case in `RecentlyBrokenHabitsTest` pins it.
      *
      * **Answers without consulting the mood.** [Mood.THRIVING] outranks
      * [Mood.REGENERATING], so a finished day returns a non-empty list with nothing to
