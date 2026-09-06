@@ -18,6 +18,9 @@
 #   - "an earlier version", "an earlier revision", "an earlier cut"
 #   - "first cut"        the shape before this one is the diff's to describe.
 #   - "on review"        as "a review": who found it is the pull request's.
+#                        Word-boundaried, unlike "a review" above — otherwise
+#                        "the migration review" and "a comparison review" fire
+#                        on the tail of the preceding word.
 #   - "was wrong"        the same, in the voice of a confession.
 #   - "coderabbit"       a bot's name in a comment dates it to the bot.
 #   - "since Phase N"    a roadmap marker dates the sentence to a phase, and
@@ -131,7 +134,7 @@ failures=$(
                     why = "\"an earlier version/revision/cut\""
                 } else if (line ~ /first cut/) {
                     why = "\"first cut\""
-                } else if (line ~ /on review/) {
+                } else if (line ~ /(^|[^a-z])on review/) {
                     why = "\"on review\""
                 } else if (line ~ /was wrong/) {
                     why = "\"was wrong\""
