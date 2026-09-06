@@ -35,9 +35,9 @@ import androidx.compose.ui.graphics.Color
  *
  * **`tertiary` is not §3's value.** §3 lists `#C9A227`, which is 2.31:1 on
  * this surface — and `tertiary` is drawn as plain text (a week streak in
- * `StreakBadge`), so WCAG's 4.5:1 applies to it. §4.1's
- * own requirement is that `tertiary` step *darker* than `primary` in light mode,
- * which `#C9A227` does not: it is lighter. `#665012` satisfies both at 7.36:1
+ * `StreakBadge`), so WCAG's 4.5:1 applies to it. §4.1's own requirement is that
+ * `tertiary` step *darker* than `primary` in light mode, which `#C9A227` does
+ * not: it is lighter. `#665012` satisfies both at 7.36:1
  * with a 1.32 lightness step. The cost, recorded rather than hidden: gold at
  * this lightness reads as bronze.
  *
