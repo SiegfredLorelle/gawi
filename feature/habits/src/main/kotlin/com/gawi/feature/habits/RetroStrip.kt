@@ -120,8 +120,7 @@ private fun RowScope.RetroCell(cell: RetroCellUi, onCell: (RetroCellUi) -> Unit,
         // than pictures of an action, they are sized by the type scale rather
         // than by a 24dp box, and a text node is what lets a test see the
         // marker at all. Turning them into icons is a live question, not a
-        // settled no.
-        // The spoken label carries the same fact; see cellAction.
+        // settled no. The spoken label carries the same fact; see cellAction.
         Text(
             text = if (cell.hasNote) NOTE_GLYPH else "",
             style = MaterialTheme.typography.labelSmall,
