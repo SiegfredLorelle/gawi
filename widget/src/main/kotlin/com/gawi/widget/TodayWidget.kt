@@ -99,7 +99,7 @@ internal class TodayWidget : GlanceAppWidget() {
     }
 }
 
-/** The repository, resolved through [WidgetEntryPoint], which has why. */
+/** The repository, resolved off the application graph via [WidgetEntryPoint]. */
 internal fun repositoryFrom(context: Context): HabitRepository =
     EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java).habitRepository()
 
@@ -232,10 +232,9 @@ private fun LargeHeader(mood: Mood, rows: List<WidgetRow>) {
  * Two [BandBitmap] masks in one [Box], each tinted by its own provider, so
  * the band has no child count to hit ([BandBitmap] has the ten-child cap that
  * rules out a box per habit) and both fills still resolve through the palette.
- * Remembered
- * against everything that changes the pixels: the flags, the room, the density
- * and the direction. Not the colour — the masks are white, and the tint is the
- * free half, as with [OutfitText].
+ * Remembered against everything that changes the pixels: the flags, the room,
+ * the density and the direction. Not the colour — the masks are white, and the
+ * tint is the free half, as with [OutfitText].
  */
 @Composable
 private fun WovenBand(rows: List<WidgetRow>, width: Dp) {
