@@ -31,12 +31,14 @@ private const val TAG = "RolloverWorker"
  *    one just changed. Pushing first would redraw the old streaks and then leave
  *    the new ones unpushed until something else committed.
  *
- * **Calling the listener directly makes this its third caller**, and the one
- * that follows the *absence* of a commit rather than a commit — the case its
- * KDoc names when it says a consumer needing to follow a rollover must observe
- * or be woken for itself. `:app` resolves the interface rather than a `:widget` type, so the
- * module rule (`widget → core`) is untouched — the Glance implementation is
- * reached through the binding `:widget` already provides.
+ * **Calling the listener directly is the caller that follows the *absence* of
+ * a commit** rather than a commit — the case its KDoc names when it says a
+ * consumer needing to follow a rollover must observe or be woken for itself.
+ * Nothing here holds the repository's mutex, which is why that KDoc scopes its
+ * serialisation guarantee to the command paths. `:app` resolves the interface
+ * rather than a `:widget` type, so the module rule (`widget → core`) is
+ * untouched — the Glance implementation is reached through the binding
+ * `:widget` already provides.
  *
  * **Arms the reminder, not itself, and with `REPLACE`** — [ReminderScheduler]'s
  * KDoc has both halves. This is the direction that guarantees forward progress, so
