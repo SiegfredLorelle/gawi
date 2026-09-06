@@ -222,12 +222,18 @@ class ReminderCheck @Inject internal constructor(
         /**
          * How far ahead of the threshold a wake may arrive and still count.
          *
-         * Asymmetric with the outright rejection of a late wake, because the two
-         * costs are not comparable: a wake a second early that is refused means
-         * no reminder *at all* that day — the next armed wake is tomorrow's —
-         * while a minute early is a nudge nobody can perceive. WorkManager defers
-         * work and does not run it ahead of its delay, so this absorbs clock
-         * jitter between arming and waking rather than a scheduling behaviour.
+         * Asymmetric with the refusal in [outsideTheReminderWindow], which is
+         * what a wake deferred past the cutoff runs into: it lands in the next
+         * logical day, where it is early against *that* day's threshold. Late
+         * within the day still posts — there is no late bound.
+         *
+         * The two costs are not comparable, which is why the early side gets a
+         * tolerance at all: a wake a second early that is refused means no
+         * reminder *at all* that day, the next armed wake being tomorrow's,
+         * while a minute early is a nudge nobody can perceive. WorkManager
+         * defers work and does not run it ahead of its delay, so this absorbs
+         * clock jitter between arming and waking rather than a scheduling
+         * behaviour.
          */
         val EARLY_TOLERANCE: Duration = Duration.ofMinutes(1)
     }

@@ -31,8 +31,7 @@ import javax.inject.Inject
  * carry at all, "is there anything here to lose", so a flow of its own was
  * needed either way. The preferences there are what the user set; this is a
  * record of something the app did. A fourth field, the theme, is not a
- * counter-example: it changes when the user changes it, and no reader binds
- * it.
+ * counter-example: it changes when the user changes it, and no reader binds it.
  *
  * It shares the *file* with them, which is safe in the direction that is easy to
  * get wrong: `DataStoreSettingsSource.update` assigns only the preference keys

@@ -527,9 +527,9 @@ internal class OfflineFirstHabitRepository @Inject constructor(
      * A second subscription to the settings, deliberately. [readContext]'s
      * dedupe drops a reminder-time edit, so anything downstream of it carries a
      * stale reminder time by construction. This is the fresh read, and it sits
-     * *inside* the query's `flatMapLatest`
-     * rather than beside it, so an edit here reaches the snapshot through
-     * `combine` without re-entering the block that sweeps.
+     * *inside* the query's `flatMapLatest` rather than beside it, so an edit
+     * here reaches the snapshot through `combine` without re-entering the block
+     * that sweeps.
      *
      * The week start is not read here. That one is the outer context's, and a
      * second independently-deduped copy of a value the query is bound to is

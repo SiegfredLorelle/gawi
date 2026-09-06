@@ -51,10 +51,10 @@ internal class ReminderJournal @Inject constructor(private val dataStore: DataSt
      * policy lives here, next to the KDoc that argues for it, and the caller
      * gets one answer from one read.
      *
-     * True for a stamp on [today] **or one day ahead of it** ([SKEW_TOLERANCE_DAYS]),
-     * and false for one further ahead than that. Both halves of that are
-     * `ExportJournal.daysSince`'s decision, re-made here because it is the same
-     * bug in the same shape.
+     * True for a stamp on [today] **or one day ahead of it**
+     * ([SKEW_TOLERANCE_DAYS]), and false for one further ahead than that. Both
+     * halves of that are `ExportJournal.daysSince`'s decision, re-made here
+     * because it is the same defect in the same shape.
      *
      * A stamp *further* ahead reads as no stamp at all, and that is not the same
      * as clamping it. A device whose clock was a month ahead when a reminder was

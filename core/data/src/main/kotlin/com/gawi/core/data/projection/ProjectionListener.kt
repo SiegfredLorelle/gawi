@@ -40,12 +40,16 @@ package com.gawi.core.data.projection
  * boundary, and `ReminderScheduler` re-arms from a `SettingsSource` collector so
  * a cutoff edit moves the wake with it.
  *
- * **Implementations must be main-safe, and are called under the command mutex
- * inside a `NonCancellable` region.** The caller's dispatcher is whatever tapped
- * — `viewModelScope` is `Main.immediate` — so an implementation that touches the
- * platform switches dispatcher itself, the way `ContentResolverEventArchive`
- * does rather than making every call site remember. Work here delays the next
- * command and cannot be cancelled out of.
+ * **Implementations must be main-safe**, whichever path calls them. The
+ * caller's dispatcher is whatever tapped — `viewModelScope` is `Main.immediate`
+ * — so an implementation that touches the platform switches dispatcher itself,
+ * the way `ContentResolverEventArchive` does rather than making every call site
+ * remember.
+ *
+ * **On the command paths only**, this runs under the repository's mutex and
+ * inside a `NonCancellable` region, so work here delays the next command and
+ * cannot be cancelled out of. The scheduled wake above has neither: it is a
+ * worker calling by hand, with nothing to serialise against.
  */
 interface ProjectionListener {
 
