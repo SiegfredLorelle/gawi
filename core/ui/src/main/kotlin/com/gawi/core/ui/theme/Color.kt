@@ -33,9 +33,9 @@ import androidx.compose.ui.graphics.Color
  * `secondaryContainer` would have shown lavender through a teal app, and §4.1
  * makes `outline` semantic rather than decorative.
  *
- * **`tertiary` is not §3's value.** §3 lists
- * `#C9A227`, which is 2.31:1 on this surface — and `tertiary` is drawn as plain
- * text (a week streak in `StreakBadge`), so WCAG's 4.5:1 applies to it. §4.1's
+ * **`tertiary` is not §3's value.** §3 lists `#C9A227`, which is 2.31:1 on
+ * this surface — and `tertiary` is drawn as plain text (a week streak in
+ * `StreakBadge`), so WCAG's 4.5:1 applies to it. §4.1's
  * own requirement is that `tertiary` step *darker* than `primary` in light mode,
  * which `#C9A227` does not: it is lighter. `#665012` satisfies both at 7.36:1
  * with a 1.32 lightness step. The cost, recorded rather than hidden: gold at
@@ -114,12 +114,12 @@ internal val GawiLightColors: ColorScheme = lightColorScheme(
  * `secondaryContainer` is darker than a straight mirror of the light scheme
  * would make it, because it is a *ground*: `RetroStrip` fills today's cell with
  * it and then draws the weekday letter in `onSurfaceVariant` on top. At the
- * lighter value that pair measures 4.24:1 — a real text failure, on the one cell
- * every user looks at every day.
- * Recessive content needs a dark enough ground to be recessive *on*, which a
- * mid-tone container does not give. The cost is that today's cell reads as a
- * slightly subtler fill: 1.59:1 against `surface` rather than 1.96:1, still more
- * visible than the light scheme's own 1.21:1.
+ * lighter value that pair measures 4.24:1 — a real text failure, on the one
+ * cell every user looks at every day. Recessive content needs a dark enough
+ * ground to be recessive *on*, which a mid-tone container does not give. The
+ * cost is that today's cell reads as a slightly subtler fill: 1.59:1 against
+ * `surface` rather than 1.96:1, still more visible than the light scheme's own
+ * 1.21:1.
  *
  * The `*Fixed` roles are shared with the light scheme by definition — Material
  * specifies them as theme-invariant — so the two declarations repeat those
