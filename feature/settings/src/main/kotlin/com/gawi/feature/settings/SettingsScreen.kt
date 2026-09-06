@@ -140,9 +140,9 @@ private fun SettingsList(state: SettingsUiState.Settings, actions: SettingsActio
  *
  * Split out of [SettingsList] rather than nested in it, because the two do
  * different jobs: that one lays out rows, this one is a `when` over view state.
- * Together they are past detekt's `LongMethod` — the sort of limit worth taking
- * the hint from rather than raising, since the seam it points at is a real
- * one.
+ * Together they are past detekt's `LongMethod` — the sort of limit worth
+ * taking the hint from rather than raising, since the seam it points at is a
+ * real one.
  *
  * [onClose] is called before the action, in every branch, so a confirm cannot
  * leave the dialog up if the write throws.

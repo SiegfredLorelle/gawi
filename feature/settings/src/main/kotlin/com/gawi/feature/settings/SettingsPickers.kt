@@ -147,10 +147,10 @@ internal fun ThemeDialog(selected: ThemeMode, onConfirm: (ThemeMode) -> Unit, on
 /**
  * One option in a [ChoiceDialog]: the value it stands for, and its name.
  *
- * The pair rather than a `label: (T) -> Int` beside the list, which would put
- * the dialog past detekt's six-parameter limit — and is the better shape anyway,
- * since an option and its name cannot then be supplied separately and get out
- * of step.
+ * The pair rather than a `label: (T) -> Int` beside the list, which would take
+ * [ChoiceDialog] to six parameters — where detekt's `LongParameterList` fires —
+ * and is the better shape anyway, since an option and its name cannot then be
+ * supplied separately and get out of step.
  */
 internal data class Choice<out T>(val value: T, @param:StringRes val label: Int)
 
