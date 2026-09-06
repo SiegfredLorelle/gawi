@@ -154,8 +154,8 @@ internal fun Mood.caption(): Int = when (this) {
  * **The reservation matches what is drawn, line for line**, and that is the
  * thing to re-check when either moves. A mood word is one line and ellipsises
  * past it, which never happens on the 110dp tile (94 − 3 − 30 leaves 61dp of
- * face at 2×). The no-habits copy is two lines
- * ([EMPTY_COPY_LINES]), and when those leave less than [MIN_FACE_DP] the face
+ * face at 2×). The no-habits copy is two lines ([EMPTY_COPY_LINES]), and when
+ * those leave less than [MIN_FACE_DP] the face
  * goes rather than a sliver of her or a clipped word — reachable only in that
  * state on the minimum tile at a large scale, where she is decorative and the
  * copy is what is read, so nothing is lost.
