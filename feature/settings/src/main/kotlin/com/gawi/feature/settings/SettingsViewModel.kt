@@ -95,10 +95,10 @@ internal class SettingsViewModel @Inject constructor(
      * warning costs an export nobody needed; a wrong silence costs the warning
      * PRD §5 asked for, on a device that may have no backup. A bug is exactly the
      * situation in which there is nothing left to argue the choice from, so it
-     * takes the same direction the rest of the feature does. "Bug-only" is a
-     * claim worth re-checking rather than assuming: `SQLiteException` from the log
-     * count is a `RuntimeException`, so anything guarding only `IOException`
-     * upstream lets it through to here.
+     * takes the same direction the rest of the feature does. And the path is
+     * narrower than "a bug" makes it sound: `SQLiteException` from the log count
+     * is a `RuntimeException`, so an upstream guard testing only `IOException`
+     * lets it reach this fallback.
      */
     private fun exportStatus(): Flow<ExportStatus> = archive.observeExportStatus()
         .catch { cause ->
