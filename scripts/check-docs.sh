@@ -17,10 +17,14 @@
 #                     re-run; that is two. A third date is a third record, which
 #                     is the shape the cap above is usually catching from the
 #                     other side, caught here even when the prose is terse.
-#   - a struck passage, `~~…~~`
+#   - a struck passage
 #                     A struck claim with its correction after it is history
 #                     written in place. The surviving half belongs in the
-#                     present tense and the struck half belongs in git.
+#                     present tense and the struck half belongs in git. The
+#                     markers inside an inline code span do not count, or no
+#                     document could name the construct it must not contain —
+#                     which is how this check first failed, on the paragraph
+#                     added to docs/architecture.md §9 to describe it.
 #
 # What it deliberately does not check. Whether a status line is *true*, which
 # only a device can say. Whether a body's prose is instruction or narrative,
@@ -132,7 +136,10 @@ failures=$(
             END { flush() }
         ' "$file"
 
-        grep -n '~~' "$file" | while IFS= read -r hit; do
+        # Inline code spans are stripped first, so a document may name the
+        # marker it must not use. sed, not grep -v, because a line can carry
+        # both a quoted mention and a real struck passage.
+        sed 's/`[^`]*`//g' "$file" | grep -n '~~' | while IFS= read -r hit; do
             echo "$file:${hit%%:*}: struck passage — the surviving half belongs in the present tense"
         done
     done
