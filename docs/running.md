@@ -1404,119 +1404,110 @@ Reach it from habit detail: **See full history**, under the five-cell strip.
 
 ### The Insights screen, and the rate trend
 
-New 2026-08-24 with the other two Insights surfaces (docs/ux/insights.md §§8.7,
-8.8). `make test` covers what each draws from given numbers; what it cannot cover
-is a colour distinction being *visible*, a glyph existing in the device's font,
-and an upgrade not losing anything.
+docs/ux/insights.md §§8.7, 8.8. `make test` covers what each surface draws from
+given numbers; what it cannot cover is a colour distinction being *visible*, a
+glyph existing in the device's font, and an upgrade not losing anything.
 
-- [x] **The upgrade, before anything else.** Install the *previous* build, make a
-      habit or two and tick a few days, then install this one over it. Every
-      habit and every completion must survive and the new start dates must appear
-      — this is the first schema migration in the repo, `fallbackToDestructive`
-      is deliberately absent, and a failure here is the one that costs real data.
-      **Run on an emulator 2026-08-24**: a v1 database with 57 events and two
-      habits came through with both versions at 2 and `created_on` populated from
-      the log.
+- [x] **The upgrade, before anything else.** Install the *previous* build, make
+      a habit or two and tick a few days, then install this one over it. Every
+      habit and every completion must survive and the new start dates must
+      appear — this is the first schema migration in the repo,
+      `fallbackToDestructive` is deliberately absent, and a failure here is the
+      one that costs real data. Run on an emulator 2026-08-24: a v1 database
+      with 57 events and two habits came through with both versions at 2 and
+      `created_on` populated from the log.
 - [x] **Every tag bar is the same colour, and Untagged is still obvious.** Reach
       Insights from Today's app bar, pick Tags. The bars are all `primary` — a
-      grey one would measure 1.07 against it, which is why the distinction is the
-      *label* instead. Check at arm's length in both themes that "Untagged" reads
-      as quieter than a tag name without reading as disabled.
+      grey one would measure 1.07 against it, which is why the distinction is
+      the *label* instead. Check at arm's length in both themes that "Untagged"
+      reads as quieter than a tag name without reading as disabled.
 - [x] **The bar track is visible where a bar is short.** Needs two tags with
       different totals; with one tag the bar is full width and the track is
-      covered, so this check is silently vacuous otherwise. **Run on an emulator
-      2026-08-24** with two: the track sampled `#D3E3E6` light / `#2C3A3D` dark.
+      covered, so this check is silently vacuous otherwise. Run on an emulator
+      2026-08-24 with two: the track sampled `#D3E3E6` light and `#2C3A3D` dark.
 - [x] **A habit created today reads a dash, not a low number.** Make a habit,
       open Insights, and look at its row under Habits — and at its rate card on
       the history screen. Five dashes is correct: it has failed nothing. A
       percentage here means the creation date is not reaching the clip, which is
-      the whole point of projecting it. **Run on an emulator 2026-08-24**: a
-      habit made that day read a dash in its row and across all five months.
+      the whole point of projecting it. Run on an emulator 2026-08-24: a habit
+      made that day read a dash in its row and across all five months.
 - [ ] **Each period chip changes the window.** With history in more than one
-      month, Month and Quarter must differ. With everything inside one month they
-      will agree, and that is correct rather than broken — worth knowing before
-      it looks like a bug. **Not yet run against data spanning two months**; the
-      query window moving is pinned by `InsightsViewModelTest` instead, which is
-      not the same claim.
-- [x] **Every icon draws, in both themes.** Fifteen controls, all vectors since
-      2026-08-24. The old check here was for tofu, which a vector cannot draw;
-      the failure that replaced it is the opposite and worse. A `<path>` missing
-      `strokeColor` inflates without complaint and draws *nothing*, and because
-      each button is named through `contentDescription`, every semantics test
-      passes on a control that renders empty. `GawiIconsTest` pins the XML, so
-      what is left for the eye is that the strokes read at a glance and that
-      `Icon`'s tint carries them in dark mode as well as light. **Run on an
-      emulator 2026-08-24, in both themes**: all ten drawables drew and the
-      strokes read at 24dp — the three app-bar icons, back, pencil, close, both
-      chevrons, the stepper's pair and the FAB. Light and dark were walked
-      separately rather than reasoned about from the one shared tint mechanism,
-      because "they all go through `LocalContentColor`" is a reason to expect
-      them to follow, not evidence that they did.
-
-      Three things that cost time here and will again. This emulator **does not
-      re-theme a running activity**, so `cmd uimode night yes` needs a
-      `force-stop` after it or the screenshot lies — it silently returned the
-      light screen once. Screen coordinates **are not stable between themes or
-      between data states**: *See full history* sits about 96px lower once the
-      habit has a live streak, because the `displaySmall` numeral appears above
-      it, so a replayed tap script lands on a retro-strip cell instead. And a
-      stray tap in that strip **writes a completion**, which is how this pass
-      silently ticked the test habit; it was reverted, but the log keeps both
-      events, which is what an event-sourced app is supposed to do. Drive this
-      by screenshot-then-tap, not by a fixed script.
-- [x] **The app-bar icons hold 24dp at 200% font scale, and that looks
+      month, Month and Quarter must differ. With everything inside one month
+      they will agree, and that is correct rather than broken — worth knowing
+      before it looks like a bug. Not yet run against data spanning two months;
+      `InsightsViewModelTest` pins the query window moving, which is not the
+      same claim.
+- [x] **Every icon draws, in both themes.** Fifteen controls, all vectors. The
+      failure to look for is not tofu, which a vector cannot draw, but its
+      opposite: a `<path>` missing `strokeColor` inflates without complaint and
+      draws *nothing*, and because each button is named through
+      `contentDescription`, every semantics test passes on a control that
+      renders empty. `GawiIconsTest` pins the XML, so what is left for the eye
+      is that the strokes read at a glance and that `Icon`'s tint carries them
+      in dark mode as well as light. Run on an emulator 2026-08-24 in both
+      themes: all ten drawables drew and the strokes read at 24 dp — the three
+      app-bar icons, back, pencil, close, both chevrons, the stepper's pair and
+      the FAB. Light and dark were walked separately rather than reasoned about
+      from the one shared tint mechanism, because "they all go through
+      `LocalContentColor`" is a reason to expect them to follow, not evidence
+      that they did. **Three things that cost time here and will again.** This
+      emulator **does not re-theme a running activity**, so `cmd uimode night
+      yes` needs a `force-stop` after it or the screenshot lies — it silently
+      returned the light screen once. Screen coordinates **are not stable
+      between themes or between data states**: *See full history* sits about 96
+      px lower once the habit has a live streak, because the `displaySmall`
+      numeral appears above it, so a replayed tap script lands on a retro-strip
+      cell instead. And a stray tap in that strip **writes a completion**. Drive
+      this by screenshot-then-tap, not by a fixed script.
+- [x] **The app-bar icons hold 24 dp at 200 % font scale, and that looks
       deliberate.** A behaviour change, not a regression: the characters these
-      replaced were `titleLarge` and grew with `fontScale`; a 24dp `Icon` does
-      not. Material-correct, and touch targets are 48dp either way — but the
+      replaced were `titleLarge` and grew with `fontScale`; a 24 dp `Icon` does
+      not. Material-correct, and touch targets are 48 dp either way — but the
       titles beside them still grow, so the thing to check is that the result
-      reads as a decision rather than as clipping. **Run on an emulator
-      2026-08-24**: the title grew about double, the three icons held their size,
+      reads as a decision rather than as clipping. Run on an emulator
+      2026-08-24: the title grew about double, the three icons held their size,
       and there was no clipping and no collision. It reads as a row of controls
-      beside a large title, which is the intended result.
+      beside a large title, which is intended.
 - [x] **The directional icons flip under RTL, and the pager still reads
       forwards.** The three glyphs replaced — `←` (U+2190), `‹` (U+2039), `›`
       (U+203A) — are all `Bidi_Mirrored`, so the text shaper flipped them and
       the app got RTL correctness for free. A `VectorDrawable` does not: it
-      needs `android:autoMirrored`, and the first cut of the set omitted it.
-      Found in review, not by any of the checks above, because every one of them
-      looks at a light-mode English screen. `GawiIconsTest` now pins the
-      attribute in both directions, and this is the other half — that the
-      framework honours it.
-
-      **`debug.force_rtl` did not work on this emulator** and silently returned
-      an LTR screen, which is the trap worth recording. What does work, without
+      needs `android:autoMirrored`. `GawiIconsTest` pins the attribute in both
+      directions, and this is the other half — that the framework honours it.
+      **`debug.force_rtl` does not work on this emulator** and silently returns
+      an LTR screen, which is the trap worth recording. What works, without
       touching system settings, is a per-app locale:
 
-          adb shell cmd locale set-app-locales com.gawi.app --user 0 --locales ar-EG
-          adb shell cmd locale set-app-locales com.gawi.app --user 0 --locales
+      adb shell cmd locale set-app-locales com.gawi.app --user 0 --locales ar-EG
+      adb shell cmd locale set-app-locales com.gawi.app --user 0 --locales
 
-      **Run on an emulator 2026-08-24**: the Up arrow points right, toward the
-      edge it now sits on; `list-checks` leads with its marks on the right; and
-      in the month pager the *earlier* chevron sits on the leading right edge
+      Run on an emulator 2026-08-24: the Up arrow points right, toward the edge
+      it now sits on; `list-checks` leads with its marks on the right; and in
+      the month pager the *earlier* chevron sits on the leading right edge
       pointing right, which is backwards in RTL and therefore correct. Restore
       the locale afterwards — the second command above clears it.
 - [x] **Each sparkline dot sits above its own month label.** The plot's x
       positions are coupled to the label row's column centres and nothing in the
       suite can see that — an earlier edge-to-edge spacing put the outer two
-      dots about 27dp off, which a screenshot shows at a glance and a test never
-      will. Look at a habit with two or more months of history. **Run on an
-      emulator 2026-08-24**: the dot's centre and its label's centre both landed
+      dots about 27 dp off, which a screenshot shows at a glance and a test
+      never will. Look at a habit with two or more months of history. Run on an
+      emulator 2026-08-24: the dot's centre and its label's centre both landed
       on the same pixel column.
-- [ ] **200% font scale on both new surfaces.** The chips wrap rather than clip,
-      the bar rows stay readable, and the rate card's five month labels do not
-      collide. **Not yet run** — 200% was checked on the month grid, which is a
+- [ ] **200 % font scale on both new surfaces.** The chips wrap rather than
+      clip, the bar rows stay readable, and the rate card's five month labels do
+      not collide. Not yet run — 200 % was checked on the month grid, which is a
       different layout from either of these.
 - [x] **An empty period says so, and says *which* empty.** Copy, not an empty
       list, and the pickers stay reachable so there is a way out of it. **Three
       different notices**, and which one appears is the check: no habits at all,
       every habit archived, and a period with no completions each say their own
-      thing (docs/ux/insights.md §8.8). **Run on an emulator 2026-08-24**, all
-      three — the first from cleared app data, and the archived one showing "1
-      active day · 1 completion" above "Every habit is archived", which is the
+      thing (docs/ux/insights.md §8.8). Run on an emulator 2026-08-24, all three
+      — the first from cleared app data, and the archived one showing "1 active
+      day · 1 completion" above "Every habit is archived", which is the
       contradiction the three-way split was made to remove.
 
-**The retrospective** (built 2026-08-29, docs/ux/insights.md §9) is the same
-screen one period back, and its owed looks are the ones no JVM test can take:
+**The retrospective** (docs/ux/insights.md §9) is the same screen one period
+back, and its owed looks are the ones no JVM test can take.
 
 - [x] **Step back to a quarter that holds real data.** On `gawi-api30` — the
       rootable image, so the clock can be walked (`adb root`, `settings put
@@ -1525,115 +1516,110 @@ screen one period back, and its owed looks are the ones no JVM test can take:
       the headline changes, the trend has three columns with a dot centred over
       each, and ▶ is greyed only on the current quarter. Then flip to Year: the
       offset resets to now, so the label reads "2026" and ▶ is greyed.
-      **Run on `gawi-api30` 2026-08-29**: Run tagged `health` logged on 10 and
-      11 May and 3 June with the clock walked, Read re-tagged `career` today.
-      Q3 → ◀ read "Q2 2026 · 3 active days", three columns (Apr 0, May 2, Jun 1)
-      with each dot on its label, "best 2 days" on Run, ▶ live; Year reset to
-      2026 with ▶ greyed. **Second pass, after the PR review**: Q3 read "So
-      far, mostly career." and Q2 — whose Q1 held nothing — no sentence; ◀ was
-      already greyed on Q2, since Q2 starts before Run's 10 May creation and
-      nothing earlier can hold a habit, and a further tap did not move.
+      Run on `gawi-api30` 2026-08-29: Q3 → ◀ read "Q2 2026 · 3 active days",
+      three columns (Apr 0, May 2, Jun 1) with each dot on its label, "best 2
+      days" on the tagged habit, ▶ live; Year reset to 2026 with ▶ greyed. A
+      second pass added that ◀ is already greyed on Q2, since Q2 starts before
+      that habit's creation and nothing earlier can hold one, and a further tap
+      did not move.
 - [ ] **The focus sentence flips when the top tag does.** With `health` leading
       last quarter and `career` this one: "Focus shifted from health to career."
       Re-tag the leading habit so both quarters agree: "Still mostly career."
       Remove every tag: no sentence at all, not "Untagged".
-      **Half run 2026-08-29**: the shifted sentence appeared on Q3 exactly as
+      Half run 2026-08-29: the shifted sentence appeared on Q3 exactly as
       written, and Q2 — whose Q1 held nothing — drew no sentence. The "still
-      mostly" and untagged flips were not exercised on a device; the mapper
-      test pins them.
+      mostly" and untagged flips were not exercised on a device; the mapper test
+      pins them.
 - [x] **200 % font scale on Year.** The eight-to-twelve trend columns are the
       densest row in the app: the counts stay on one line each, the initials
       under them do not collide, and the stepper label between its two arrows
       does not wrap. The initials are what bought the room, so this is the look
-      that decides whether they were enough. **Run 2026-08-29** on eight
-      columns: every count and initial on one line, "2026" between its arrows,
-      the rows' "Every day · best 2 days" unwrapped. Also seen in dark.
+      that decides whether they were enough.
+      Run 2026-08-29 on eight columns: every count and initial on one line,
+      "2026" between its arrows, the rows' "Every day · best 2 days" unwrapped.
+      Also seen in dark.
 - [x] **A row's best run reads as one line.** "Daily · best 31 days" beside the
       percentage, and a habit made this period with no run shows the schedule
-      alone — no "best 0 days" anywhere. **Run 2026-08-29**: "Every day · best
-      1 day" beside a dash on Read — the habit was created on the 29th and
-      back-filled, so the creation clip leaves one day for the run and no
-      finished day for the rate, which is the two rules agreeing. The no-run
-      half was seen on the same pass: on Q3, Run — created in May, not yet done
-      this quarter — read "Every day" alone beside "0%", no "best" anywhere.
+      alone — no "best 0 days" anywhere.
+      Run 2026-08-29: "Every day · best 1 day" beside a dash on a habit created
+      that day and back-filled, so the creation clip leaves one day for the run
+      and no finished day for the rate, which is the two rules agreeing. The
+      no-run half was seen on the same pass: a habit created in May and not yet
+      done that quarter read "Every day" alone beside "0%", no "best" anywhere.
 
 ---
 
 ### The restyle — both themes, once
 
-New with the designed scheme (2026-08-23). Everything here is a thing the tests
-cannot see: `GawiColorSchemeTest` asserts every contrast ratio the app draws in
-both themes, which is the part a number can answer. Whether it *looks* like one
-app is not.
+Everything here is a thing the tests cannot see: `GawiColorSchemeTest` asserts
+every contrast ratio the app draws in both themes, which is the part a number
+can answer. Whether it *looks* like one app is not.
 
 **Ticked items ran on an emulator, not on a phone, and are labelled so.** That
-is enough for this block: everything in it is colour, contrast and layout, which
-an emulator renders with the same Compose and the same resource qualifiers a
-device would. It is *not* enough for the widget or for TalkBack below, and those
-stay unticked — a widget lives in a launcher's process against a background it
-does not own, and TalkBack cannot be driven from `adb` at all. A tick here means
-"seen and correct", never "shipped and verified on the target device"; the
-Nothing A059 pass in §3 is still owed and is what would upgrade these.
+is enough for this block — everything in it is colour, contrast and layout,
+which an emulator renders with the same Compose and the same resource
+qualifiers a device would. It is *not* enough for the widget or for TalkBack,
+so those stay unticked: a widget lives in a launcher's process against a
+background it does not own, and TalkBack cannot be driven from `adb` at all.
 
 - [x] **Every screen, in both system themes.** Settings → Display → Dark theme,
       and walk Today, the habit list, habit detail, the editor and settings in
       each. What the ratio test cannot catch: two roles that both pass and still
       look wrong together, and any surface that reads as a different app.
-- [x] **A day streak next to a week streak.** `StreakBadge` distinguishes them by
-      `primary` versus `tertiary` and a trailing `w`
-      ([visual-identity.md](ux/visual-identity.md) §4.1). Both roles are measured
-      to be a lightness step apart, so this check is the other half: that the two
-      are *tellable apart at a glance*, in both themes, on a real row rather than
-      in a swatch. Light mode's `tertiary` is a dark bronze rather than the gold
-      the drawings showed — this is where that either reads as deliberate or does
-      not.
+- [x] **A day streak next to a week streak.** `StreakBadge` distinguishes them
+      by `primary` versus `tertiary` and a trailing `w` ([visual-
+      identity.md](ux/visual-identity.md) §4.1). Both roles are measured to be a
+      lightness step apart, so this check is the other half: that the two are
+      *tellable apart at a glance*, in both themes, on a real row rather than in
+      a swatch. Light mode's `tertiary` is a dark bronze rather than the gold
+      the drawings showed — this is where that either reads as deliberate or
+      does not.
 - [x] **Habit detail's retro strip.** Three marker states, not two: a completed
       day is `primary`, an open day not yet done is `onSurfaceVariant`, and a
       shut day is `outline` — which should be the quietest of the three. The
       strip is the densest use of the scheme and the place a recessive role that
-      is *too* recessive shows up. Look at today's cell especially: it is the one
-      with a filled ground, and the ground is what made the first version of
+      is *too* recessive shows up. Look at today's cell especially: it is the
+      one with a filled ground, and the ground is what made the first version of
       this fail (`visual-identity.md` §3).
 - [x] **The editor's colour swatches, and the tick on every one.** All eight
       retuned hues take a black glyph by design. Look at the tick on each: the
       old palette drew six of the eight below the contrast floor and the ring
-      around the selection hid it (§4.2), so a swatch that looks fine at a glance
-      is exactly the failure mode here.
-- [x] **Cold start in dark mode, watching for a flash.** Force-stop the app, then
-      launch it. The window is painted from `values-night/themes.xml` before
-      Compose runs, and its `windowBackground` was pointed at the scheme's dark
-      surface for this reason. Any visible flip from a lighter grey to the app's
-      background means the two have drifted apart.
-- [x] **The theme setting, on a phone whose system theme is the opposite.**
-      New 2026-08-26 ([ux/settings.md](ux/settings.md) §7). Settings →
-      Appearance → Theme → Dark on a light phone: every screen flips
-      immediately, and the app does not leave Settings while doing it — the
-      Activity is recreated underneath on API 31+, so a lost scroll position or
-      a reopened dialog is what a failure looks like. Then Light on a dark
-      phone, then back to *Follow the system* and toggle dark from quick
-      settings, which must move the app again.
+      around the selection hid it (§4.2), so a swatch that looks fine at a
+      glance is exactly the failure mode here.
+- [x] **Cold start in dark mode, watching for a flash.** Force-stop the app,
+      then launch it. The window is painted from `values-night/themes.xml`
+      before Compose runs, and its `windowBackground` is pointed at the scheme's
+      dark surface for this reason. Any visible flip from a lighter grey to the
+      app's background means the two have drifted apart.
+- [x] **The theme setting, on a phone whose system theme is the opposite**
+      ([ux/settings.md](ux/settings.md) §7). Settings → Appearance → Theme →
+      Dark on a light phone: every screen flips immediately, and the app does
+      not leave Settings while doing it — the Activity is recreated underneath
+      on API 31+, so a lost scroll position or a reopened dialog is what a
+      failure looks like. Then Light on a dark phone, then back to *Follow the
+      system* and toggle dark from quick settings, which must move the app
+      again.
 - [x] **Cold start with a forced theme, on API 31 or later.** The check above
-      this one, run with Dark chosen and the *system* in light mode.
-      Force-stop, launch, watch the first frame. There must be no flash at all:
+      this one, run with Dark chosen and the *system* in light mode. Force-stop,
+      launch, watch the first frame. There must be no flash at all:
       `setApplicationNightMode` puts the choice in the configuration, so the
-      window resolves from `values-night/` before Compose runs. **Run
-      2026-08-26 on API 37** — the launch window came up `#0E1A1C` with the
-      system in light mode, measured frame by frame off a `screenrecord`, so
-      the light `#F4FBFA` never appeared.
+      window resolves from `values-night/` before Compose runs. Run 2026-08-26
+      on API 37: the launch window came up `#0E1A1C` with the system in light
+      mode, measured frame by frame off a `screenrecord`, so the light `#F4FBFA`
+      never appeared.
 - [x] **The same cold start on API 29 or 30, where it is a different check.**
-      Its own item rather than a second half of the one above, because those
-      two versions have no `setApplicationNightMode`. **Run 2026-08-28 on
-      both**, `google_apis` x86_64 `medium_phone` emulators, Dark chosen with
-      the system in light: nine cold starts each, sampled frame by frame off a
+      Its own item rather than a second half of the one above, because those two
+      versions have no `setApplicationNightMode`. Run 2026-08-28 on both,
+      `google_apis` x86_64 `medium_phone` emulators, Dark chosen with the system
+      in light: nine cold starts each, sampled frame by frame off a
       `screenrecord`. The launch window came up light `#F4FBFA` and held it
-      before the dark app replaced it — 66–331 ms on API 30, and 317–448 ms on
-      API 29, which is the one place the two levels measurably differ. That is
-      the flash API 31 and up does not have. Backgrounding the app and opening
-      Recents was part of the check, and is where the doc turned out to be
-      wrong: the thumbnail is a screenshot of the window and measured
-      `#0E1A1C` on both.
-      [ux/settings.md](ux/settings.md) §8 carries the numbers and the two
-      claims that did not survive them.
+      before the dark app replaced it — **66–331 ms on API 30 and 317–448 ms on
+      API 29**, the one place the two levels measurably differ. That is the
+      flash API 31 and up does not have. Backgrounding the app and opening
+      Recents was part of the check and is where the document turned out to be
+      wrong: the thumbnail is a screenshot of the window and measured `#0E1A1C`
+      on both. [ux/settings.md](ux/settings.md) §8 carries the numbers and the
+      two claims that did not survive them.
 - [x] **The status bar's icons in both forced modes.** The bars follow the
       resolved theme rather than the device's, so this is where that either
       holds or produces white-on-white — the exact failure `enableEdgeToEdge`
@@ -1643,63 +1629,50 @@ Nothing A059 pass in §3 is still owed and is what would upgrade these.
       says so; the check is that the *row* said so, not that the widget moved.
 - [ ] **The habit hues against a real photo wallpaper**, on the Today list. Not
       because anything composites against the wallpaper — nothing does — but
-      because the eight are tuned to one lightness and the failure to look for is
-      the set reading as muddy rather than as eight distinguishable colours.
-- [x] **The app draws in Outfit, at the right weight, and knows which glyphs it
-      cannot draw.** New with the type scale (2026-08-24). Three things, and only
-      the first is easy. **The face**: Outfit is geometric, so its `o`, `a` and
-      `0` are visibly circular against the system sans, and the status bar clock
-      stays Roboto and gives a free side-by-side. **The weight**: the `wght` axis
-      is named explicitly on each entry, and if that were ever dropped as
-      redundant the whole app would render at the file's `fvar` default of 100 —
-      hairline, everywhere. That is loud rather than subtle, which is the good
-      news; a unit test pins it, so this check is a second line and not the only
-      one. Also worth a look with the system *Bold text* setting on, where the
-      roles ask for W700/W800 and should hit real instances rather than fake
-      bold. **The glyphs**: five characters the screens draw as text — `☰`, `◔`,
-      `⚙`, `✎`, `✕` — are not in this font and fall back to the platform face, so
-      an app bar mixes faces at one size. Look at habit detail's bar, where `←`
-      is Outfit and `✎` is not. Expected, documented, and an argument for icons
-      rather than a bug to file. **Not** in that set, checked rather than assumed
-      after review asked: `−` (U+2212) and `·` (U+00B7) are both present, which
-      matters most for the weekly-target stepper — it draws `−` beside an ASCII
-      `+` at one size, so an absent `−` would have been the most visible
-      mismatch in the app. The habit-icon emoji are a different thing again and
-      not worth checking here: colour emoji always come from the system's emoji
-      font ([visual-identity.md](ux/visual-identity.md) §4.2). Seen on an
-      emulator on 2026-08-24: face correct, weights correct, the five do fall
-      back, and the stepper pair is wholly Outfit.
-
-      **The glyph third of this is now history, and a re-run should skip it.**
-      Those five characters stopped being drawn later the same day — every
-      character-as-icon is a vector now
-      ([visual-identity.md](ux/visual-identity.md) §7.5) — so the face and the
-      weight are all that is left to look at here, and the icons have their own
-      check in §4. The record above stays as run rather than being edited: it
-      was true, and the fallback it describes is why the icons exist.
-- [x] **200% font scale, a second time, because the face changed.** The pass
-      below is ticked and was run on 2026-08-23 against Roboto. Outfit has its
-      own metrics — wider, different x-height — so every clipping and overflow
-      judgement in that pass was made about a face the app no longer draws. This
-      is not a doubt about the old run; it is that the old run answered a
-      different question. The `displaySmall` streak numeral and Settings' longest
-      body paragraph are where a wider face would show first. **Re-run on an
-      emulator on 2026-08-24 and clean.** Today's empty state wraps to two lines
-      and keeps its button; Settings' longest body paragraph wraps to six lines
-      and the notification notice wraps rather than clipping; habit detail wraps a
-      three-word habit name to two lines, still draws the `displaySmall` streak
-      numeral, and scrolls far enough that all five retro-strip cells and *See
-      full history* are reachable — checked by scrolling to the end rather than
-      by assuming the screen scrolls.
+      because the eight are tuned to one lightness and the failure to look for
+      is the set reading as muddy rather than as eight distinguishable colours.
+- [x] **The app draws in Outfit, at the right weight.** Two things. **The
+      face**: Outfit is geometric, so its `o`, `a` and `0` are visibly circular
+      against the system sans, and the status bar clock stays Roboto and gives a
+      free side-by-side. **The weight**: the `wght` axis is named explicitly on
+      each entry, and if that were ever dropped as redundant the whole app would
+      render at the file's `fvar` default of 100 — hairline, everywhere. That is
+      loud rather than subtle, and a unit test pins it, so this check is a
+      second line and not the only one. Also worth a look with the system *Bold
+      text* setting on, where the roles ask for W700/W800 and should hit real
+      instances rather than fake bold. Seen on an emulator 2026-08-24: face
+      correct, weights correct. That pass also covered a third thing a re-run
+      should **skip** — five characters the screens drew as text (`☰`, `◔`, `⚙`,
+      `✎`, `✕`) falling back to the platform face, which is why every character-
+      as-icon is a vector now ([visual-identity.md](ux/visual-identity.md) §7.5)
+      and has its own check above. Two glyphs are present and were checked
+      rather than assumed: `−` (U+2212) and `·` (U+00B7), which matter most for
+      the weekly-target stepper, since it draws `−` beside an ASCII `+` at one
+      size. The habit-icon emoji are a different thing again and not worth
+      checking here — colour emoji always come from the system's emoji font
+      (§4.2).
+- [x] **200 % font scale, a second time, because the face changed.** The pass in
+      the accessibility block ran against Roboto, and Outfit has its own metrics
+      — wider, different x-height — so every clipping and overflow judgement
+      there was made about a face the app no longer draws. Not a doubt about the
+      old run; it answered a different question. The `displaySmall` streak
+      numeral and Settings' longest body paragraph are where a wider face would
+      show first. Re-run on an emulator 2026-08-24 and clean: Today's empty
+      state wraps to two lines and keeps its button; Settings' longest body
+      paragraph wraps to six lines and the notification notice wraps rather than
+      clipping; habit detail wraps a three-word name to two lines, still draws
+      the `displaySmall` numeral, and scrolls far enough that all five retro-
+      strip cells and *See full history* are reachable — checked by scrolling to
+      the end rather than by assuming the screen scrolls.
 
 ### Momo — the four faces, both themes
 
-New with the character (2026-08-25, [momo.md](ux/momo.md)); the habitat, the
-transition and the celebration joined on 2026-08-26. `MomoRenderTest`,
-`HabitatRenderTest` and `CelebrationRenderTest` prove each mood draws, differs
-from the others, and moves; what they cannot see is whether the motion reads as
-a character rather than a screensaver, the things that are Settings reads, and
-the one sequence that only plays while the frame loop runs.
+The character, the habitat, the transition and the celebration
+([momo.md](ux/momo.md)). `MomoRenderTest`, `HabitatRenderTest` and
+`CelebrationRenderTest` prove each mood draws, differs from the others and
+moves; what they cannot see is whether the motion reads as a character rather
+than a screensaver, the things that are Settings reads, and the one sequence
+that only plays while the frame loop runs.
 
 - [ ] **All four moods on the tank, in both themes.** Content is the default
       with habits added and nothing done late in the day; tick everything for
@@ -1709,41 +1682,40 @@ the one sequence that only plays while the frame loop runs.
       drains and one right-hand gill is short and pulsing. If any two are hard
       to tell apart with the app held at arm's length, that is a finding for
       momo.md §3, not for the tests.
-- [ ] **The tank keeps the mood's tempo.** Behind Momo, four weeds sway and
-      four bubbles rise: briskly while thriving, at the canvas's own pace while
+- [ ] **The tank keeps the mood's tempo.** Behind Momo, four weeds sway and four
+      bubbles rise: briskly while thriving, at the canvas's own pace while
       content, slower while worried. Regenerating drains the water, leans the
       weeds outward and greys them, and no bubble rises. If the weeds and
       bubbles ever look out of step with each other, that is a finding for
       momo.md §4 — they share one tempo by design.
-- [ ] **A mood change is one Momo.** Tick a habit so the mood changes and
-      watch the change: the body should glide from one float to the other with
-      the face crossfading on it, never two bodies at different heights. The
-      water should drain or refill on the same beat when regenerating is one
-      end of the change.
-- [ ] **Finishing the day plays once.** With one habit left, tick it: Momo
-      hops, bubbles rush up from under the tail and the water brightens for a
-      beat, then the thriving loop continues. Untick and re-tick: it plays
-      again, because the mood left thriving and came back. Now background the
-      app and return, and rotate the phone: nothing plays — a finished day is
-      not re-celebrated (momo.md §6). TalkBack says nothing extra either: the
-      line changing to "All done. Momo is thriving." is the whole announcement.
+- [ ] **A mood change is one Momo.** Tick a habit so the mood changes and watch
+      the change: the body should glide from one float to the other with the
+      face crossfading on it, never two bodies at different heights. The water
+      should drain or refill on the same beat when regenerating is one end of
+      the change.
+- [ ] **Finishing the day plays once.** With one habit left, tick it: Momo hops,
+      bubbles rush up from under the tail and the water brightens for a beat,
+      then the thriving loop continues. Untick and re-tick: it plays again,
+      because the mood left thriving and came back. Now background the app and
+      return, and rotate the phone: nothing plays — a finished day is not re-
+      celebrated (momo.md §6). TalkBack says nothing extra either: the line
+      changing to "All done. Momo is thriving." is the whole announcement.
 - [ ] **The pastel body on the light tank.** momo.md §2 calls this the softest
       edge on purpose. Look at whether the silhouette reads from the gills and
       eyes alone; if the body vanishes into the water, the fix is the tank's
       gradient, not Momo's colour.
-- [ ] **A milestone plays bigger.** With a habit at six days, tick it: Momo
-      hops twice, a wider burst rises, a ring of gold sparkles opens out around
-      her and the water brightens harder; the line under the tank reads "7 days
-      in a row. Momo is dazzled." for two seconds and the row's streak badge
-      swells on a teal pill, then everything returns. Untick and re-tick: it
-      plays again. If that habit was also the last one of the day, only the
-      milestone plays, and the thriving line follows the milestone line.
-      Background the app and return, and rotate: nothing plays (momo.md §6).
-      A weekly habit reaching its fourth week does the same with "4 weeks" and
-      a gold pill.
-- [ ] **TalkBack on a milestone.** With TalkBack on and focus on the row,
-      tick the six-day habit: after "checked", the panel's live region reads
-      the milestone line once, and the mood line once more when it returns two
+- [ ] **A milestone plays bigger.** With a habit at six days, tick it: Momo hops
+      twice, a wider burst rises, a ring of gold sparkles opens out around her
+      and the water brightens harder; the line under the tank reads "7 days in a
+      row. Momo is dazzled." for two seconds and the row's streak badge swells
+      on a teal pill, then everything returns. Untick and re-tick: it plays
+      again. If that habit was also the last one of the day, only the milestone
+      plays, and the thriving line follows the milestone line. Background the
+      app and return, and rotate: nothing plays (momo.md §6). A weekly habit
+      reaching its fourth week does the same with "4 weeks" and a gold pill.
+- [ ] **TalkBack on a milestone.** With TalkBack on and focus on the row, tick
+      the six-day habit: after "checked", the panel's live region reads the
+      milestone line once, and the mood line once more when it returns two
       seconds later; the badge announces nothing extra. Tick and untick any
       other row: each is followed by one sentence — the mood line and the
       remaining count — and nothing else.
@@ -1762,161 +1734,106 @@ the one sequence that only plays while the frame loop runs.
       wraps and pushes the list down rather than clipping. The character must
       not shrink.
 - [x] **TalkBack, once.** Swipe onto the panel: it is one node and should
-      announce the mood's line once — "Momo is pottering about." followed by
-      the remaining count — and never "image" or "unlabelled". If the tank and
-      the caption land as two stops, the merge has been lost. **Heard on the
-      Nothing A059, 2026-09-02**, TalkBack 17: one stop, the sentence and the
-      count together, no "image". The overlay spelled it *"Momo is pottering
-      about.. 3 of 14 left today"* — the copy's own full stop plus TalkBack's
-      joiner, a nit to hear rather than a defect. The same line was read
-      unprompted on a cold launch, and again each time the panel scrolled back
-      into composition, which is the live region firing on appearance that
-      today-view §1 predicted.
-- [x] **The regenerating line names a habit** (2026-08-31, today-view §6).
-      **Half seen 2026-08-31** and the box stays open for the other half. With
-      three streaks broken on the same day the line read "Momo is regrowing a
-      gill. Pick Read back up" — a real name, in the sentence, at API 37. That
-      is the tie case, where the rule is "keep the user's own order", and it
-      cannot be told apart from the ordering rule. **Still owed:** break one
-      streak, then break a second a day later, and check the line moves to the
-      newer break. Most recently broken is the rule and two breaks *on different
-      days* are the only way to see it. `TodayUiMapperTest` pins which name
-      reaches the state and `TodayScreenTest` pins that the panel draws it;
-      neither can see whether a long habit name still reads as a sentence.
-
-      **The other half, seen 2026-09-02 on the Nothing A059.** Seeded: *Read*
-      completed 20–29 August (broken on the 31st), *Stretch* completed 24–30
-      August (broken on 1 September), *Read* first in the list. The line read
-      *"Momo is regrowing a gill. Pick Stretch back up."* — the newer break,
-      over the one that sorts first. Ticking *Stretch* moved it to *"Pick Read
-      back up."*, and ticking *Read* ended it: *"Momo is pottering about."*
-- [x] **The app-bar chip** (2026-08-31, today-view §1). Seen on API 37: the
-      title "Today" gives way to Momo's face and "4 left", and scrolling back
-      restores the title. The face is the current mood's — the drained
-      regenerating one, which is what made it obvious the mood really reaches
-      it — and the swap is a crossfade, caught half-done in one screenshot.
-      Re-checked after the review widened the gap between face and count from
-      2 dp to 12 dp, since that is the axis a full bar runs out of room on.
-
-      **Read the box below before trusting this tick.** It was seen at
-      `wm size 720x820`, not at the AVD's own 720x1280, for the reason that box
-      gives.
+      announce the mood's line once — "Momo is pottering about." followed by the
+      remaining count — and never "image" or "unlabelled". If the tank and the
+      caption land as two stops, the merge has been lost. Heard on the Nothing
+      A059, 2026-09-02: one stop, the sentence and the count together, no
+      "image". The overlay spelled it *"Momo is pottering about.. 3 of 14 left
+      today"* — the copy's own full stop plus TalkBack's joiner, a nit to hear
+      rather than a defect. The line was also read unprompted on a cold launch
+      and again each time the panel scrolled back into composition, which is the
+      live region firing on appearance that today-view §1 predicted.
+- [x] **The regenerating line names a habit** (today-view §6). Break one streak,
+      then break a second a day later, and check the line moves to the newer
+      break: most recently broken is the rule, and two breaks *on different
+      days* are the only way to see it — breaks on the same day are the tie
+      case, where the rule is "keep the user's own order" and cannot be told
+      apart from the ordering rule. `TodayUiMapperTest` pins which name reaches
+      the state and `TodayScreenTest` pins that the panel draws it; neither can
+      see whether a long habit name still reads as a sentence. Seen 2026-09-02
+      on the Nothing A059, seeded so that *Read* broke on 31 August and
+      *Stretch* on 1 September with *Read* first in the list: the line read
+      *"Momo is regrowing a gill. Pick Stretch back up."* — the newer break over
+      the one that sorts first. Ticking *Stretch* moved it to *"Pick Read back
+      up."*, and ticking *Read* ended it.
+- [x] **The app-bar chip** (today-view §1). The title "Today" gives way to
+      Momo's face and "4 left", and scrolling back restores the title. The face
+      is the current mood's, and the swap is a crossfade. Seen on API 37, and
+      re-checked after the gap between face and count widened from 2 dp to 12
+      dp, since that is the axis a full bar runs out of room on. **Read the box
+      below before trusting this tick**: it was seen at `wm size 720x820`, not
+      at the AVD's own 720x1280, for the reason that box gives.
 - [ ] **The chip on a full-height screen with a realistic habit count.** The
       trigger is `firstVisibleItemIndex > 0` — the panel has to leave the
-      viewport *entirely* — and a short list cannot scroll that far. Measured
-      on this AVD at 720x1280 / 320 dpi: the list viewport is 1056 px, the
-      panel is 628 px and a row is 128 px, so the chip needs **nine habits**
-      before it can appear at all. With four, the panel scrolls to a sliver and
-      stops, and the title never changes. Whether that is right — the chip is
-      for long lists, and with four habits Momo never really leaves — or
-      whether the trigger should fire on "mostly gone" instead, is open in
-      today-view §1.
-
-      **Measured again 2026-09-02 on the Nothing A059**, 1080×2392 at 375 dpi:
-      viewport 2060 px (879 dp), panel 722 px (308 dp), row 150 px (64 dp), so
-      the chip needs **fourteen** habits here — it appeared with fourteen and
-      forty pixels to spare, reading *"10 left"*. Nine on a small emulator,
-      fourteen on a tall phone: the count is the screen's, not the design's,
-      which is one more reason the question in today-view §1 is a design call.
-- [x] **The chip at 200 % font scale** (2026-08-31). The face, "4 left" and all
-      three action icons on one bar, nothing truncated. This is the case the
-      chip replaces the title *for*, so it is the one that would have justified
-      undoing that decision, and it did not. Same short-screen caveat as above.
-- [x] **The milestone line in the chip** (2026-09-01, today-view §1 and §6).
-      Done on the AVD at its own 720x1280, font scale 1.0, with ten habits — the
-      four real ones plus six seeded — one of them holding a six-day run so a
-      tick crossed the seven-day rung. Recorded with `screenrecord` rather than
-      screenshotted, because the line holds for two seconds and a screencap
-      round-trip is most of that: the frames show "9 left", then the milestone
-      line for ~2 s, then "8 left". The row's badge swelled to a `7` on its pill
-      at the same time, so the two treatments agree.
-
-      **This is the box that earned its place.** The first build drew the
-      *panel's* line here — "7 days in a row. Momo is dazzled." — and on the bar
-      it truncated to "7 days in a row. Mom…", crowding the first action icon, at
-      font scale 1.0 rather than only at 200 %. Every JVM assertion was green,
-      and would stay green: a Compose text assertion passes on a node that draws
-      its string clipped, so no test at any font scale could have caught this.
-      The fix is a chip-length plural of its own
-      (`today_chip_milestone_days`, "7 days!"), which is what
-      `today_chip_remaining` already does for the count; re-checked on the device
-      after, and it now fits with room before the icons.
-
-      **The spoken half, by `uiautomator dump` mid-run**, which reads the node a
-      screen reader consumes: `"7 days in a row. Momo is dazzled. 8 of 10 left
-      today"` — the panel's full sentence *and* the count, while the drawn label
-      is the short form. That divergence is deliberate and is the thing to
-      re-check if either string is ever touched. Still not *announced*: the node
-      is not a live region, which is the box below.
-
-      Seeded habits and the tick were removed afterwards by restoring the
-      database file pulled before any of it, so the four real habits and their
-      history are untouched — verified by event counts and `integrity_check`.
-- [x] **TalkBack: the chip is one stop, and a tick under it is silent.** The
-      first version of this box asked for something that cannot happen — "the
-      announcement should come from the panel's live region only" — when the
-      panel is a list item and is disposed the moment the chip appears. A
-      by-hand pass would have "succeeded" without checking anything. What to
-      check instead:
-
-      Swipe onto the chip with the list scrolled down: **one** stop, announcing
-      the mood and the count together, never a bare "image" or two stops for the
+      viewport *entirely* — and a short list cannot scroll that far. Whether
+      that is right, or whether the trigger should fire on "mostly gone"
+      instead, is open in today-view §1. The count is the screen's, not the
+      design's, which is one more reason that question is a design call. On this
+      AVD at 720×1280 / 320 dpi the viewport is 1056 px, the panel 628 px and a
+      row 128 px, so the chip needs **nine** habits before it can appear at all;
+      with four, the panel scrolls to a sliver and the title never changes.
+      Measured again 2026-09-02 on the Nothing A059 at 1080×2392 / 375 dpi —
+      viewport 2060 px (879 dp), panel 722 px (308 dp), row 150 px (64 dp) — it
+      needs **fourteen**, and appeared with fourteen and forty pixels to spare,
+      reading *"10 left"*.
+- [x] **The chip at 200 % font scale.** The face, "4 left" and all three action
+      icons on one bar, nothing truncated. This is the case the chip replaces
+      the title *for*, so it is the one that would have justified undoing that
+      decision, and it did not. Same short-screen caveat as above.
+- [x] **The milestone line in the chip** (today-view §1 and §6). Record it with
+      `screenrecord` rather than a screenshot, because the line holds for two
+      seconds and a screencap round-trip is most of that. Done on the AVD at its
+      own 720×1280, font scale 1.0, with ten habits, one holding a six-day run
+      so a tick crossed the seven-day rung: the frames show "9 left", then the
+      milestone line for about two seconds, then "8 left", with the row's badge
+      swelling to a `7` on its pill at the same time. **This is the box that
+      earned its place.** The first build drew the *panel's* line here and it
+      truncated to "7 days in a row. Mom…", crowding the first action icon, at
+      font scale 1.0 rather than only at 200 % — and every JVM assertion was
+      green and would stay green, because **a Compose text assertion passes on a
+      node that draws its string clipped**, so no test at any font scale could
+      have caught it. The fix is a chip-length plural of its own
+      (`today_chip_milestone_days`, "7 days!"), the way `today_chip_remaining`
+      already works for the count. The drawn label and the spoken sentence are
+      deliberately different strings: `uiautomator dump` mid-run reads *"7 days
+      in a row. Momo is dazzled. 8 of 10 left today"* while the label is the
+      short form. Re-check that divergence if either string is ever touched. It
+      is still not *announced*, because the node is not a live region, which is
+      the box below. Seeded habits and the tick were removed afterwards by
+      restoring the database pulled beforehand, verified by event counts and
+      `integrity_check`.
+- [x] **TalkBack: the chip is one stop, and a tick under it is silent.** Swipe
+      onto the chip with the list scrolled down: **one** stop, announcing the
+      mood and the count together, never a bare "image" or two stops for the
       face and the label. Scroll back to the top and swipe into the panel: it
       announces once when reached. Then tick a habit while the chip is up — the
       only thing that should speak is **the row's own checkbox**, because the
       chip is not a live region and the panel is not composed. Silence from the
       chip is the expected result here, not a failure; today-view §1 says why it
-      is accepted and leaves making it a live region open. This is the check
-      that would settle that, so run it before deciding.
-      `chip_isNotALiveRegion` pins the property on the JVM, but only a screen
-      reader can say what is spoken, and neither emulator image here has one.
-
-      **Run 2026-09-02 on the Nothing A059, swiped by hand, and both halves
-      hold — with one thing the box did not ask for.** The chip is one stop.
-      Ticking *Guitar* under it spoke *"checked"* from the row and nothing from
-      the chip; unticking spoke *"not checked"*. But the stop read *"Momo is
-      pottering about. 3 of 14 left today. **3 left**"* — the description and
-      then the drawn label. today-view §1 built the description on the premise
-      that a described node's text is not read; on this TalkBack it is, so the
-      count is spoken twice in two forms. The same shape leaks on the retro
-      strip, the history grid and the trend columns (the accessibility block).
-      The shape of the fix is `clearAndSetSemantics` where the description is
-      set — a plain swap here, on the grid cell and on the trend column, but
-      not on the retro strip, whose open cell chains its description onto a
-      `combinedClickable` with a checkbox role and toggle state that the
-      transcript shows being announced; clearing there must keep both, which a
-      Robolectric assertion should pin first. The test that asserted the
-      description was complete passes either side of it, so
-      `chip_doesNotAlsoReadItsLabel` was added: the chip's node carries no
-      text, and the label is found only in the unmerged tree. **Changed
-      2026-09-02**; not re-heard that day, which is what kept the box open
-      until the next paragraph.
-
-      **Re-heard 2026-09-03 on the Nothing A059, by the user's swipe**: with
-      the list scrolled down the chip is one stop, *"Momo is pottering about.
-      12 of 14 left today."* — the description and nothing after it, so the
-      leak is gone. The panel, scrolled back up, reads *"Momo is pottering
-      about.. 12 of 14 left today. In list. 15 items"*: the joiner nit the
-      *TalkBack, once* box above records, plus the list position, because the
-      panel is the list's first item. Neither is a defect, and both are now
-      known words rather than predicted ones.
-
-      **What *was* checked, 2026-08-31, and how:** `uiautomator dump` reads the
-      same node description a screen reader consumes, and on API 37 the chip's
-      is `"Momo is regrowing a gill. Pick Read back up. 3 of 4 left today"` —
-      the mood and the full count, in one node. That is worth doing before
-      trusting any chip description, because the first build's said only the
-      mood: a node with a `contentDescription` has its `text` ignored, so the
-      drawn count was silently unspoken and every test still passed. What the
-      dump cannot answer is the double-read, which needs the real thing.
-
-      **Since 2026-09-01 there is a second description to dump**: during a
-      milestone run the chip's is the milestone line followed by the count, the
-      mood line dropping out. Worth reading mid-run for the same reason as
-      above — the drawn label and the spoken sentence are different strings
-      here, and only one of them is the one TalkBack reads. It is still not
-      *announced*, because the node is not a live region; that is the decision
-      this box exists to settle.
+      is accepted and leaves making it a live region open, and this is the check
+      that would settle that. `chip_isNotALiveRegion` pins the property on the
+      JVM, but only a screen reader can say what is spoken, and neither emulator
+      image here has one. Heard 2026-09-02 on the Nothing A059 and re-heard
+      2026-09-03 on main's build. Both halves hold, and the first hearing
+      retired a premise: today-view §1 built the chip's description on the
+      premise that a described node's text is not read, and on this TalkBack
+      **it is**, so the count was spoken twice in two forms. The same shape
+      leaked on the retro strip, the history grid and the trend columns (the
+      accessibility block). `clearAndSetSemantics` where the description is set
+      fixed it, and `chip_doesNotAlsoReadItsLabel` pins that the chip's node
+      carries no text and the label is found only in the unmerged tree. The re-
+      hearing reads *"Momo is pottering about. 12 of 14 left today."* and
+      nothing after it. The panel, scrolled back up, adds *"In list. 15 items"*
+      because it is the list's first item, and the joiner nit the *TalkBack,
+      once* box records — neither a defect, and both now known words rather than
+      predicted ones. **Dump the description before trusting any chip copy.**
+      `uiautomator dump`
+      reads the same node a screen reader consumes, and the first build's said
+      only the mood: a node with a `contentDescription` has its `text` ignored
+      *in the dump*, so the drawn count was silently unspoken and every test
+      still passed. During a milestone run there is a second description to
+      read, the milestone line followed by the count with the mood line dropping
+      out.
 
 ### The launcher icon
 
