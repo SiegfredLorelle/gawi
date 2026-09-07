@@ -920,13 +920,12 @@ a launcher, where the bitmaps are drawn and tinted.
       immediately while the name and glyph kept the value baked at the last
       render, landing at 1.31:1 and 1.60:1 — plus a second the toggle was not
       needed to see, the glyph below the floor in dark mode even freshly
-      rendered at 2.91:1 checked and 1.60:1 unchecked. Re-run the same day
-      against the fix and the expectation holds: the name at 16.59:1 light and
-      14.82:1 dark, the glyph at 5.56:1 and 5.18:1 light, 10.44:1 and 5.31:1
-      dark, unchanged across a toggle either way. **Two traps that make a broken
-      widget and a working one look identical.** An `APPWIDGET_UPDATE` broadcast
-      is **not** a render and will not repair the staleness — a tap on the
-      widget or a write in the app is. And on a freshly booted emulator `cmd
+      rendered at 2.91:1 checked. Re-run the same day against the fix and the
+      expectation holds: the name at 16.59:1 light and 14.82:1 dark, the glyph
+      at 5.56:1 and 5.18:1 light, 10.44:1 and 5.31:1 dark. **Two traps that make
+      a broken widget and a working one look identical.** An `APPWIDGET_UPDATE`
+      broadcast is **not** a render and will not repair the staleness — a tap on
+      the widget or a write in the app is. And on a freshly booted emulator `cmd
       uimode night yes` silently does nothing, printing `Night mode: no` back,
       until `adb root` has been run, so **read the setting back** before
       believing either result.
@@ -962,27 +961,23 @@ a launcher, where the bitmaps are drawn and tinted.
       shaped and read right-to-left. `BitmapTextTest` proves the glyphs land on
       the canvas; only a launcher shows whether the row mirrors around them. Run
       2026-08-30 on `Small_Phone` (API 37), Pixel launcher, Hebrew first and a
-      habit named קריאה. A clean mirror, measured off the accessibility tree in
-      both directions: the checkbox, Momo's face bitmap and the mood line all
-      mirror about the content span to within a pixel. Read the face as the
-      `ImageView`, not the pill `FrameLayout` around it, or the pill looks 7 px
-      short of a mirror when it is not. קריאה shapes right-to-left from the
-      platform's Hebrew face — Outfit's `cmap` has no Hebrew — and it still
-      shapes correctly in the LTR pass, which is `FIRSTSTRONG_LTR` doing its job
-      on the paragraph while the run stays RTL. The launcher itself went Hebrew
-      too, which is the evidence that this was the host's own configuration and
-      not ours. **How to set the locale, because two obvious routes are dead
-      ends.** The emulator's `-prop persist.sys.locale=he-IL` is silently
-      ignored, and a Play Store image (`Small_Phone` is `google_apis_playstore`)
-      refuses `adb root`, so there is no `setprop` either. It has to be the
-      Settings UI, and on API 37 the language **search** crashes Settings
-      outright, so scroll instead: the list sorts by native name, which puts
-      every RTL script in one clump just above the CJK tail. Adding a language
-      does **not** switch to it — tap the row's drag handle for a **Move up**
-      menu, then confirm. **Hebrew is left installed as the second preferred
-      language on this AVD on purpose**, so a re-run is only that handle and
-      *Move up*. Read it back with `am get-config`, the one that proves
-      direction: `…he-rIL,en-rUS-ldrtl…` against `…en-rUS-ldltr…`.
+      habit named קריאה. A clean mirror: the checkbox, Momo's face bitmap and
+      the mood line all mirror about the content span to within a pixel, and
+      קריאה shapes right-to-left from the platform's Hebrew face — Outfit's
+      `cmap` has no Hebrew — while still shaping correctly in the LTR pass,
+      which is `FIRSTSTRONG_LTR` doing its job on the paragraph. Read the face
+      as the `ImageView`, not the pill `FrameLayout` around it, or the pill
+      looks 7 px short of a mirror when it is not. **How to set the locale,
+      because two obvious routes are dead ends.** The emulator's `-prop
+      persist.sys.locale=he-IL` is silently ignored, and a Play Store image
+      (`Small_Phone` is `google_apis_playstore`) refuses `adb root`, so there is
+      no `setprop` either. It has to be the Settings UI, and on API 37 the
+      language **search** crashes Settings outright, so scroll instead. Adding a
+      language does **not** switch to it — tap the row's drag handle for a
+      **Move up** menu, then confirm. **Hebrew is left installed as the second
+      preferred language on this AVD on purpose.** Read it back with `am get-
+      config`, the one that proves direction and does not lag: `…he-rIL,en-rUS-
+      ldrtl…` against `…en-rUS-ldltr…`.
 - [x] **A non-default Display size** — Settings → Display → Display size, Large
       then Small (or `wm density 400` on the emulator, `wm density reset`
       after), then complete a habit so the widget re-renders. The name must be
@@ -1059,24 +1054,20 @@ the emulator's.
       the header goes and the face sits above the rows again. Then shorten it to
       under **170 dp**: rows alone. `WidgetBodyTest` pins the two gates; only a
       launcher shows which side of them its cells land on. Run 2026-09-02 on the
-      Nothing A059's own launcher (85 dp cells, five columns): four by three
-      grew the header, with fourteen band segments and the two done habits woven
-      in `#7FD4DC` against `#324042`; three columns kept it, with the mood line
-      wrapping; two rows was rows alone, because 3×2 spans 170.7 dp of cells and
-      the launcher reports less than 170 after its padding. **The arithmetic for
-      whoever has a third launcher**, and the reason neither phone can show the
-      middle body: the face-above-rows form wants a width of at least 180 dp
-      (the provider's floor) and under 220 dp (the header's gate), so either
-      three cells of 60 to 73.3 dp or two cells of 90 to 110 dp. Nothing's 85 dp
-      cells and the Pixel's 80 dp cells both fall in the gap between those
-      windows. The flip was reached on 2026-09-03 on a throwaway AVD — `gawi-
-      flip`, the API 37 Play image with `hw.lcd.width` 1260, `hw.lcd.height`
-      1800 and `hw.lcd.density` 480, giving 420×600 dp and four columns — where
-      two by two measured 183×123 dp (rows alone) and one row taller 183×188 dp
-      (the face above the rows, no header). That shows the gates are right and
-      the body draws; it does not show a phone launcher's cells landing in the
-      window, which is what this box asks, so header and rows-alone are the
-      Nothing's and the flip is still owed to a phone launcher with other cells.
+      Nothing A059's own launcher (85 dp cells): four by three grew the header,
+      three columns kept it with the mood line wrapping, and two rows was rows
+      alone, because 3×2 spans 170.7 dp of cells and the launcher reports less
+      than 170 after its padding. **The arithmetic for whoever has a third
+      launcher**, and the reason neither phone can show the middle body: the
+      face-above-rows form wants a width of at least 180 dp (the provider's
+      floor) and under 220 dp (the header's gate), so either three cells of 60
+      to 73.3 dp or two cells of 90 to 110 dp. Nothing's 85 dp cells and the
+      Pixel's 80 dp cells both fall in the gap. The flip was reached 2026-09-03
+      on a throwaway AVD — `gawi-flip`, the API 37 Play image with
+      `hw.lcd.width` 1260, `hw.lcd.height` 1800 and `hw.lcd.density` 480, giving
+      420×600 dp and four columns — at 183×188 dp. That shows the gates are
+      right and the body draws, not that a phone launcher's cells land in the
+      window, so the flip is still owed to a phone launcher with other cells.
 - [x] **The band is the checkboxes.** Count the segments against the rows and
       tap a row: its segment flips with its box, on the same write. A band that
       disagrees with the rows beneath it has been given a rule of its own, which
@@ -1422,21 +1413,17 @@ glyph existing in the device's font, and an upgrade not losing anything.
       `contentDescription`, every semantics test passes on a control that
       renders empty. `GawiIconsTest` pins the XML, so what is left for the eye
       is that the strokes read at a glance and that `Icon`'s tint carries them
-      in dark mode as well as light. Run on an emulator 2026-08-24 in both
-      themes: all ten drawables drew and the strokes read at 24 dp — the three
-      app-bar icons, back, pencil, close, both chevrons, the stepper's pair and
-      the FAB. Light and dark were walked separately rather than reasoned about
-      from the one shared tint mechanism, because "they all go through
-      `LocalContentColor`" is a reason to expect them to follow, not evidence
-      that they did. **Three things that cost time here and will again.** This
-      emulator **does not re-theme a running activity**, so `cmd uimode night
-      yes` needs a `force-stop` after it or the screenshot lies — it silently
-      returned the light screen once. Screen coordinates **are not stable
-      between themes or between data states**: *See full history* sits about 96
-      px lower once the habit has a live streak, because the `displaySmall`
-      numeral appears above it, so a replayed tap script lands on a retro-strip
-      cell instead. And a stray tap in that strip **writes a completion**. Drive
-      this by screenshot-then-tap, not by a fixed script.
+      in dark mode as well as light — walk the two themes separately rather than
+      reasoning from the one shared tint mechanism. Run on an emulator
+      2026-08-24 in both themes: all ten drawables drew and the strokes read at
+      24 dp. **Three things that cost time here and will again.** This emulator
+      **does not re-theme a running activity**, so `cmd uimode night yes` needs
+      a `force-stop` after it or the screenshot lies. Screen coordinates **are
+      not stable between themes or between data states**: *See full history*
+      sits about 96 px lower once the habit has a live streak, because the
+      `displaySmall` numeral appears above it, so a replayed tap script lands on
+      a retro-strip cell instead. And a stray tap in that strip **writes a
+      completion**. Drive this by screenshot-then-tap, not by a fixed script.
 - [x] **The app-bar icons hold 24 dp at 200 % font scale, and that looks
       deliberate.** A behaviour change, not a regression: the characters these
       replaced were `titleLarge` and grew with `fontScale`; a 24 dp `Icon` does
@@ -1757,26 +1744,21 @@ that only plays while the frame loop runs.
       decision, and it did not. Same short-screen caveat as above.
 - [x] **The milestone line in the chip** (today-view §1 and §6). Record it with
       `screenrecord` rather than a screenshot, because the line holds for two
-      seconds and a screencap round-trip is most of that. Done on the AVD at its
-      own 720×1280, font scale 1.0, with ten habits, one holding a six-day run
-      so a tick crossed the seven-day rung: the frames show "9 left", then the
+      seconds and a screencap round-trip is most of that. Done on the AVD at
+      720×1280, font scale 1.0, with ten habits, one holding a six-day run so a
+      tick crossed the seven-day rung: the frames show "9 left", then the
       milestone line for about two seconds, then "8 left", with the row's badge
       swelling to a `7` on its pill at the same time. **This is the box that
       earned its place.** The first build drew the *panel's* line here and it
       truncated to "7 days in a row. Mom…", crowding the first action icon, at
       font scale 1.0 rather than only at 200 % — and every JVM assertion was
       green and would stay green, because **a Compose text assertion passes on a
-      node that draws its string clipped**, so no test at any font scale could
-      have caught it. The fix is a chip-length plural of its own
-      (`today_chip_milestone_days`, "7 days!"), the way `today_chip_remaining`
+      node that draws its string clipped**. The fix is a chip-length plural of
+      its own (`today_chip_milestone_days`), the way `today_chip_remaining`
       already works for the count. The drawn label and the spoken sentence are
-      deliberately different strings: `uiautomator dump` mid-run reads *"7 days
-      in a row. Momo is dazzled. 8 of 10 left today"* while the label is the
-      short form. Re-check that divergence if either string is ever touched. It
-      is still not *announced*, because the node is not a live region, which is
-      the box below. Seeded habits and the tick were removed afterwards by
-      restoring the database pulled beforehand, verified by event counts and
-      `integrity_check`.
+      deliberately different strings, so re-check that divergence if either is
+      ever touched. It is still not *announced*, because the node is not a live
+      region, which is the box below.
 - [x] **TalkBack: the chip is one stop, and a tick under it is silent.** Swipe
       onto the chip with the list scrolled down: **one** stop, announcing the
       mood and the count together, never a bare "image" or two stops for the
@@ -1784,30 +1766,23 @@ that only plays while the frame loop runs.
       announces once when reached. Then tick a habit while the chip is up — the
       only thing that should speak is **the row's own checkbox**, because the
       chip is not a live region and the panel is not composed. Silence from the
-      chip is the expected result here, not a failure; today-view §1 says why it
-      is accepted and leaves making it a live region open, and this is the check
+      chip is the expected result, not a failure; today-view §1 says why it is
+      accepted and leaves making it a live region open, and this is the check
       that would settle that. `chip_isNotALiveRegion` pins the property on the
-      JVM, but only a screen reader can say what is spoken, and neither emulator
-      image here has one. Heard 2026-09-02 on the Nothing A059 and re-heard
-      2026-09-03 on main's build. Both halves hold, and the first hearing
-      retired a premise: today-view §1 built the chip's description on the
-      premise that a described node's text is not read, and on this TalkBack
-      **it is**, so the count was spoken twice in two forms. The same shape
-      leaked on the retro strip, the history grid and the trend columns (the
-      accessibility block). `clearAndSetSemantics` where the description is set
-      fixed it, and `chip_doesNotAlsoReadItsLabel` pins that the chip's node
-      carries no text and the label is found only in the unmerged tree. The re-
-      hearing reads *"Momo is pottering about. 12 of 14 left today."* and
-      nothing after it. The panel, scrolled back up, adds *"In list. 15 items"*
-      because it is the list's first item, and the joiner nit the *TalkBack,
-      once* box records — neither a defect, and both now known words rather than
-      predicted ones. **Dump the description before trusting any chip copy.**
+      JVM, but only a screen reader can say what is spoken. Heard 2026-09-02 on
+      the Nothing A059 and re-heard 2026-09-03, reading *"Momo is pottering
+      about. 12 of 14 left today."* and nothing after it. The first hearing
+      retired a premise: today-view §1 built the description on the premise that
+      a described node's text is not read, and on this TalkBack **it is**, so
+      the count was spoken twice in two forms — the same leak the retro strip,
+      the history grid and the trend columns had. `clearAndSetSemantics` fixed
+      it and `chip_doesNotAlsoReadItsLabel` pins that the label is now only in
+      the unmerged tree. **Dump the description before trusting any chip copy.**
       `uiautomator dump` reads the same node a screen reader consumes, and the
       first build's said only the mood: a node with a `contentDescription` has
       its `text` ignored *in the dump*, so the drawn count was silently unspoken
-      and every test still passed. During a milestone run there is a second
-      description to read, the milestone line followed by the count with the
-      mood line dropping out.
+      while every test passed. A milestone run has a second description to read,
+      the milestone line followed by the count with the mood line dropping out.
 
 ### The launcher icon
 
@@ -1872,20 +1847,18 @@ needs it larger.
       when you are forced through the tree in order. Watch for a control that is
       reachable but unnamed, two targets that say the same thing, and a state
       change that happens silently (WCAG 2.4.3 and 4.1.3). Re-heard 2026-09-03
-      on the Nothing A059 by D-pad and the speech overlay, after the fixes of
-      the day before: a Today row reads *"Read. Streak broken, was 10 days.
-      Check box"* — the name first, no emoji name, the streak in words, the
-      badge last. Settings rows read title, value and helper in order, and the
-      *Add a habit* flow was swiped end to end with nothing unnamed or silent.
-      Two things the overlay showed that no test predicted: an unchecked row
-      carries **no state word when landed on**, because this TalkBack says
-      *checked* for a Compose checkbox and nothing for the other state, and the
-      weekly ratio is spoken **as drawn**, *"1/3 this week"*, because
-      `today_week_progress` has no spoken twin — a *"1 of 3 this week"* string
-      is the follow-up if the user's ear says it reads badly. The icon picker's
-      cells read the emoji's platform name rather than a label, which
-      `ICON_LABELS` is the follow-up for. Open for the day-cutoff **picker**
-      itself, the one part of the three flows no pass has driven.
+      on the Nothing A059 by D-pad and the speech overlay: a Today row reads
+      *"Read. Streak broken, was 10 days. Check box"* — the name first, no emoji
+      name, the streak in words, the badge last — settings rows read title,
+      value and helper in order, and *Add a habit* was swiped end to end with
+      nothing unnamed or silent. Two things the overlay showed that no test
+      predicted: an unchecked row carries **no state word when landed on**,
+      because this TalkBack says *checked* for a Compose checkbox and nothing
+      for the other state, and the weekly ratio is spoken **as drawn**, *"1/3
+      this week"*, because `today_week_progress` has no spoken twin. A *"1 of 3
+      this week"* string and `ICON_LABELS` for the icon picker's platform-named
+      cells are the two follow-ups. Open for the day-cutoff **picker** itself,
+      the one part of the three flows no pass has driven.
 - [x] **A TalkBack pass over the Insights screen.** Two pickers and a list, and
       the thing to listen for is whether a bar row makes sense read aloud: the
       label, the total, and nothing announcing the bar itself. The bars carry no
@@ -1991,22 +1964,21 @@ needs it larger.
       the `enabled_accessibility_services` setting), then tap its floating
       button on each screen. Run 2026-09-02 and re-scanned 2026-09-03 on the
       Nothing A059 with Scanner 2.5.1. **The habit list and Settings: no
-      suggestions at all.** No unlabelled control anywhere and no touch-target
+      suggestions at all**, no unlabelled control anywhere and no touch-target
       hit in the app itself. The home screen with both widgets returns six, none
       of them a row: the three 32 dp checkboxes are each a *Touch target*, the
       first also a duplicate description, and the two widget frames are
       *Unsupported item type*, which is the Scanner declining a
-      `LauncherAppWidgetHostView` rather than a finding. So the 48 dp rows left
-      the list as predicted and the boxes stayed on it as predicted; **the
-      checkbox control's own 32 dp is the recorded follow-up**. Two classes the
-      first scan raised are decided rather than open: the emoji icon badge's
-      *text contrast* (`#F5F5F5` on `#427FF6` = 3.44:1 against a wanted 4.5) is
-      noise while every icon is a colour emoji, because the declared colour
-      never paints one — real the day a plain character is allowed, and a
-      decision for visual-identity rather than a bug; and the repeated rate and
-      schedule texts across Insights bar rows are the unmerged-row shape that
-      box already records. The Today, detail, editor and Insights screens are
-      inferred clear from the same badge change rather than re-scanned.
+      `LauncherAppWidgetHostView` rather than a finding. **The checkbox
+      control's own 32 dp is the recorded follow-up.** Two classes the first
+      scan raised are decided rather than open: the emoji icon badge's *text
+      contrast* (`#F5F5F5` on `#427FF6` = 3.44:1 against a wanted 4.5) is noise
+      while every icon is a colour emoji, because the declared colour never
+      paints one — real the day a plain character is allowed, and a decision for
+      visual-identity rather than a bug; and the repeated Insights row texts are
+      the unmerged-row shape that box records. The Today, detail, editor and
+      Insights screens are inferred clear from the same badge change rather than
+      re-scanned.
 
 **Still owed, and an emulator discharges none of it.** Five open items, each
 with its blocker: the day-cutoff **picker** under TalkBack, undriven; the
