@@ -260,24 +260,22 @@ Small decisions that were easier to make once drawn:
   the widget and the reminder (PRD §5) — that treatment is not designed
   yet and is not decided here.
 
-## 6. Still open
+## 6. Open, and what closed
 
-- ~~**PRD OQ-4** — Momo's art style.~~ Decided and built 2026-08-25:
-  [momo.md](momo.md). The slot is now the redesign's 250 dp tank rather than a
-  96 dp floor for copy — momo.md §4 records why that keeps §3's promise.
-- ~~**PRD OQ-5** — whether the widget shows streaks.~~ **Settled 2026-08-21:
-  minimal, no streak.** Reasoning in [widget.md](widget.md) §2.
+- **PRD OQ-4** — Momo's art style — is decided and built:
+  [momo.md](momo.md). The slot is the redesign's 250 dp tank rather than a
+  96 dp floor for copy; momo.md §4 records why that keeps §3's promise.
+- **PRD OQ-5** — whether the widget shows streaks — is settled as **minimal, no
+  streak**. Reasoning in [widget.md](widget.md) §2.
 - The Phase 1 mascot treatment **in the widget and the reminder** (PRD §5).
   Only the Today-view slot is fixed here.
-- ~~Milestone celebrations (7/30/100 days) have no visual treatment yet.~~
-  **Built 2026-08-29** ([momo.md](momo.md) §5 and §6): the tank plays a
-  bigger sequence than finishing the day's, the panel's line swaps to the
+- Milestone celebrations (7/30/100 days) have their treatment
+  ([momo.md](momo.md) §5 and §6): the tank plays a bigger sequence than finishing the day's, the panel's line swaps to the
   milestone line for the run, and §5's streak badge sits on a pill of its
   container role and swells — the day/week distinction holds on the pill as
   it does on the number.
-- ~~§1's collapse into an app-bar chip, and the chip itself. See the status
-  note above.~~ **Built 2026-08-31.** The panel keeps its place as the list's
-  first item — the status note says why that is not a reversal — and the chip
+- §1's collapse into an app-bar chip, and the chip itself, are built. The panel
+  keeps its place as the list's first item — the status note says why that is not a reversal — and the chip
   appears once it has scrolled off, carrying a small face and a short count in
   the title's place. It replaces the title rather than joining it, because a
   title, a chip and three action icons do not fit across one bar at a large font
@@ -333,13 +331,13 @@ Small decisions that were easier to make once drawn:
   asserting the *spoken* string proves the description is complete, not that it
   is all that is spoken.
 
-  ~~**Still open: the chip does not carry the milestone line.**~~ **Drawn since
-  2026-09-01; the announcing is what is left.** The panel swaps that line in for
-  the length of a celebration and [momo.md](momo.md) §6 makes the swap the
-  announcement, but the milestone lived on `TodayMotion`, which `HabitList`
-  owned one level below the app bar — so a rung crossed while scrolled down was
-  neither drawn nor spoken. Older than the chip: the panel was already disposed
-  by then, so nothing was drawn there either.
+  **The chip carries the milestone line; the announcing is what is left.** The
+  panel swaps that line in for the length of a celebration and
+  [momo.md](momo.md) §6 makes the swap the announcement. It did not reach the
+  chip at first because the milestone lived on `TodayMotion`, which `HabitList`
+  owned one level below the app bar, so a rung crossed while scrolled down was
+  neither drawn nor spoken — a gap older than the chip, since the panel was
+  already disposed by then and nothing was drawn there either.
 
   `rememberTodayMotion` now sits above the `Scaffold` rather than above the
   `LazyColumn`, which is the distinction that mattered: the bar is the list's
@@ -382,20 +380,14 @@ Small decisions that were easier to make once drawn:
   **Still open: it is drawn but not spoken.** A description change on a non-live
   node is not announced, so this is the live-region question above rather than a
   second gap, and it needs a device with TalkBack rather than another decision.
-- ~~**The `regenerating` copy has nowhere to come from yet.** §3 says it
-  "names the habit and offers the repair", but the mood is a bare label —
-  it names an artboard, not a habit — and `HabitMoodState` deliberately
-  carries no habit identity. Both halves are missing, and the input is the
-  cheap one. When this lands the shape is a second pure function beside
-  `Mascot.mood`, something like `recentlyBrokenHabits(inputs)` returning
-  the ids, rather than a wider `Mood`: one type should not have to carry
-  both "which drawing" and "which habit". Recorded because two review
-  rounds have now rediscovered it.~~ **Built 2026-08-31, in exactly that
-  shape** — the paragraph was written as a prescription and was followed
-  line for line, down to the ids. `HabitMoodState` gained the one field it
-  needed.
+- **The `regenerating` copy has somewhere to come from.** §3 asks it to name
+  the habit and offer the repair, which needed a second pure function beside
+  `Mascot.mood` — `recentlyBrokenHabits(inputs)`, returning ids rather than a
+  wider `Mood`, because one type should not carry both "which drawing" and
+  "which habit". That is the shape built, and `HabitMoodState` gained the one
+  field it needed.
 
-  What the prescription did not settle was **which** habit, once more than
+  What that shape did not settle was **which** habit, once more than
   one sits inside the window. The line names one, so the ordering *is* the
   copy: most recently broken first, ties keeping the user's own habit
   order. Most recent rather than the largest lost streak, because naming
@@ -406,11 +398,10 @@ Small decisions that were easier to make once drawn:
   make the three Phase 0 states distinguishable rather than to be read —
   with one exception since 2026-08-31, the regenerating line, which now
   says the one thing §3 actually specified about it.
-- ~~**`regenerating` is currently invisible.**~~ Visible since 2026-08-25: its
-  own face, its own line ([momo.md](momo.md) §3). ~~The half of this that was
-  the copy gap above is still open — the line does not name the habit.~~ It
-  names it, since 2026-08-31. The unnamed line is kept, and a second review round
-  found the state it belongs to. **A habit already ticked today is never named** —
+- **`regenerating` is visible**, with its own face and its own line
+  ([momo.md](momo.md) §3), and the line names the habit. The unnamed line is
+  kept for the state it belongs to. **A habit already ticked today is never
+  named** —
   the line offers a repair, and there is nothing to repair today. Only a weekly
   habit can be both ticked and broken: a completion short of the week's target
   leaves the streak at zero with `brokenOn` set, and without the rule the line

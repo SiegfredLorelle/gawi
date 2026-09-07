@@ -11,8 +11,8 @@ before anything existed, and revised once the scheme landed in `Theme.kt` — so
 §§3, 4 and 6 now record what building decided rather than what was proposed, in
 the way [habits.md](habits.md), [widget.md](widget.md),
 [settings.md](settings.md) and [reminder.md](reminder.md) do. §7's second half
-(Momo's art, the icon) was sketch until 2026-08-25; [momo.md](momo.md) now
-records the character as built, and only the icon's drawing is still owed.
+(Momo's art, the icon) is built too: [momo.md](momo.md) records the character,
+and §8 the launcher icon's two layers.
 [insights.md](insights.md) is still the document to read the sketchy way.
 
 **§5 (typography) is BUILT as of 2026-08-24.** The experiment it waited on ran
@@ -77,13 +77,11 @@ Glance tree compiles to `RemoteViews` and cannot consume a Compose theme
 (architecture §2), so `:widget` draws the palette a *second* time from values of
 its own rather than consuming the scheme.
 
-~~Two copies of the same hexes, maintained by hand, is the sanctioned
-duplication here — there is no mechanism that would let it be one.~~
-**Wrong, and corrected 2026-08-29.** There is a mechanism, and the sentence
-above talked itself out of looking for one: it reasoned from a true premise — a
-Glance tree cannot consume a Compose *theme* — to a conclusion about *hexes*,
-which are not a theme. A plain `Color` crosses the module edge like any other
-value. `:core:ui` now publishes `GawiRole` and `gawiRole(role, darkTheme)`, and
+**It does not follow that the hexes are duplicated.** That conclusion reasons
+from a true premise — a Glance tree cannot consume a Compose *theme* — to a
+claim about *hexes*, which are not a theme: a plain `Color` crosses the module
+edge like any other value. `:core:ui` publishes `GawiRole` and
+`gawiRole(role, darkTheme)`, and
 `WidgetPalette` derives its day/night `ColorProvider`s from them, so there is
 one copy and the widget cannot drift from the app. Both `ColorScheme`s stay
 `internal` and a surface inside the app still reads `MaterialTheme.colorScheme`
@@ -650,21 +648,13 @@ is judged together. Constraints on the choice:
 
 - **OFL-licensed and available on Google Fonts**, so the face previewed in the
   browser is the same file that gets bundled as a `.ttf`.
-- ~~**Possibly close to the system sans in character** — conditional on §2's
-  experiment. If a widget cannot get the bundled font it renders in the platform
-  face, and the app and widget sit next to each other on a home screen: a quiet
-  humanist face makes that divergence hard to notice, a strongly geometric one
-  (Outfit, which the canvas uses) makes it obvious. If `AndroidRemoteViews` does
-  carry `@font/…` through, the constraint disappears and the face can be chosen
-  on identity alone.~~ **So the typeface waits on that experiment rather than on
-  taste** — decided 2026-08-23.
-
-  **The experiment ran on 2026-08-24 and the constraint is real, so it hardens
-  from *possibly* into the live tension in this choice.** §2 has the
-  measurement: a widget cannot be handed a bundled font, and the only faces it
-  can name are the platform's four generics. The app will render in ours and the
-  widget in the system sans, one home screen apart — *permanently*, this said
-  until 2026-08-25, and the next paragraph but one records why that word went.
+- **Closeness to the system sans was a live constraint, and the experiment
+  settled it.** §2 has the measurement: a widget cannot be handed a bundled
+  font, and the only faces it can name are the platform's four generics. So the
+  app renders in ours and a widget's own text in the system sans, one home
+  screen apart — which a quiet humanist face would make hard to notice and a
+  strongly geometric one (Outfit, which the canvas uses) makes obvious. The
+  paragraph after next records why that divergence is not permanent.
 
   What that does **not** mean is "pick a humanist face and move on", and it is
   worth saying so before the next session reads it as an instruction. It makes
@@ -973,9 +963,8 @@ running.md §4 found the widget illegible for a moment after a night-mode toggle
 and four of these values are the fix. §7.4 has the scope; the rest of that set
 is still to come.
 
-~~**Still a leaning: Momo's style is flat.**~~ **Decided 2026-08-25: flat, and
-the character is the canvas's own, built for Today** — [momo.md](momo.md) is the
-record. The other two treatments stay on the canvas as the record of the choice.
+**Momo's style is flat, and the character is the canvas's own, built for
+Today** — [momo.md](momo.md) is the record. The other two treatments stay on the canvas as the record of the choice.
 The launcher mark derives from the character, and was drawn the same day:
 `ic_launcher_foreground.xml` is the canvas's artboard transcribed (§8).
 
@@ -1055,9 +1044,9 @@ widget. Before any of it is built, the price:
 
 - **Each new widget is its own provider** — a `GlanceAppWidget`, a
   `GlanceAppWidgetReceiver`, an `appwidget-provider` xml and a manifest entry,
-  three times over. ~~The streak and Momo widgets also each need a read
-  `observeToday()` does not currently serve.~~ **Wrong, corrected 2026-08-29:**
-  `observeToday()` serves both already. `TodayHabit` carries a `StreakSnapshot`
+  three times over. Neither the streak nor the Momo widget needs a read
+  `observeToday()` does not already serve: `TodayHabit` carries a
+  `StreakSnapshot`
   per habit and `TodaySnapshot` carries `today` and `weekStart`, which is a
   streak widget's whole input including its "as of" date; the mood a Momo widget
   needs is `moodInputs()`, on the same snapshot. Neither needs a repository
@@ -1065,10 +1054,10 @@ widget. Before any of it is built, the price:
   list forgot: `GlanceProjectionListener` pushes `TodayWidget()` and nothing
   else, so a second provider that is not added there freezes for the life of a
   session — which looks exactly like a widget nobody placed.
-- **Two sizes of one widget** means ~~`SizeMode.Single` → `SizeMode.Responsive`~~
-  — **stale: the provider has been `SizeMode.Exact` since the Momo gate was
-  built**, which is what makes `LocalSize` drive both `contentWidth()` and
-  `MOMO_MIN_HEIGHT`. What is genuinely outstanding is the other half: the
+- **Two sizes of one widget** are served by `SizeMode.Exact`, which the
+  provider has carried since the Momo gate was built and which is what makes
+  `LocalSize` drive both `contentWidth()` and `MOMO_MIN_HEIGHT`. What is
+  genuinely outstanding is the other half: the
   attributes that make a widget resize properly — `targetCellWidth/Height`,
   `previewLayout`, `description` — still need a **`res/xml-v31` variant**. They
   were absent on purpose: minSdk is 29 and `warningsAsErrors` is on, so lint's
@@ -1084,10 +1073,9 @@ widget. Before any of it is built, the price:
   hand-copied palette left in the module: XML cannot read Kotlin, so
   `res/values/colors.xml` reproduces four roles and `StreakPreviewColorsTest`
   pins them the way `WindowBackgroundTest` pins `:app`'s window background.
-- **Momo on a widget does not move.** `RemoteViews` cannot run the animation, so
-  ~~it is a static vector drawable per mood: four assets~~ — priced before the
-  character was code. Built 2026-08-25 as **zero assets**: the widget
-  rasterises `drawMomo` at the resting frame the way it rasterises Outfit
+- **Momo on a widget does not move.** `RemoteViews` cannot run the animation.
+  Priced here as a static vector drawable per mood, four assets; built as
+  **zero assets** instead, because the widget rasterises `drawMomo` at the resting frame the way it rasterises Outfit
   ([momo.md](momo.md) §4), in the existing Today widget, only when the host
   gives it two cells. The large-widget question this bullet list prices is
   thereby answered without a second provider.
@@ -1101,10 +1089,8 @@ widget. Before any of it is built, the price:
   were wrong and §2 records them: `CheckBoxColors` refuses only resource-backed
   providers, and the colours the glyph is given are assertable after all. `docs/running.md` §4 keeps a
   by-hand check for what a JVM test cannot see.
-- ~~**What is left of this set is the Momo widget and Today large's woven band.**
-  Both are drawn on the canvas's page 3 and neither is built.~~ **Both built
-  2026-08-29, later the same day, and the set of four is closed.** The large body
-  is a third body of the Today provider gated on width as well as height, and
+- **The set of four is closed**, the Momo widget and Today large's woven band
+  last, both drawn on the canvas's page 3. The large body is a third body of the Today provider gated on width as well as height, and
   the Momo widget is the fourth provider, captioned with one word chosen on the
   canvas's page 9 against the sentence and against nothing; docs/ux/widget.md §7
   has both, the three roles they added to `GawiRole`, and the one asset the
@@ -1115,19 +1101,18 @@ widget. Before any of it is built, the price:
   two costs this list had not priced — the projection listener naming only one
   provider, and `previewLayout` needing a layout resource the module did not
   have.
-  ~~plus the rest of the role list a full `GlanceTheme(colors = …)` would
-  need.~~ **Dropped 2026-08-29, and this half-bullet was asking for dead code.**
-  The `GlanceTheme` wrapper was *removed* from the widget on 2026-08-28 because
-  nothing under it read `GlanceTheme.colors` once every colour came from
-  `WidgetPalette`, and the `CheckboxDefaults.colors(checked, unchecked)` overload
-  does not consult a theme at all. A full role list would therefore have been
-  roles no surface draws. What replaced the idea is narrower and load-bearing:
+  **The rest of the role list a full `GlanceTheme(colors = …)` would need is
+  dead code, and asking for it was a mistake.** The `GlanceTheme` wrapper was
+  *removed* from the widget once nothing under it read `GlanceTheme.colors`,
+  every colour coming from `WidgetPalette`, and the
+  `CheckboxDefaults.colors(checked, unchecked)` overload does not consult a
+  theme at all — so a full role list would have been roles no surface draws.
+  What replaced the idea is narrower and load-bearing:
   `WidgetPalette` grows a role when a drawn surface needs one, and `GawiRole` in
   `:core:ui` is where the list lives.
-- ~~**Three of the four built hexes have no tripwire, and that is this set's debt
-  to clear.**~~ **Cleared 2026-08-29, and by neither of the two routes priced
-  here.** The debt was real and is worth keeping on the record: `WidgetPalette`
-  held eight literals, of which only `surface`'s pair was pinned — by a
+- **The built hexes have tripwires now, and by neither of the two routes priced
+  here.** Three of four had none, and the debt was real enough to keep on the
+  record: `WidgetPalette` held eight literals, of which only `surface`'s pair was pinned — by a
   test-source-only import of `gawiWindowBackground`, the way
   `WindowBackgroundTest` pins `:app`'s XML copy — so **retuning `onSurface`,
   `primary` or `outline` in `core/ui/theme/Color.kt` moved the app's checkboxes
@@ -1184,11 +1169,10 @@ vendoring costs here; `material-icons-extended` was the alternative that
 from Feather and are **additionally MIT** (Cole Bemis). Upstream's notice carries
 both texts and the derived-from list, so it is vendored verbatim as
 `licenses/Lucide-ISC.txt` and nothing here had to adjudicate which clause
-governs. Each drawable's header says which licence is its own. ~~This does not
-close the licences release gate: nothing packages `licenses/` and there is
-still no about screen.~~ **Closed 2026-08-30**: `:feature:settings` packages
-`licenses/` as assets, filenames intact, and its Licences screen shows both
-notices verbatim (docs/ux/settings.md §9).
+governs. Each drawable's header says which licence is its own. **The licences release
+gate is closed**: `:feature:settings` packages `licenses/` as assets, filenames
+intact, and its Licences screen shows both notices verbatim
+(docs/ux/settings.md §9).
 
 | Icon | Replaces | Where |
 |---|---|---|
@@ -1292,21 +1276,20 @@ deliberately so: a notification small icon is drawn from its alpha channel only
 and must be solid, so it is a different medium — it is now Momo's silhouette
 ([momo.md](momo.md) §4).
 
-## 8. What this does not decide
+## 8. What this decided, and what it does not
 
-- ~~**Momo's art style, expressions, and whether it is static or animated.**~~
-  **Decided and built 2026-08-25** — flat, the canvas's character, all four
-  expressions, animated in Compose on the Today screen. [momo.md](momo.md) is
-  the record, including why PRD §5's Rive recommendation was dropped (its export
-  is behind a paid plan) and what that cost. The widget and reminder
-  treatments followed the same day, and on 2026-08-26 the tank gained its life
-  (the canvas's own weeds and bubbles, at a per-mood tempo), the mood change
-  became one interpolated body rather than two crossfaded ones, and finishing
-  the day is celebrated — all designed on the canvas's "Habitat & motion" page
-  (momo.md §3, §4, §6). Streak milestones followed on 2026-08-29, from the
-  canvas's "Milestone celebration" page (momo.md §6).
-- ~~**The launcher icon — its drawing and its wiring, not its design.**~~
-  **Built 2026-08-25.** §7.1's decision — Momo as a mark, the woven thread as
+- **Momo's art style, expressions, and whether she is static or animated** are
+  decided and built — flat, the canvas's character, all four expressions,
+  animated in Compose on the Today screen. [momo.md](momo.md) is the record,
+  including why PRD §5's Rive recommendation was dropped (its export is behind a
+  paid plan) and what that cost. The widget and reminder treatments, the tank's
+  life (the canvas's own weeds and bubbles, at a per-mood tempo), the mood
+  change as one interpolated body rather than two crossfaded ones, and the
+  celebration on finishing the day all followed, designed on the canvas's
+  "Habitat & motion" page (momo.md §3, §4, §6); streak milestones came from its
+  "Milestone celebration" page (momo.md §6).
+- **The launcher icon is drawn and wired**, which was this bullet's half of it
+  rather than its design. §7.1's decision — Momo as a mark, the woven thread as
   the monochrome layer — is `ic_launcher_foreground.xml` and
   `ic_launcher_monochrome.xml`, transcribed from the canvas's "Launcher icon"
   artboard on its 108 grid — inside a group that scales the mark by 0.85 and
