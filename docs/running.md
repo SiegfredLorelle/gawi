@@ -437,12 +437,12 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
 
 - [ ] The app launches and `adb logcat -d -s AndroidRuntime:E` is empty.
 - [ ] From the empty state, tap **Add a habit**, name it, save. It appears on
-      Today with no restart. This one observation covers Hilt building the data
-      layer, the command path, the event log being folded, the projection write,
-      and the Room `Flow`.
+      Today with no restart — one observation covering Hilt building the data
+      layer, the command path, the log being folded, the projection write and
+      the Room `Flow`.
 - [ ] Create a **weekly** habit and check the target stepper stops at 7 and at
-      1. Above 7 would throw out of `Schedule.Weekly`'s `require` rather than
-      being rejected, so this is a crash if it is wrong.
+      1. Above 7 throws out of `Schedule.Weekly`'s `require` rather than being
+      rejected, so this is a crash if it is wrong.
 - [ ] Open a habit from the list, change **only** its name, save. Its icon,
       colour, schedule and tag survive — an update is a whole-record write, so
       a field the form forgot to submit would come back as a default.
@@ -454,7 +454,8 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       daily streak reads as a count, a weekly one in weeks.
 - [ ] Force-stop and relaunch: completions and streaks are rebuilt from the log.
 - [ ] The database exists — `adb shell run-as com.gawi.app ls -l databases`.
-      To inspect it, **pull the `-wal` too**:
+      To inspect it, **pull the `-wal` too**, or you read a pre-checkpoint
+      snapshot and will think writes were lost:
 
       ```sh
       adb exec-out run-as com.gawi.app cat databases/gawi.db     > /tmp/gawi.db
@@ -462,10 +463,8 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       sqlite3 /tmp/gawi.db 'select type, payload from events;'
       ```
 
-      Without the WAL you read a pre-checkpoint snapshot and will think writes
-      were lost — the main file was 4 KB against a 181 KB WAL when this was
-      written. A *missing* `-wal` is fine and means SQLite has checkpointed
-      into the main file, so let that copy fail rather than chasing it.
+      A *missing* `-wal` is fine and means SQLite has checkpointed into the main
+      file, so let that copy fail rather than chasing it.
 - [ ] Settings persist. Open **Settings** from Today's app bar — the gear, not
       the list glyph beside it — and change the day cutoff.
       `files/datastore/settings.preferences_pb` appears after the **first
@@ -474,8 +473,8 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       back, not the default. **Put the cutoff back to midnight before moving
       on** — the next two checks both start from it, and neither restores it.
 - [ ] **Day rollover, against a real clock.** Start from a cutoff at or before
-      the current time — midnight does, which is why the check above restores it
-      — and tick a habit, so there is a completion on today's logical date.
+      the current time — midnight does, which is why the check above restores
+      it — and tick a habit, so there is a completion on today's logical date.
       *Then* set the cutoff a couple of minutes ahead and go back to Today:
       "today" becomes yesterday, so that row reads unticked. Leave the screen
       alone; when the boundary passes it flips back on its own. Getting the
@@ -488,19 +487,11 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       panel changes with no habit touched and no interaction — and the habit
       rows do not reload underneath it, which is the point of the repository
       subscribing to the settings twice with different dedupes.
-
-      **Half seen 2026-09-03 on the Nothing A059**: the hour set to 18:20 at
-      18:17, the screen left alone, and at 18:21 the panel read *Momo is
-      getting worried.* with no habit touched. Whether the rows reloaded under
-      it was not watched — a reload of unchanged rows draws the same pixels —
-      and **nothing pins that half**: `TodayMoodTest`'s `crossing the reminder
-      threshold re-emits with the rows unchanged` asserts the rows are *equal*
-      before and after, which an identical re-query also satisfies (its sibling
-      test says as much about `distinctUntilChanged`), and the sweep test is
-      about a settings edit, not a clock crossing. So the box stays open for
-      someone watching the screen at the boundary, and it is the only check of
-      that half. The run itself is written up once, in the Momo widget block's
-      *word follows the mood* box.
+      Half seen 2026-09-03 on the Nothing A059: the panel turned over on its
+      own at the boundary, but whether the rows reloaded under it was not
+      watched, and no test pins that half — `TodayMoodTest` asserts the rows
+      are *equal* across the crossing, which an identical re-query satisfies
+      too. Open for someone watching the screen at the boundary.
 - [ ] **Week start re-buckets what is already on screen.** With a weekly habit
       showing a ratio, change the week start. The ratio re-counts against the
       new week without leaving the screen. Unlike the cutoff, this is not
@@ -519,38 +510,35 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       It prints JSON with your habits in it. Note the contrast with the
       database check above: SAF wrote outside app-private storage, so this
       needs no `run-as`. Nothing in the app points at that file, so delete it
-      when you are done. This one observation covers the whole Storage Access
-      Framework path — the picker, the grant, the `ContentResolver` stream and
-      the serializer — none of which any test touches, because no test in this
-      repo can open a picker.
+      when you are done.
 - [ ] **The offered name is today's date, not yesterday's.** Set the day cutoff
       to 03:00, wait until after midnight — or simply check the name is today's
       while the cutoff is at 03:00 and the clock reads before it — and the save
-      dialog still offers `gawi-export-<today>.json`. Proves the file name uses
-      the wall clock rather than the logical date. **Put the cutoff back to
+      dialog still offers `gawi-export-<today>.json`, so the file name uses the
+      wall clock rather than the logical date. **Put the cutoff back to
       midnight afterwards**; the rollover checks above start from it.
 - [ ] **Cancelling the picker does nothing and says nothing.** Tap **Export a
       copy**, then press Back out of the save dialog. No snackbar, no file, and
-      the row is still tappable. Proves the null-`Uri` path is a no-op rather
-      than an error, which is the rule every Cancel on this screen follows.
+      the row is still tappable — the null-`Uri` path is a no-op rather than an
+      error, which is the rule every Cancel on this screen follows.
 - [ ] **Importing what you just exported changes nothing.** **Import a file** →
       pick the export from above. The snackbar says nothing was new, and Today
-      is unchanged — same rows, same ticks, same streaks. Proves the dedupe by
-      event id, and that an import is a merge and not a replace. It restores
+      is unchanged — same rows, same ticks, same streaks. That is the dedupe by
+      event id, and an import being a merge and not a replace. It restores
       nothing because it changes nothing, which is the point.
 - [ ] **A file that is not an export is refused without changing anything.**
       Import → pick a photo or any text file. The snackbar says it is not a
-      Gawi export, and Today is unchanged. Proves a refusal is a message rather
-      than a crash or a half-written log.
+      Gawi export, and Today is unchanged: a refusal is a message rather than a
+      crash or a half-written log.
 - [ ] **The export is visible in the import picker** without needing a "show
       all files" step. The one thing the type filter can get wrong that no test
-      can see: a filter that hides someone's own backup from them is worse than
+      can see — a filter that hides someone's own backup from them is worse than
       one that shows a few extra files.
 - [ ] **Both rows go quiet while the work runs.** With a log big enough to take
       a moment, the tapped row's explanation is replaced by *Writing the file…*
       and neither row answers a tap until it finishes. On a small log this is
-      over before you can see it — that is expected, and `SettingsScreenTest`
-      covers it instead.
+      over before you can see it — expected, and `SettingsScreenTest` covers it
+      instead.
 - [ ] **A file far too large to be an export is refused, not fatal.** The picker
       shows essentially everything by design, so this is the likeliest wrong tap:
 
@@ -560,8 +548,8 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
 
       Import it. The snackbar says it is not a Gawi export, the app is still
       running (`adb shell pidof com.gawi.app` returns the same pid) and the log
-      is untouched. Before the ceiling this was an `OutOfMemoryError`, which is
-      an `Error` and so slipped past the guard around every other failure here —
+      is untouched. Without the ceiling this is an `OutOfMemoryError`, which is
+      an `Error` and so slips past the guard around every other failure here —
       process death on the recovery screen with nothing said. Delete the file
       afterwards.
 - [ ] **An export you do not interrupt ends in a closing brace.** Export into
@@ -572,8 +560,8 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       ```
 
       It ends `}` rather than mid-token, and the `event_count` near the top
-      matches what the log holds. That is the check that the reordering — encode
-      first, open the document last — did not break the ordinary path.
+      matches what the log holds — the check that encoding first and opening the
+      document last did not break the ordinary path.
 - [ ] **Leaving the screen the instant you tap Save can leave an empty file, and
       that is a known gap.** Tap **Export a copy**, save, and press Back out of
       Settings immediately. Two outcomes are both correct: no file at all (Back
@@ -589,9 +577,9 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       `adb shell am force-stop com.gawi.app` instead of pressing Back. The file
       is empty or truncated — expected; `NonCancellable` survives cancellation,
       not a killed process. Now import it: the snackbar says it is damaged.
-      Proves the residual gap is bounded, because truncated JSON does not parse
-      and `event_count` would not match, so a half-written backup can never be
-      silently restored as a partial one.
+      That is what bounds the residual gap, because truncated JSON does not
+      parse and `event_count` would not match, so a half-written backup can
+      never be silently restored as a partial one.
 - [ ] **The count snackbar is readable before it goes.** Import an export
       holding habits this install does not have and read the whole line without
       hurrying; it uses the default short duration, and if that is too fast
@@ -602,35 +590,32 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       `adb shell pm clear com.gawi.app`, relaunch to the empty state, and
       import the file. Every habit, completion and streak comes back. This is
       the promise architecture §6 makes on behalf of `allowBackup="false"`, and
-      it is the only check that tests it as a user would need it.
+      the only check that tests it as a user would need it.
 
 **The 30-day nudge** (PRD §5). Run these in order from a cleared install — they
-build on each other, and the third is the one that has no JVM test behind it.
+build on each other, and the third is the one with no JVM test behind it.
 
 - [ ] **A fresh install is not nudged about losing nothing.** After
       `adb shell pm clear com.gawi.app`, open Settings → **Data**. The export
-      row has *no* value line and the ordinary help underneath it. Proves the
-      empty-log case: the stamp is absent here exactly as it is on a log full
-      of events, and only the log tells the two apart.
+      row has *no* value line and the ordinary help underneath it. The stamp is
+      absent here exactly as it is on a log full of events, and only the log
+      tells the two apart.
 - [ ] **A log with something in it and no backup says so.** Create one habit,
       then reopen Settings. The export row reads **Never exported** and the
-      help line has become the nudge. Proves the split above, in the other
-      direction, and that "never" is overdue immediately rather than in thirty
-      days.
+      help line has become the nudge — the same split in the other direction,
+      and "never" is overdue immediately rather than in thirty days.
 - [ ] **An import moves the row without leaving the screen.** From a cleared
       install again — `adb shell pm clear com.gawi.app` — open Settings while
       the log is empty, confirm the row is silent, then **without navigating
-      away** tap **Import a file** and pick an export saved earlier. The row must
-      switch to **Never exported** with the nudge *immediately*.
-
-      This step exists because the obvious ordering hides the bug. The import
-      check further down runs after an export, so the log already has events and
-      the row is already saying something — which is why a reviewer, not this
-      checklist, found that importing into an *empty* log left the row silent
-      for up to five seconds. Watch for the five seconds specifically: a row that
-      only updates after you leave and come back is the defect, not a pass.
-      Creating a habit on Today and returning to Settings within five seconds
-      checks the same mechanism from the other side.
+      away** tap **Import a file** and pick an export saved earlier. The row
+      must switch to **Never exported** with the nudge *immediately*.
+      **Watch the five seconds specifically**: importing into an *empty* log
+      once left the row silent for up to five seconds, and a row that only
+      updates after you leave and come back is the defect, not a pass. The
+      import check further down runs after an export, so the log already has
+      events and the row is already saying something — which is why the obvious
+      ordering hides this. Creating a habit on Today and returning to Settings
+      within five seconds checks the same mechanism from the other side.
 - [ ] **A finished export records itself, and only a finished one.** Export a
       copy, keep the offered name, and return to Settings: the row reads
       **Last exported today** and the ordinary help is back. **This is the only
@@ -640,14 +625,14 @@ build on each other, and the third is the one that has no JVM test behind it.
       Robolectric shadow this project does not use (docs/ux/settings.md §8).
 - [ ] **A cancelled export does not count as a backup.** Tap **Export a copy**
       and press Back out of the save dialog. The row still reads whatever it
-      read before. Proves the stamp follows the write and not the tap.
+      read before: the stamp follows the write and not the tap.
 - [ ] **An import does not count as a backup either.** Import the file from
       above. The row still says today and the value does not move. Deliberate:
       an imported file proves a copy was readable, not that it is recent, so
       importing a backup from March must not silence the nudge for a month.
 - [ ] **The stamp survives a restart.** `adb shell am force-stop com.gawi.app`,
-      relaunch, reopen Settings: still **Last exported today**. Proves it is in
-      the preferences file rather than in memory.
+      relaunch, reopen Settings: still **Last exported today**, so it is in the
+      preferences file rather than in memory.
 - [ ] **A month later, the nudge comes back.** Settings → **Date & time**, turn
       off automatic time and move the date forward 31 days — the device UI, not
       `adb shell date`, which needs root and is refused on a Play image. Reopen
@@ -660,8 +645,8 @@ build on each other, and the third is the one that has no JVM test behind it.
       **Never exported** once the date is restored, which is correct behaviour
       and looks like a bug if you were not expecting it.
 - [ ] **A settings edit does not reset the clock.** With a stamp in place,
-      change the week start and come back. The value line has not moved. Proves
-      the export stamp shares a preferences file with the three settings and
+      change the week start and come back. The value line has not moved: the
+      export stamp shares a preferences file with the three settings and
       survives a write that assigns all three of their keys.
 
 **The CSV of completions** (PRD §5, docs/ux/settings.md §6). Its correctness is
@@ -704,25 +689,22 @@ does with the file.
       EOF
       ```
 
-- [ ] **A formula in a habit name stays text in a spreadsheet.** This is the
-      security check and it is the reason the file is not written naively.
-      Create three habits named `=1+1`, `Read, daily` and `say "yes"`, complete
-      each one today, export, then open the file in LibreOffice on the host
+- [ ] **A formula in a habit name stays text in a spreadsheet.** The security
+      check, and the reason the file is not written naively. Create three habits
+      named `=1+1`, `Read, daily` and `say "yes"`, complete each one today,
+      export, then open the file in LibreOffice on the host
       (`localc /tmp/gawi-completions-*.csv`, comma-separated, UTF-8). The first
       cell must **display** `=1+1` and compute nothing; the other two must each
       be a single cell. In the raw file the first field reads `"'=1+1"` — the
-      apostrophe is the guard and a spreadsheet does not show it. Archive the
-      three habits afterwards.
-
-      Include a name with a **leading space before the sigil** — ` =1+1` — in
-      the same pass. It must also come out as text. Note what this check does
-      and does not show: measured 2026-08-21, LibreOffice leaves ` =1+1` as text
-      whether or not leading-space removal is on, so this is not a reproduction
-      of an exploit — it pins the guard's rule for readers nobody has measured.
-      The case that genuinely evaluates, and the one worth keeping an eye on, is
-      a **bare** `=1+1` with no apostrophe: convert a hand-made file holding one
-      and confirm the cell really does compute, or this whole check can pass
-      because the reader never evaluates anything.
+      apostrophe is the guard and a spreadsheet does not show it. Include a name
+      with a **leading space before the sigil** — ` =1+1` — in the same pass; it
+      must also come out as text. Archive the three habits afterwards.
+      What this does not show: LibreOffice leaves ` =1+1` as text whether or not
+      leading-space removal is on, measured 2026-08-21, so the check pins the
+      guard's rule rather than reproducing an exploit. The case that genuinely
+      evaluates is a **bare** `=1+1` with no apostrophe — convert a hand-made
+      file holding one and confirm the cell really does compute, or this whole
+      check can pass because the reader never evaluates anything.
 
 - [ ] **Know what a `;`-locale Excel does with it.** Not a defect and not
       fixable in the bytes without breaking every other reader, so it is a check
@@ -747,8 +729,8 @@ does with the file.
 - [ ] **All three Data rows go dead together.** Start a CSV export of a large
       log and, while it runs, confirm **Export a copy** and **Import a file**
       are both unavailable and that only the CSV row says it is working. Hard to
-      catch by hand on a small log; the JVM tests own this and this is a
-      sanity check.
+      catch by hand on a small log; the JVM tests own this and this is a sanity
+      check.
 
 - [ ] **An empty log still writes a usable file.** After `adb shell pm clear
       com.gawi.app`, export completions before creating anything. The snackbar
