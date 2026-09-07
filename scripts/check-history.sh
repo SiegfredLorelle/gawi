@@ -18,9 +18,11 @@
 #   - "an earlier version", "an earlier revision", "an earlier cut"
 #   - "first cut"        the shape before this one is the diff's to describe.
 #   - "on review"        as "a review": who found it is the pull request's.
-#                        Word-boundaried, unlike "a review" above — otherwise
-#                        "the migration review" and "a comparison review" fire
-#                        on the tail of the preceding word.
+#                        Boundaried on the left only, so "the migration review"
+#                        and "a comparison review" do not fire on the tail of
+#                        the preceding word. Deliberately not boundaried on the
+#                        right: "on reviewer feedback" and "on reviews" are the
+#                        same defect, the way "a review" covers "a reviewer".
 #   - "was wrong"        the same, in the voice of a confession.
 #   - "coderabbit"       a bot's name in a comment dates it to the bot.
 #   - "since Phase N"    a roadmap marker dates the sentence to a phase, and
