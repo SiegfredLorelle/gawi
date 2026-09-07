@@ -399,117 +399,39 @@ exist, which also arms the 30-day export nudge.
 ## 4. Manual verification checklist
 
 Architecture §8 puts instrumented tests outside CI, so this is the substitute.
-Work through it for any change to the data path or the Today view; note in the PR
-which parts you ran.
+Work through it for any change to the data path or the Today view; note in the
+PR which parts you ran. Nothing here is deferred any longer: the widget block
+is owed against the palette the widget has carried since 2026-08-28
+([visual-identity.md](ux/visual-identity.md) §7.4), and the accessibility block
+is live work.
 
-**The widget and accessibility blocks are deferred, not dropped** (recorded
-2026-08-23). PRD §5 wanted them run before Phase 1, on the reasoning that Phase 1
-adds screens and replaces the three-face placeholder on both the Today view and
-the widget — the surfaces these checks exist to verify. Phase 1 then turned out
-to open with a whole-app restyle rather than with those screens (PRD §8, OQ-4
-widened to the visual identity), which makes the argument sharper, not weaker:
-a TalkBack pass, a 200% font-scale pass and a widget legibility check run *now*
-would all be measuring a theme that is about to be replaced.
+**How to read a tick.** A tick earned on an emulator means "seen and correct",
+not "verified on the target device" — colour, contrast and layout render the
+same there and nothing else does. Each box says where it ran. Two device passes
+stand behind the ticks that name them: the **Nothing A059 on 2026-09-02** —
+Android 16 (API 36), 1080×2392 at 375 dpi, font scale 0.85, the Nothing
+launcher, TalkBack 17.0.1, Accessibility Scanner 2.5.1, over Wi-Fi adb, against
+a seeded event log of fourteen habits — and a re-hearing pass on 2026-09-03.
 
-**Their trigger was the restyle landing, and it has fired** (2026-08-23): the
-designed scheme and the retuned hues are in the code, so the theme these checks
-would measure is no longer about to be replaced. **They are due**, and part of
-the debt has since been paid. The accessibility block below and the widget block
-are live work, and the restyle block before them is new and comes from the same
-change.
+**TalkBack cannot be driven from `adb shell input`.** Injected taps and swipes
+bypass the accessibility layer, so a tap under TalkBack *toggles* the row it
+lands on — which is the "direct tap" these boxes forbid, arriving by another
+door. What can be driven is focus, `input keyevent KEYCODE_DPAD_DOWN`, which
+TalkBack announces for every focusable node; what can be read is TalkBack's
+*Display speech output* overlay off a `screencap` taken within half a second of
+the key. Anything not focusable — the panel, the chip, headings, grid cells,
+trend columns, widget bodies — has to be swiped by hand and reported by ear.
 
-**What has actually run, and where.** Everything ticked in the restyle block and
-three items in the accessibility block ran on an **emulator** on 2026-08-23, and
-each says so at the tick. That is the honest ceiling for those checks: colour,
-contrast and layout render the same there, so a tick means "seen and correct",
-not "verified on the target device". What an emulator cannot settle is left
-unticked and named at the end of each block — the TalkBack items, Accessibility
-Scanner, and the widget on a launcher, which is the only end-to-end
-`ProjectionListener` exercise and has still never run. The Nothing A059 pass
-(§3) is what would upgrade the rest.
-
-**The Nothing A059 pass ran on 2026-09-02** — Android 16 (API 36), 1080×2392 at
-375 dpi, font scale 0.85, the Nothing launcher, TalkBack 17.0.1 and
-Accessibility Scanner 2.5.1, over Wi-Fi adb — against a seeded event log
-(fourteen habits, two streaks broken on different days, a six-day run, tags),
-since the phone's own data was a single test habit. Every box below that names
-that date ran there, and each says how. Two things about how it ran are worth
-more than any one tick. **TalkBack cannot be driven from `adb shell input`**:
-injected taps and swipes bypass the accessibility layer entirely, so a tap under
-TalkBack *toggles* the row it lands on and a swipe at a row's height does too —
-which is exactly the "direct tap" these boxes forbid, arriving by another door.
-What can be driven is input focus, `input keyevent KEYCODE_DPAD_DOWN`, which
-TalkBack announces for every focusable node, and what can be read is TalkBack's
-*Display speech output* overlay (its developer setting) off a `screencap` taken
-within half a second of the key. Everything that is not focusable — the panel,
-the chip, headings, grid cells, trend columns, widget bodies — was swiped by
-hand and reported by ear, and the boxes say which. **And one premise fell**: on
-this TalkBack a Compose node that merges its descendants and carries a
-`contentDescription` is read as the description *and then* every child text, so
-the retro strip, the history grid, the trend columns and the chip all say more
-than their description. The accessibility block has the recordings; the shape
-of the fix is one modifier (`clearAndSetSemantics`) in four places — a plain
-swap in three, and on the retro strip one that has to keep the cell's checkbox
-role and toggle state. **Made 2026-09-02** in all four (`TodayChip`, `DayCell`,
-`LabelledColumns`, `cellAction`); the strip's role and state were pinned first
-by `anOpenCell_isACheckboxThatReportsItsState` and
-`theShutCell_isDisabledAndNotABox`, and one test per site holds the child text
-out of the merged tree. The same day took the other findings too: the icon
-badge is decorative, the streak badge and habit detail's streak panel speak
-their unit in `:core:ui`'s words, the colour swatch clears its tick, each
-Archive button is named for its row, and the Today widget's rows are 48dp and
-described. Momo's body is unchanged — the list experiment was built and
-withdrawn the same day; its box says why. Every box below was left open for a
-device to hear; the 2026-09-03 pass heard most of them, and each box quotes
-what was said and names what, if anything, it still waits on.
-
-That deferral has expired. The widget drew on Glance's default theme on purpose
-for two phases — a Glance tree cannot consume the Compose theme (architecture
-§2), so the widget takes any palette separately, and this section said the
-legibility check was due against the *unchanged* widget and would be owed a
-second time once it had one. **It has one since 2026-08-28**
-([visual-identity.md](ux/visual-identity.md) §7.4), because the check found a
-real defect and the palette turned out to be its fix rather than styling laid on
-top. So the second time has arrived and is what the widget items below now ask
-for. Nothing in this section is deferred any longer.
-
-The clock-dependent checks below used to need an `adb` call into a debug
-activity. They drive the settings screen now, which is the same code path a user
-takes — so what they verify is the app rather than a test fixture beside it.
-
-**The Storage Access Framework cannot be exercised off a device.** No test in
-this repo opens a file picker — the export, import and CSV checks below are the
-only thing that verifies a file is actually written and read. `SettingsScreenTest`
-covers the Data section's rows, their disabled state and their status copy, and
-`SettingsDataViewModelTest` covers what the ViewModel does with the `Uri` the
-picker returns, but nothing above those knows whether a picker appears at all.
-
-**What `make test` now covers on its own.** `TodayScreenTest`,
-`HabitListScreenTest`, `HabitEditorScreenTest` and `SettingsScreenTest` render
-those screens under Robolectric, so the empty, loading and unavailable states,
-the weekly target's bounds, the disabled save, the archived row's action, the
-fact that a tap reports the tapped row's own date and completion, the fact
-that the settings rows draw the *stored* values rather than the defaults, and
-every state of the export row's nudge — silent, never, today, a day count and
-overdue, including that a running export outranks the nudge — are all checked
-without a device. They are still listed below because the checklist
-verifies them *through the real stack* — a tap that reaches Room and comes back,
-and a habit that survives a process death — which a stateless render cannot.
-
-`AppNavigationTest` goes one layer further: it launches the real `MainActivity`
-under `HiltTestApplication`, so the production Hilt graph, the navigation graph
-and all four routes are covered without a device too — including that the
-settings screen resolves its `SettingsSource` binding and reads the real store.
-What it deliberately leaves out is anything that **writes** — Room's
-`InvalidationTracker` does not deliver in that setup, so a screen never re-reads
-after a write (see docs/architecture.md §8). That is the part this checklist
-still owns, and why the create, edit and archive steps below earn their place.
-
-**Read the copy anyway.** The tests resolve every expected string from the same
-`R.string` the composable renders, so a reword cannot fail them — by design, so
-they survive a copy edit. What they do catch is copy in the wrong *place*: the
-empty state rendering the remaining-count line is a failing test now, which is
-the shape the 4b bug took. Wording itself is still yours to read.
+**What a device is for, and `make test` is not.** No test here opens a file
+picker, so the export, import and CSV boxes are the only check that a file is
+written and read at all. `AppNavigationTest` launches the real `MainActivity`
+under `HiltTestApplication` and covers the production Hilt graph, the navigation
+graph and all four routes, but Room's `InvalidationTracker` does not deliver in
+that setup, so no screen ever re-reads after a write
+(docs/architecture.md §8) — which is why the create, edit and archive steps
+below earn their place even though Robolectric renders the same screens. Read
+the copy while you are here: the tests resolve every expected string from the
+same `R.string` the composable renders, so a reword cannot fail them, by design.
 
 **On an emulator**
 
