@@ -251,7 +251,11 @@ one, so the clickable stays ahead of it. `anOpenCell_isACheckboxThatReportsItsSt
 `theShutCell_isDisabledAndNotABox` were written first and hold across the
 change; `aCell_speaksItsLabelAndNothingElse` holds the four glyphs out of the
 merged tree. The test that pins the label passes either side of it, as
-predicted. Not yet re-heard; docs/running.md §4 keeps the box open.
+predicted. Re-heard on the device 2026-09-03: the four glyphs are gone from
+what is spoken and the role and toggle state survived the clearing, and the
+shut day announces as *"Day 30, too old to change. Disabled"*. Its box in
+docs/running.md §4 stays open for one thing only — a cell with a note, whose
+*has a note* word no quoted cell has carried yet.
 
 ### Every past-day write confirms, in both directions
 

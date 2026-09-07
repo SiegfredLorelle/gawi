@@ -410,8 +410,10 @@ then the day number the cell draws, because the cell merges its children under a
 description and this TalkBack reads both. `clearAndSetSemantics` on the cell is
 the fix — a plain swap here, unlike the retro strip's (habits.md) — **made
 2026-09-02** and pinned by `a day cell speaks its label and not its number after
-it`, which also finds the number still drawn in the unmerged tree. Not yet
-re-heard; docs/running.md §4 keeps the box open.
+it`, which also finds the number still drawn in the unmerged tree. Re-heard on
+the device 2026-09-03: today's cell reads *"Thursday, 3, today, not done yet"*
+and nothing after it. Its box in docs/running.md §4 stays open for the tedium
+of a full month, which is a judgement rather than a sentence.
 
 This is what moved the spelled-out weekday names into `:core:ui`. They were
 `:feature:settings`' — the week-start picker's options — and this screen needed

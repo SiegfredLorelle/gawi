@@ -8,15 +8,12 @@ activity"*. §4 below is that activity written down. Toolchain setup for the
 **build** lives in [docs/stacks/kotlin-android.md](stacks/kotlin-android.md);
 this file picks up where that leaves off.
 
-**What has actually been run.** The Linux path in this document was executed end
-to end on 2026-08-20 (Arch, AMD Ryzen, AVD on Android 17 x86_64). The macOS and
-Windows sections come from Google's and Microsoft's documentation and have **not**
-been run by anyone here — they are marked as such. A physical device joined them
-on 2026-08-22 — a Nothing A059 on Android 16 (API 36) — but **over wireless
-debugging**: §3's USB path was attempted on Linux and never got as far as
-enumeration, so it stays unverified, and the macOS and Windows device notes are
-unrun like the rest of their sections. Corrections welcome; that is what those
-markers are for.
+**What has actually been run**, since every heading below says so and this is
+the summary. The Linux path end to end on Arch with an AVD; a physical device
+over **wireless debugging** only, a Nothing A059 on Android 16 (API 36). The
+macOS and Windows sections, and §3's USB path, come from Google's and
+Microsoft's documentation and have not been run by anyone here. Corrections
+welcome; that is what those markers are for.
 
 ---
 
@@ -218,8 +215,7 @@ adb shell pm clear com.gawi.app                 # wipe the database and settings
 ## 3. A physical device — *wireless path verified on Linux; USB unverified*
 
 PRD §7 makes a real device the primary target for widget and notification work,
-because launchers and OEM battery policies differ from emulators. That stopped
-being forward-looking on 2026-08-21: the widget and the reminder both shipped, and
+because launchers and OEM battery policies differ from emulators. The widget and the reminder both ship, and
 §4's widget block **cannot be completed without a launcher** — pinning a widget
 requires a user, so nothing automated in this repo can place one. A device is no
 longer setup-in-advance; it is the only way to finish the checklist.
@@ -297,9 +293,9 @@ $ ls /sys/bus/usb/devices/usb*/      # per-port detail when it does not
 runs with `kernel.dmesg_restrict = 1`, so kernel logs need root and USB
 enumeration cannot be read from them. `lsusb` and `/sys` are the substitutes.
 
-Measured on 2026-08-22: the phone above never enumerated, on any port or cable,
-while charging normally throughout — and wireless debugging is what got the app
-on. That is why the USB half of this section is still marked unverified.
+The phone above never enumerated, on any port or cable, while charging normally
+throughout, measured 2026-08-22 — which is why the USB half of this section is
+marked unverified, and why wireless debugging is the path that works.
 
 ### Check the udev group *before* you plug in
 
@@ -374,11 +370,9 @@ API level with `adb shell getprop ro.build.version.sdk`.
 
 ### If the device is one you actually use — read this
 
-**There is no 30-day trial any more** — PRD §5's criterion was waived on
-2026-08-23 — but nothing in this section ever depended on the data being a
-*trial*. It depends on the device holding the only copy, which is true of any
-real use and true from the first habit you create: `allowBackup` is off, so there
-is no second copy anywhere by design. Two ways to destroy it, both easy:
+This depends on the device holding the only copy, which is true of any real use
+and true from the first habit you create: `allowBackup` is off, so there is no
+second copy anywhere by design. Two ways to destroy it, both easy:
 
 - **`make itest` uninstalls the app**, and `allowBackup=false` (architecture §6)
   means the OS has no copy. See the warning above §4's widget block — it is not
