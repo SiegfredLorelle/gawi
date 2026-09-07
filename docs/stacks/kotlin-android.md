@@ -33,6 +33,7 @@ lint: ## Lint and type-check the codebase
 	./scripts/check-history.sh
 	./scripts/check-citations.sh
 	./scripts/check-tests.sh
+	./scripts/check-docs.sh
 	./gradlew spotlessCheck detekt lint :app:assembleDebug
 
 test: ## Run the test suite
@@ -41,12 +42,14 @@ test: ## Run the test suite
 
 `./gradlew help` looks like a no-op but the wrapper downloads the Gradle
 distribution and warms the daemon, which is exactly what `setup` means here.
-`lint` is three scripts and four Gradle gates. `scripts/check-history.sh`
+`lint` is four scripts and four Gradle gates. `scripts/check-history.sh`
 refuses a date or a narrative phrasing in a `src/main` comment,
-`scripts/check-citations.sh` checks that every `docs/` citation in a comment
-resolves, and `scripts/check-tests.sh` refuses the constructs that reach past
-behaviour into the implementation. All three are scripts and not Gradle tasks
-on purpose, because a task can pass by being UP-TO-DATE (architecture §9). The
+`scripts/check-citations.sh` checks that every `docs/` citation resolves,
+`scripts/check-tests.sh` refuses the constructs that reach past behaviour into
+the implementation, and `scripts/check-docs.sh` refuses an overgrown checklist
+box or a struck passage under `docs/`. All four are scripts and not Gradle
+tasks on purpose, because a task can pass by being UP-TO-DATE
+(architecture §9), and all four refuse to pass on a scan that found nothing. The
 Gradle gates are formatting (Spotless check, non-mutating), static analysis
 (detekt), Android Lint, and a
 debug assemble — the one step that packages, without which CI never proves
