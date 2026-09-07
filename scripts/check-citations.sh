@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 #
-# Every `<doc> §N` citation in Kotlin source names a document and a section that
-# exist, and no single file uses one section number for two different documents.
+# Every `<doc> §N` citation names a document and a section that exist, and no
+# single file uses one section number for two different documents. The first
+# rule reads Kotlin, the `docs/` tree itself and the resource XML; the second
+# reads Kotlin alone, for the reason its own section gives.
 #
-# This exists because the comments here cite `docs/` heavily — 627 citations
+# This exists because this repo cites `docs/` heavily — several hundred citations
 # across 212 files — and nothing verified any of them. That is not hypothetical:
 # the comment above `robolectric` in gradle/libs.versions.toml pointed at a
 # `:core:data/robolectric.properties` that has never existed, and was believed
@@ -102,7 +104,8 @@ sources=$(
     {
         find app core feature widget -name '*.kt' -path '*/src/*'
         find docs -type f -name '*.md'
-        find . -path ./build -prune -o -path '*/src/main/res/*' -name '*.xml' -print
+        find app core feature widget -path '*/build' -prune \
+            -o -path '*/src/main/res/*' -name '*.xml' -print
     } | sort
 )
 kotlin_sources=$(find app core feature widget -name '*.kt' -path '*/src/*' | sort)
@@ -121,12 +124,21 @@ for root in app core feature widget docs; do
     fi
 done
 
-found=$(printf '%s' "$kotlin_sources" | grep -c .)
-if [ "$found" -lt 100 ]; then
-    echo "check-citations: found $found Kotlin source files, too few to be this" >&2
-    echo "repo — the module layout has moved and the scan roots need updating." >&2
-    exit 2
-fi
+# One floor per group that rule 1 reads, because a single total would let a
+# whole group drop out unnoticed: the Kotlin count alone stayed healthy while
+# the resource glob could stop matching and take 36 files with it, and the
+# script would still have printed the line below.
+check_floor() {
+    count=$(printf '%s' "$2" | grep -c .)
+    if [ "$count" -lt "$3" ]; then
+        echo "check-citations: found $count $1, too few to be this repo — the" >&2
+        echo "layout has moved and the scan roots need updating." >&2
+        exit 2
+    fi
+}
+check_floor "Kotlin sources" "$kotlin_sources" 100
+check_floor "documents under docs/" "$(printf '%s\n' "$sources" | grep '\.md$')" 8
+check_floor "resource XML files" "$(printf '%s\n' "$sources" | grep '\.xml$')" 20
 
 # --- Rule 1: every anchored citation resolves ------------------------------
 while IFS= read -r file; do
