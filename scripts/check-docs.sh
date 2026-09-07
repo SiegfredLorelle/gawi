@@ -103,7 +103,7 @@ findings=$(
             start = 0
         }
 
-        FNR == 1 { flush(); infence = 0 }
+        FNR == 1 { flush(); infence = 0; fencechar = ""; fencelen = 0 }
 
         {
             # Tabs are expanded before any indent arithmetic, or a tab-indented
@@ -114,8 +114,26 @@ findings=$(
             trimmed = line
             sub(/^[[:space:]]+/, "", trimmed)
 
-            if (trimmed ~ /^(```|~~~)/) { infence = !infence; next }
-            if (infence) next
+            # A fence is paired by its own delimiter, per CommonMark: the
+            # closing run is the same character, at least as long, and carries
+            # nothing but whitespace. Toggling on either marker let a ``` block
+            # holding a ~~~ line — or the reverse — close early, which ends the
+            # exemption in the middle of an example.
+            if (infence) {
+                if (match(trimmed, /^(`{3,}|~{3,})/) &&
+                    substr(trimmed, 1, 1) == fencechar &&
+                    RLENGTH >= fencelen &&
+                    substr(trimmed, RLENGTH + 1) ~ /^[[:space:]]*$/) {
+                    infence = 0
+                }
+                next
+            }
+            if (match(trimmed, /^(`{3,}|~{3,})/)) {
+                fencechar = substr(trimmed, 1, 1)
+                fencelen = RLENGTH
+                infence = 1
+                next
+            }
 
             if (match(line, /^[[:space:]]*- \[[ xX]\] /)) {
                 flush()
@@ -155,10 +173,28 @@ findings=$(
 
 strikes=$(
     awk '
-        FNR == 1 { infence = 0 }
-        /^[[:space:]]*(```|~~~)/ { infence = !infence; next }
-        infence { next }
+        FNR == 1 { infence = 0; fencechar = ""; fencelen = 0 }
+
         {
+            fence = $0
+            sub(/^[[:space:]]+/, "", fence)
+
+            if (infence) {
+                if (match(fence, /^(`{3,}|~{3,})/) &&
+                    substr(fence, 1, 1) == fencechar &&
+                    RLENGTH >= fencelen &&
+                    substr(fence, RLENGTH + 1) ~ /^[[:space:]]*$/) {
+                    infence = 0
+                }
+                next
+            }
+            if (match(fence, /^(`{3,}|~{3,})/)) {
+                fencechar = substr(fence, 1, 1)
+                fencelen = RLENGTH
+                infence = 1
+                next
+            }
+
             stripped = $0
             gsub(/`[^`]*`/, "", stripped)
             if (stripped ~ /~~/)
