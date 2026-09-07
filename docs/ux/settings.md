@@ -666,7 +666,8 @@ eleven, which is why the Data section's mapper functions sit in
   and both are worse, so it stays open.
 
   **The drawn app being wrong for as long as the first DataStore read takes is
-  true in principle and almost never visible.** `ThemeViewModel.theme` does
+  real but brief, and invisible unless the page cache is cold.**
+  `ThemeViewModel.theme` does
   start at "not read yet", but the read beats the first composed frame, and does
   so identically on both levels: no light-scheme content frame appeared in three
   runs with a warm page cache, and with the cache dropped before every start —

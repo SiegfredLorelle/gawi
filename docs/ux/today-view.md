@@ -377,9 +377,11 @@ Small decisions that were easier to make once drawn:
   rule a celebration cannot be observed at all, so that test lives outside
   `TodayScreenTest` and carries a deliberate control.
 
-  **Still open: it is drawn but not spoken.** A description change on a non-live
-  node is not announced, so this is the live-region question above rather than a
-  second gap, and it needs a device with TalkBack rather than another decision.
+  **The chip carries the milestone line in its description and does not
+  announce the change.** A description change on a non-live node is not
+  announced, so this is the live-region question above rather than a second
+  gap — and that question has had its recording since 2026-09-02, so what is
+  open is the decision rather than a measurement.
 - **The `regenerating` copy has somewhere to come from.** §3 asks it to name
   the habit and offer the repair, which needed a second pure function beside
   `Mascot.mood` — `recentlyBrokenHabits(inputs)`, returning ids rather than a

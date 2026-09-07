@@ -17,10 +17,11 @@ tag metric when OQ-1 lands. All three are now settled by code, and §8 is the
 record of what building them decided — including the four places the reasoning
 here, and the artboard it came from, turned out to be wrong.
 
-PRD §5's Phase 1.5, this module's second job, **is built**, and it grew out of
-the app-wide screen (§8.8) rather than becoming a screen of its own: a stepper
-walks the period back through the calendar, and three facts joined the numbers
-it already drew. §9 is the record. What was called "the first line of
+**The retrospective is built** — PRD §5's Phase 1.5 apart from its
+nice-to-have, export of a review as an image or PDF, which is deferred and which
+§7 keeps. It grew out of the app-wide screen (§8.8) rather than becoming a
+screen of its own: a stepper walks the period back through the calendar, and
+three facts joined the numbers it already drew. §9 is the record. What was called "the first line of
 it" — adherence per habit and per tag across a period — was already there, which
 is why the retrospective cost a stepper and three facts rather than a module.
 
