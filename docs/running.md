@@ -1051,7 +1051,14 @@ windows. The flip was reached on 2026-09-03 on a throwaway AVD — `gawi-flip`,
 the API 37 Play image with `hw.lcd.width` 1260, `hw.lcd.height` 1800 and
 `hw.lcd.density` 480, giving 420×600 dp and four columns — at 183×188 dp,
 which shows the gates are right and the body draws, not that a phone
-launcher's cells land in the window.
+launcher's cells land in the window. To make it again anywhere:
+
+```sh
+avdmanager create avd -n gawi-flip -d small_phone \
+  -k "system-images;android-37.1;google_apis_playstore_ps16k;x86_64"
+```
+
+then the three `hw.lcd.*` edits above in its `config.ini`.
 
 **Two experiments would settle the Momo body under TalkBack, the clickable
 first and the list as fallback.** A one-item `LazyColumn` was built and
@@ -1958,6 +1965,9 @@ which is the defect visual-identity §4.3 describes — and it needs no TalkBack
       the report the way you would a Lighthouse audit: the touch-target and
       contrast items are already asserted, so what it earns its place for is
       unlabelled controls and text-contrast cases the theme tests do not reach.
+      Enable its service over adb — `appops set … SYSTEM_ALERT_WINDOW allow`
+      plus the `enabled_accessibility_services` setting — then tap its floating
+      button on each screen.
       Run 2026-09-02 and re-scanned 2026-09-03 with Scanner 2.5.1. **The habit
       list and Settings: no suggestions at all**, no unlabelled control anywhere
       and no touch-target hit in the app itself. The home screen with both
