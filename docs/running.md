@@ -1195,126 +1195,103 @@ the emulator's.
 
 ### The reminder
 
-Built 2026-08-21 (docs/ux/reminder.md). PRD §7 makes a **physical device** the
-primary target for this as well as for the widget — OEM battery policies are the
-whole risk and an emulator has none.
+docs/ux/reminder.md. PRD §7 makes a **physical device** the primary target for
+this as well as for the widget — OEM battery policies are the whole risk and an
+emulator has none.
 
-- [ ] **The status-bar icon is Momo.** When a reminder posts, the small icon
-      is her silhouette — body, two fronds a side, eyes punched out — tinted by
-      the system, not a bell and not a blob. `LauncherIconTest` proves the
-      vector has fills; only the shade shows whether the eyes survive at 24 dp.
+- [ ] **The status-bar icon is Momo.** When a reminder posts, the small icon is
+      her silhouette — body, two fronds a side, eyes punched out — tinted by the
+      system, not a bell and not a blob. `LauncherIconTest` proves the vector
+      has fills; only the shade shows whether the eyes survive at 24 dp.
 
-Every check here needs the reminder time moved to a couple of minutes ahead,
-in Settings. **Put it back to 21:00 afterwards**, for the reason §4's rollover
-check gives about itself: leaving it moved is how a later run passes vacuously.
+Every check below needs the reminder time moved to a couple of minutes ahead, in
+Settings. **Put it back to 21:00 afterwards**, for the reason §4's rollover check
+gives about itself: leaving it moved is how a later run passes vacuously.
 
 **How to see whether anything was posted, and why it matters here.** Two of the
 checks below assert an *absence* — silent when everything is done, and one per
 day — so a command that cannot see a notification makes both pass without
-proving anything. Use:
+proving anything.
 
 ```console
 adb shell cmd notification list | grep com.gawi.app
-```
-
-A posted reminder is one line, `0|com.gawi.app|1|null|<uid>`. For the copy and
-the time it fired:
-
-```console
 adb shell dumpsys notification --noredact | grep -A30 "pkg=com.gawi.app" \
   | grep -E "android.title|android.text|when="
 ```
 
-Note **`dumpsys notification`**, not `dumpsys notification_manager`: the latter
-exists, exits zero, and contains no `NotificationRecord` section at all, so
-grepping it for one reports "nothing posted" for every app on the device
-including the ones that certainly did post. Measured 2026-08-21, after it turned
-a reminder that had fired exactly on time into ten minutes of looking for a bug
-that was not there.
-
+A posted reminder is one line from the first, `0|com.gawi.app|1|null|<uid>`; the
+second gives the copy and the time it fired. Note **`dumpsys notification`**,
+not `dumpsys notification_manager`: the latter exists, exits zero, and contains
+no `NotificationRecord` section at all, so grepping it for one reports "nothing
+posted" for every app on the device including the ones that certainly did post.
 
 - [ ] **It fires.** With at least one habit outstanding, set the reminder a
       couple of minutes ahead and lock the screen. A notification arrives saying
       *"N of M left today"*. Tapping it opens the app on Today.
 - [ ] **It is silent when everything is done.** Complete every habit, set the
       time ahead again. Nothing arrives. This is PRD §6.1.5's second half, and
-      the failure it guards against looks identical to success from the outside
-      — so check it deliberately rather than assuming.
+      the failure it guards against looks identical to success from the outside,
+      so check it deliberately rather than assuming.
 - [ ] **One per day, and this is the one only a device can show.** After a
-      reminder has fired:
-
-      ```console
-      adb shell am force-stop com.gawi.app
-      ```
-
-      Then reopen the app, set the reminder time a couple of minutes ahead in
-      Settings, and wait for it. **No second notification arrives** — the journal
-      already stamped today, and it was read back in a process that did not write
-      it.
-
+      reminder has fired, `adb shell am force-stop com.gawi.app`. Then reopen
+      the app, set the reminder time a couple of minutes ahead in Settings, and
+      wait for it. **No second notification arrives** — the journal already
+      stamped today, and it was read back in a process that did not write it.
       **The force-stop is the point of the check.** Skip it and nothing has been
       shown about the journal surviving a process ending: the app is alive
-      throughout — moving the reminder time means opening Settings — so the read
-      could come from the same in-memory `DataStore` that wrote the stamp, and
-      the one thing this adds over `ReminderCheckTest` is the one thing it would
-      not have done.
-
-      Reopening also re-arms both wakes through `ReminderScheduler.start()`, which
-      is the documented repair path, so this check exercises that for free and does
-      not depend on whether `force-stop` cancels pending jobs by itself.
-
-      Do **not** try this by forcing the job out of `dumpsys jobscheduler`. Once
-      `ReminderWorker` has succeeded its unique work is finished and the only thing
-      pending is the *rollover*, so the job you would find and force is the wrong
-      one: no second notification appears, the check looks green, and nothing about
-      the once-a-day rule was exercised.
+      throughout, because moving the reminder time means opening Settings, so
+      the read could come from the same in-memory `DataStore` that wrote the
+      stamp — and that is the one thing this adds over `ReminderCheckTest`.
+      Reopening also re-arms both wakes through `ReminderScheduler.start()`,
+      which is the documented repair path, so this exercises that for free and
+      does not depend on whether `force-stop` cancels pending jobs by itself. Do
+      **not** try it by forcing the job out of `dumpsys jobscheduler`: once
+      `ReminderWorker` has succeeded its unique work is finished and the only
+      thing pending is the *rollover*, so the job you would find and force is
+      the wrong one — no second notification appears, the check looks green, and
+      nothing about the once-a-day rule was exercised.
 - [ ] **Notifications off is admitted, not hidden.** Turn the app's
-      notifications off in system settings and come back to Settings. The reminder
-      row shows *"Notifications are off, so this reminder will not arrive"* with a
-      target that leads somewhere — the permission dialog, or the system page if
-      the dialog can no longer appear. The row must update **on resume**, without
-      re-navigating.
+      notifications off in system settings and come back to Settings. The
+      reminder row shows *"Notifications are off, so this reminder will not
+      arrive"* with a target that leads somewhere — the permission dialog, or
+      the system page if the dialog can no longer appear. The row must update
+      **on resume**, without re-navigating.
 - [ ] **The time still edits while notifications are off.** Tapping the row
       itself opens the time picker, not the permission. The time drives Momo's
       worried face whether or not a notification can arrive.
-- [ ] **Survives doze and the vendor's battery optimiser.**
-
-      ```console
-      adb shell dumpsys deviceidle force-idle
-      ```
-
-      The reminder still arrives, late. It is *expected* to be late: architecture
-      §7 makes delivery deliberately inexact and there is **no ceiling to quote**
-      — WorkManager will not wake a device to deliver this. What must not happen
-      is the failure below.
-- [ ] **A very late wake stays quiet rather than lying.** Let a deferred reminder
-      land after the day cutoff (force-idle through midnight, or move the cutoff
-      close). It must post **nothing**. A reminder at 00:30 saying *"5 of 5 left
-      today"* is the bug: it describes a brand-new day, and it would consume that
-      day's one reminder so the real 21:00 one never comes.
+- [ ] **Survives doze and the vendor's battery optimiser.** With `adb shell
+      dumpsys deviceidle force-idle`, the reminder still arrives, late. It is
+      *expected* to be late: architecture §7 makes delivery deliberately inexact
+      and there is **no ceiling to quote**, because WorkManager will not wake a
+      device to deliver this. What must not happen is the failure below.
+- [ ] **A very late wake stays quiet rather than lying.** Let a deferred
+      reminder land after the day cutoff — force-idle through midnight, or move
+      the cutoff close. It must post **nothing**. A reminder at 00:30 saying *"5
+      of 5 left today"* is the bug: it describes a brand-new day, and it would
+      consume that day's one reminder so the real 21:00 one never comes.
 
 ### Habit detail
 
-Built 2026-08-21, and the first time PRD §5's retro window and per-completion
-note are reachable by hand at all (docs/ux/habits.md §7). `make test` covers what
-the screen draws and what a tap reports; what it cannot cover is a write going
-all the way to Room and coming back, which is most of this list.
+PRD §5's retro window and per-completion note, reachable by hand
+(docs/ux/habits.md §7). `make test` covers what the screen draws and what a tap
+reports; what it cannot cover is a write going all the way to Room and coming
+back, which is most of this list.
 
 Open a habit from the **Habits** list — the row's name, not the Archive button.
 
-- [ ] **The streak matches the Today row's.** Tick a habit on Today, open it, and
-      the number agrees. A daily habit reads as a count and a weekly one in weeks
-      with a `w`. Two screens drawing one habit's streak differently is the
-      failure docs/ux/today-view.md §5 exists to prevent, and the shared
+- [ ] **The streak matches the Today row's.** Tick a habit on Today, open it,
+      and the number agrees. A daily habit reads as a count and a weekly one in
+      weeks with a `w`. Two screens drawing one habit's streak differently is
+      the failure docs/ux/today-view.md §5 exists to prevent, and the shared
       `StreakUi` is what should make it impossible — this is the check that the
       sharing actually reaches both.
-- [ ] **An unfinished daily habit still shows its live streak.** Open a habit with
-      a run going, before ticking it today. It must not read `0`.
+- [ ] **An unfinished daily habit still shows its live streak.** Open a habit
+      with a run going, before ticking it today. It must not read `0`.
 - [ ] **The oldest cell is drawn shut, and does nothing.** The leftmost of the
       five cells is struck through and dimmed. Tap it: nothing happens — no
       snackbar, no prompt, no tick. **The absence of a snackbar is the check**;
-      a refusal message would mean the cell is being tapped and refused, which is
-      exactly what §5 says not to do.
+      a refusal message would mean the cell is being tapped and refused, which
+      is exactly what §5 says not to do.
 - [ ] **A past day asks first, and cancelling changes nothing.** Tap one of the
       three open past cells. The honesty prompt appears. Cancel, and the cell is
       unchanged. Force-stop and reopen: still unchanged. Cancelling has to leave
@@ -1323,52 +1300,53 @@ Open a habit from the **Habits** list — the row's name, not the Archive button
 - [ ] **Confirming writes to that day, not to today.** Tap a past cell, confirm,
       and the tick lands on *that* cell. Then go back to Today: the habit is
       **not** ticked there. This is the one worth running slowly — the 3-day
-      window *accepts* a date one day off rather than refusing it, so a wrong date
-      here looks like success and is only visible by checking which day moved.
+      window *accepts* a date one day off rather than refusing it, so a wrong
+      date here looks like success and is only visible by checking which day
+      moved.
 - [ ] **Un-ticking a past day prompts too.** Tap a completed past cell: the same
       prompt. Confirm, and it clears.
 - [ ] **Today's cell writes with no prompt.** Tap the rightmost cell: it ticks
       immediately. PRD §6.4 wants same-day logging and undo frictionless, so a
       prompt here is a bug.
 - [ ] **A note survives a restart.** Long-press a completed cell, type a note,
-      Save. Force-stop and reopen the habit, then long-press that cell again: the
-      note is in the field. Force-stop matters — an in-memory projection would
-      hold the note without it ever reaching the log.
+      Save. Force-stop and reopen the habit, then long-press that cell again:
+      the note is in the field. Force-stop matters — an in-memory projection
+      would hold the note without it ever reaching the log.
 - [ ] **Clear removes it, and that also survives.** Long-press the same cell,
       **Clear note**, force-stop, reopen: the field is empty. An empty note is a
       real write, so a clear that was skipped as a no-op would let the old note
       come back on the next read.
 - [ ] **Long-press offers nothing on a day with no tick.** Long-press an empty
       open cell, and on the shut cell. Neither opens the sheet.
-- [ ] **Creating a habit opens it.** Add a habit and save: you land on its detail
-      screen, not back on the list. Press Back **once** — you reach the habit
-      list, not the create form you just filled in.
+- [ ] **Creating a habit opens it.** Add a habit and save: you land on its
+      detail screen, not back on the list. Press Back **once** — you reach the
+      habit list, not the create form you just filled in.
 - [ ] **The strip follows the day rollover.** With detail open, set the **day
-      cutoff** a couple of minutes ahead and wait past it. The strip shifts by one
-      day and today's cell moves with it, with nothing tapped. **Put the cutoff
-      back to midnight afterwards.**
+      cutoff** a couple of minutes ahead and wait past it. The strip shifts by
+      one day and today's cell moves with it, with nothing tapped. **Put the
+      cutoff back to midnight afterwards.**
 - [ ] **An archived habit still opens.** Archive a habit, then open it from the
-      Archived section: it shows, and says it is archived. Unarchiving has to stay
-      reachable, so a detail screen that refused to show one would be a trap.
+      Archived section: it shows, and says it is archived. Unarchiving has to
+      stay reachable, so a detail screen that refused to show one would be a
+      trap.
 
 ---
 
 ### The history grid
 
-New with `:feature:insights` (2026-08-24) — PRD §5's per-habit heatmap,
-docs/ux/insights.md §8. `make test` covers what the grid draws from a given month
-and what the steppers report; what it cannot cover is the colour distinction
-being *visible*, which is the point of the screen, and a month query reaching Room
-and coming back.
+PRD §5's per-habit heatmap, docs/ux/insights.md §8. `make test` covers what the
+grid draws from a given month and what the steppers report; what it cannot cover
+is the colour distinction being *visible*, which is the point of the screen, and
+a month query reaching Room and coming back.
 
 Reach it from habit detail: **See full history**, under the five-cell strip.
 
 - [ ] **Done and not-done are obviously different, in both themes.** Tick a few
-      days, open the grid, and look at it from arm's length in light and in dark.
-      The pair is measured at 4.41 and 6.94, so this is not really in doubt — what
-      is worth confirming by eye is the other half of §8.1's claim: that a
-      not-done cell is *quiet* against the page rather than invisible, and that
-      you can still read its number.
+      days, open the grid, and look at it from arm's length in light and in
+      dark. The pair is measured at 4.41 and 6.94, so this is not really in
+      doubt — what is worth confirming by eye is the other half of §8.1's claim:
+      that a not-done cell is *quiet* against the page rather than invisible,
+      and that you can still read its number.
 - [ ] **Today is findable without hunting.** The ring, not a different fill. Do
       it on a day you have **not** ticked as well as one you have: the not-done
       case is the one that fails if the ring is ever replaced by a
@@ -1377,28 +1355,28 @@ Reach it from habit detail: **See full history**, under the five-cell strip.
 - [ ] **Nothing after today is drawn.** In the current month, the cells past
       today are empty — no ground, no number. A grid that drew them as not-done
       would read as a month already half lost.
-- [ ] **A tap does nothing at all.** Tap cells: done ones, empty ones, today.
-      No ripple, no prompt, no tick, no snackbar. Read-only is
-      docs/ux/insights.md §3, and the absence of a *refusal* is the check —
-      a message would mean the cell is being tapped and turned down.
+- [ ] **A tap does nothing at all.** Tap cells: done ones, empty ones, today. No
+      ripple, no prompt, no tick, no snackbar. Read-only is docs/ux/insights.md
+      §3, and the absence of a *refusal* is the check — a message would mean the
+      cell is being tapped and turned down.
 - [ ] **The columns line up with the week start.** Change **Week starts on** in
-      Settings from Monday to Sunday and come back. The header letters rotate and
-      the whole grid shifts by a column. It must not need reopening.
+      Settings from Monday to Sunday and come back. The header letters rotate
+      and the whole grid shifts by a column. It must not need reopening.
 - [ ] **Stepping back reads real months.** Step back past a month you have
       history in, then back again into one you do not: the second draws an empty
       month rather than repeating the first's cells. Then step forward to the
       current month — the forward arrow disappears there and nowhere else.
 - [ ] **The month follows the day rollover.** With the grid open, set the **day
       cutoff** a couple of minutes ahead and wait past it. Today's ring moves a
-      day, with nothing tapped. Worth doing at least once near a month end, where
-      the whole grid should change month. **Put the cutoff back to midnight
-      afterwards.**
-- [ ] **200% font scale.** Six rows of cells at 200% overflow the screen: the
+      day, with nothing tapped. Worth doing at least once near a month end,
+      where the whole grid should change month. **Put the cutoff back to
+      midnight afterwards.**
+- [ ] **200 % font scale.** Six rows of cells at 200 % overflow the screen: the
       column scrolls, and no cell clips its own number. Two-digit days are where
       this shows first.
 - [ ] **A habit with no history at all.** Create a habit, open its history
-      immediately. A month of not-done cells, no crash, and nothing that reads as
-      an error — the habit is new, not failing.
+      immediately. A month of not-done cells, no crash, and nothing that reads
+      as an error — the habit is new, not failing.
 
 ---
 
@@ -1515,37 +1493,34 @@ back, and its owed looks are the ones no JVM test can take.
       habit each, then open Insights → Quarter → ◀. The label reads "Q2 2026",
       the headline changes, the trend has three columns with a dot centred over
       each, and ▶ is greyed only on the current quarter. Then flip to Year: the
-      offset resets to now, so the label reads "2026" and ▶ is greyed.
-      Run on `gawi-api30` 2026-08-29: Q3 → ◀ read "Q2 2026 · 3 active days",
-      three columns (Apr 0, May 2, Jun 1) with each dot on its label, "best 2
-      days" on the tagged habit, ▶ live; Year reset to 2026 with ▶ greyed. A
-      second pass added that ◀ is already greyed on Q2, since Q2 starts before
-      that habit's creation and nothing earlier can hold one, and a further tap
-      did not move.
+      offset resets to now, so the label reads "2026" and ▶ is greyed. Run on
+      `gawi-api30` 2026-08-29: Q3 → ◀ read "Q2 2026 · 3 active days", three
+      columns (Apr 0, May 2, Jun 1) with each dot on its label, "best 2 days" on
+      the tagged habit, ▶ live; Year reset to 2026 with ▶ greyed. A second pass
+      added that ◀ is already greyed on Q2, since Q2 starts before that habit's
+      creation and nothing earlier can hold one, and a further tap did not move.
 - [ ] **The focus sentence flips when the top tag does.** With `health` leading
       last quarter and `career` this one: "Focus shifted from health to career."
       Re-tag the leading habit so both quarters agree: "Still mostly career."
-      Remove every tag: no sentence at all, not "Untagged".
-      Half run 2026-08-29: the shifted sentence appeared on Q3 exactly as
-      written, and Q2 — whose Q1 held nothing — drew no sentence. The "still
-      mostly" and untagged flips were not exercised on a device; the mapper test
-      pins them.
+      Remove every tag: no sentence at all, not "Untagged". Half run 2026-08-29:
+      the shifted sentence appeared on Q3 exactly as written, and Q2 — whose Q1
+      held nothing — drew no sentence. The "still mostly" and untagged flips
+      were not exercised on a device; the mapper test pins them.
 - [x] **200 % font scale on Year.** The eight-to-twelve trend columns are the
       densest row in the app: the counts stay on one line each, the initials
       under them do not collide, and the stepper label between its two arrows
       does not wrap. The initials are what bought the room, so this is the look
-      that decides whether they were enough.
-      Run 2026-08-29 on eight columns: every count and initial on one line,
-      "2026" between its arrows, the rows' "Every day · best 2 days" unwrapped.
-      Also seen in dark.
+      that decides whether they were enough. Run 2026-08-29 on eight columns:
+      every count and initial on one line, "2026" between its arrows, the rows'
+      "Every day · best 2 days" unwrapped. Also seen in dark.
 - [x] **A row's best run reads as one line.** "Daily · best 31 days" beside the
       percentage, and a habit made this period with no run shows the schedule
-      alone — no "best 0 days" anywhere.
-      Run 2026-08-29: "Every day · best 1 day" beside a dash on a habit created
-      that day and back-filled, so the creation clip leaves one day for the run
-      and no finished day for the rate, which is the two rules agreeing. The
-      no-run half was seen on the same pass: a habit created in May and not yet
-      done that quarter read "Every day" alone beside "0%", no "best" anywhere.
+      alone — no "best 0 days" anywhere. Run 2026-08-29: "Every day · best 1
+      day" beside a dash on a habit created that day and back-filled, so the
+      creation clip leaves one day for the run and no finished day for the rate,
+      which is the two rules agreeing. The no-run half was seen on the same
+      pass: a habit created in May and not yet done that quarter read "Every
+      day" alone beside "0%", no "best" anywhere.
 
 ---
 
@@ -1827,77 +1802,58 @@ that only plays while the frame loop runs.
       because it is the list's first item, and the joiner nit the *TalkBack,
       once* box records — neither a defect, and both now known words rather than
       predicted ones. **Dump the description before trusting any chip copy.**
-      `uiautomator dump`
-      reads the same node a screen reader consumes, and the first build's said
-      only the mood: a node with a `contentDescription` has its `text` ignored
-      *in the dump*, so the drawn count was silently unspoken and every test
-      still passed. During a milestone run there is a second description to
-      read, the milestone line followed by the count with the mood line dropping
-      out.
+      `uiautomator dump` reads the same node a screen reader consumes, and the
+      first build's said only the mood: a node with a `contentDescription` has
+      its `text` ignored *in the dump*, so the drawn count was silently unspoken
+      and every test still passed. During a milestone run there is a second
+      description to read, the milestone line followed by the count with the
+      mood line dropping out.
 
 ### The launcher icon
 
-Built 2026-08-25 ([visual-identity.md](ux/visual-identity.md) §7.1, §8).
-`LauncherIconTest` proves the three layers exist, draw and are wired; every
-launcher masks and scales them differently, which is what is left.
+[visual-identity.md](ux/visual-identity.md) §7.1, §8. `LauncherIconTest` proves
+the three layers exist, draw and are wired; every launcher masks and scales them
+differently, which is what is left.
 
 - [x] **In the app drawer and on the home screen.** Momo's mark — face and two
       fronds a side on teal — under whatever mask the launcher uses (circle,
       squircle, rounded square). Nothing that carries meaning is clipped; a
-      sliver of the lower fronds may be, by design.
-      **Run 2026-08-30 on `Small_Phone` (API 37), Pixel launcher, under three
-      masks rather than one** — Wallpaper & style → Icons → **Shape** offers
-      Circle, Square, 4-sided cookie, 7-sided cookie and Arch, so the mask is a
-      setting here rather than something to hunt a launcher for. Checked Circle
-      (the default), Square and Arch, which is the most aggressive of the five:
-      face, both eyes, mouth and all four frond lobes sit inside the mask in
-      every one, and **nothing was clipped at all** — not even the sliver of
-      lower fronds this item allows for. The ground sampled `#B4E9F0` off the
-      drawer icon, which is `Color.kt`'s light `primaryContainer` exactly, the
-      value `LauncherIconTest` pins.
+      sliver of the lower fronds may be, by design. Run 2026-08-30 on
+      `Small_Phone` (API 37), Pixel launcher, under three masks rather than one:
+      Wallpaper & style → Icons → **Shape** makes the mask a setting here rather
+      than something to hunt a launcher for, and Circle, Square and Arch — the
+      most aggressive of the five — all kept the face, both eyes, the mouth and
+      all four frond lobes inside the mask, with **nothing clipped at all**, not
+      even the sliver this item allows for. The ground sampled `#B4E9F0` off the
+      drawer icon, which is `Color.kt`'s light `primaryContainer` exactly.
 - [x] **Small.** Drop it in a folder and look at it at the drawer's smallest
-      size: the eyes and mouth still read as a face. That was the canvas's
-      test for two fronds over three.
-      **Run 2026-08-30 on `Small_Phone` (API 37)**, in a two-item dock folder.
-      The preview draws the mark at about 42 × 42 px — 21 dp at this device's
-      320 dpi, under half the 48 dp it gets in the drawer — and it still reads:
-      two eyes and the mouth are separately legible and the fronds are still two
-      lobes a side rather than a pink smudge. So the canvas's two-over-three
-      call survives the smallest size the launcher draws. A note for whoever
-      re-runs it: `input draganddrop` makes the folder only over a *short* hop
-      between two dock icons; over a longer one the launcher displaces the
-      target or flips the page instead, and chained `input motionevent` with a
-      dwell does not merge at all.
-- [x] **Themed, API 33+.** Wallpaper & style → *Themed icons* on. The icon
-      becomes the woven thread — three warps and a weft — in the system tint,
-      not a tinted face. Below API 33 the coloured icon stays; there is nothing
-      to check there.
-      **Run 2026-08-30 on `Small_Phone` (API 37)**, and correct: three warps
-      crossed by one weft, drawn in the system tint on the themed ring, with no
-      trace of the face. **The setting is not called *Themed icons* any more**
-      on this level — it is Wallpaper & style → Home screen → **Icons** →
-      *Style* → **Minimal**, against *Default*, and it needs an explicit
-      **Apply**. Same monochrome layer underneath, so the item's expectation is
-      unchanged; only the path to it moved.
-
-      **What ships is three warps and one weft, and the drawable expected to draw
-      four elements plus that weft** — noticed by review off the back of this
-      run, not by the eye. `ic_launcher_monochrome.xml`'s first path carried a
-      fourth subpath, `M54,45 V63`, commented as "the short weft under the
-      centre one". It is *vertical* at x = 54, so it lay wholly inside the
-      centre warp `M54,28 V80` at the same 9-unit stroke and painted nothing; a
-      weft would be horizontal. So this box's expectation was met by an icon one
-      element shy of what its own file described, and the two readings — dead
-      subpath to delete, or a short weft mis-transcribed from the canvas — needed
-      the artboard to tell apart.
-
-      **Resolved 2026-08-30 against the artboard: three warps and one weft, so
-      the subpath was dead and is deleted.** Nothing rendered changes, which is
-      why this tick stands without a re-run — the file now describes what it
-      already drew. `LauncherIconTest` could not see it either way: it checks
-      that every path draws and is in Momo's colours, and a subpath hidden
-      inside another is more than a test can see. The artboard is what says
-      how many warps there are.
+      size: the eyes and mouth still read as a face. That was the canvas's test
+      for two fronds over three. Run 2026-08-30 on `Small_Phone` (API 37) in a
+      two-item dock folder, where the preview draws the mark at about 42 × 42 px
+      — 21 dp at this device's 320 dpi, under half the 48 dp it gets in the
+      drawer — and it still reads: two eyes and a mouth separately legible, the
+      fronds still two lobes a side rather than a pink smudge. A note for
+      whoever re-runs it: `input draganddrop` makes the folder only over a
+      *short* hop between two dock icons; over a longer one the launcher
+      displaces the target or flips the page instead, and chained `input
+      motionevent` with a dwell does not merge at all.
+- [x] **Themed, API 33+.** The icon becomes the woven thread — three warps and a
+      weft — in the system tint, not a tinted face. Below API 33 the coloured
+      icon stays and there is nothing to check. **The setting is not called
+      *Themed icons*** on this level: it is Wallpaper & style → Home screen →
+      **Icons** → *Style* → **Minimal**, against *Default*, and it needs an
+      explicit **Apply**. Run 2026-08-30 on `Small_Phone` (API 37) and correct:
+      three warps crossed by one weft in the system tint on the themed ring,
+      with no trace of the face. What the run also settled, off review rather
+      than off the eye: `ic_launcher_monochrome.xml`'s first path carried a
+      fourth subpath, `M54,45 V63`, commented as a short weft but *vertical* at
+      x = 54, so it lay wholly inside the centre warp at the same 9-unit stroke
+      and painted nothing. The artboard says three warps and one weft, so the
+      subpath was dead and is deleted; nothing rendered changes, which is why
+      this tick stands without a re-run. `LauncherIconTest` cannot see it either
+      way — it checks that every path draws and is in Momo's colours, and a
+      subpath hidden inside another is more than a test can see. **The artboard
+      is what says how many warps there are.**
 
 ### Accessibility — *device only, and the layer no test reaches*
 
@@ -2067,47 +2023,37 @@ source set, so §8's line that CI runs unit tests only is unaffected here.
 
 ### The About section and the Licences screen
 
-Built 2026-08-30 (docs/ux/settings.md §9). The JVM tests prove the two notices
-are packaged and rendered; what only a device can show is how the section reads.
+docs/ux/settings.md §9. The JVM tests prove the two notices are packaged and
+rendered; what only a device can show is how the section reads.
 
-- [x] Settings scrolls to a fourth header, **About**, below Data. The Version row
-      shows the build's `versionName` in its small grey line, has no primary
-      middle line, and does nothing when tapped. **Seen 2026-09-02 on the
-      Nothing A059**: *About* at the bottom under *Data*; *Version* with `0.1.0`
-      in the
-      small line and no middle one; a tap on the row changed nothing in the tree
-      (dumped before and after, identical), and there is no clickable wrapper
-      around it to have taken the tap.
+- [x] Settings scrolls to a fourth header, **About**, below Data. The Version
+      row shows the build's `versionName` in its small grey line, has no primary
+      middle line, and does nothing when tapped. Seen 2026-09-02 on the Nothing
+      A059: a tap on the row changed nothing in the tree, dumped before and
+      after, and there is no clickable wrapper around it to have taken the tap.
 - [x] **Licences** opens a screen titled Licences with two headings, Outfit then
       Lucide, each with a one-line role and the full notice text under it. Both
       texts scroll; the OFL runs to its section 5 and the Lucide notice to its
-      MIT block. Back returns to Settings at the same scroll position. **Seen
-      2026-09-02**: the OFL node is 4,387 characters and contains `5)` and
-      TERMINATION; the Lucide node is 3,207 and contains the Feather MIT block
-      down to its last line; three swipes scrolled the OFL to a 100 px sliver
-      at the top with Lucide's text ending at the bottom edge. Back returned to
-      Settings with *About* at the same y as before.
+      MIT block. Back returns to Settings at the same scroll position. Seen
+      2026-09-02: the OFL node is 4,387 characters and reaches TERMINATION, the
+      Lucide node 3,207 and reaches the last line of the Feather MIT block, and
+      Back returned with *About* at the same y as before.
 - [x] TalkBack: the Version row is read as one item with no "double-tap to
-      activate"; each heading on the Licences screen is a stop of its own.
-      **Heard 2026-09-02 on the Nothing A059**, swiped by hand: the Version row
-      is one stop with no activate hint, and *Outfit* and *Lucide* are each a
-      stop of their own.
+      activate"; each heading on the Licences screen is a stop of its own. Heard
+      2026-09-02 on the Nothing A059, swiped by hand, and both hold.
 
 ### The day-rollover refresh
 
-Also built 2026-08-21, and the same mechanism (docs/ux/reminder.md §2). This is
-what §4 of this document and docs/ux/widget.md §4 previously listed as a known
-widget limitation.
+The same mechanism as the reminder (docs/ux/reminder.md §2).
 
-- [ ] **The widget follows the rollover without being tapped.** With the widget on
-      the home screen and a habit ticked, set the **day cutoff** a couple of
-      minutes ahead and wait past it without touching anything. The tick clears by
-      itself. Before this worker existed, the widget kept yesterday's ticks until
-      the provider's periodic update got through.
+- [ ] **The widget follows the rollover without being tapped.** With the widget
+      on the home screen and a habit ticked, set the **day cutoff** a couple of
+      minutes ahead and wait past it without touching anything. The tick clears
+      by itself.
 - [ ] **A cutoff edit re-arms it.** Change the cutoff again; the wake moves with
       it. A settings edit writes nothing to the log, so nothing pushes it — the
-      scheduler's `SettingsSource` collector is the only thing that can, and this
-      is the only way to see it working.
+      scheduler's `SettingsSource` collector is the only thing that can, and
+      this is the only way to see it working.
 - [ ] **Put the cutoff back to midnight afterwards.** Same reason as above.
 
 ---
