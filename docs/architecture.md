@@ -398,7 +398,8 @@ reminder). `RolloverWorker` wakes at the cutoff, sweeps the streaks and calls
 `ProjectionListener` by hand — making it that interface's third caller, and the
 first that follows the *absence* of a commit rather than one. A settings edit is
 covered by the same mechanism from the other end: `ReminderScheduler` collects
-`SettingsSource` and re-arms the wake when the cutoff moves. Neither is a
+`SettingsSource` and re-arms whichever wake moved — both of them when the
+cutoff moves, since it is an input to the reminder's own instant as well. Neither is a
 deadline — a deferred wake is a late redraw — so the tap-path rule above is
 unchanged and still load-bearing. docs/ux/reminder.md §2.
 
@@ -772,8 +773,9 @@ Deviations and notes:
   `scripts/check-docs.sh` is the fourth and holds AGENTS.md's documents rule
   over `docs/`: a checklist box keeps its instruction and one status line, so
   the script caps a body at 26 prose lines and its dates at two, and it refuses
-  `~~` anywhere, a struck claim with its correction after it being history
-  written in place. It runs last, being the only one that reads nothing but
+  `~~` outside an inline code span or a fenced block — a struck claim with its
+  correction after it being history written in place, and the two code forms
+  being how a document names the marker it must not use. It runs last, being the only one that reads nothing but
   documents — the citation check reads both since it took `docs/` on.
 
   All four refuse to pass on a scan that found nothing, by two nets: every
