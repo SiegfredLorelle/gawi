@@ -951,27 +951,18 @@ a launcher, where the bitmaps are drawn and tinted.
       locale set-app-locales` flips our app and leaves the widget as it was,
       because the launcher inflates the `RemoteViews` in *its* configuration,
       and `settings put global development_force_rtl 1` changes nothing at all.
-      What to see: the glyph sits on the right, and a Hebrew or Arabic name is
-      shaped and read right-to-left. `BitmapTextTest` proves the glyphs land on
-      the canvas; only a launcher shows whether the row mirrors around them. Run
-      2026-08-30 on `Small_Phone` (API 37), Pixel launcher, Hebrew first and a
-      habit named קריאה. A clean mirror: the checkbox, Momo's face bitmap and
-      the mood line all mirror about the content span to within a pixel, and
-      קריאה shapes right-to-left from the platform's Hebrew face — Outfit's
-      `cmap` has no Hebrew — while still shaping correctly in the LTR pass,
-      which is `FIRSTSTRONG_LTR` doing its job on the paragraph. Read the face
-      as the `ImageView`, not the pill `FrameLayout` around it, or the pill
-      looks 7 px short of a mirror when it is not. **How to set the locale,
-      because two obvious routes are dead ends.** The emulator's `-prop
-      persist.sys.locale=he-IL` is silently ignored, and a Play Store image
-      (`Small_Phone` is `google_apis_playstore`) refuses `adb root`, so there is
-      no `setprop` either. It has to be the Settings UI, and on API 37 the
-      language **search** crashes Settings outright, so scroll instead. Adding a
-      language does **not** switch to it — tap the row's drag handle for a
-      **Move up** menu, then confirm. **Hebrew is left installed as the second
-      preferred language on this AVD on purpose.** Read it back with `am get-
-      config`, the one that proves direction and does not lag: `…he-rIL,en-rUS-
-      ldrtl…` against `…en-rUS-ldltr…`.
+      The recipe below the block's boxes is how to set one. What to see: the
+      glyph sits on the right, and a Hebrew or Arabic name is shaped and read
+      right-to-left. `BitmapTextTest` proves the glyphs land on the canvas; only
+      a launcher shows whether the row mirrors around them. Run 2026-08-30 on
+      `Small_Phone` (API 37), Pixel launcher, Hebrew first and a habit named
+      קריאה. A clean mirror: the checkbox, Momo's face bitmap and the mood line
+      all mirror about the content span to within a pixel, and קריאה shapes
+      right-to-left from the platform's Hebrew face — Outfit's `cmap` has no
+      Hebrew — while still shaping correctly in the LTR pass, which is
+      `FIRSTSTRONG_LTR` doing its job on the paragraph. Read the face as the
+      `ImageView`, not the pill `FrameLayout` around it, or the pill looks 7 px
+      short of a mirror when it is not.
 - [x] **A non-default Display size** — Settings → Display → Display size, Large
       then Small (or `wm density 400` on the emulator, `wm density reset`
       after), then complete a habit so the widget re-renders. The name must be
@@ -1031,6 +1022,17 @@ failed — the failure shape that looks identical to nobody having placed a widg
 check gives: those steps start from midnight and this section sits below them,
 so leaving it moved is how a later run passes vacuously.
 
+**How to set a system RTL locale, because two obvious routes are dead ends.**
+The emulator's `-prop persist.sys.locale=he-IL` is silently ignored, and a Play
+Store image (`Small_Phone` is `google_apis_playstore`) refuses `adb root`, so
+there is no `setprop` either. It has to be the Settings UI, and on API 37 the
+language **search** crashes Settings outright, so scroll instead. Adding a
+language does **not** switch to it — tap the row's drag handle for a **Move
+up** menu, then confirm. **Hebrew is left installed as the second preferred
+language on the `Small_Phone` AVD on purpose**, so a re-run is only that handle
+and *Move up*. Read it back with `am get-config`, the one that proves direction
+and does not lag: `…he-rIL,en-rUS-ldrtl…` against `…en-rUS-ldltr…`.
+
 ### The Momo widget and the large Today body — *launcher only*
 
 Both of docs/ux/widget.md §7's surfaces. `MomoWidgetHostTest` and
@@ -1039,6 +1041,34 @@ binds and Glance composes it" is a machine's job; what follows is what only a
 launcher shows. An emulator does not tick a box here, for the streak block's
 reason: a widget lives in a launcher's process, and an OEM launcher's is not
 the emulator's.
+
+**The arithmetic for whoever has a third launcher**, and the reason neither
+phone here can show the middle body: the face-above-rows form wants a width of
+at least 180 dp (the provider's floor) and under 220 dp (the header's gate),
+so either three cells of 60 to 73.3 dp or two cells of 90 to 110 dp. Nothing's
+85 dp cells and the Pixel's 80 dp cells both fall in the gap between those
+windows. The flip was reached on 2026-09-03 on a throwaway AVD — `gawi-flip`,
+the API 37 Play image with `hw.lcd.width` 1260, `hw.lcd.height` 1800 and
+`hw.lcd.density` 480, giving 420×600 dp and four columns — at 183×188 dp,
+which shows the gates are right and the body draws, not that a phone
+launcher's cells land in the window.
+
+**Two experiments would settle the Momo body under TalkBack, the clickable
+first and the list as fallback.** A one-item `LazyColumn` was built and
+withdrawn on four counts. `MomoWidgetHostTest` waits for the mood sentence
+from a host view never attached to a window, and such a host never asks a
+collection's adapter for its items, so the instrumented test would time out
+with the whole body inside an item. On API 29–31 Glance serves a list through
+`RemoteViewsService`, so the face would arrive a beat after the ground where
+the `Column` paints in one pass — Today and Streaks keep their headers outside
+their lists for that reason and Momo would have had nothing outside. A
+`ListView` claims vertical drags that start on it, so a home-screen swipe over
+a static tile would go dead. And the folding rule the Today checkbox taught —
+TalkBack folds a described, unfocusable view into its nearest *focusable*
+ancestor — points at the cheaper experiment first: a clickable `Column`
+(`actionStartActivity` to the app) is focusable without an adapter, a service
+or "in list" in every announcement. The Streaks rows being reached *without* a
+click shows a list suffices, not that a focusable view would fail.
 
 - [ ] **The Today widget grows a header at four by three.** Place *Today* and
       resize it to four cells wide and three tall: Momo on a teal pill at the
@@ -1051,17 +1081,8 @@ the emulator's.
       Nothing A059's own launcher (85 dp cells): four by three grew the header,
       three columns kept it with the mood line wrapping, and two rows was rows
       alone, because 3×2 spans 170.7 dp of cells and the launcher reports less
-      than 170 after its padding. **The arithmetic for whoever has a third
-      launcher**, and the reason neither phone can show the middle body: the
-      face-above-rows form wants a width of at least 180 dp (the provider's
-      floor) and under 220 dp (the header's gate), so either three cells of 60
-      to 73.3 dp or two cells of 90 to 110 dp. Nothing's 85 dp cells and the
-      Pixel's 80 dp cells both fall in the gap. The flip was reached 2026-09-03
-      on a throwaway AVD — `gawi-flip`, the API 37 Play image with
-      `hw.lcd.width` 1260, `hw.lcd.height` 1800 and `hw.lcd.density` 480, giving
-      420×600 dp and four columns — at 183×188 dp. That shows the gates are
-      right and the body draws, not that a phone launcher's cells land in the
-      window, so the flip is still owed to a phone launcher with other cells.
+      than 170 after its padding. The middle body is still owed to a phone
+      launcher whose cells land in the window the preamble gives.
 - [x] **The band is the checkboxes.** Count the segments against the rows and
       tap a row: its segment flips with its box, on the same write. A band that
       disagrees with the rows beneath it has been given a rule of its own, which
@@ -1152,24 +1173,8 @@ the emulator's.
       action at all, and both the Streaks and Today bodies are Glance
       `LazyColumn`s that land as a real list in the `RemoteViews` tree, while
       Momo's body is a plain `Box` and `Column`. Re-heard 2026-09-03, unchanged,
-      as expected — nothing in the body changed. **Two experiments stay for a
-      phone, the clickable first and the list as fallback.** A one-item
-      `LazyColumn` was built and withdrawn on 2026-09-02 on four counts.
-      `MomoWidgetHostTest` waits for the mood sentence from a host view never
-      attached to a window, and such a host never asks a collection's adapter
-      for its items, so the instrumented test would time out with the whole body
-      inside an item. On API 29–31 Glance serves a list through
-      `RemoteViewsService`, so the face would arrive a beat after the ground
-      where the `Column` paints in one pass — Today and Streaks keep their
-      headers outside their lists for that reason and Momo would have had
-      nothing outside. A `ListView` claims vertical drags that start on it, so a
-      home-screen swipe over a static tile would go dead. And the folding rule
-      the Today checkbox taught — TalkBack folds a described, unfocusable view
-      into its nearest *focusable* ancestor — points at the cheaper experiment
-      first: a clickable `Column` (`actionStartActivity` to the app) is
-      focusable without an adapter, a service or "in list" in every
-      announcement. The Streaks rows being reached *without* a click shows a
-      list suffices, not that a focusable view would fail.
+      as expected — nothing in the body changed. The two experiments that would
+      settle it are the block's, above.
 - [x] **A write in the app moves all three widgets**, on the same commit. Seen
       2026-09-02, all three placed and dumped before and after each write:
       ticking one habit checked its box on the Today widget and moved its
@@ -1630,6 +1635,13 @@ moves; what they cannot see is whether the motion reads as a character rather
 than a screensaver, the things that are Settings reads, and the one sequence
 that only plays while the frame loop runs.
 
+**Dump the description before trusting any chip or panel copy.** `uiautomator
+dump` reads the same node a screen reader consumes, and the first chip build's
+said only the mood: a node with a `contentDescription` has its `text` ignored
+*in the dump*, so the drawn count was silently unspoken while every test
+passed. A milestone run has a second description to read, the milestone line
+followed by the count with the mood line dropping out.
+
 - [ ] **All four moods on the tank, in both themes.** Content is the default
       with habits added and nothing done late in the day; tick everything for
       thriving; let the reminder hour pass with one habit open for worried;
@@ -1771,12 +1783,7 @@ that only plays while the frame loop runs.
       the count was spoken twice in two forms — the same leak the retro strip,
       the history grid and the trend columns had. `clearAndSetSemantics` fixed
       it and `chip_doesNotAlsoReadItsLabel` pins that the label is now only in
-      the unmerged tree. **Dump the description before trusting any chip copy.**
-      `uiautomator dump` reads the same node a screen reader consumes, and the
-      first build's said only the mood: a node with a `contentDescription` has
-      its `text` ignored *in the dump*, so the drawn count was silently unspoken
-      while every test passed. A milestone run has a second description to read,
-      the milestone line followed by the count with the mood line dropping out.
+      the unmerged tree.
 
 ### The launcher icon
 
@@ -1833,6 +1840,12 @@ state — throughout. Architecture §8 records why the one automated ruleset wor
 wanting is not wired up yet. What is left is what a ruleset cannot judge:
 whether the app is usable without sight, and whether it survives a reader who
 needs it larger.
+
+**One thing here is checkable rather than audible, and that is better than
+listening.** `adb shell uiautomator dump` gives a node's `content-desc`
+together with its `bounds`; a screenshot gives the pixel inside those bounds.
+Pair them and an announced name is checked against the colour actually drawn,
+which is the defect visual-identity §4.3 describes — and it needs no TalkBack.
 
 - [ ] **A TalkBack pass over the three core flows.** Turn TalkBack on, then add
       a habit, complete one from the Today view, and change the day cutoff —
@@ -1894,18 +1907,13 @@ needs it larger.
       calling it yellow would be a false description ([visual-
       identity.md](ux/visual-identity.md) §6.2). No *unit* test can check this —
       `HabitsUiMapperTest` pins only that the labels and the hues are the same
-      length, and a name is not a checkable property of a hex (§4.3). **But it
-      is checkable on a device, and that is better than listening.** `adb shell
-      uiautomator dump` gives every swatch's `content-desc` together with its
-      `bounds`; a screenshot gives the pixel inside those bounds. Pair them and
-      the announced name is checked against the colour actually drawn, which is
-      the whole defect §4.3 describes — and it needs no TalkBack. Run on an
-      emulator on 2026-08-23: all nine, the eight hues plus "Current colour",
-      matched the colour drawn at their own bounds. Ticked on that basis, and
-      worth re-running rather than re-reading whenever a hue or a label moves.
-      *Focus order* belongs to the TalkBack box above and is still owed, because
-      this check cannot see it. One gap it also cannot close: the **selected**
-      swatch now clears its subtree with `selectable` kept ahead
+      length, and a name is not a checkable property of a hex (§4.3). Check it
+      by the dump-and-sample pairing above rather than by ear. Run on an
+      emulator 2026-08-23: all nine, the eight hues plus "Current colour",
+      matched the colour drawn at their own bounds. Ticked on that basis. *Focus
+      order* belongs to the TalkBack box above and is still owed, because this
+      check cannot see it, and one gap the pairing cannot close either: the
+      **selected** swatch clears its subtree with `selectable` kept ahead
       (`theSelectedSwatch_doesNotAlsoReadItsTick`), and while an unselected
       swatch was quoted back on 2026-09-03 the selected one never was, so that
       clearing rests on its pin.
@@ -1923,21 +1931,17 @@ needs it larger.
       label by design (`RetroStrip`'s `cellAction`), so this is the check that
       the label is *legible as speech* rather than merely complete. A shut day
       is the one to listen to hardest: it must announce as unavailable, not as
-      an unchecked box. Re-heard 2026-09-03 on the Nothing A059. An open cell:
-      *"Day 2, not done. Mark done. Check box"*; the done cell adds *"Add or
-      edit note"*. No letter, no number and no *"Check mark"* after either, so
-      the cell's four child texts are gone from what is spoken, and the role and
-      the toggle state survived the clearing. The user's swipe the same day
-      heard the shut day as *"Day 30, too old to change. Disabled"* —
-      unavailable rather than an unchecked box, the hardest thing this box asked
-      to hear. Open because the **note marker** — `cellAction` appends *"has a
-      note"* only when the cell has one — was on neither quoted cell, so a noted
-      day is the one sentence still to hear. The invariant to keep when editing
-      this: the `combinedClickable` stays *ahead* of `clearAndSetSemantics` in
-      the chain, because Compose clears everything after the clearing modifier
-      and not before it. Reversing the order turns
-      `anOpenCell_isACheckboxThatReportsItsState` and
-      `theShutCell_isDisabledAndNotABox` red, which is what those pins are for.
+      an unchecked box. The modifier order this rests on, and what breaks if it
+      moves, is [habits.md](ux/habits.md) §7's. Re-heard 2026-09-03 on the
+      Nothing A059. An open cell: *"Day 2, not done. Mark done. Check box"*; the
+      done cell adds *"Add or edit note"*. No letter, no number and no *"Check
+      mark"* after either, so the cell's four child texts are gone from what is
+      spoken, and the role and the toggle state survived the clearing. The
+      user's swipe the same day heard the shut day as *"Day 30, too old to
+      change. Disabled"* — unavailable rather than an unchecked box, the hardest
+      thing this box asked to hear. Open because the **note marker** —
+      `cellAction` appends *"has a note"* only when the cell has one — was on
+      neither quoted cell, so a noted day is the one sentence still to hear.
 - [x] **200 % font scale.** Settings → Display → Font size, at maximum. Three
       screens carry reasoning about this in comments — `TodayScreen`,
       `HabitDetailScreen` and `SettingsScreen` all scroll or floor a dimension
@@ -1954,15 +1958,12 @@ needs it larger.
       the report the way you would a Lighthouse audit: the touch-target and
       contrast items are already asserted, so what it earns its place for is
       unlabelled controls and text-contrast cases the theme tests do not reach.
-      Enable its service over adb (`appops set … SYSTEM_ALERT_WINDOW allow` and
-      the `enabled_accessibility_services` setting), then tap its floating
-      button on each screen. Run 2026-09-02 and re-scanned 2026-09-03 on the
-      Nothing A059 with Scanner 2.5.1. **The habit list and Settings: no
-      suggestions at all**, no unlabelled control anywhere and no touch-target
-      hit in the app itself. The home screen with both widgets returns six, none
-      of them a row: the three 32 dp checkboxes are each a *Touch target*, the
-      first also a duplicate description, and the two widget frames are
-      *Unsupported item type*, which is the Scanner declining a
+      Run 2026-09-02 and re-scanned 2026-09-03 with Scanner 2.5.1. **The habit
+      list and Settings: no suggestions at all**, no unlabelled control anywhere
+      and no touch-target hit in the app itself. The home screen with both
+      widgets returns six, none of them a row: the three 32 dp checkboxes are
+      each a *Touch target*, the first also a duplicate description, and the two
+      widget frames are *Unsupported item type*, the Scanner declining a
       `LauncherAppWidgetHostView` rather than a finding. **The checkbox
       control's own 32 dp is the recorded follow-up.** Two classes the first
       scan raised are decided rather than open: the emoji icon badge's *text
@@ -1970,9 +1971,8 @@ needs it larger.
       while every icon is a colour emoji, because the declared colour never
       paints one — real the day a plain character is allowed, and a decision for
       visual-identity rather than a bug; and the repeated Insights row texts are
-      the unmerged-row shape that box records. The Today, detail, editor and
-      Insights screens are inferred clear from the same badge change rather than
-      re-scanned.
+      the unmerged-row shape that box records. Today, detail, the editor and
+      Insights are inferred clear from the same badge change, not re-scanned.
 
 **Still owed, and an emulator discharges none of it.** Five open items, each
 with its blocker: the day-cutoff **picker** under TalkBack, undriven; the
