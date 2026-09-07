@@ -444,8 +444,8 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       1. Above 7 throws out of `Schedule.Weekly`'s `require` rather than being
       rejected, so this is a crash if it is wrong.
 - [ ] Open a habit from the list, change **only** its name, save. Its icon,
-      colour, schedule and tag survive — an update is a whole-record write, so
-      a field the form forgot to submit would come back as a default.
+      colour, schedule and tag survive — an update is a whole-record write, so a
+      field the form forgot to submit would come back as a default.
 - [ ] Archive a habit: it leaves Today, and appears under **Archived** on the
       list with a *Bring back* action. Bring it back: it returns to Today.
 - [ ] The mascot's count follows archiving — an archived habit stops being
@@ -453,9 +453,9 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
 - [ ] Tap a row: it ticks, and its streak appears. Tap again: it unticks. A
       daily streak reads as a count, a weekly one in weeks.
 - [ ] Force-stop and relaunch: completions and streaks are rebuilt from the log.
-- [ ] The database exists — `adb shell run-as com.gawi.app ls -l databases`.
-      To inspect it, **pull the `-wal` too**, or you read a pre-checkpoint
-      snapshot and will think writes were lost:
+- [ ] The database exists — `adb shell run-as com.gawi.app ls -l databases`. To
+      inspect it, **pull the `-wal` too**, or you read a pre-checkpoint snapshot
+      and will think writes were lost:
 
       ```sh
       adb exec-out run-as com.gawi.app cat databases/gawi.db     > /tmp/gawi.db
@@ -473,25 +473,25 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       back, not the default. **Put the cutoff back to midnight before moving
       on** — the next two checks both start from it, and neither restores it.
 - [ ] **Day rollover, against a real clock.** Start from a cutoff at or before
-      the current time — midnight does, which is why the check above restores
-      it — and tick a habit, so there is a completion on today's logical date.
+      the current time — midnight does, which is why the check above restores it
+      — and tick a habit, so there is a completion on today's logical date.
       *Then* set the cutoff a couple of minutes ahead and go back to Today:
       "today" becomes yesterday, so that row reads unticked. Leave the screen
       alone; when the boundary passes it flips back on its own. Getting the
       order wrong is what makes this pass vacuously: with the cutoff already
       ahead of now, the row is unticked before you change anything. This is
-      still the cheapest way to force a boundary — `adb shell date` needs
-      `adb root` and is refused on the Play images this project uses.
+      still the cheapest way to force a boundary — `adb shell date` needs `adb
+      root` and is refused on the Play images this project uses.
 - [ ] **The mascot follows the clock, not just the data.** With something
       outstanding, set *Day is nearly over at* to a time just past now. The
       panel changes with no habit touched and no interaction — and the habit
       rows do not reload underneath it, which is the point of the repository
-      subscribing to the settings twice with different dedupes.
-      Half seen 2026-09-03 on the Nothing A059: the panel turned over on its
-      own at the boundary, but whether the rows reloaded under it was not
-      watched, and no test pins that half — `TodayMoodTest` asserts the rows
-      are *equal* across the crossing, which an identical re-query satisfies
-      too. Open for someone watching the screen at the boundary.
+      subscribing to the settings twice with different dedupes. Half seen
+      2026-09-03 on the Nothing A059: the panel turned over on its own at the
+      boundary, but whether the rows reloaded under it was not watched, and no
+      test pins that half — `TodayMoodTest` asserts the rows are *equal* across
+      the crossing, which an identical re-query satisfies too. Open for someone
+      watching the screen at the boundary.
 - [ ] **Week start re-buckets what is already on screen.** With a weekly habit
       showing a ratio, change the week start. The ratio re-counts against the
       new week without leaving the screen. Unlike the cutoff, this is not
@@ -499,24 +499,24 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       recomputed on read.
 - [ ] A cancelled tap still commits: tap, immediately press Back, relaunch, and
       the completion is there.
-- [ ] **Export writes a file you can read back.** Settings → scroll to
-      **Data** → **Export a copy**. Keep the offered name, save it into
-      Downloads, confirm the snackbar, then:
+- [ ] **Export writes a file you can read back.** Settings → scroll to **Data**
+      → **Export a copy**. Keep the offered name, save it into Downloads,
+      confirm the snackbar, then:
 
       ```sh
       adb shell cat /sdcard/Download/gawi-export-*.json | head -c 400
       ```
 
-      It prints JSON with your habits in it. Note the contrast with the
-      database check above: SAF wrote outside app-private storage, so this
-      needs no `run-as`. Nothing in the app points at that file, so delete it
-      when you are done.
+      It prints JSON with your habits in it. Note the contrast with the database
+      check above: SAF wrote outside app-private storage, so this needs no `run-
+      as`. Nothing in the app points at that file, so delete it when you are
+      done.
 - [ ] **The offered name is today's date, not yesterday's.** Set the day cutoff
       to 03:00, wait until after midnight — or simply check the name is today's
       while the cutoff is at 03:00 and the clock reads before it — and the save
       dialog still offers `gawi-export-<today>.json`, so the file name uses the
-      wall clock rather than the logical date. **Put the cutoff back to
-      midnight afterwards**; the rollover checks above start from it.
+      wall clock rather than the logical date. **Put the cutoff back to midnight
+      afterwards**; the rollover checks above start from it.
 - [ ] **Cancelling the picker does nothing and says nothing.** Tap **Export a
       copy**, then press Back out of the save dialog. No snackbar, no file, and
       the row is still tappable — the null-`Uri` path is a no-op rather than an
@@ -527,20 +527,21 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       event id, and an import being a merge and not a replace. It restores
       nothing because it changes nothing, which is the point.
 - [ ] **A file that is not an export is refused without changing anything.**
-      Import → pick a photo or any text file. The snackbar says it is not a
-      Gawi export, and Today is unchanged: a refusal is a message rather than a
-      crash or a half-written log.
-- [ ] **The export is visible in the import picker** without needing a "show
-      all files" step. The one thing the type filter can get wrong that no test
-      can see — a filter that hides someone's own backup from them is worse than
-      one that shows a few extra files.
+      Import → pick a photo or any text file. The snackbar says it is not a Gawi
+      export, and Today is unchanged: a refusal is a message rather than a crash
+      or a half-written log.
+- [ ] **The export is visible in the import picker** without needing a "show all
+      files" step. The one thing the type filter can get wrong that no test can
+      see — a filter that hides someone's own backup from them is worse than one
+      that shows a few extra files.
 - [ ] **Both rows go quiet while the work runs.** With a log big enough to take
       a moment, the tapped row's explanation is replaced by *Writing the file…*
       and neither row answers a tap until it finishes. On a small log this is
       over before you can see it — expected, and `SettingsScreenTest` covers it
       instead.
 - [ ] **A file far too large to be an export is refused, not fatal.** The picker
-      shows essentially everything by design, so this is the likeliest wrong tap:
+      shows essentially everything by design, so this is the likeliest wrong
+      tap:
 
       ```sh
       adb shell 'dd if=/dev/zero of=/sdcard/Download/toobig.json bs=1048576 count=40'
@@ -573,56 +574,55 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       an application-scoped coroutine, which is a decision rather than a patch.
       Delete the file afterwards so the next check starts clean.
 - [ ] **Process death mid-export is not survived, and the file is refused rather
-      than half-restored.** Repeat the check above but run
-      `adb shell am force-stop com.gawi.app` instead of pressing Back. The file
-      is empty or truncated — expected; `NonCancellable` survives cancellation,
-      not a killed process. Now import it: the snackbar says it is damaged.
-      That is what bounds the residual gap, because truncated JSON does not
-      parse and `event_count` would not match, so a half-written backup can
-      never be silently restored as a partial one.
+      than half-restored.** Repeat the check above but run `adb shell am force-
+      stop com.gawi.app` instead of pressing Back. The file is empty or
+      truncated — expected; `NonCancellable` survives cancellation, not a killed
+      process. Now import it: the snackbar says it is damaged. That is what
+      bounds the residual gap, because truncated JSON does not parse and
+      `event_count` would not match, so a half-written backup can never be
+      silently restored as a partial one.
 - [ ] **The count snackbar is readable before it goes.** Import an export
       holding habits this install does not have and read the whole line without
-      hurrying; it uses the default short duration, and if that is too fast
-      that is a real finding. The habits it adds cannot be deleted afterwards,
-      only archived, so do this on a scratch install or be ready to archive
-      them.
-- [ ] **The whole recovery claim, end to end.** Export, then
-      `adb shell pm clear com.gawi.app`, relaunch to the empty state, and
-      import the file. Every habit, completion and streak comes back. This is
-      the promise architecture §6 makes on behalf of `allowBackup="false"`, and
-      the only check that tests it as a user would need it.
+      hurrying; it uses the default short duration, and if that is too fast that
+      is a real finding. The habits it adds cannot be deleted afterwards, only
+      archived, so do this on a scratch install or be ready to archive them.
+- [ ] **The whole recovery claim, end to end.** Export, then `adb shell pm clear
+      com.gawi.app`, relaunch to the empty state, and import the file. Every
+      habit, completion and streak comes back. This is the promise architecture
+      §6 makes on behalf of `allowBackup="false"`, and the only check that tests
+      it as a user would need it.
 
 **The 30-day nudge** (PRD §5). Run these in order from a cleared install — they
 build on each other, and the third is the one with no JVM test behind it.
 
-- [ ] **A fresh install is not nudged about losing nothing.** After
-      `adb shell pm clear com.gawi.app`, open Settings → **Data**. The export
-      row has *no* value line and the ordinary help underneath it. The stamp is
-      absent here exactly as it is on a log full of events, and only the log
-      tells the two apart.
+- [ ] **A fresh install is not nudged about losing nothing.** After `adb shell
+      pm clear com.gawi.app`, open Settings → **Data**. The export row has *no*
+      value line and the ordinary help underneath it. The stamp is absent here
+      exactly as it is on a log full of events, and only the log tells the two
+      apart.
 - [ ] **A log with something in it and no backup says so.** Create one habit,
-      then reopen Settings. The export row reads **Never exported** and the
-      help line has become the nudge — the same split in the other direction,
-      and "never" is overdue immediately rather than in thirty days.
+      then reopen Settings. The export row reads **Never exported** and the help
+      line has become the nudge — the same split in the other direction, and
+      "never" is overdue immediately rather than in thirty days.
 - [ ] **An import moves the row without leaving the screen.** From a cleared
       install again — `adb shell pm clear com.gawi.app` — open Settings while
       the log is empty, confirm the row is silent, then **without navigating
       away** tap **Import a file** and pick an export saved earlier. The row
-      must switch to **Never exported** with the nudge *immediately*.
-      **Watch the five seconds specifically**: importing into an *empty* log
-      once left the row silent for up to five seconds, and a row that only
-      updates after you leave and come back is the defect, not a pass. The
-      import check further down runs after an export, so the log already has
-      events and the row is already saying something — which is why the obvious
-      ordering hides this. Creating a habit on Today and returning to Settings
-      within five seconds checks the same mechanism from the other side.
+      must switch to **Never exported** with the nudge *immediately*. **Watch
+      the five seconds specifically**: importing into an *empty* log once left
+      the row silent for up to five seconds, and a row that only updates after
+      you leave and come back is the defect, not a pass. The import check
+      further down runs after an export, so the log already has events and the
+      row is already saying something — which is why the obvious ordering hides
+      this. Creating a habit on Today and returning to Settings within five
+      seconds checks the same mechanism from the other side.
 - [ ] **A finished export records itself, and only a finished one.** Export a
-      copy, keep the offered name, and return to Settings: the row reads
-      **Last exported today** and the ordinary help is back. **This is the only
-      check of the ordering** — the stamp is written after the output stream
-      closes, so that it means "a file landed" rather than "a write was
-      attempted", and substituting a `ContentResolver` to test that needs a
-      Robolectric shadow this project does not use (docs/ux/settings.md §8).
+      copy, keep the offered name, and return to Settings: the row reads **Last
+      exported today** and the ordinary help is back. **This is the only check
+      of the ordering** — the stamp is written after the output stream closes,
+      so that it means "a file landed" rather than "a write was attempted", and
+      substituting a `ContentResolver` to test that needs a Robolectric shadow
+      this project does not use (docs/ux/settings.md §8).
 - [ ] **A cancelled export does not count as a backup.** Tap **Export a copy**
       and press Back out of the save dialog. The row still reads whatever it
       read before: the stamp follows the write and not the tap.
@@ -638,9 +638,9 @@ build on each other, and the third is the one with no JVM test behind it.
       `adb shell date`, which needs root and is refused on a Play image. Reopen
       Gawi's settings: **Last exported 31 days ago**, with the nudge underneath.
       **Put the date back and re-enable automatic time afterwards**; a 31-day
-      jump also sweeps every streak, so any check above this one has to be
-      re-run from a clean state rather than after this. **Do not export while
-      the date is forward.** That leaves a stamp dated in the future, which the
+      jump also sweeps every streak, so any check above this one has to be re-
+      run from a clean state rather than after this. **Do not export while the
+      date is forward.** That leaves a stamp dated in the future, which the
       journal deliberately reads as no stamp at all — so the row goes back to
       **Never exported** once the date is restored, which is correct behaviour
       and looks like a bug if you were not expecting it.
@@ -692,19 +692,19 @@ does with the file.
 - [ ] **A formula in a habit name stays text in a spreadsheet.** The security
       check, and the reason the file is not written naively. Create three habits
       named `=1+1`, `Read, daily` and `say "yes"`, complete each one today,
-      export, then open the file in LibreOffice on the host
-      (`localc /tmp/gawi-completions-*.csv`, comma-separated, UTF-8). The first
-      cell must **display** `=1+1` and compute nothing; the other two must each
-      be a single cell. In the raw file the first field reads `"'=1+1"` — the
+      export, then open the file in LibreOffice on the host (`localc /tmp/gawi-
+      completions-*.csv`, comma-separated, UTF-8). The first cell must
+      **display** `=1+1` and compute nothing; the other two must each be a
+      single cell. In the raw file the first field reads `"'=1+1"` — the
       apostrophe is the guard and a spreadsheet does not show it. Include a name
       with a **leading space before the sigil** — ` =1+1` — in the same pass; it
-      must also come out as text. Archive the three habits afterwards.
-      What this does not show: LibreOffice leaves ` =1+1` as text whether or not
-      leading-space removal is on, measured 2026-08-21, so the check pins the
-      guard's rule rather than reproducing an exploit. The case that genuinely
-      evaluates is a **bare** `=1+1` with no apostrophe — convert a hand-made
-      file holding one and confirm the cell really does compute, or this whole
-      check can pass because the reader never evaluates anything.
+      must also come out as text. Archive the three habits afterwards. What this
+      does not show: LibreOffice leaves ` =1+1` as text whether or not leading-
+      space removal is on, measured 2026-08-21, so the check pins the guard's
+      rule rather than reproducing an exploit. The case that genuinely evaluates
+      is a **bare** `=1+1` with no apostrophe — convert a hand-made file holding
+      one and confirm the cell really does compute, or this whole check can pass
+      because the reader never evaluates anything.
 
 - [ ] **Know what a `;`-locale Excel does with it.** Not a defect and not
       fixable in the bytes without breaking every other reader, so it is a check
@@ -722,8 +722,8 @@ does with the file.
       says, write a CSV, and return: the value line and the help line are both
       unchanged. A CSV holds no events, so treating one as a backup would
       silence the warning for a month over a file that could not restore
-      anything. `CompletionCsvArchiveTest` reads a real journal either side of
-      a real export and `SettingsDataViewModelTest` asserts what the row says;
+      anything. `CompletionCsvArchiveTest` reads a real journal either side of a
+      real export and `SettingsDataViewModelTest` asserts what the row says;
       this confirms it through the real graph.
 
 - [ ] **All three Data rows go dead together.** Start a CSV export of a large
@@ -759,391 +759,274 @@ the only automated proof that Glance renders at all.
 
 ### The widget — *launcher only, and mostly not automatable*
 
-**Built 2026-08-21.** The widget's logic is JVM-tested (`:widget`) and the write
-journey is covered by `make itest`, so what is left here is the part that needs a
-real launcher: **pinning a widget requires the user**, so no test can place one.
-Decisions and reasoning are in [docs/ux/widget.md](ux/widget.md).
+The widget's logic is JVM-tested (`:widget`) and the write journey is covered by
+`make itest`, so what is left here is the part that needs a real launcher:
+**pinning a widget requires the user**, so no test can place one. Decisions and
+reasoning are in [docs/ux/widget.md](ux/widget.md).
 
-- [ ] **It is offered at all.** (`WidgetHostTest` covers provider binding and
-      that Glance renders — *not* launcher discovery, which nothing automated
-      reaches. So if that test passes and this step still fails, the launcher is
-      the thing to suspect; if it fails too, the problem is below the launcher.)
-      Long-press the home screen → *Widgets* → **Gawi**
-      → *Today*. If it is missing, the provider did not merge: read
+- [ ] **It is offered at all.** Long-press the home screen → *Widgets* →
+      **Gawi** → *Today*. If it is missing, the provider did not merge: read
       `app/build/intermediates/packaged_manifests/debug/.../AndroidManifest.xml`
       for `com.gawi.widget.TodayWidgetReceiver` (needs `--rerun-tasks`; a stale
-      merged manifest reports the old answer).
-- [ ] **Momo appears only when there is room.** Place the widget at its
-      smallest (one row tall): name and checkbox, no face. Resize it to two
-      rows: Momo's resting frame appears above the rows, in today's mood, and
-      the rows still have room beneath her. `WidgetMomoTest` proves the tree;
-      it cannot see whether a launcher's two-row cell clears 170 dp, which is
-      the constant this check is really measuring. Then, with no habits, two
-      rows tall: the face above "No habits yet".
+      merged manifest reports the old answer). `WidgetHostTest` covers provider
+      binding and that Glance renders, *not* launcher discovery — so if that
+      test passes and this step fails, suspect the launcher; if it fails too,
+      the problem is below the launcher.
+- [ ] **Momo appears only when there is room.** Place the widget at its smallest
+      (one row tall): name and checkbox, no face. Resize it to two rows: Momo's
+      resting frame appears above the rows, in today's mood, and the rows still
+      have room beneath her. Then, with no habits, two rows tall: the face above
+      "No habits yet". `WidgetMomoTest` proves the tree; it cannot see whether a
+      launcher's two-row cell clears **170 dp**, which is the constant this
+      check is really measuring.
 - [ ] **It draws today's habits** — each active habit's name with a checkbox,
       ticked to match the Today screen. **No streak**, deliberately (PRD OQ-5).
-- [ ] **You can read it, in the theme the device is actually in.** Added
-      2026-08-22, because this is where a shipped defect was found and this block
-      had nothing that would have caught it: the widget set its background from
-      `GlanceTheme` and never set a text colour, and Glance's default is not
-      theme-aware, so a dark-themed device drew near-black text on a near-black
-      surface at a contrast ratio of 1.59. It *rendered* the whole time, so every
-      JVM test was green. `WidgetTextColourDarkTest` and its light-mode twin now
-      measure the ratio of every text the widget emits, in both themes — so the
-      part worth a human's eyes is what those cannot reach: **toggle the system
-      dark-mode setting and look at the widget in both**. Specifically check the
-      **checkbox glyph**, not just the label. Until 2026-08-28 it was the one
-      thing on this surface whose colour the app did not choose — it took
-      `?android:attr/colorControlNormal` (unchecked) and `colorControlActivated`
-      (checked) from Glance's own selector — and this check is what caught the
-      consequence: on API 29 it resolved to the platform accent and sat at
-      2.91:1 against a background this app picked, freshly rendered. The app
-      chooses it now, from `WidgetPalette`, and `WidgetPaletteTest` holds both
-      states in both themes to the 4.5:1 floor. Confirm by eye that both states
-      stand out: no JVM test reads what the tree drew the glyph with, and none
-      can see how a real launcher translates the colour, which is where the
-      defect lived.
-      **Unticked on purpose, and here is the split.** The emulator half has run
-      twice — 2026-08-28 on API 29 and 30, by eye and by sampling the rendered
-      pixels — and it is what found the 2.91:1 glyph above. What the tick waits
-      on is a phone, because this block's own standard is that an emulator is not
-      enough for a widget: it lives in a launcher's process, and an OEM
-      launcher's is not the emulator's. Read the body as done on emulators and
-      owed on hardware, not as unstarted.
+- [ ] **You can read it, in the theme the device is actually in.** Toggle the
+      system dark-mode setting and look at the widget in both, checking the
+      **checkbox glyph** and not just the label. This is where a shipped defect
+      lived: Glance's default is not theme-aware, so a dark-themed device drew
+      near-black on near-black at 1.59:1 while every JVM test stayed green,
+      because it *rendered* the whole time. Every colour now comes from
+      `WidgetPalette` and `WidgetPaletteTest` holds both glyph states in both
+      themes to the 4.5:1 floor — but no JVM test reads what the tree drew the
+      glyph with, and none can see how a real launcher translates a colour,
+      which is where the defect lived. Done on emulators, owed on hardware: the
+      emulator half ran twice on 2026-08-28 (API 29 and 30, by eye and by
+      sampling the rendered pixels) and found the 2.91:1 glyph, but this block's
+      standard is that a widget lives in a launcher's process and an OEM
+      launcher's is not the emulator's.
 - [ ] **A tap completes.** Tap an unticked row's *glyph*: it ticks at once. Tap
-      its *name* instead: nothing moves until the write round-trips (a second
-      or so), then the glyph ticks — only the checkbox half flips instantly, so
-      do not tap twice while waiting or the second tap undoes the first. Open
-      the app — Today
-      agrees, and the mascot has reacted if that was the last one.
+      its *name* instead: nothing moves until the write round-trips (a second or
+      so), then the glyph ticks — only the checkbox half flips instantly, so do
+      not tap twice while waiting or the second tap undoes the first. Open the
+      app: Today agrees, and the mascot has reacted if that was the last one.
 - [ ] **A tap again undoes.** Tap the ticked row: it unticks, and Today agrees.
       This is the half that separates the widget from a complete-only one.
-- [ ] **A write in the app moves the widget.** This is the only check that
-      exercises `ProjectionListener`, and nothing else can: complete a habit *in
-      the app*, then go to the home screen **without tapping the widget**. It
-      shows the tick. If it does not, the push is broken even though every JVM
-      test passes — `ProjectionListenerTest` proves the call happens, not that
-      Glance acted on it.
+- [ ] **A write in the app moves the widget.** The only check that exercises
+      `ProjectionListener`, and nothing else can: complete a habit *in the app*,
+      then go to the home screen **without tapping the widget**. It shows the
+      tick. If it does not, the push is broken even though every JVM test passes
+      — `ProjectionListenerTest` proves the call happens, not that Glance acted
+      on it.
 - [ ] **An empty install says so.** With no active habits the widget reads *"No
-      habits yet"*, not a blank box. (Archive every habit rather than using
-      `pm clear`, which destroys the log.)
+      habits yet"*, not a blank box. (Archive every habit rather than using `pm
+      clear`, which destroys the log.)
 - [ ] **Resizing keeps it usable.** Drag the handles: rows reflow and the list
       scrolls rather than clipping.
 - [ ] **A write in the app moves *both* widgets.** With the Today widget and the
       streak widget both placed, complete a habit in the app and go to the home
-      screen without touching either. Both change. This is the same
-      `ProjectionListener` check as above and it is listed separately because the
-      failure it catches is different: a provider missing from
-      `GlanceProjectionListener` still *renders*, so it looks placed and working
-      and simply stops following writes. `ProjectionRefreshTest` reads the
-      receivers out of the merged manifest, which is as far as a JVM test reaches.
+      screen without touching either. Both change. Listed separately from the
+      check above because the failure it catches is different: a provider
+      missing from `GlanceProjectionListener` still *renders*, so it looks
+      placed and working and simply stops following writes.
+      `ProjectionRefreshTest` reads the receivers out of the merged manifest,
+      which is as far as a JVM test reaches.
 
-**The streak widget — built 2026-08-29** (docs/ux/widget.md §6). Its own
-provider, so its own picker entry, and the first one here carrying API 31
-attributes.
-
-**What `StreakWidgetHostTest` already covers, so these checks need not.** Run on
-emulators at API 30 and API 37 on 2026-08-29: the provider binds to a real host,
-Glance's session renders it, the rows body is what renders, its `LazyColumn`
-translates to a `RemoteViews` collection with the "as of" footer pinned outside
-it, and on API 31+ `targetCellWidth/Height`, `description` and `previewLayout`
-resolve from `res/xml-v31` (3×2, and a non-empty description). Below 31 those
+**The streak widget** (docs/ux/widget.md §6). Its own provider, so its own
+picker entry, and the first one here carrying API 31 attributes.
+`StreakWidgetHostTest` already covers provider binding, Glance's session, the
+rows body, its `LazyColumn` translating to a `RemoteViews` collection with the
+"as of" footer pinned outside it, and `targetCellWidth/Height`, `description`
+and `previewLayout` resolving from `res/xml-v31` on API 31+. Below 31 those
 three fields **do not exist** on `AppWidgetProviderInfo` — reading one throws
-`NoSuchFieldError`, which is the sharpest possible statement of why the provider
-xml is split.
+`NoSuchFieldError`, which is the sharpest statement of why the provider xml is
+split. Two things it cannot reach, so they stay below: the **row content**,
+because a `RemoteViews` collection's items are materialised by the host when it
+lays out and an unattached `AppWidgetHostView` never does (the `ListView` comes
+back present and childless), and anything about a **launcher's own cells, theme
+or process**.
 
-Two things that test cannot reach, so they stay below. The **row content**: a
-`RemoteViews` collection's item views are materialised by the host when it lays
-out, and an unattached `AppWidgetHostView` never lays out — the `ListView` comes
-back present and childless. And anything about a **launcher's own cells, theme or
-process**, which is the standard this block already holds.
-
-**Seen by eye on a launcher, 2026-08-29** — API 37 emulator, Pixel launcher, dark
-mode, both widgets placed and one daily habit; then again the same day with four
-habits, one of them weekly. The boxes below stay unticked because this block's
-standard is that an emulator is not an OEM launcher, but these were watched
-rather than inferred and the next pass need not rediscover them:
-
-- The rows render, which is the half `StreakWidgetHostTest` cannot see: habit
-  name left, streak numeral right in `primary`, `as of Sat, Aug 29` pinned
-  beneath. Dark palette correct.
-- **The size gate flips on resize.** Placed at roughly 240×127dp it drew the
-  compact form — a bare `1`, no header — and dragging it taller switched it to
-  `Streaks` / `1 day`. That is `SizeMode.Exact` and `FULL_MIN_HEIGHT` doing what
-  they claim, at density 320.
-- **`1 day`, not `1 days`** — the plural, end to end, on the surface that draws
-  it.
-
-- **Days and weeks do not look alike — the second pass, with `Read` (daily,
-  done today) beside `Stretch` (weekly, target 1, done today), and `Water` and
-  `Journal` never completed.** Compact: `1` in `primary` and `1w` in `tertiary`,
-  the two em dashes in `outline`. Full: `1 day` and `1 week` under the *Streaks*
-  header. The inks were measured from the screenshot, not eyeballed, and they
-  reproduce `gawiRole`'s dark-scheme numbers exactly — 10.44:1, 7.34:1 and
-  5.31:1 against the widget's own surface. **The two inks are only 1.42:1
-  apart from each other**, which is the whole reason the `w` and the unit word
-  exist — in greyscale they are near-identical greys, so on this surface the
-  suffix and the word carry the distinction alone, and they were both present.
-- **The greyscale step cannot be screenshotted.** Turning on monochromacy
-  (`settings put secure accessibility_display_daltonizer_enabled 1` and
-  `accessibility_display_daltonizer 0`) reads back as set, and `screencap`
-  returns the same colours as before — colour correction is applied on the
-  display path, after the frame a capture reads. Judge it by eye on the
-  device, or compute the luminance as above; a capture proves nothing here.
-- **Never-completed reads as an em dash, not `0`**, on both rows that had
-  no history.
-- **This launcher's smallest cell is two rows, about 240×132dp**, and at that
-  size four rows and the date all fit. The "one row tall, three rows and the
-  date" case below needs a launcher whose cells come closer to the 110dp
-  minimum; dragging the handle further up here snaps back.
-- Placing it from the picker is a drag, and `input draganddrop` does it on
-  API 37 — the only part of this block that had always needed a hand.
-
-Still not seen: **three rows at the smallest size** proper, for the reason
-above — the launcher, not the habits, is what this pass lacked.
-
-- [ ] **It is offered, and the picker says what it is.** Long-press → *Widgets* →
-      **Gawi**: two entries, *Today* and *Streaks*. On API 31+ the *Streaks*
+- [ ] **It is offered, and the picker says what it is.** Long-press → *Widgets*
+      → **Gawi**: two entries, *Today* and *Streaks*. On API 31+ the *Streaks*
       entry shows a description under the name and a preview of the rows; on 29
       and 30 it shows neither, which is correct rather than broken — those
       attributes only exist in `res/xml-v31`. The preview is in the **system
-      face, not Outfit**, also correct: a picker inflates real XML and there is no
-      bitmap escape there.
+      face, not Outfit**, also correct: a picker inflates real XML and there is
+      no bitmap escape there.
 - [ ] **A fresh placement lands three cells by two** on API 31+, from
-      `targetCellWidth/Height`. On 29 and 30 the launcher sizes it off `minWidth`
-      instead, so a narrower first placement there is expected.
+      `targetCellWidth/Height`. On 29 and 30 the launcher sizes it off
+      `minWidth` instead, so a narrower first placement there is expected.
 - [ ] **It dates its number.** The bottom line reads *as of* and then a weekday,
-      a day and a month — no year, no clock time. This is the requirement
-      docs/ux/visual-identity.md §7.1 makes non-negotiable, so it is the one
-      element on this widget that must never be missing or clipped.
+      a day and a month — no year, no clock time. docs/ux/visual-identity.md
+      §7.1 makes this non-negotiable, so it is the one element on this widget
+      that must never be missing or clipped.
 - [ ] **Three rows and the date at the smallest size.** Place it one row tall
       with four or more active habits: three habit rows, the date pinned beneath
-      them, and the rows scroll. Four rows and no date is the failure — 94dp buys
-      one or the other and the date is not the half that gives way.
+      them, and the rows scroll. Four rows and no date is the failure — 94 dp
+      buys one or the other and the date is not the half that gives way. Still
+      unseen: this needs a launcher whose cells come closer to the 110 dp
+      minimum. The Pixel launcher's smallest cell is two rows, about 240×132 dp,
+      where four rows and the date all fit and dragging the handle further up
+      snaps back.
 - [ ] **The unit word appears only when there is room.** At the smallest size a
       weekly habit reads `3w` and a daily one a bare number. Resize to two rows
       and two columns wider: they become `3 weeks` and `12 days`, under a
       *Streaks* header. `StreakUiStateTest` pins the thresholds; only a launcher
-      shows whether its cells clear them.
+      shows whether its cells clear them. Seen on an API 37 emulator on
+      2026-08-29: the gate flipped on resize at roughly 240×127 dp, compact to
+      full, at density 320.
 - [ ] **Days and weeks never look like the same number.** With one daily and one
-      weekly habit both on a run, check all three signals are present at the
-      larger size — the unit word, and two visibly different inks — and that at
-      the smallest size the `w` and the ink still separate them. Then check it in
-      greyscale (Settings → Accessibility → colour correction → monochromacy):
-      the `w` and the word must carry it alone.
+      weekly habit both on a run, check all three signals at the larger size —
+      the unit word and two visibly different inks — and that at the smallest
+      size the `w` and the ink still separate them. Then check it in greyscale
+      (Settings → Accessibility → colour correction → monochromacy): the `w` and
+      the word must carry it alone, because **the two inks are only 1.42:1 apart
+      from each other** and are near-identical greys. Judge greyscale by eye on
+      the device: colour correction is applied on the display path, after the
+      frame a capture reads, so `screencap` returns the uncorrected colours and
+      proves nothing here.
 - [ ] **A break and a fresh habit read differently.** A habit whose streak has
-      broken shows a muted `0` (and *was 12* at the larger size); a habit with no
-      completions ever shows an em dash. If both show `0`, the two states have
-      been collapsed and the widget is telling a new user they have failed.
+      broken shows a muted `0` (and *was 12* at the larger size); a habit with
+      no completions ever shows an em dash. If both show `0`, the two states
+      have been collapsed and the widget is telling a new user they have failed.
 - [ ] **It survives a rollover untouched.** Set the day cutoff a couple of
       minutes ahead, wait past it without touching anything, and a streak that
       depended on yesterday updates itself. Same mechanism as the Today widget's
-      rollover check further down, and worth repeating here because this is the
-      widget whose number can go stale *without any event at all* — which is why
-      it carries a date in the first place.
+      rollover check below, and worth repeating here because this is the widget
+      whose number can go stale *without any event at all* — which is why it
+      carries a date in the first place.
 - [ ] **TalkBack reads each row once, with the unit.** Swipe through the rows:
       each announces as *"read, 12 days"* — the **full** wording even where the
       widget is drawing `3w`, because a spoken "12" cannot say whether it counts
       days or weeks. The date is announced too. Nothing announces twice.
 - [ ] **You can read it in the theme the device is in.** Both schemes, on
       hardware, sampled the way the API 29/30 pass sampled the Today widget. The
-      role to watch is `tertiary` — the week-streak ink, and the only role in this
-      module that no other surface draws, so nothing measured it against a real
-      launcher before this widget existed.
+      role to watch is `tertiary` — the week-streak ink, and the only role in
+      this module that no other surface draws, so nothing measured it against a
+      real launcher before this widget existed.
 - [ ] **200 % font scale.** Rows grow, a long habit name ellipsises inside its
       row rather than under the numeral, and the numeral is never pushed off the
       edge. The name and the streak have fixed slots, so what fails here is the
       slot width rather than the layout.
 
-**The widget's text is in Outfit since 2026-08-25, as bitmaps** — a font
-resource cannot reach a widget (measured 2026-08-24, docs/ux/visual-identity.md
-§2), so each name is rasterised in our process and tinted by the host. Until
-then this paragraph said the platform sans was "not a bug to file" and that no
-check was owed; the reversal owed four, all on a launcher because that is where
-the bitmaps are drawn and tinted. The list below has grown to six — the widget
-palette added two on 2026-08-28 — and **one is still open**, the first:
+**The widget's text is Outfit, as bitmaps.** A font resource cannot reach a
+widget (measured 2026-08-24, docs/ux/visual-identity.md §2), so each name is
+rasterised in our process and tinted by the host — which is why these six run on
+a launcher, where the bitmaps are drawn and tinted.
 
-- [ ] **It is Outfit.** Against the launcher's own clock and labels, the
-      names' `a` and `o` are geometric and the `t` has no tail — the same test
-      the typography block further down uses for the app. Both themes, and the
-      text follows the theme on API 31+: force-stop after `cmd uimode night yes`
-      or the running widget will not re-theme.
-- [x] **API 29 or 30 emulator: every colour is resolved in our process.**
-      Toggle dark mode with the widget placed. The expectation written here was
-      that the text, the checkbox glyph and the background stay stale
-      *together* until the next render. **Run 2026-08-28 on API 29 and 30, and
-      they did not** — this check found the defect it was written for, and the
-      two levels measured the same to the decimal. The background was
-      resource-backed, so the host re-resolved it immediately while the name and
-      the glyph kept the value baked at the last render, and the widget landed
-      at 1.31:1 for the name and 1.60:1 for the glyph. The same run found a
-      second defect no toggle was needed to see: the glyph was below the floor
-      in dark mode even freshly rendered, at 2.91:1 checked and 1.60:1
-      unchecked, taking the platform accent against a background this app chose.
-      **Re-run the same day against the fix, on both levels and identical on
-      each**, and the expectation this check was written with now holds. All
-      three colours are day/night pairs from `WidgetPalette`, so they take one
-      translation path, stay stale together, and stay readable throughout: the
-      name at 16.59:1 in light and 14.82:1 in dark, the glyph at 5.56:1 checked
-      and 5.18:1 unchecked in light, 10.44:1 and 5.31:1 in dark, unchanged
-      across a toggle in either direction. Completing a habit repairs the
-      staleness, so it lasts until the next write, rollover or 30-minute update.
-      Two traps worth not rediscovering, both of which make a broken widget and
-      a working one look identical. An `APPWIDGET_UPDATE` broadcast is **not** a
-      render and will not repair the staleness — measure with one and you will
-      conclude, wrongly, that nothing moved; a tap on the widget or a write in
-      the app is a render. And on a freshly booted emulator `cmd uimode night
-      yes` silently does nothing, printing `Night mode: no` back at you, until
-      `adb root` has been run: a toggle that never happened looks exactly like a
-      widget that correctly stayed light, so **read the setting back** before
-      believing either. [ux/widget.md](ux/widget.md) has the mechanism.
-- [x] **API 31 or later: the whole widget follows a toggle with no render.**
-      Added 2026-08-28 with the widget palette, because the property changed
-      hands. The background used to be a colour *resource* the launcher
-      resolved; it is now a day/night pair the launcher picks from, so "it still
-      follows" became a claim about this repo's code rather than about Glance's
-      default, and the check above is the reason not to trust that reasoning
-      unmeasured. Run on API 37 the same day: `cmd uimode night yes` then `no`
-      with the widget placed and the app not running, and the ground, the name
-      and the glyph all move together within about two seconds — 16.59:1 and
-      5.18:1 in light, 14.82:1 and 5.31:1 in dark.
+- [ ] **It is Outfit.** Against the launcher's own clock and labels, the names'
+      `a` and `o` are geometric and the `t` has no tail — the same test the
+      typography block below uses for the app. Both themes, and the text follows
+      the theme on API 31+: force-stop after `cmd uimode night yes` or the
+      running widget will not re-theme.
+- [x] **API 29 or 30 emulator: every colour is resolved in our process.** Toggle
+      dark mode with the widget placed. The text, the checkbox glyph and the
+      background must go stale *together* until the next render, because all
+      three are day/night pairs from `WidgetPalette` taking one translation
+      path. Completing a habit repairs the staleness, so it lasts until the next
+      write, rollover or 30-minute update. Run 2026-08-28 on API 29 and 30,
+      identical to the decimal on both: this check found the defect it was
+      written for — a resource-backed background the host re-resolved
+      immediately while the name and glyph kept the value baked at the last
+      render, landing at 1.31:1 and 1.60:1 — plus a second the toggle was not
+      needed to see, the glyph below the floor in dark mode even freshly
+      rendered at 2.91:1 checked and 1.60:1 unchecked. Re-run the same day
+      against the fix and the expectation holds: the name at 16.59:1 light and
+      14.82:1 dark, the glyph at 5.56:1 and 5.18:1 light, 10.44:1 and 5.31:1
+      dark, unchanged across a toggle either way. **Two traps that make a broken
+      widget and a working one look identical.** An `APPWIDGET_UPDATE` broadcast
+      is **not** a render and will not repair the staleness — a tap on the
+      widget or a write in the app is. And on a freshly booted emulator `cmd
+      uimode night yes` silently does nothing, printing `Night mode: no` back,
+      until `adb root` has been run, so **read the setting back** before
+      believing either result.
+- [x] **API 31 or later: the whole widget follows a toggle with no render.** The
+      background is a day/night pair the launcher picks from, not a colour
+      resource it resolves, so "it still follows" is a claim about this repo's
+      code rather than Glance's default — and the check above is the reason not
+      to trust that reasoning unmeasured. Run 2026-08-28 on API 37: `cmd uimode
+      night yes` then `no` with the widget placed and the app not running, and
+      the ground, the name and the glyph all move together within about two
+      seconds — 16.59:1 and 5.18:1 in light, 14.82:1 and 5.31:1 in dark.
 - [x] **200 % font scale.** Rows grow; a long name ellipsises inside the row
       rather than under the widget's edge; nothing clips vertically. The change
-      lands at the next render, not on the spot — complete a habit in the app
-      to force one. (Glance recomposes on locale, not on configuration.)
-      **Run 2026-08-30 on `Small_Phone` (API 37), Pixel launcher, the Today
-      widget at four by three.** The name bitmap for *Read* grew 75 × 40 px to
-      130 × 71 px — the text is close to the 2× asked for; the *row* grew only
-      64 → 71 px, because a row's height is the checkbox's floor until the text
-      passes it. A 37-character name ellipsised to *Read a long …* with its
-      bitmap ending at x = 469, against the rows' content edge at 501 and the
-      widget's own edge at 517 — inside the row, and the full string is still
-      the row's `contentDescription`. Nothing is lost vertically: the rows are
-      a `ListView`, so the fourth row sits below the fold and **scrolls** into
-      view rather than clipping, which is worth knowing before reading a
-      part-drawn last row as a defect. One thing a re-run should expect: at
-      200 % the body drops to the face-above-rows form, so the header, the mood
-      line and the band are not on screen to judge here.
+      lands at the next render, not on the spot — complete a habit in the app to
+      force one, because Glance recomposes on locale and not on configuration.
+      Run 2026-08-30 on `Small_Phone` (API 37), Pixel launcher, the Today widget
+      at four by three: the *Read* name bitmap grew 75×40 px to 130×71 px, close
+      to the 2× asked for, while the *row* grew only 64 → 71 px, because a row's
+      height is the checkbox's floor until the text passes it. A 37-character
+      name ellipsised inside the row, its bitmap ending at x = 469 against the
+      rows' content edge at 501, with the full string still the row's
+      `contentDescription`. Nothing is lost vertically: the rows are a
+      `ListView`, so a fourth row **scrolls** into view rather than clipping —
+      worth knowing before reading a part-drawn last row as a defect. At 200 %
+      the body drops to the face-above-rows form, so the header, the mood line
+      and the band are not on screen to judge here.
 - [x] **An RTL *system* locale** — Settings → System → Languages, Hebrew or
-      Arabic first. Not a per-app locale, and not the developer toggle: measured
-      on 2026-08-25 on the API 37 emulator, `cmd locale set-app-locales` flips
-      our app and leaves the widget as it was, because the launcher inflates the
-      `RemoteViews` in *its* configuration, and `settings put global
-      development_force_rtl 1` changed nothing at all, not even the status bar.
+      Arabic first. Not a per-app locale and not the developer toggle: `cmd
+      locale set-app-locales` flips our app and leaves the widget as it was,
+      because the launcher inflates the `RemoteViews` in *its* configuration,
+      and `settings put global development_force_rtl 1` changes nothing at all.
       What to see: the glyph sits on the right, and a Hebrew or Arabic name is
       shaped and read right-to-left. `BitmapTextTest` proves the glyphs land on
-      the canvas; only a launcher shows whether the row mirrors around them.
-
-      **Run 2026-08-30 on `Small_Phone` (API 37), Pixel launcher, Hebrew first
-      and a habit named קריאה.** Both halves hold, and the launcher itself went
-      Hebrew with them (`יום א׳, 30 באוג׳`, *חנות Play*), which is the evidence
-      that this was the host's own configuration and not ours. Measured off the
-      accessibility tree, same widget and same data in both directions, the
-      content spanning x 49–501 either way:
-
-      | | LTR | RTL |
-      |---|---|---|
-      | row 1's checkbox | 49–113 (flush left) | 437–501 (flush right) |
-      | Momo's face bitmap | 52–177 | 372–497 |
-      | the mood line | 201–473 | 77–349 |
-
-      Read the middle row as the `ImageView`, not the pill `FrameLayout` around
-      it (49–181 in LTR) — review caught the first version of this table quoting
-      the container on one side and its child on the other, which made the pill
-      look 7 px short of a mirror when it was not. Mirroring 52–177 about the
-      content span gives 373–498 against a measured 372–497, so all three rows
-      mirror to within a pixel.
-
-      A clean mirror. קריאה shapes and reads right-to-left, from the platform's
-      Hebrew face — Outfit's `cmap` has no Hebrew — and it still shapes
-      correctly *in the LTR pass too*, which is `FIRSTSTRONG_LTR` doing its job
-      on the paragraph while the run itself stays RTL.
-
-      **The band not mirroring was this run's finding, and it was fixed the same
-      day** — it is the band's own box under *The Momo widget and the large Today
-      body*, not this one, and both the finding and its re-run are recorded
-      there.
-
-      **How to set the locale, because two obvious routes are dead ends.** The
-      emulator's `-prop persist.sys.locale=he-IL` is silently ignored, and a
-      Play Store image (`Small_Phone` is `google_apis_playstore`) refuses
-      `adb root`, so there is no `setprop` either. It has to be the Settings UI
-      — and on API 37 the language **search** crashes Settings outright
-      (`LocalePickerBaseListPreferenceController.getSortedSuggestedLocaleFromSearchList`,
-      NPE), so scroll instead. The list sorts by native name, which puts every
-      RTL script in one clump just above the CJK tail: fling to the bottom, then
-      step back up and עברית is about thirteen screens short of it. Adding a
-      language does **not** switch to it — tap the row's drag handle (its
-      `content-desc` is *Edit system language list, …*) for a **Move up** menu,
-      then confirm. **Hebrew has been left installed as the second preferred
+      the canvas; only a launcher shows whether the row mirrors around them. Run
+      2026-08-30 on `Small_Phone` (API 37), Pixel launcher, Hebrew first and a
+      habit named קריאה. A clean mirror, measured off the accessibility tree in
+      both directions: the checkbox, Momo's face bitmap and the mood line all
+      mirror about the content span to within a pixel. Read the face as the
+      `ImageView`, not the pill `FrameLayout` around it, or the pill looks 7 px
+      short of a mirror when it is not. קריאה shapes right-to-left from the
+      platform's Hebrew face — Outfit's `cmap` has no Hebrew — and it still
+      shapes correctly in the LTR pass, which is `FIRSTSTRONG_LTR` doing its job
+      on the paragraph while the run stays RTL. The launcher itself went Hebrew
+      too, which is the evidence that this was the host's own configuration and
+      not ours. **How to set the locale, because two obvious routes are dead
+      ends.** The emulator's `-prop persist.sys.locale=he-IL` is silently
+      ignored, and a Play Store image (`Small_Phone` is `google_apis_playstore`)
+      refuses `adb root`, so there is no `setprop` either. It has to be the
+      Settings UI, and on API 37 the language **search** crashes Settings
+      outright, so scroll instead: the list sorts by native name, which puts
+      every RTL script in one clump just above the CJK tail. Adding a language
+      does **not** switch to it — tap the row's drag handle for a **Move up**
+      menu, then confirm. **Hebrew is left installed as the second preferred
       language on this AVD on purpose**, so a re-run is only that handle and
-      *Move up*. Read it back three ways before believing it —
-      `getprop persist.sys.locale`, `settings get system system_locales`, and
-      `am get-config`, which is the one that actually proves direction: it reads
-      `…he-rIL,en-rUS-ldrtl…` against `…en-rUS-ldltr…`.
+      *Move up*. Read it back with `am get-config`, the one that proves
+      direction: `…he-rIL,en-rUS-ldrtl…` against `…en-rUS-ldltr…`.
 - [x] **A non-default Display size** — Settings → Display → Display size, Large
-      then Small (or `wm density 400` on the emulator, `wm density reset` after),
-      then complete a habit so the widget re-renders. The name must be as crisp
-      as the checkbox glyph and keep its proportion to it. A blurry, oversized
-      or clipped name means the bitmap is carrying the device's default density
-      rather than the one it was drawn at, and the host has scaled it twice —
-      review caught exactly that in the first cut, and none of the checks above
-      would have, because they all run at the default size.
-      **Run 2026-08-30 on `Small_Phone` (API 37) in both directions**, `wm
-      density 400` and `wm density 260` against its 320 default. At 400 (×1.25)
-      the checkbox went 64 → 80 px and the *Read* bitmap 75 × 40 → 91 × 50; at
-      260 (×0.8125) the checkbox went 64 → 52 px and the bitmap 75 × 40 → 60 ×
-      33. The checkbox and the bitmap's *height* land on the ratio exactly; its
-      **width** runs about 3 % short of it (91 against the 93.75 the ratio
-      predicts, 60 against 60.9) — an earlier draft of this said "exactly" of
-      both and review caught it. That 3 % is not the failure this box is for,
-      and the arithmetic is what says so: a bitmap drawn at one density and
-      scaled again by the host is out by the *square* of the ratio, 56 % at
-      1.25, not 3 %. The name and the glyph therefore keep their proportion, and
-      both stay crisp — the letterforms have clean antialiased edges at 400,
-      which is where a twice-scaled bitmap would have shown as blur. Expect the
-      *body* to change underneath: at 400 the widget is about 151 dp tall and
-      draws rows alone, at 260 it is tall enough for the header again, so this
-      check is about the row, not about which body appears.
+      then Small (or `wm density 400` on the emulator, `wm density reset`
+      after), then complete a habit so the widget re-renders. The name must be
+      as crisp as the checkbox glyph and keep its proportion to it. A blurry,
+      oversized or clipped name means the bitmap is carrying the device's
+      default density rather than the one it was drawn at, and the host has
+      scaled it twice — which none of the checks above would catch, because they
+      all run at the default size. Run 2026-08-30 on `Small_Phone` (API 37) in
+      both directions, `wm density 400` and `260` against its 320 default. The
+      checkbox and the bitmap's *height* land on the ratio exactly; its
+      **width** runs about 3 % short (91 px against the 93.75 the ratio
+      predicts). That 3 % is not the failure this box is for, and the arithmetic
+      is what says so: a bitmap drawn at one density and scaled again by the
+      host is out by the *square* of the ratio, 56 % at 1.25, not 3 %. Both stay
+      crisp, with clean antialiased edges at 400 where a twice-scaled bitmap
+      would have blurred. Expect the *body* to change underneath — about 151 dp
+      tall at 400, drawing rows alone — so this check is about the row, not
+      about which body appears.
 
-Known and expected, not a bug — but **much narrower since 2026-08-21**: a widget
-left on the launcher across the day cutoff is now refreshed by a scheduled wake
-(`RolloverWorker`, docs/ux/reminder.md §2), so it normally clears by itself. What
-remains is that the wake is best-effort and not a deadline: a device deep in Doze
-can still defer it, and then the periodic update is the fallback it always was.
+**A stale render across the day cutoff is known and expected, not a bug**, and
+much narrower than it was: a widget left on the launcher is refreshed by a
+scheduled wake (`RolloverWorker`, docs/ux/reminder.md §2), so it normally clears
+by itself. The wake is best-effort and not a deadline, though, so a device deep
+in Doze can defer it and leave the periodic update as the fallback. The
+behaviour is worth knowing because it is why the tap path is built the way it
+is: a tap always writes to the *right* date, because it re-reads rather than
+trusting the drawn one, but the visible semantics invert while a render is
+stale — tapping a row drawn as **ticked** finds today incomplete and therefore
+**adds** a completion, so the box stays checked and nothing looks undone. The
+log is correct; the render was not (docs/ux/widget.md §4).
 
-So the stale-render behaviour below is still reachable and still worth knowing,
-because it is the reason the tap path is built the way it is. A tap always writes
-to the *right* date, because it re-reads rather than trusting the drawn one — but
-the visible semantics invert while a render is stale: tapping a row drawn as
-**ticked** finds today incomplete and therefore **adds** a completion, so the box
-stays checked and nothing looks undone. The log is correct; the render was not
-(docs/ux/widget.md §4).
-
-**Provoking it now takes deliberately stopping the wake, and that is the point of
-the change.** Moving the cutoff a couple of minutes ahead and waiting will
-normally show the widget *refreshing*, because `RolloverWorker` runs. That
-validates the fix; it does not
-reproduce the fault. To see the stale render, stop the worker from running across
-the boundary:
-
-```console
-adb shell dumpsys deviceidle force-idle
-```
-
-Then move the cutoff ahead and wait past it. With the wake deferred, the widget
-keeps yesterday's ticks and the periodic update is the only thing left, which is
-the pre-2026-08-21 behaviour. `adb shell dumpsys deviceidle unforce` afterwards.
+**Provoking it takes deliberately stopping the wake.** Moving the cutoff ahead
+and waiting will normally show the widget *refreshing*, which validates the fix
+rather than reproducing the fault. To see the stale render, stop the worker from
+running across the boundary with `adb shell dumpsys deviceidle force-idle`, then
+move the cutoff ahead and wait past it; `unforce` afterwards.
 
 A lag *without* forcing Doze is worth investigating rather than expected — but it
-does **not** on its own mean the wake was never armed. At least three things
-produce the same symptom: the wake armed and
-deferred anyway (App Standby, an OEM battery policy, ordinary idle), the wake ran
-and the push failed silently — `GlanceProjectionListener` catches `Throwable` and
-only logs — or the push succeeded and Glance's own update did not. Raised in PR
-review.
-
-Tell them apart before concluding anything:
+does **not** on its own mean the wake was never armed. Three things produce the
+same symptom: armed and deferred anyway (App Standby, an OEM battery policy,
+ordinary idle), the wake ran and the push failed silently
+(`GlanceProjectionListener` catches `Throwable` and only logs), or the push
+succeeded and Glance's own update did not. Tell them apart before concluding
+anything:
 
 ```console
 adb shell dumpsys jobscheduler | grep -A5 com.gawi.app
@@ -1153,12 +1036,11 @@ adb logcat -s ReminderScheduler ReminderWorker RolloverWorker GlanceProjection
 Pending work under `gawi.reminder.day-rollover` and no log line means armed and
 deferred. No pending work means never armed, and `ReminderScheduler` will have
 logged why. A `GlanceProjection` warning means it ran and the redraw is what
-failed — which is the failure shape that looks identical to nobody having placed a
-widget.
+failed — the failure shape that looks identical to nobody having placed a widget.
 
 **Put the cutoff back to midnight afterwards**, for the reason §4's own rollover
-check gives: those steps start from midnight, and this section sits below them, so
-leaving it moved is how a later run passes vacuously.
+check gives: those steps start from midnight and this section sits below them,
+so leaving it moved is how a later run passes vacuously.
 
 ### The Momo widget and the large Today body — *launcher only*
 
