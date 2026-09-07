@@ -95,7 +95,38 @@ has_subsection() {
     ' "$1"
 }
 
-sources=$(find app core feature widget -name '*.kt' -path '*/src/*' | sort)
+# Rule 1 reads everything that cites a document: Kotlin, the `docs/` tree
+# itself, and the resource XML whose comments cite as heavily as the code does.
+# Rule 2 stays on Kotlin, for the reason its own section gives.
+sources=$(
+    {
+        find app core feature widget -name '*.kt' -path '*/src/*'
+        find docs -type f -name '*.md'
+        find . -path ./build -prune -o -path '*/src/main/res/*' -name '*.xml' -print
+    } | sort
+)
+kotlin_sources=$(find app core feature widget -name '*.kt' -path '*/src/*' | sort)
+
+# A scan that found nothing to scan is not a pass. `find` writes to stderr and
+# keeps going when a root is missing, its status is swallowed here, and there is
+# no `set -e` — so a moved tree would otherwise print the success line below and
+# exit 0. Two nets, because a count alone is the weaker one: every root has to
+# exist, which is what catches a *renamed* module, and the total has to look
+# like this repo, which catches a glob that stopped matching.
+for root in app core feature widget docs; do
+    if [ ! -d "$root" ]; then
+        echo "check-citations: $root is not a directory — the layout has moved" >&2
+        echo "and the scan roots need updating." >&2
+        exit 2
+    fi
+done
+
+found=$(printf '%s' "$kotlin_sources" | grep -c .)
+if [ "$found" -lt 100 ]; then
+    echo "check-citations: found $found Kotlin source files, too few to be this" >&2
+    echo "repo — the module layout has moved and the scan roots need updating." >&2
+    exit 2
+fi
 
 # --- Rule 1: every anchored citation resolves ------------------------------
 while IFS= read -r file; do
@@ -138,6 +169,14 @@ done <<< "$sources"
 # Three documents behind one number, and every unanchored `§4` in between
 # ambiguous.
 #
+# This rule reads Kotlin only, and deliberately. Run over `docs/` it reports 180
+# problems and almost none of them is one: inside a document a bare `§N`
+# conventionally means *that document's* own section, and the
+# `[name](path) §N` link form the documents use defeats the anchor test below
+# because a closing paren is not in `DOC_TOKEN`'s character class — so an
+# anchored citation reads as bare. A comment has neither habit. The genuine
+# subset is real but small and is a job of its own.
+#
 # Note what is *not* the defect. A file citing three different `§4`s is fine so
 # long as each one names its document — Mascot.kt legitimately needs all three.
 # Shorthand after a single anchor is good prose too; repeating
@@ -169,7 +208,7 @@ while IFS= read -r file; do
             failures=$((failures + 1))
         done < <(grep -nE "§$num([^0-9.]|\$)" "$file")
     done
-done <<< "$sources"
+done <<< "$kotlin_sources"
 
 if [ "$failures" -gt 0 ]; then
     echo
