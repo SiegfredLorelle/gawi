@@ -167,6 +167,27 @@ Full guide with examples: `.github/COMMIT_CONVENTION.md`
   was ruled out, the pixel counts, the thing that was expected to happen and
   did not. Git holds the investigation and `docs/… §N` holds the decision, so
   the comment cites the section rather than restating what it settled.
+- **A document records decisions and current state; git records history**
+  (`scripts/check-docs.sh`, in `make lint`). **A checklist box keeps its
+  instruction and one status line** — the quoted screen-reader output and the
+  session narrative go, and an unticked box with nothing recorded against it
+  gets no status line at all, because the empty box is the status. **A struck
+  passage is deleted**: a claim struck through with its correction after it is
+  history written in place, so the surviving half is rewritten in the present
+  tense. A "still open" section compresses to one bullet per item with its
+  blocker, and a section whose list has closed items in it says so in its
+  heading. The script is the mechanical half: it caps a checkbox body at 22
+  prose lines, allows a status line at most two dates (when it ran and when it
+  was re-run), and refuses `~~` anywhere under `docs/`.
+- **Method that serves a whole block belongs to the block, not to one box.** A
+  recipe, a trap or an invariant appended to one checklist entry is the shape
+  that outgrows the cap, and it is usually the shape that gets repeated in the
+  next entry too — the same defect as a mechanism argued three times in one
+  file. State it once in the block's preamble and let the boxes point at it.
+- **A measurement another document cites is not narrative.** Before cutting a
+  paragraph, check whether the number in it is the thing some other file cites
+  §N for; `scripts/check-citations.sh` proves the section still exists and
+  cannot prove it still says what the citation claims.
 - Run `make fmt` before committing; `make lint` and `make test` before
   considering any change complete.
 
