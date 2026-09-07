@@ -176,9 +176,11 @@ Full guide with examples: `.github/COMMIT_CONVENTION.md`
   history written in place, so the surviving half is rewritten in the present
   tense. A "still open" section compresses to one bullet per item with its
   blocker, and a section whose list has closed items in it says so in its
-  heading. The script is the mechanical half: it caps a checkbox body at 22
+  heading. The script is the mechanical half: it caps a checkbox body at 26
   prose lines, allows a status line at most two dates (when it ran and when it
-  was re-run), and refuses `~~` anywhere under `docs/`.
+  was re-run), and refuses `~~` outside a code span or a fenced block. **Never
+  drop an instruction to get under the cap** — that is the rule inverted, and it
+  cost this document two setup recipes before the margin was widened.
 - **Method that serves a whole block belongs to the block, not to one box.** A
   recipe, a trap or an invariant appended to one checklist entry is the shape
   that outgrows the cap, and it is usually the shape that gets repeated in the

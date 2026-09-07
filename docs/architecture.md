@@ -771,15 +771,18 @@ Deviations and notes:
   here is as often a launcher, an API level or a third-party reader as a phone.
   `scripts/check-docs.sh` is the fourth and holds AGENTS.md's documents rule
   over `docs/`: a checklist box keeps its instruction and one status line, so
-  the script caps a body at 22 prose lines and its dates at two, and it refuses
+  the script caps a body at 26 prose lines and its dates at two, and it refuses
   `~~` anywhere, a struck claim with its correction after it being history
-  written in place. It runs last, being the only one that reads documents
-  rather than sources.
+  written in place. It runs last, being the only one that reads nothing but
+  documents — the citation check reads both since it took `docs/` on.
 
   All four refuse to pass on a scan that found nothing, by two nets: every
   scan root has to still be a directory, which is what catches a renamed
   module, and the file count has to look like this repo, which catches a glob
-  that stopped matching. A count alone does not catch a rename — 190 production
+  that stopped matching. The citation check carries **one floor per group** it
+  reads — Kotlin, documents, resource XML — because a single total let the
+  healthy Kotlin count hide the resource glob dropping 36 files.
+  A count alone does not catch a rename — 190 production
   sources against a floor of 100 means losing a module still passes — which is
   why the roots are checked first.
 - **`make lint` gained a second step, `:app:assembleDebug`** (2026-09-02). Same
