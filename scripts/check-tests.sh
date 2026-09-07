@@ -49,6 +49,33 @@ if [ ! -f docs/architecture.md ]; then
     exit 2
 fi
 
+sources=$(
+    find app core feature widget -type f -name '*.kt' \
+        \( -path '*/src/test/*' -o -path '*/src/androidTest/*' -o -path '*/src/testFixtures/*' -o -path 'core/testing/src/main/*' \) \
+        -not -path '*/build/*' | sort
+)
+
+# A scan that found nothing to scan is not a pass. `find` writes to stderr and
+# keeps going when a root is missing, its status is swallowed here, and there is
+# no `set -e` — so a moved tree would otherwise print the success line below and
+# exit 0. Two nets, because a count alone is the weaker one: every root has to
+# exist, which is what catches a *renamed* module, and the total has to look
+# like this repo, which catches a glob that stopped matching.
+for root in app core feature widget; do
+    if [ ! -d "$root" ]; then
+        echo "check-tests: $root is not a directory — the module layout has" >&2
+        echo "moved and the scan roots need updating." >&2
+        exit 2
+    fi
+done
+
+found=$(printf '%s' "$sources" | grep -c .)
+if [ "$found" -lt 40 ]; then
+    echo "check-tests: found $found test source file(s), too few to be this" >&2
+    echo "repo — the module layout has moved and the scan roots need updating." >&2
+    exit 2
+fi
+
 FORBIDDEN='Thread\.sleep\(|\.getMethod\(|[gG]etDeclaredMethods?\(|[gG]etMethods\(|[gG]etDeclaredFields?\(|[gG]etFields\(|[gG]etDeclaredConstructors\(|declaredConstructors|declaredFields|\.methods\b|\.fields\b|declaredMethods|declaredMemberFunctions|declaredMemberProperties|memberProperties'
 failures=0
 
@@ -69,11 +96,7 @@ while IFS= read -r file; do
 # :core:testing keeps its helpers in `main`, because only test source sets
 # consume it — so the rule has to reach that directory by name or the module
 # that exists to hold shared test code would be the one place exempt from it.
-done < <(
-    find app core feature widget -type f -name '*.kt' \
-        \( -path '*/src/test/*' -o -path '*/src/androidTest/*' -o -path '*/src/testFixtures/*' -o -path 'core/testing/src/main/*' \) \
-        -not -path '*/build/*' | sort
-)
+done <<< "$sources"
 
 if [ "$failures" -gt 0 ]; then
     echo "check-tests: $failures line(s) reach past behaviour into the implementation" >&2

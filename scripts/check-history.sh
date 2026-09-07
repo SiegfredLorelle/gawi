@@ -71,10 +71,21 @@ sources=$(find app core feature widget build-logic -type f -name '*.kt' \
     -path '*/src/main/*' -not -path '*/build/*' | sort)
 
 # A scan that found nothing to scan is not a pass. `find` writes to stderr and
-# keeps going when a root is missing, its status is swallowed by the command
-# substitution, and there is no `set -e` — so a renamed module directory would
-# otherwise print the success line below and exit 0. That is the same defect as
-# a gate going UP-TO-DATE, and quieter.
+# keeps going when a root is missing, its status is swallowed here, and there is
+# no `set -e` — so a moved tree would otherwise print the success line below and
+# exit 0. Two nets, because a count alone is the weaker one: every root has to
+# exist, which is what catches a *renamed* module, and the total has to look
+# like this repo, which catches a glob that stopped matching.
+#
+# That is the same defect as a gate going UP-TO-DATE, and quieter.
+for root in app core feature widget build-logic; do
+    if [ ! -d "$root" ]; then
+        echo "check-history: $root is not a directory — the module layout has" >&2
+        echo "moved and the scan roots need updating." >&2
+        exit 2
+    fi
+done
+
 found=$(printf '%s' "$sources" | grep -c .)
 if [ "$found" -lt 100 ]; then
     echo "check-history: found $found source files, too few to be this repo —" >&2
