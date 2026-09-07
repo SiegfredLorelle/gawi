@@ -514,9 +514,12 @@ docs/running.md §4 has the boxes.
   **day cutoff** changes the logical date and therefore every `completedToday`
   without writing anything to the log, so no `ProjectionListener` push can fire
   for it (found by `/code-review`). `ReminderScheduler` collects
-  `SettingsSource.observe()` and re-arms both wakes when the cutoff or the
-  reminder time moves, so a cutoff edit re-schedules the boundary refresh along
-  with it — reminder.md §2. The gap that remains is the interval *between* the
+  `SettingsSource.observe()` and re-arms **the wake that moved**: a cutoff edit
+  re-arms both, because the cutoff is the rollover's own instant and also an
+  input to `reminderOn`, so it can move the reminder by a whole day; a
+  reminder-time edit re-arms the reminder alone. Replacing both on every edit
+  would let a reminder-time change cancel a `RolloverWorker` mid-run and lose
+  its sweep — reminder.md §2. The gap that remains is the interval *between* the
   edit and the next wake, which is the same best-effort caveat as above.
 - **The band mirrors under an RTL host** (§7, running.md §4). It did not once:
   the rows mirrored and the band kept its left-to-right order, so it read
