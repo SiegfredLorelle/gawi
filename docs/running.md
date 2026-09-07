@@ -1047,311 +1047,151 @@ so leaving it moved is how a later run passes vacuously.
 Both of docs/ux/widget.md §7's surfaces. `MomoWidgetHostTest` and
 `WidgetHostTest`'s large-body case bind them to a real host, so "the provider
 binds and Glance composes it" is a machine's job; what follows is what only a
-launcher shows.
-
-**Seen by eye on a launcher, 2026-08-29** — API 37 emulator, Pixel launcher, dark
-mode, the same four habits as the streak pass. Boxes stay unticked because an
-emulator is not an OEM launcher, the streak block's standard; these were
-watched and measured, not inferred:
-
-- **The picker offers three entries**, and the *Momo* one shows its description
-  and a preview that is the ground and the word with no face, as intended.
-  `input draganddrop` placed it; it landed two by two.
-- **The Momo widget's colours are the derivation, to the byte.** Sampled off the
-  screenshot: ground `#0F545C`, the word `#B2E7EE`, 6.37:1 — the numbers
-  `gawiRole`'s KDoc promises for `onPrimaryContainer` on `primaryContainer`.
-- **The large body renders at four by three** — Momo on the pill, *Momo is
-  pottering about.* beside her, a four-segment band, four rows. Woven segments
-  `#7FD4DC`, outstanding `#324042`, 6.34:1 apart, again the derivation exactly.
-- **The band is the checkboxes.** Tapping *Water* flipped its box and its
-  segment on the same write, and the Momo widget beside it kept its word (one
-  habit still outstanding, so still *pottering*).
-- **Three columns is 240dp on this launcher, so the header stays** — 240 is
-  over the 220 gate, and the mood line fits. **Two columns is refused**: the
-  launcher will not resize a 180dp-minimum provider below three cells, so the
-  face-above-rows body cannot be reached here at three rows tall. Like the
-  streak block's "smallest size" case, that is the launcher's cell size and
-  not the widget; a launcher with narrower cells is what shows the flip.
-- **At three by two the Today widget drew rows alone**, because two rows here
-  are 132dp and the face needs 170. That refutes `MOMO_MIN_HEIGHT`'s old KDoc
-  claim that two cells land at 220 or more on every launcher, and the "two
-  cells tall" wording widget.md §2 and momo.md §4 used; all three now say 170dp
-  of room and name this launcher as the one where that is three rows.
-
-Not seen there: greyscale by eye (the capture cannot show it), TalkBack, the
-light scheme, and the two-column flip. **The Nothing A059 pass of 2026-09-02
-took three of the four** — greyscale by the user's eye, the light scheme by
-`cmd uimode`, and TalkBack by hand, which is where the two widget bodies failed
-— and left the flip owed to a launcher with other cells, which an AVD stood in
-for on 2026-09-03 without discharging the box; each box says how.
+launcher shows. An emulator does not tick a box here, for the streak block's
+reason: a widget lives in a launcher's process, and an OEM launcher's is not
+the emulator's.
 
 - [ ] **The Today widget grows a header at four by three.** Place *Today* and
-      resize it to four cells wide and three tall (250×200dp on the canvas):
-      Momo on a teal pill at the left, the mood line beside her, and beneath the
-      line a band of thin segments — one per habit, filled where today is done.
-      Then narrow it, still three tall, to the first width under 220dp the
-      launcher allows: the header goes and the face sits above the rows again,
-      the 2026-08-25 body. Then shorten it to under 170dp: rows alone. On the
-      small-phone Pixel launcher neither is reachable — three columns is 240dp
-      and the floor, and two rows is 132dp — so this box needs a launcher with
-      other cells. `WidgetBodyTest` pins the two gates; only a launcher shows
-      which side of them its cells land on.
-
-      **Run 2026-09-02 on the Nothing A059's own launcher** (85 dp cells, five
-      columns), driven over adb: long-press the widget's padding → *Resize*,
-      then drag an edge one cell at a time. **Four by three** (341×256 dp)
-      **grows the header**: Momo on the pill, the mood line, and a band of
-      fourteen segments with the two done habits woven in `#7FD4DC` against
-      `#324042` — the derivation exactly, sampled off the screenshot — over five
-      rows. Three columns (256 dp) keeps it, with the mood line wrapping to two
-      lines. **Two rows is rows alone**: 3×2 spans 170.7 dp of cells, and the
-      launcher reports less than 170 after its padding, so this launcher's 2-row
-      widget is under the face gate even though its cells are not — the
-      2026-08-22 instance had been rows-alone since install for that reason.
-      **The two-column flip is unreachable here too**: two cells is 170 dp and
-      the provider's minimum is 180, so the launcher refuses, as the Pixel one
-      refused its two columns at 160. The arithmetic for whoever has a third
-      launcher: the face-above-rows body wants a width of at least 180 dp (the
-      provider's floor) and under 220 dp (the header's gate), so either three
-      cells of 60 to 73.3 dp or two cells of 90 to 110 dp. Nothing's 85 dp cells
-      and the Pixel's 80 dp cells both fall in the gap between those windows,
-      which is why neither launcher can show it. One row is refused as well
-      (85 < 110). So, that day: header seen, rows-alone seen, the flip owed
-      to a launcher with other cells.
-
-      **The flip, seen 2026-09-03 on a throwaway AVD.** No third launcher was
-      needed: a launcher's cell is its screen width less padding over its
-      column count, so an AVD whose screen puts a cell in one of the windows
-      does it. `gawi-flip` is the API 37 Play image with `config.ini` edited
-      to `hw.lcd.width=1260`, `hw.lcd.height=1800`, `hw.lcd.density=480` —
-      420×600 dp, at which the Pixel launcher picks four columns and its
-      picker already offers *Today* as "2 × 2". Placed at two by two the host
-      view measured 550×369 px, **183×123 dp**: rows alone. One row taller,
-      **183×188 dp**: the face above the rows and no header — the 2026-08-25
-      body, the one neither phone launcher could reach. Three wide, 283×188
-      dp: the header. Light scheme, four habits, none done. To make it again
-      anywhere: `avdmanager create avd -n gawi-flip -d small_phone -k
-      "system-images;android-37.1;google_apis_playstore_ps16k;x86_64"`, then
-      the three `hw.lcd.*` edits above in its `config.ini`; the copy on this
-      machine is kept for the next time a gate moves. **The box stays open
-      all the same**: this block's standard, four paragraphs up, is that an
-      emulator is not an OEM launcher and does not tick a launcher box. The
-      AVD shows the gates are right and the body draws; it does not show a
-      phone launcher's cells landing in the window, which is what the box
-      asks. Header and rows-alone are the Nothing's; the flip is still owed to
-      a phone launcher with other cells, and now known to be reachable.
+      resize it to four cells wide and three tall: Momo on a teal pill at the
+      left, the mood line beside her, and beneath the line a band of thin
+      segments — one per habit, filled where today is done. Then narrow it,
+      still three tall, to the first width under **220 dp** the launcher allows:
+      the header goes and the face sits above the rows again. Then shorten it to
+      under **170 dp**: rows alone. `WidgetBodyTest` pins the two gates; only a
+      launcher shows which side of them its cells land on. Run 2026-09-02 on the
+      Nothing A059's own launcher (85 dp cells, five columns): four by three
+      grew the header, with fourteen band segments and the two done habits woven
+      in `#7FD4DC` against `#324042`; three columns kept it, with the mood line
+      wrapping; two rows was rows alone, because 3×2 spans 170.7 dp of cells and
+      the launcher reports less than 170 after its padding. **The arithmetic for
+      whoever has a third launcher**, and the reason neither phone can show the
+      middle body: the face-above-rows form wants a width of at least 180 dp
+      (the provider's floor) and under 220 dp (the header's gate), so either
+      three cells of 60 to 73.3 dp or two cells of 90 to 110 dp. Nothing's 85 dp
+      cells and the Pixel's 80 dp cells both fall in the gap between those
+      windows. The flip was reached on 2026-09-03 on a throwaway AVD — `gawi-
+      flip`, the API 37 Play image with `hw.lcd.width` 1260, `hw.lcd.height`
+      1800 and `hw.lcd.density` 480, giving 420×600 dp and four columns — where
+      two by two measured 183×123 dp (rows alone) and one row taller 183×188 dp
+      (the face above the rows, no header). That shows the gates are right and
+      the body draws; it does not show a phone launcher's cells landing in the
+      window, which is what this box asks, so header and rows-alone are the
+      Nothing's and the flip is still owed to a phone launcher with other cells.
 - [x] **The band is the checkboxes.** Count the segments against the rows and
       tap a row: its segment flips with its box, on the same write. A band that
       disagrees with the rows beneath it has been given a rule of its own, which
-      it must not have.
-
-      **Run 2026-08-30 on `Small_Phone` (API 37) in both layout directions, and
-      the second one fails.** In LTR it is exactly right: four habits, four
-      segments, and tapping the *first* row lit the *first* segment — woven
-      `#7FD4DC` sampled at x 201–269, the band's left end, with the three
-      outstanding `#324042` running rightwards. Under a Hebrew system locale the
-      rows mirror and the band does not. The same first row now has its glyph at
-      x 437–501, flush **right**, while its woven segment is still at x 49–117,
-      the band's **left** end — so the band's first segment sits where a
-      right-to-left reader finishes rather than where they start, and the band
-      reads backwards against the rows it is supposed to be repeating.
-
-      `BandBitmap.render` had no layout direction to consult: it placed every
-      segment at `left = index * pitch`, unconditionally, so index 0 was at the
-      bitmap's left edge in both directions. That is the whole mechanism, and it
-      is why no test caught it — the geometry was correct, it was the *reading*
-      that was wrong. Distinct from the `BitmapText` side, which does settle
-      direction, via `FIRSTSTRONG_LTR`.
-
-      **Re-run 2026-08-30 after the fix, same emulator, and it passes in both
-      directions.** `WovenBand` now reads the app's configuration and
-      `BandBitmap.render` mirrors on it; [ux/widget.md](ux/widget.md) §8 has the
-      arithmetic and the caveat that survives. Sampled off `screencap` at the
-      band's own `uiautomator` node — `[49,283][349,293]` under RTL,
-      `[201,283][501,293]` under LTR, the same node on both sides — with four
-      habits, all outstanding, and the first row tapped:
-
-      - **LTR**: woven `#7FD4DC` at x 202–268, the band's left end, with the
-        three outstanding `#324042` running rightwards. Matches the pre-fix LTR
-        reading of x 201–269, so nothing moved on this side.
-      - **RTL**: woven `#7FD4DC` at x 281–347, the band's **right** end, beside
-        the same row's glyph at x 437–501. Before the fix it was x 49–117. The
-        gap now falls at the near (left) edge, x 49–54, which is the half of the
-        arithmetic the wrong form gets backwards.
-      - **The tap still flips both together** in RTL: tapping the first row
-        returned its right-end segment to `#324042` on the same write.
-
-      **Two notes on the recipe above**, which was followed as written. Move up
-      now raises a *Change system language to …?* confirmation on this level, so
-      it is two taps rather than one. And `am get-config` is the check that
-      matters — `getprop persist.sys.locale` still read `en-US` after the
-      handle's menu and before the confirmation, so it lags the thing being set.
+      it must not have. Check it under an RTL system locale too. Run 2026-08-30
+      on `Small_Phone` (API 37), where the RTL half failed and was fixed the
+      same day. `BandBitmap.render` had no layout direction to consult and
+      placed every segment at `left = index * pitch`, so index 0 sat at the
+      bitmap's left edge in both directions and the band read backwards against
+      the rows it repeats — the geometry was correct and the *reading* was
+      wrong, which is why no test caught it. `WovenBand` now reads the app's
+      configuration and `BandBitmap.render` mirrors on it
+      ([ux/widget.md](ux/widget.md) §8 has the arithmetic). After the fix, both
+      directions pass: sampled at the band's own `uiautomator` node,
+      `[49,283][349,293]` under RTL against `[201,283][501,293]` under LTR, the
+      woven segment sits at the band's right end in RTL beside the same row's
+      glyph, and the tap still flips both together. Two notes on the locale
+      recipe above: *Move up* raises a confirmation on this level, so it is two
+      taps, and `am get-config` is the check that matters — `getprop
+      persist.sys.locale` still reads the old value between the menu and the
+      confirmation, so it lags the thing being set.
 - [x] **In greyscale the band still reads.** Monochromacy on: a woven segment
       and an outstanding one must still tell apart by lightness alone (3.78:1
-      light, 6.34:1 dark, measured). `screencap` will not show you this — see
-      the streak block above — so look at the device. **Looked at on the Nothing
-      A059, 2026-09-02**, dark scheme, the 4×3 body with eleven woven and three
+      light, 6.34:1 dark). `screencap` will not show you this — see the streak
+      block above — so look at the device. Looked at on the Nothing A059,
+      2026-09-02, dark scheme, the 4×3 body with eleven woven and three
       outstanding segments, monochromacy set over adb (`settings put secure
       accessibility_display_daltonizer_enabled 1` and `…_daltonizer 0`, which
-      work without root on this phone): "the two kinds of segments are clear
-      even on monochrome". Restored after.
+      need no root on this phone): the two kinds of segment were clear on
+      monochrome. Restored after.
 - [ ] **TalkBack reads the large body once.** The mood line, then each row with
-      its state. Not the face and then the line, and nothing for the band.
-
-      **Fails on the Nothing launcher, 2026-09-02, swiped by hand.** The header
-      is not a stop at all — swiping into the 4×3 widget goes straight to the
-      list, and *"Momo is regrowing a gill. Pick the thread back up."* is never
-      spoken, though the mood line's `ImageView` carries it as its description.
-      Each row is then **two** stops, not one: *"Read. In list, double tap to
-      activate"* and *"not checked. Check box, double tap to toggle"*. The band
-      and the face are silent, which is the one half that holds. Two things to
-      check in the Glance body. The header sits outside the `LazyColumn` that
-      the rows live in, and the rows are what TalkBack reached — see the Momo
-      box below for why the list may be the mechanism. And the row's click and
-      its `CheckBox` are separate nodes, so TalkBack lands on each; the box's
-      stop said only *"not checked. Check box"* although `TodayWidget.kt` sets
-      the habit's name as the `CheckBox`'s `contentDescription`, so a Glance
-      description on a `CheckBox` is not surviving into the hosted
-      `RemoteViews` — the name has to reach it another way (the checkbox's own
-      text, which was deliberately dropped, or the row's description). Whether
-      the Pixel launcher does the same is unknown — no AVD image has TalkBack.
-      Accessibility Scanner on the same widget adds that the rows and boxes are
-      75 px tall here, **32 dp**, under the 48 dp floor, and that the boxes
-      share one description — the same lost name, seen from the other side.
-
-      **Half fixed 2026-09-02.** The rows are 48dp (`ROW_HEIGHT`) and each
-      row's description is the name and its state, on the row — the streak
-      widget's pattern. The name had been surviving all along, on Glance's
-      checkbox wrapper (`glance_check_box.xml`, a `FrameLayout` around the
-      control), which TalkBack folds into the row; that is what *"Read"* at the
-      row stop was, so "not surviving" above is wrong by one view. Expect the
-      row stop to read *"Read, done. In list, double tap to activate"* and the
-      box stop unchanged; the header's silence and the box's own 32dp are not
-      addressed. `WidgetRowTest` pins what the tree asks for. Re-swipe after
-      `make run`. **And listen for the name twice**: the box keeps its bare
-      name, which by the folding rule lands on this same row stop, so it is
-      either suppressed by the row's description or read after it — *"Read,
-      done. Read"*. A JVM test cannot tell the two apart. If the name repeats,
-      drop the box's description; if it does not, the "host that attaches it
-      to the control" justification stays untested on this launcher and says
-      so.
-
-      **Re-heard 2026-09-03 on the Nothing launcher, by the user's swipe**, a
-      fresh 4×3 placement of main's build: the row stop is *"Read. Not done"*
-      and the box stop *"Not checked. Check box"*. The name is **not** read
-      twice, so the box keeps its description and the justification above
-      stays untested here, as it said it would. The row is now one named stop
-      with its state; the box is still a second, nameless stop, and the header
-      was not reported as a stop, so the two halves this box still owes are the
-      ones already recorded — the control's own 32 dp and the header's silence.
-- [x] **The Momo widget is offered, two by two, and says what it is.** Long-press
-      → *Widgets* → **Gawi**: three entries. The *Momo* preview on API 31+ is her
-      ground and a word with **no face** — deliberate, and widget.md §7 says
-      why; the description under the name is what names her. **Seen on the
-      Nothing launcher, 2026-09-02**: the picker's Gawi row reads "Momo,
-      Streaks, Today"; expanded, *Momo* is "2 × 2" with "How Momo is doing, in
-      one word" under the name and a preview of the ground and the word
-      *pottering* with no face (a real host preview, a
-      `LauncherAppWidgetHostView`, not a drawable); *Streaks* "3 × 2" with its
-      line; *Today* "3 × 2". `input draganddrop` from the preview to the home
-      screen placed each one.
+      its state. Not the face and then the line, and nothing for the band. Re-
+      heard 2026-09-03 on the Nothing launcher, a fresh 4×3 placement: the row
+      is now one named stop with its state, *"Read. Not done"*, and the name is
+      not read twice — so the checkbox keeps its own description and the "host
+      that attaches it to the control" justification stays untested here. Two
+      halves still owed, both recorded: **the header is not a stop at all**, so
+      the mood line is never spoken even though its `ImageView` carries it as a
+      description, and **the checkbox is a second, nameless stop at 32 dp**,
+      under the 48 dp floor. The rows themselves reached 48 dp (`ROW_HEIGHT`)
+      and took the streak widget's pattern, a description of name and state on
+      the row; `WidgetRowTest` pins what the tree asks for. Whether the Pixel
+      launcher behaves the same is unknown — no AVD image has TalkBack.
+- [x] **The Momo widget is offered, two by two, and says what it is.** Long-
+      press → *Widgets* → **Gawi**: three entries. The *Momo* preview on API 31+
+      is her ground and a word with **no face** — deliberate, and widget.md §7
+      says why; the description under the name is what names her. Seen on the
+      Nothing launcher, 2026-09-02: *Momo* is "2 × 2" with "How Momo is doing,
+      in one word" under the name and a preview of the ground and the word
+      *pottering* with no face — a real host preview, a
+      `LauncherAppWidgetHostView`, not a drawable. `input draganddrop` from the
+      preview to the home screen placed each one.
 - [x] **Her ground is the tank colour, in both schemes.** Light `#B4E9F0`, dark
-      `#0F545C`, sampled off a screenshot; the word on it in `#00353A` / `#B2E7EE`.
-      A flat colour, not the Today screen's gradient. **Sampled 2026-09-02 on
-      the Nothing A059**, the placed 2×2 widget (400×400 px): dark ground
-      `#0F545C` on 103,983 of its pixels with the word in `#B2E7EE`; light,
-      after `cmd uimode night no` (which needs no root on this phone, unlike the
-      AVD), ground `#B4E9F0` on the same 103,983 pixels with the word in
-      `#00353A`. To the byte, both ways. Night mode was put back afterwards.
+      `#0F545C`, with the word on it in `#00353A` / `#B2E7EE`. A flat colour,
+      not the Today screen's gradient. Sampled 2026-09-02 on the Nothing A059,
+      the placed 2×2 widget: to the byte in both schemes, over the same 103,983
+      pixels each way. `cmd uimode night no` needs no root on this phone, unlike
+      the AVD; night mode was put back afterwards.
 - [x] **The word follows the mood.** Complete everything → *thriving*; leave one
       → *pottering* or *worried* as the day goes; break a streak → *regrowing*,
-      with the dimmer face. Same face as the Today screen at that moment.
-      **Seen 2026-09-02**: *regrowing* with the faded-gill face while two
-      streaks were freshly broken; *pottering* with the smiling face once both
-      were
-      picked back up; *thriving* with the sparkle face once all fourteen were
-      done. *Worried* was not seen — it needs the clock past 21:00, and the pass
-      ended before it. Each word change arrived with the app's own write (see
-      the last box).
-
-      ***Worried* seen 2026-09-03 on the Nothing A059**, by moving the hour
-      rather than waiting for it: *Day is nearly over at* set to 18:20 at
-      18:17 with eleven habits outstanding. At 18:21 the Today panel already
-      read *Momo is getting worried.* — while **both widgets still said
-      *pottering***, a minute past the hour, because nothing had been written
-      and their only clock is the 30-minute `updatePeriodMillis`
-      (widget.md §4, "shortened, not bounded"). One write in the app — *test
-      123* unticked, the one row this pass had ticked by D-pad earlier, so the
-      phone's habits end the day as found with two events appended to its log
-      — and the Momo widget read *worried* under the worried face,
-      and the Today widget's header *Momo is getting worried.* with the band
-      all outstanding. So the word follows the mood and the mood follows the
-      clock, but the widget learns of the clock only on the next write or
-      period, which is the documented trade and now a seen one. The hour was
-      put back to 21:00 afterwards.
-- [x] **With no habits she is still there**, under *No habits yet*. Archive every
-      habit rather than `pm clear` to see it. **Seen 2026-09-02**: fourteen
-      `HabitArchived` events appended to the log (the run-as recipe in §5) and
-      the projection rebuilt — the Today screen showed *Momo is waiting for a
-      habit.* / *No habits yet* / *Add a habit*, and the widget kept its ground
-      and her smiling face with *No habits yet* in the word's place; the Today
-      and Streaks widgets said the same three words. Deleting the fourteen
-      events brought all fourteen habits back.
+      with the dimmer face. Same face as the Today screen at that moment. Seen
+      2026-09-02 for *regrowing*, *pottering* and *thriving*, each arriving with
+      the app's own write. *Worried* was seen 2026-09-03 by moving the hour
+      rather than waiting for it, and it is the box's real finding: at a minute
+      past the new hour the Today panel already read *Momo is getting worried.*
+      while **both widgets still said *pottering***, because nothing had been
+      written and their only clock is the 30-minute `updatePeriodMillis`
+      (widget.md §4, "shortened, not bounded"). One write in the app and both
+      caught up. So the word follows the mood and the mood follows the clock,
+      but a widget learns of the clock only on the next write or period — the
+      documented trade, now a seen one.
+- [x] **With no habits she is still there**, under *No habits yet*. Archive
+      every habit rather than `pm clear` to see it. Seen 2026-09-02 by appending
+      fourteen `HabitArchived` events to the log (the run-as recipe in §5) and
+      rebuilding the projection: she kept her ground and her smiling face with
+      *No habits yet* in the word's place, and the Today and Streaks widgets
+      said the same three words. Deleting the fourteen events brought all
+      fourteen habits back.
 - [ ] **TalkBack reads the sentence, not the word.** Focus the widget: *"Momo is
-      pottering about."* once, and never *"pottering"* as well.
-
-      **Fails on the Nothing launcher, 2026-09-02, swiped by hand — and not in
-      the way the box feared.** The widget is one stop that says *"Momo"*, then
-      *"Actions available, swipe up and swipe down, double tap to activate"*:
-      the launcher's own label for the widget frame and its move/resize
-      actions. The next swipe leaves the widget for the neighbouring app icon.
-      The sentence is **never** spoken, and neither is the word. The face
-      `ImageView` carries the sentence as its description, but the frame
-      (`LauncherAppWidgetHostView`,
-      described "Momo" by the launcher) has no reachable child inside it, and a
-      described container hides its unreachable children from TalkBack. What
-      separates the bodies is the container, not clickability: the Streaks
-      rows are stops of their own (*"Water 7 days"*) and carry no click action
-      at all — `StreakWidget.kt` has none — and the Today rows are stops too;
-      both bodies are Glance `LazyColumn`s, which land as a real list in the
-      `RemoteViews` tree (the Today rows say *"In list"*), while Momo's body is
-      a plain `Box` and `Column`. So the experiment for the second launcher is
-      a one-item `LazyColumn` around the face, not a clickable. The user's
-      *"double tap to activate"* on a Streaks row has no callback behind it and
-      is itself a reason to re-listen. Whether the Pixel launcher labels its
-      frame the same way is unknown.
-
-      **Built and withdrawn, 2026-09-02.** The one-item `LazyColumn` was made
-      and passed the JVM suite, and review took it out before it shipped, on
-      four counts. `MomoWidgetHostTest` waits for the mood sentence from a
-      host view that is never attached to a window, and such a host never asks
-      a collection's adapter for its items (`WidgetHostBinding` says so), so
-      the instrumented test would time out with the whole body inside an
-      item. On API 29–31 Glance serves a list through `RemoteViewsService`, so
-      the face would arrive a beat after the ground where the `Column` painted
-      in one pass; Today and Streaks keep their headers outside their lists
-      for that reason and Momo would have had nothing outside. A `ListView`
-      claims vertical drags that start on it, so a home-screen swipe over a
-      static tile would go dead. And the folding rule the Today checkbox
-      taught — TalkBack folds a described, unfocusable view into its nearest
-      *focusable* ancestor — points at a cheaper experiment first: a clickable
-      `Column` (`actionStartActivity` to the app) is focusable without an
-      adapter, a service or "in list" in every announcement. The Streaks rows
-      being reached *without* a click shows a list suffices, not that a
-      focusable view would fail. So two experiments stay for the phone, the
-      clickable first and the list as fallback; neither is made here.
-
-      **Re-heard 2026-09-03**, a fresh 2×2 placement on the same launcher:
-      still one stop, *"Momo"*. Unchanged, as expected — nothing in the body
-      changed — and the two experiments are still the way to settle it.
-- [x] **A write in the app moves all three widgets**, on the same commit.
-      **Seen 2026-09-02**, all three placed and dumped before and after each
-      write: ticking *Stretch* checked its box on the Today widget and moved its
-      Streaks row 0 → 1 while Momo, still regenerating over *Read*, kept her
-      sentence — as she should; ticking *Read* then checked its box, moved its
-      row 0 → 1 **and** changed Momo's description to *"Momo is pottering
-      about."* with the word *pottering*. One write, three widgets, all changed
-      by the next dump about five seconds later.
+      pottering about."* once, and never *"pottering"* as well. Fails on the
+      Nothing launcher, and not in the way the box feared: the widget is one
+      stop that says *"Momo"* — the launcher's own label for the frame — and the
+      next swipe leaves it for the neighbouring app icon. The sentence is never
+      spoken and neither is the word. The face `ImageView` carries the sentence
+      as its description, but the frame (`LauncherAppWidgetHostView`) has no
+      reachable child inside it, and a described container hides its unreachable
+      children. **What separates the bodies is the container, not
+      clickability**: the Streaks rows are stops of their own and carry no click
+      action at all, and both the Streaks and Today bodies are Glance
+      `LazyColumn`s that land as a real list in the `RemoteViews` tree, while
+      Momo's body is a plain `Box` and `Column`. Re-heard 2026-09-03, unchanged,
+      as expected — nothing in the body changed. **Two experiments stay for a
+      phone, the clickable first and the list as fallback.** A one-item
+      `LazyColumn` was built and withdrawn on 2026-09-02 on four counts.
+      `MomoWidgetHostTest` waits for the mood sentence from a host view never
+      attached to a window, and such a host never asks a collection's adapter
+      for its items, so the instrumented test would time out with the whole body
+      inside an item. On API 29–31 Glance serves a list through
+      `RemoteViewsService`, so the face would arrive a beat after the ground
+      where the `Column` paints in one pass — Today and Streaks keep their
+      headers outside their lists for that reason and Momo would have had
+      nothing outside. A `ListView` claims vertical drags that start on it, so a
+      home-screen swipe over a static tile would go dead. And the folding rule
+      the Today checkbox taught — TalkBack folds a described, unfocusable view
+      into its nearest *focusable* ancestor — points at the cheaper experiment
+      first: a clickable `Column` (`actionStartActivity` to the app) is
+      focusable without an adapter, a service or "in list" in every
+      announcement. The Streaks rows being reached *without* a click shows a
+      list suffices, not that a focusable view would fail.
+- [x] **A write in the app moves all three widgets**, on the same commit. Seen
+      2026-09-02, all three placed and dumped before and after each write:
+      ticking one habit checked its box on the Today widget and moved its
+      Streaks row 0 → 1 while Momo, still regenerating over another, kept her
+      sentence — as she should; ticking that other one then moved its row and
+      changed Momo's description too. One write, three widgets, all changed by
+      the next dump about five seconds later.
 
 ### The reminder
 
