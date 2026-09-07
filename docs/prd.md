@@ -138,12 +138,13 @@ cheapest-unblocked first:
    choose between fractional and full attribution. That choice belongs to the
    schema bump, not to this screen. What this screen owes it is not to be shaped
    as though one tag were permanent.
-3. **Notification quick-complete actions** — blocked on **OQ-2** (what to do when
-   more than three habits remain, Android's action-button cap). Not urgent: §6.1
-   is already satisfied by the widget.
-4. **Momo** — blocked on **OQ-4** (art style), which is a design decision before
-   it is an engineering one. `Mood` already computes all four states; what is
-   missing is art, not logic ([docs/ux/today-view.md](ux/today-view.md) §4).
+3. **Notification quick-complete actions** — was blocked on **OQ-2** (what to do
+   when more than three habits remain, Android's action-button cap), which §8
+   has since decided. Not urgent even then: §6.1 is satisfied by the widget.
+4. **Momo** — was blocked on **OQ-4** (art style), a design decision before it
+   was an engineering one, and §8 has since closed it. `Mood` already computed
+   all four states; what was missing was art, not logic
+   ([docs/ux/today-view.md](ux/today-view.md) §4).
 
 Note that 4 partly unblocks OQ-3's second half — see §8.
 
@@ -165,8 +166,8 @@ The order actually being taken is therefore: **OQ-4's brief first, then
 Insights.** The brief is split where its lead times split. Its palette,
 typography and habit hues are what Insights needs and go first, unblocking
 `Theme.kt`, the widget and the two feature modules together; Momo's own art and
-the launcher icon are a longer job and run behind them, so a Rive state machine
-never holds the phase up.
+the launcher icon were the longer job and ran behind them, so no state machine
+would hold the phase up.
 
 **All of that first half landed.** The colour scheme and the eight retuned hues
 are in the code and verified on a device. Typography is **Outfit**, one bundled
