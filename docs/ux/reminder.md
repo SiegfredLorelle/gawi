@@ -505,6 +505,16 @@ mutation-checked against the code before the fix.
   itself is only exercised by hand — [running.md](../running.md) §4 has the
   checks. This is the same gap the widget has for *"a write in the app moves the
   widget"*, and for the same reason: the framework is the part not under test.
+- **Nor does any test pin which wakes an edit re-arms**, which is the one
+  property `replaceWhatMoved` exists for. No test calls its `start()` — the
+  only caller is `GawiApplication` — `replaceWhatMoved` is private, and
+  every case drives `armReminder`/`armRollover` directly with an explicit
+  policy, so the closest one asserts that the reminder's own delay moved and
+  never that the rollover was left alone. A change making a reminder-time edit
+  replace both would reintroduce the defect §5 records, with the suite green.
+  The only coverage is the manual cutoff check in
+  [running.md](../running.md) §4, which exercises the direction that re-arms
+  both rather than the one that must not.
 - **The reminder does not survive a cleared app.** `pm clear` or an uninstall
   removes the WorkManager database along with everything else; the next launch
   re-arms both wakes. Worth knowing when a manual check appears to fail for no
