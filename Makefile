@@ -44,9 +44,11 @@ fmt: ## Format the codebase
 	./gradlew spotlessApply
 
 # The scripts run first because each takes about a second and Gradle takes
-# minutes, so a narrated comment, a stale `docs/` reference or a forbidden call
-# in a test fails fast instead of at the end. Scripts and not Gradle tasks on
-# purpose — see their headers, and architecture §9.
+# minutes, so a narrated comment, a stale `docs/` reference, a forbidden call in
+# a test or an overgrown checklist box fails fast instead of at the end. Scripts
+# and not Gradle tasks on purpose — see their headers, and architecture §9.
+# `check-docs.sh` is last of the four because it is the only one that reads
+# `docs/` rather than sources, so a code change trips the other three first.
 #
 # `:app:assembleDebug` is the only step here that packages, and CI calls nothing
 # but `make`. Without it nothing in fmt/lint/test merges a manifest, merges
@@ -69,6 +71,7 @@ lint: ## Lint and type-check the codebase
 	./scripts/check-history.sh
 	./scripts/check-citations.sh
 	./scripts/check-tests.sh
+	./scripts/check-docs.sh
 	./gradlew spotlessCheck detekt lint :app:assembleDebug
 
 test: ## Run the test suite
