@@ -48,7 +48,7 @@ fmt: ## Format the codebase
 # a test or an overgrown checklist box fails fast instead of at the end. Scripts
 # and not Gradle tasks on purpose — see their headers, and architecture §9.
 # `check-docs.sh` is last of the four because it is the only one that reads
-# `docs/` rather than sources, so a code change trips the other three first.
+# nothing but `docs/`, so a code change trips the other three first.
 #
 # `:app:assembleDebug` is the only step here that packages, and CI calls nothing
 # but `make`. Without it nothing in fmt/lint/test merges a manifest, merges

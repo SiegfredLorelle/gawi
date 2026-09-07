@@ -437,7 +437,7 @@ onto a phone that was told something else. Re-applying on every process start
 is what keeps them in step, which is why the call hangs off the settings flow
 rather than off the write.
 
-## 8. Still open
+## 8. Open, and what closed
 
 Two of this section's items are built, and each left a rule behind. **The CSV is
 a view of the completions projection for a spreadsheet and not a recovery
