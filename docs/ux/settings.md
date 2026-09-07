@@ -439,38 +439,25 @@ rather than off the write.
 
 ## 8. Still open
 
-- ~~**The CSV of completions is not built.**~~ **Built 2026-08-21**, and this
-  bullet's own warning is what shaped it. The JSON is the event log and the only
-  thing an import can rebuild from; the CSV is a view of the completions
-  projection for a spreadsheet, and it is not a recovery path. §6 has the
-  decisions. Two of them exist purely to keep that true where a comment could
-  not: the CSV archive is not given `ExportJournal`, so it cannot stamp the
-  last-export time, and `csvHelp` takes no `ExportRecency`, so the row cannot
-  show the nudge. Both are asserted rather than asked for.
+Two of this section's items are built, and each left a rule behind. **The CSV is
+a view of the completions projection for a spreadsheet and not a recovery
+path** — the JSON event log is the only thing an import can rebuild from — and
+two assertions keep that true where a comment could not: the CSV archive is not
+given `ExportJournal`, so it cannot stamp the last-export time, and `csvHelp`
+takes no `ExportRecency`, so the row cannot show the nudge (§6). **And
+`lastExportedAt` is not a fourth `UserSettings` field**, written up on
+`ExportJournal`: `OfflineFirstHabitRepository` dedupes the Today query on the
+`(settings, logical date)` pair, so a field that changed on every export would
+make that dedupe miss and restart the streak sweep under an open screen, and the
+nudge needs a second signal `UserSettings` cannot carry at all — whether the log
+holds anything. It shares the preferences *file*, which is safe because `update`
+assigns only its own three keys, and two tests pin that in both directions. The
+three preferences are what the user set; when an export last happened is a record
+of what the app did — the same distinction §6 draws about the two rows. One build
+constraint from the same work is still live: `TooManyFunctions` caps a *file* at
+eleven, which is why the Data section's mapper functions sit in
+`SettingsDataMapper.kt`.
 
-  One sizing assumption in the plan for it was wrong and worth recording.
-  `SettingsActions` was expected to need a nested holder for a seventh action,
-  because its own KDoc said six was the last that fits under detekt's
-  constructor threshold of seven. The threshold is seven, but
-  `LongParameterList` sets `ignoreDataClasses` true by default, so the rule
-  never applied to that declaration at all — measured, and the KDoc is corrected
-  in place. What did bite was `TooManyFunctions`, which caps a *file* at eleven:
-  the mapper was at ten, so the Data section's functions moved to
-  `SettingsDataMapper.kt`.
-- ~~**The 30-day nudge is not built.**~~ **Built 2026-08-21**, and one thing
-  this bullet said about it turned out to be wrong in a way worth recording.
-  `lastExportedAt` is **not** a fourth `UserSettings` field. Two reasons, both
-  written up on `ExportJournal`. `OfflineFirstHabitRepository` dedupes the Today
-  query on the `(settings, logical date)` pair, so a `UserSettings` field that
-  changed on every export would make that dedupe miss and restart the streak
-  sweep under an open screen — the churn `DataStoreSettingsSource`'s
-  `distinctUntilChanged` exists to prevent. And the nudge needs a second signal
-  `UserSettings` cannot carry at all, whether the log holds anything, so a flow
-  of its own was needed either way and folding the stamp into it cost nothing.
-  It shares the preferences *file*, which is safe because `update` assigns only
-  its own three keys, and two tests pin that in both directions. The three
-  preferences are what the user set; when an export last happened is a record of
-  what the app did — the same distinction §6 draws about the two rows.
 - **`ContentResolverEventArchive` has no behavioural test, and that is now a
   gap rather than a constraint.** The CSV archive got one this round
   (`CompletionCsvArchiveTest`), using `ShadowContentResolver` — which the
@@ -678,24 +665,23 @@ rather than off the write.
   Closing it needs either AppCompat or a blocking disk read on the launch path,
   and both are worse, so it stays open.
 
-  ~~The drawn app is wrong for as long as the first DataStore read takes.~~
-  True in principle and almost never visible, which is not what this bullet
-  said. `ThemeViewModel.theme` does start at "not read yet", but the read beats
-  the first composed frame, and does so identically on both levels: no
-  light-scheme content frame appeared in three runs with a warm page cache, and
-  with the cache dropped before every start — the worst case the argument has —
-  one appeared in four runs of six. It survives a single captured frame on
-  API 30 and one to three on API 29, so tens of milliseconds either way.
+  **The drawn app being wrong for as long as the first DataStore read takes is
+  true in principle and almost never visible.** `ThemeViewModel.theme` does
+  start at "not read yet", but the read beats the first composed frame, and does
+  so identically on both levels: no light-scheme content frame appeared in three
+  runs with a warm page cache, and with the cache dropped before every start —
+  the worst case the argument has — one appeared in four runs of six. It
+  survives a single captured frame on API 30 and one to three on API 29, so tens
+  of milliseconds either way.
 
-  ~~The window background, the starting window and the Recents snapshot come
-  from the `values-night` qualifier for the whole session.~~ Wrong about
-  Recents, on both levels, and that was the alarming half. The task snapshot is
+  **The Recents snapshot does not come from the `values-night` qualifier**, on
+  either level, and that was the alarming half to rule out. The task snapshot is
   a screenshot of the window, so it shows the scheme the app actually drew:
   backgrounded, after `am kill`, and after a rotation, the thumbnail measured
   `#0E1A1C` every time, with no light-scheme pixel in any of the six captures.
-  Nor does it last "the whole session" — a warm resume with the process still
-  alive shows no wrong-scheme frame at all, because the starting window is only
-  reached when there is no window left to restore.
+  Nor does the wrong scheme last "the whole session" — a warm resume with the
+  process still alive shows no wrong-scheme frame at all, because the starting
+  window is only reached when there is no window left to restore.
 - **A snackbar in flight does not survive a theme change**, on API 31 and up.
   The recreation rebuilds `SnackbarHostState`, and `events` is a
   single-consumer `Channel` whose element has already been taken, so the

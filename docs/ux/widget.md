@@ -56,9 +56,8 @@ So §6.6 is **narrowed** rather than contradicted: streaks live in the Today vie
 and habit detail, built 2026-08-21. `WidgetRow` has no streak field, which is
 what stops this decision being undone by an accident of what was in scope.
 
-~~Revisit when Momo has real art (PRD OQ-4)~~ — revisited 2026-08-25, when
-she had it. **The minimal widget stands, and Momo joins it only when the host
-gives it room**: from 170 dp of height (`WidgetUiState.kt` — two cells on most launchers, three on the small-phone Pixel launcher, whose rows are 132 dp; running.md §4) her
+PRD OQ-4 asked for a revisit once Momo had real art. She has it, and
+**the minimal widget stands: Momo joins it only when the host gives it room**: from 170 dp of height (`WidgetUiState.kt` — two cells on most launchers, three on the small-phone Pixel launcher, whose rows are 132 dp; running.md §4) her
 resting frame sits above the rows, 72 dp; one cell tall is exactly the widget
 this section describes. A mascot on the widget turned out to be the thing that
 made a larger *size* worth drawing without making a second *provider* worth
@@ -501,17 +500,17 @@ test cannot tell the two tall bodies apart. The width gate is a JVM matter
 (`WidgetBodyTest`, `HeaderCopyTest`) and the header a launcher one —
 docs/running.md §4 has the boxes.
 
-## 8. Still open
+## 8. Open, and what closed
 
-- ~~**A boundary refresh** (§4).~~ **Built 2026-08-21** with the reminder, as
-  `RolloverWorker` (reminder.md §2). A widget on a launcher now follows the day
-  rollover without being tapped. What has not changed is that this is still
+- **A boundary refresh** (§4) is **built**, with the reminder, as
+  `RolloverWorker` (reminder.md §2). A widget on a launcher follows the day
+  rollover without being tapped. What that does not change is that it is
   best-effort rather than a deadline — a wake WorkManager defers is a redraw that
   arrives late, and the provider's periodic update remains the only other thing
   shortening the window. There is still no ceiling to state here, only a much
   better likelihood.
-- ~~**A settings edit is not an event either.**~~ **Built the same day, and by
-  the same mechanism**, which is why the two were listed together. Changing the
+- **A settings edit is not an event either**, and is handled by the same
+  mechanism, which is why the two belong together. Changing the
   **day cutoff** changes the logical date and therefore every `completedToday`
   without writing anything to the log, so no `ProjectionListener` push can fire
   for it (found by `/code-review`). `ReminderScheduler` collects
@@ -519,9 +518,9 @@ docs/running.md §4 has the boxes.
   reminder time moves, so a cutoff edit re-schedules the boundary refresh along
   with it — reminder.md §2. The gap that remains is the interval *between* the
   edit and the next wake, which is the same best-effort caveat as above.
-- ~~**The band does not mirror under an RTL host** (§7, running.md §4, found
-  2026-08-30).~~ **Fixed the same day.** The rows mirrored and the band kept its
-  left-to-right order, so it read backwards against the checkboxes it repeats.
+- **The band mirrors under an RTL host** (§7, running.md §4). It did not once:
+  the rows mirrored and the band kept its left-to-right order, so it read
+  backwards against the checkboxes it repeats.
   `BandBitmap.render` now takes a `mirrored` flag and places a mirrored segment
   at `left = widthPx - index * pitch - segment` — **not** `widthPx - (index + 1)
   * pitch`, which this bullet warned about and which is off by a whole `gap`: it
@@ -612,9 +611,8 @@ docs/running.md §4 has the boxes.
   WorkManager need `ACCESS_NETWORK_STATE` again and force the
   `tools:node="remove"` line out. `ManifestPermissionTest` is the tripwire for
   exactly that.
-- ~~**Size variants.** The provider declares no API 31 attributes.~~ **Half
-  closed 2026-08-29.** The streak widget carries them, in a `res/xml-v31`
-  variant beside its base file (§6): `targetCellWidth/Height` so a fresh
+- **Size variants, half of them declared.** The streak widget carries the API
+  31 attributes, in a `res/xml-v31` variant beside its base file (§6): `targetCellWidth/Height` so a fresh
   placement is three cells by two rather than a guess off `minWidth`,
   `description` so the picker says what the widget is, and `previewLayout`. The
   Today widget still declares none, because nothing has yet asked it to — the
@@ -653,9 +651,8 @@ docs/running.md §4 has the boxes.
 - **The widget is not in the launcher automatically.** Pinning one needs the
   user, or `requestPinAppWidget` from the app. There is no in-app "add the
   widget" affordance and PRD §4 does not ask for one.
-- ~~**Whether this widget can ever draw the app's own typeface.**~~ **Answered
-  on 2026-08-24: not as a font — and on 2026-08-25: yes, as pixels.** The route
-  that failed was not Glance's typed API, which has never offered anything but
+- **This widget draws the app's own typeface as pixels, and cannot as a font.**
+  The route that failed was not Glance's typed API, which has never offered anything but
   four generic family names, but a hand-written layout inside
   `AndroidRemoteViews` — `RemoteViews` are inflated against our package's
   resources, so `android:fontFamily="@font/…"` looked like it should resolve.

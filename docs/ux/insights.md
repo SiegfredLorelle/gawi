@@ -17,11 +17,10 @@ tag metric when OQ-1 lands. All three are now settled by code, and §8 is the
 record of what building them decided — including the four places the reasoning
 here, and the artboard it came from, turned out to be wrong.
 
-~~What is *not* built is PRD §5's Phase 1.5, this module's second job.~~ **Built
-2026-08-29**, and it grew out of the app-wide screen (§8.8) exactly as this
-paragraph predicted rather than becoming a screen of its own: a stepper walks
-the period back through the calendar, and three facts joined the numbers it
-already drew. §9 is the record. What that paragraph called "the first line of
+PRD §5's Phase 1.5, this module's second job, **is built**, and it grew out of
+the app-wide screen (§8.8) rather than becoming a screen of its own: a stepper
+walks the period back through the calendar, and three facts joined the numbers
+it already drew. §9 is the record. What was called "the first line of
 it" — adherence per habit and per tag across a period — was already there, which
 is why the retrospective cost a stepper and three facts rather than a module.
 
@@ -152,13 +151,9 @@ was *supposed* to be done on. Two consequences, and neither is cosmetic:
     A habit created this morning has not failed anything, and `0.0` renders as
     "0%" — the screen accusing the user on no evidence. Callers draw a dash.
 
-  ~~One limitation is the screen's to solve and is recorded rather than hidden:
-  nothing in the projection stores when a habit was created — `HabitState` has no
-  such field — so a window reaching back before the habit existed yields a rate
-  that is arithmetically right and meaningless. The earliest completed date is
-  the available proxy, and whether to clamp to it is a presentation decision.~~
-
-  **Fixed 2026-08-24, and not with the proxy.** `HabitState.createdOn` is
+  A window reaching back before the habit existed would yield a rate that is
+  arithmetically right and meaningless. That is **fixed, and not with the
+  earliest-completed-date proxy** once considered: `HabitState.createdOn` is
   projected from the `HabitCreated` event's own envelope, so both rate surfaces
   clip their window to it and a habit younger than the period draws a dash
   instead of a low number. The proxy this paragraph offered — the earliest
@@ -249,15 +244,14 @@ Not owed but worth stating: the heatmap needs **no new domain logic**. Trends do
 — §4's denominator — and that lands in `:core:domain` where the schedule rules
 already live, never in the feature module.
 
-## 7. Still open
+## 7. Open, and what closed
 
-- ~~**Weekly habits' grid**: two-state days for everyone, or a grid of weeks for
-  weekly habits (§4).~~ **Settled 2026-08-23: two-state days for everyone.** §4
-  carries the reasoning.
-- ~~**The period picker.** "Over a selected period" (PRD §5) does not say which
-  periods.~~ **Settled 2026-08-24: a fixed set of three — Month, Quarter,
-  Year — and calendar periods rather than trailing windows.** The labels say so,
-  and the reason this was worth deciding once is Phase 1.5's *quarterly and
+- **Weekly habits' grid: two-state days for everyone**, rather than a grid of
+  weeks for weekly habits. §4 carries the reasoning.
+- **The period picker is a fixed set of three — Month, Quarter, Year — and
+  calendar periods rather than trailing windows**, which is what "over a
+  selected period" (PRD §5) left open. The labels say so, and the reason this
+  was worth deciding once is Phase 1.5's *quarterly and
   yearly* review screens: a trailing thirty days cannot serve a quarterly
   retrospective, so a trailing window would have meant deciding it twice after
   all. Known consequence, recorded rather than hidden: on the 1st of a month,
@@ -270,9 +264,8 @@ already live, never in the feature module.
   arrows and the rate trend keeps its fixed five months, because a trend needs
   several buckets and so "which period" is the wrong question to ask of it.
   Three surfaces, three different time questions, one control each.
-- ~~**The colour scale**, and specifically whether intensity encodes anything at
-  all.~~ **Settled 2026-08-24**, and §8 has the values and the measurements. The
-  question was never hard once the palette existed — completions are idempotent
+- **The colour scale encodes nothing by intensity**, and §8 has the values and
+  the measurements. The question was never hard once the palette existed — completions are idempotent
   per logical date (architecture §4), so there is nothing to count and a
   count-per-day scale has no input. Two colours, `primary` for done as this
   paragraph predicted, and the constraint it named held: every colour comes from
@@ -280,29 +273,25 @@ already live, never in the feature module.
   the way it reaches every other screen. What the paragraph did not anticipate is
   that the *pair* would need measuring rather than the roles individually, and
   that the obvious way to mark today would fail that measurement.
-- **Where it is reached from.** ~~Habit detail for the per-habit grid is the
-  obvious door~~ — **taken, 2026-08-24**: a "See full history" text button under
-  habit detail's retro strip, reported as a lambda, routed by `:app` to
-  `Destination.HabitHistory`. Architecture §2 used this door as its own worked
-  example of why the heatmap can live outside `:feature:habits`, and building it
-  cost the cross-module dependency that section predicted: none. **The tag
-  distribution still has no door**, and inventing a top-level destination is a
-  navigation decision that belongs to `:app`.
+- **Where it is reached from.** Habit detail is the door for the per-habit
+  grid: a "See full history" text button under its retro strip, reported as a
+  lambda, routed by `:app` to `Destination.HabitHistory`. Architecture §2 used
+  this door as its own worked example of why the heatmap can live outside
+  `:feature:habits`, and building it cost the cross-module dependency that
+  section predicted: none.
 
-  **Closed 2026-08-24.** `Destination.Insights` is that top-level destination,
+  The tag distribution needed a door of its own, and inventing a top-level
+  destination is a navigation decision that belongs to `:app`.
+  `Destination.Insights` is that top-level destination,
   reached from a third action in Today's app bar — the app's only top-level
   surface, so it was that or nowhere. What made it the right shape rather than a
   convenience is that the screen turned out to want more than the tag bars: the
   question it answers is "how am I doing overall", which nothing in the app
   answered, and the tag distribution is one breakdown of it. §8.8 has the screen.
-- ~~**Whether Momo appears here.** PRD §5 puts him in the Today view, the widget
-  and the reminder. This screen is not on that list and should probably stay off
-  it until OQ-4 is settled.~~ **Settled 2026-08-31: he stays off.**
-
-  **The condition this bullet named was met** — OQ-4 was settled and built on
-  2026-08-25 ([momo.md](momo.md)) — and the answer is still no, which is why this
-  is struck rather than rewritten with a new gate. Nobody should re-open it on
-  the grounds that the art style now exists.
+- **Momo stays off this screen.** PRD §5 puts him in the Today view, the widget
+  and the reminder, and this screen is not on that list. The question was once
+  gated on OQ-4; OQ-4 is settled and built ([momo.md](momo.md)) and the answer
+  is still no, so **the art style existing is not a reason to re-open it**.
 
   The reason is not taste, it is that there is no mood to draw. `Mascot.mood` is
   a function of *today* — what is outstanding, what broke in the last three days,

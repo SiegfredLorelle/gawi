@@ -248,9 +248,9 @@ desaturation, done arithmetically in `drawMomo` so a test can measure it.
   spoken. Scrolled down, the line is drawn and not announced; today-view §6
   holds that open for a device with TalkBack.
 
-## 6. What this does not decide
+## 6. What this decided, and what it does not
 
-- ~~**Celebrations.**~~ **Finishing the day is celebrated since 2026-08-26**
+- **Celebrations.** Finishing the day is celebrated
   (`Celebration.kt`): when the mood the tank was showing gives way to thriving,
   Momo hops 14 dp, fourteen bubbles rush up from under the tail on staggered
   lanes and the water brightens for a beat, over 1.4 s — the Habitat & motion
@@ -263,9 +263,11 @@ desaturation, done arithmetically in `drawMomo` so a test can measure it.
   `docs/running.md` §4 checks the first two. One part of the board was not
   transcribed: it also popped the sparkles in, but the face crossfade already
   brings them in over the transition, and a knob on `Momo`'s public API for one
-  caller was not worth it. ~~**Streak milestones** (PRD §5: 7 / 30 / 100 days;
-  4 / 12 / 52 weeks) still have no treatment.~~ **Celebrated since 2026-08-29**
-  (`Milestone.kt`), designed on the canvas's "Milestone celebration" page: when
+  caller was not worth it.
+
+  **Streak milestones** (PRD §5: 7 / 30 / 100 days; 4 / 12 / 52 weeks) are
+  celebrated too, by `Milestone.kt`, designed on the canvas's "Milestone
+  celebration" page: when
   a row's streak crosses a rung — `previous < m ≤ next`, the largest such m, so
   a retro fill from 6 to 31 celebrates 30 — Momo hops twice (18 dp), twenty-two
   bubbles rush up across the middle 200 dp, a ring of eight of the thriving
@@ -282,18 +284,17 @@ desaturation, done arithmetically in `drawMomo` so a test can measure it.
   records the one thing it does that the day's does not: the copy line swaps.
   Still rigid motion of existing parts, drawn by an `Animatable` — §1's Lottie
   fallback stays unused.
-- ~~**The widget and reminder treatments** beyond "the still frame on their own
-  ground"~~ — placement and size were decided with the build (§4): in the
-  Today widget, above the rows, size-gated. ~~Still open from visual-identity
-  §7.4: whether a Momo-only widget or a streak widget is worth its provider.~~
-  **Both built 2026-08-29** ([widget.md](widget.md) §6 and §7): the streak
-  widget as one row per habit, the Momo widget as her face on the tank colour
-  with one word, and the large Today body puts her on a pill beside the woven
-  day band. The habitat stays here: none of the three draws the weeds.
-- **Momo's real copy.** Every line but one is still placeholder. ~~And the
-  `recentlyBrokenHabits` function the regenerating line needs to name a
-  habit (today-view §6).~~ **Built 2026-08-31**: `Mascot.recentlyBrokenHabits`
-  returns the ids of the habits inside the three-day window, most recently
+- **The widget and reminder treatments.** Placement and size were decided with
+  the build (§4): in the Today widget, above the rows, size-gated. A Momo-only
+  widget and a streak widget were both worth their provider, which
+  visual-identity §7.4 had left open — see [widget.md](widget.md) §6 and §7 for
+  the streak widget as one row per habit, the Momo widget as her face on the
+  tank colour with one word, and the large Today body that puts her on a pill
+  beside the woven day band. The habitat stays here: none of the three draws
+  the weeds.
+- **Momo's real copy.** Every line but one is still placeholder. What the
+  regenerating line needed to name a habit does exist (today-view §6):
+  `Mascot.recentlyBrokenHabits` returns the ids of the habits inside the three-day window, most recently
   broken first, and the regenerating line names the first of them — §3's
   "names the habit and offers the repair", which until now named an artboard.
   Ids rather than a wider `Mood`, for the reason today-view §6 gave: one type
@@ -301,13 +302,12 @@ desaturation, done arithmetically in `drawMomo` so a test can measure it.
   product decision in it — most recently broken, because the line is about what
   just happened rather than the worst thing that ever did, which is the same
   reason this state never scolds.
-- ~~**Whether Momo appears on Insights** ([insights.md](insights.md) §7).~~
-  **Settled 2026-08-31: he does not.** That section has the reasoning; the short
-  form is that `Mascot.mood` is a function of today and Insights' subject is a
+- **Momo does not appear on Insights** ([insights.md](insights.md) §7). That
+  section has the reasoning; the short form is that `Mascot.mood` is a function of today and Insights' subject is a
   chosen period, so there is no mood to draw without inventing a second rule.
-- ~~**The collapse into an app-bar chip** on scroll (today-view §1), which the
-  250 dp tank makes more pressing, not less.~~ **Built 2026-08-31**: once the
-  tank scrolls off, the app bar carries a small face and the remaining count in
+- **The collapse into an app-bar chip** on scroll (today-view §1) is built,
+  which the 250 dp tank made pressing rather than optional: once the tank
+  scrolls off, the app bar carries a small face and the remaining count in
   the title's place — and, since 2026-09-01, the milestone line in the count's
   place for the length of a run, the same swap the panel's own line makes. The
   tank made it pressing exactly as this line predicted —
