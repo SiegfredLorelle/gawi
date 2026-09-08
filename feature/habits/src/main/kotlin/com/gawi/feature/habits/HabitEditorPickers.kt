@@ -46,7 +46,7 @@ import com.gawi.core.ui.theme.parseHabitColor
  * for 📖), because here the emoji *is* the label — unlike `HabitIcon`, which
  * sits beside a name and is decorative. The same defect class the list and
  * Today fixed, left open here: a positional `ICON_LABELS` mirroring
- * [COLOR_LABELS] is the recorded follow-up (docs/ux/habits.md §4).
+ * [COLOR_LABELS] is the recorded follow-up (docs/ux/habits.md §3).
  */
 @Composable
 internal fun IconPicker(form: HabitEditorUiState.Form, onEdit: (HabitEditorUiState.Form) -> Unit) {
