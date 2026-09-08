@@ -29,7 +29,9 @@ ADB ?= adb
 
 # apksigner ships inside a versioned build-tools directory and never on PATH,
 # so the newest installed one is the default. Override it the same way as ADB.
-APKSIGNER ?= $(shell ls -d $(or $(ANDROID_HOME),$(HOME)/Android/Sdk)/build-tools/*/apksigner 2>/dev/null | tail -1)
+APKSIGNER ?= $(shell ls -d \
+  $(or $(ANDROID_HOME),$(HOME)/Android/Sdk)/build-tools/*/apksigner \
+  2>/dev/null | tail -1)
 
 # AGP names this file app-release-unsigned.apk when no signing config resolved,
 # so the name itself is a signing check and `release` guards its inputs first.
@@ -106,19 +108,24 @@ run: ## Build, install and launch the app on a device or emulator
 # one leaves `release` unsigned rather than failing the build — which is what
 # lets CI assemble with no key, and what makes this guard the only place the
 # omission can be caught. `.env.example` names them; export them into the shell
-# first, e.g. `set -a; . .env; set +a`.
+# first with `set -a; . ./.env; set +a` — the `./` because zsh looks a bare
+# name up on PATH and will not find it in the working directory.
 #
 # apksigner rather than a Gradle assertion, because nothing in AGP fails an
 # unsigned release build: the unsigned APK is the failure this target exists to
-# make impossible to ship. `mapping.txt` is printed because PRD §5 requires it
-# to travel with every release, and it is the only way to read a stack trace
-# from a shrunk build.
+# make impossible to ship. It prints the certificate and not just the verdict,
+# because `Verifies` says that an APK is signed and not *by whom* — and an
+# up-to-date assemble reports success without repackaging, so the DN is all
+# that separates the real key from one left over from a test.
+#
+# `mapping.txt` is printed because PRD §5 requires it to travel with every
+# release, and it is the only way to read a stack trace from a shrunk build.
 release: ## Build a signed, shrunk release APK (needs the GAWI_KEYSTORE_* vars)
 	@test -n "$(GAWI_KEYSTORE_PATH)" \
 	  || { echo "GAWI_KEYSTORE_PATH is unset — see .env.example"; exit 2; }
 	@test -n "$(APKSIGNER)" \
 	  || { echo "apksigner not found — pass APKSIGNER=<path>"; exit 2; }
 	./gradlew :app:assembleRelease
-	$(APKSIGNER) verify --verbose $(RELEASE_APK)
+	$(APKSIGNER) verify --print-certs --verbose $(RELEASE_APK)
 	@echo "APK:     $(RELEASE_APK)"
 	@echo "mapping: $(RELEASE_MAPPING)"

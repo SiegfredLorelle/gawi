@@ -395,12 +395,21 @@ $ set -a; . ./.env; set +a        # .env.example is the template
 $ printf '%s\n' "$GAWI_KEYSTORE_PASSWORD" | keytool -list \
     -keystore "$GAWI_KEYSTORE_PATH" -alias "$GAWI_KEY_ALIAS"
 $ make release
+Verifies
+V2 Signer: certificate DN: CN=Gawi, O=Gawi, C=PH
 APK:     app/build/outputs/apk/release/app-release.apk
 mapping: app/build/outputs/mapping/release/mapping.txt
 ```
 
-**The `./` is load-bearing and this is the shell's doing, not a typo.** `.` takes
-a bare name as something to find on `$PATH`, so `. .env` fails with
+**Read the DN, not just `Verifies`.** An assemble that is already up to date
+prints success in a second or two without repackaging anything, so `Verifies`
+on its own can be perfectly true of an APK signed by a key from some earlier
+experiment. The certificate is what ties the artifact to the keystore: its
+SHA-256 has to be the digest `keytool -list` printed above, which is why the
+target prints certificates rather than only the verdict.
+
+**The `./` is load-bearing, and that is the shell's doing rather than a typo.**
+`.` takes a bare name as something to find on `$PATH`, so `. .env` fails with
 *"no such file or directory"* in zsh even standing in the directory that holds
 it — bash falls back to the working directory and zsh does not. `. ./.env`
 works in both.
