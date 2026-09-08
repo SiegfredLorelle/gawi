@@ -34,9 +34,9 @@ rather than left to be discovered: it uninstalls the app when it finishes and
 emulator, never at a device holding real data. `make run`, `make itest` and
 `make release` are stack-specific additions to the shared five, recorded in
 docs/architecture.md §9; the rest of the table is the same in every repo.
-`make release` is the only target that needs a secret — the four
-`GAWI_KEYSTORE_*` variables in `.env.example`, exported into the shell, never
-read from the file.
+`make release` is the only target that needs a secret — the four `GAWI_*`
+variables `.env.example` names, exported into the shell, never read from the
+file.
 
 Run `make lint` and `make test` before considering any change complete.
 

@@ -757,7 +757,7 @@ Deviations and notes:
 - **`make release` is the third such addition**, and the only target that needs
   a secret. It cannot run in CI for the same reason `itest` cannot — a runner
   holds no signing key — so keeping it out of `lint` and `test` is again what
-  lets `ci.yml` stay stack-blind. The four `GAWI_KEYSTORE_*` variables reach the
+  lets `ci.yml` stay stack-blind. The four `GAWI_*` variables reach the
   build as Gradle providers rather than `System.getenv` reads, so the
   configuration cache records them as inputs; unset, they leave `release`
   unsigned instead of failing configuration, which is what keeps a keyless
