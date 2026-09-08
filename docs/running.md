@@ -387,10 +387,13 @@ passwords not supported"* and ignores the one you gave. So `GAWI_KEY_PASSWORD`
 holds the same value as `GAWI_KEYSTORE_PASSWORD` unless the keystore was made
 with `-storetype JKS`.
 
-The build reads the *environment* and not the file, so export them first:
+The build reads the *environment* and not the file, so export them first, and
+check the password against the keystore before paying for a build:
 
 ```console
 $ set -a; . ./.env; set +a        # .env.example is the template
+$ printf '%s\n' "$GAWI_KEYSTORE_PASSWORD" | keytool -list \
+    -keystore "$GAWI_KEYSTORE_PATH" -alias "$GAWI_KEY_ALIAS"
 $ make release
 APK:     app/build/outputs/apk/release/app-release.apk
 mapping: app/build/outputs/mapping/release/mapping.txt
@@ -401,6 +404,16 @@ a bare name as something to find on `$PATH`, so `. .env` fails with
 *"no such file or directory"* in zsh even standing in the directory that holds
 it — bash falls back to the working directory and zsh does not. `. ./.env`
 works in both.
+
+**What the `keytool -list` line buys.** A wrong password otherwise surfaces
+minutes later inside `packageRelease`, in a message naming the keystore rather
+than the `.env` that is actually wrong. This settles it in two seconds: a
+`PrivateKeyEntry` line and a SHA-256 fingerprint mean the file and the password
+agree, and *"keystore password was incorrect"* means the password is wrong and
+the keystore is fine. Piped rather than handed over as `-storepass`, so the
+value stays out of shell history — only the variable name is recorded. Keep the
+fingerprint it prints beside the password and the alias, since it is how an APK
+is later proved to have come from this key.
 
 `mapping.txt` travels with every release (PRD §5). Without it a stack trace off
 a shrunk build names `a.b.c` and nothing more, and it is per-build — the copy
