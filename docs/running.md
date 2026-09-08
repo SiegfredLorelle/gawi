@@ -334,15 +334,11 @@ may call `adb` while it is down.
 
 `make run` is the whole story, but four things about it are not obvious.
 
-**Only the debug variant is installable.** `release` has no signing config and R8
-is deliberately deferred until the keep rules for Room, Hilt and
-kotlinx-serialization can be tested against a real release build
-(`build-logic/src/main/kotlin/AndroidApplicationConventionPlugin.kt`), so
-`assembleRelease` produces an *unsigned* APK that no device will accept. Anything
-you run on a phone is the debug build: `debuggable`, unminified, and entirely fine
-for use — just not a release rehearsal. This is why `v0.2.0` (2026-09-03) is a
-tag and a changelog entry with nothing attached; signing and R8 are step 1 of
-the road to 1.0.0 in PRD §5.
+**`make run` installs the debug build; `make release` builds the shippable
+one.** Debug is `debuggable` and unminified and is entirely fine for daily use,
+but it is not a release rehearsal: R8 rewrites the release build, and what
+breaks there breaks nowhere else. Anything being verified for a tag runs on the
+release APK.
 
 **With more than one device attached, `make run` is ambiguous.** It is
 `./gradlew :app:installDebug` followed by `$(ADB) shell am start`, and neither
@@ -367,6 +363,48 @@ rather than at first launch (docs/ux/reminder.md §3). On a fresh install on a
 modern phone, that means the end-of-day reminder is silently inert until you go
 there — which reads exactly like a bug if you do not know it. Check the phone's
 API level with `adb shell getprop ro.build.version.sdk`.
+
+### The release build
+
+`make release` is the only target that needs a secret. It reads four
+environment variables, writes a signed and shrunk APK, and ends in
+`apksigner verify` — because **nothing in AGP fails an unsigned release
+build**: it names the output `app-release-unsigned.apk`, exits 0, and that APK
+installs nowhere.
+
+Make the keystore once, never inside the repository, and keep a second copy
+somewhere you would still have it if this machine died. Losing it means nothing
+can ever update an installed Gawi again.
+
+```console
+$ keytool -genkeypair -v -keystore ~/keys/gawi-release.jks \
+    -alias gawi -keyalg RSA -keysize 4096 -validity 10000
+```
+
+`keytool` writes a **PKCS12** keystore by default, and PKCS12 cannot hold a key
+password that differs from the store's — it says *"Different store and key
+passwords not supported"* and ignores the one you gave. So `GAWI_KEY_PASSWORD`
+holds the same value as `GAWI_KEYSTORE_PASSWORD` unless the keystore was made
+with `-storetype JKS`.
+
+The build reads the *environment* and not the file, so export them first:
+
+```console
+$ set -a; . .env; set +a          # .env.example is the template
+$ make release
+APK:     app/build/outputs/apk/release/app-release.apk
+mapping: app/build/outputs/mapping/release/mapping.txt
+```
+
+`mapping.txt` travels with every release (PRD §5). Without it a stack trace off
+a shrunk build names `a.b.c` and nothing more, and it is per-build — the copy
+that can read an APK is the one written beside it.
+
+**Two things the release build takes away**, both of which shape §4's device
+work. It cannot install over a debug build, because the keys differ, so it wants
+an uninstall first and that destroys the event log. And `run-as` refuses on it
+outright — *"package not debuggable"* — so the adb route into `/data/data` is
+gone and the JSON export is the only way to read back what the app holds.
 
 ### If the device is one you actually use — read this
 
