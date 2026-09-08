@@ -757,14 +757,22 @@ Deviations and notes:
 - **`make release` is the third such addition**, and the only target that needs
   a secret. It cannot run in CI for the same reason `itest` cannot — a runner
   holds no signing key — so keeping it out of `lint` and `test` is again what
-  lets `ci.yml` stay stack-blind. It ends in `apksigner verify` rather than
-  trusting the assemble, because **nothing in AGP fails an unsigned release
-  build**: it names the output `app-release-unsigned.apk` and exits 0, and that
-  APK installs nowhere. The four `GAWI_KEYSTORE_*` variables reach the build as
-  Gradle providers rather than `System.getenv` reads, so the configuration cache
-  records them as inputs; unset, they leave `release` unsigned instead of
-  failing configuration, which is what keeps a keyless `assembleDebug` working.
-  R8 is on with the signing, and its keep rules are in `app/proguard-rules.pro`.
+  lets `ci.yml` stay stack-blind. The four `GAWI_KEYSTORE_*` variables reach the
+  build as Gradle providers rather than `System.getenv` reads, so the
+  configuration cache records them as inputs; unset, they leave `release`
+  unsigned instead of failing configuration, which is what keeps a keyless
+  `assembleDebug` working. R8 is on with the signing, and its keep rules are in
+  `app/proguard-rules.pro`.
+
+  **The target guards its inputs and then checks the artifact, and the two catch
+  different things.** With no signing config at all AGP names the output
+  `app-release-unsigned.apk` and exits 0, so the guards are what keep that out of
+  a release; with a config that is present but incomplete it fails inside
+  `packageRelease` instead, after R8 has run, which is why all four variables are
+  checked up front rather than the path alone. The closing `apksigner verify
+  --print-certs` then answers a question neither guard can: **which key signed
+  it.** `Verifies` alone is true of any signed APK, including one an up-to-date
+  assemble left on disk from an earlier experiment.
 - **`make lint` gained a repo-local step**, `scripts/check-citations.sh`. It is a
   step inside an existing target rather than a new one, so `ci.yml` needs no
   change and stays stack-blind — it calls `make lint` and does not have to know
@@ -813,7 +821,7 @@ Deviations and notes:
   signing key, so the only release build CI could produce is an unsigned one, and
   it would pay R8's shrink on every gate to prove nothing this step does not
   already prove. `make release` is where a shippable APK is packaged
-  (running.md §3).
+  (running.md §6).
 - **The citation check is a script, not a Gradle task.** A task would be the more
   idiomatic home — `build-logic/` owns build configuration, and no convention
   plugin registers a custom task today, so this is deliberately not the start of
