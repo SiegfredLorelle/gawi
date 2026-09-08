@@ -75,10 +75,11 @@ import kotlin.math.roundToInt
  * [widgetContent] retries before it gives up; without the retry one transient
  * failure would strand the widget on the error copy for the whole session.
  *
- * `internal` is a Kotlin visibility statement only — this class is instantiated
- * reflectively, so it compiles to a public JVM class with a no-arg constructor
- * and must keep one. It will also need a keep rule if minification is ever
- * turned on (it is off today, see `AndroidApplicationConventionPlugin`).
+ * `internal` is a Kotlin visibility statement only — this class compiles to a
+ * public JVM class with a no-arg constructor, and both the receiver and
+ * [ToggleHabitAction] construct it directly, so R8 sees that constructor and
+ * needs no rule to keep it. The class Glance reaches by name instead is
+ * [ToggleHabitAction], and the keep rule belongs to it.
  */
 internal class TodayWidget : GlanceAppWidget() {
 
