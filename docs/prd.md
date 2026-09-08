@@ -210,10 +210,10 @@ reason (2026-08-23).
 Written the day v0.2.0 was cut. That tag marks the source state after the
 accessibility re-hearing, 201 commits past `v0.1.0-alpha.1`: the visual
 identity finished, Momo in the tank and on the home screen, three widgets,
-the theme setting, About and licences, Insights with its retrospectives. That tag ships nothing installable, which is
-the fact that puts signing first in the list below. The order below was decided with the
-maintainer, one question at a time; [CHANGELOG.md](../CHANGELOG.md) records
-what each tag contained.
+the theme setting, About and licences, Insights with its retrospectives. That
+tag ships nothing installable, which is what puts signing first in the list
+below. The order was decided with the maintainer, one question at a time;
+[CHANGELOG.md](../CHANGELOG.md) records what each tag contained.
 
 #### Phase 1 close-out → 1.0.0, the first installable release
 
@@ -259,7 +259,7 @@ kotlinx-serialization and both WorkManager workers need nothing of their own,
 their artifacts' bundled rules being enough. The release build also refuses
 `run-as`, so the export is the only way to read the log on the build that
 ships, which is what the device work in
-[running.md](running.md) §4 now runs against (its §3 has the procedure).
+[running.md](running.md) §4 now runs against; its §6 has the procedure.
 
 **Step 2 — the canvas-fidelity pass.** One design session before any UI code,
 and the standing practice from here on: every current screen goes on the

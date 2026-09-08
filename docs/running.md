@@ -364,76 +364,6 @@ modern phone, that means the end-of-day reminder is silently inert until you go
 there — which reads exactly like a bug if you do not know it. Check the phone's
 API level with `adb shell getprop ro.build.version.sdk`.
 
-### The release build
-
-`make release` is the only target that needs a secret. It reads four
-environment variables, writes a signed and shrunk APK, and ends in
-`apksigner verify` — because **nothing in AGP fails an unsigned release
-build**: it names the output `app-release-unsigned.apk`, exits 0, and that APK
-installs nowhere.
-
-Make the keystore once, never inside the repository, and keep a second copy
-somewhere you would still have it if this machine died. Losing it means nothing
-can ever update an installed Gawi again.
-
-```console
-$ keytool -genkeypair -v -keystore ~/keys/gawi-release.jks \
-    -alias gawi -keyalg RSA -keysize 4096 -validity 10000
-```
-
-`keytool` writes a **PKCS12** keystore by default, and PKCS12 cannot hold a key
-password that differs from the store's — it says *"Different store and key
-passwords not supported"* and ignores the one you gave. So `GAWI_KEY_PASSWORD`
-holds the same value as `GAWI_KEYSTORE_PASSWORD` unless the keystore was made
-with `-storetype JKS`.
-
-The build reads the *environment* and not the file, so export them first, and
-check the password against the keystore before paying for a build:
-
-```console
-$ set -a; . ./.env; set +a        # .env.example is the template
-$ printf '%s\n' "$GAWI_KEYSTORE_PASSWORD" | keytool -list \
-    -keystore "$GAWI_KEYSTORE_PATH" -alias "$GAWI_KEY_ALIAS"
-$ make release
-Verifies
-V2 Signer: certificate DN: CN=Gawi, O=Gawi, C=PH
-APK:     app/build/outputs/apk/release/app-release.apk
-mapping: app/build/outputs/mapping/release/mapping.txt
-```
-
-**Read the DN, not just `Verifies`.** An assemble that is already up to date
-prints success in a second or two without repackaging anything, so `Verifies`
-on its own can be perfectly true of an APK signed by a key from some earlier
-experiment. The certificate is what ties the artifact to the keystore: its
-SHA-256 has to be the digest `keytool -list` printed above, which is why the
-target prints certificates rather than only the verdict.
-
-**The `./` is load-bearing, and that is the shell's doing rather than a typo.**
-`.` takes a bare name as something to find on `$PATH`, so `. .env` fails with
-*"no such file or directory"* in zsh even standing in the directory that holds
-it — bash falls back to the working directory and zsh does not. `. ./.env`
-works in both.
-
-**What the `keytool -list` line buys.** A wrong password otherwise surfaces
-minutes later inside `packageRelease`, in a message naming the keystore rather
-than the `.env` that is actually wrong. This settles it in two seconds: a
-`PrivateKeyEntry` line and a SHA-256 fingerprint mean the file and the password
-agree, and *"keystore password was incorrect"* means the password is wrong and
-the keystore is fine. Piped rather than handed over as `-storepass`, so the
-value stays out of shell history — only the variable name is recorded. Keep the
-fingerprint it prints beside the password and the alias, since it is how an APK
-is later proved to have come from this key.
-
-`mapping.txt` travels with every release (PRD §5). Without it a stack trace off
-a shrunk build names `a.b.c` and nothing more, and it is per-build — the copy
-that can read an APK is the one written beside it.
-
-**Two things the release build takes away**, both of which shape §4's device
-work. It cannot install over a debug build, because the keys differ, so it wants
-an uninstall first and that destroys the event log. And `run-as` refuses on it
-outright — *"package not debuggable"* — so the adb route into `/data/data` is
-gone and the JSON export is the only way to read back what the app holds.
-
 ### If the device is one you actually use — read this
 
 This depends on the device holding the only copy, which is true of any real use
@@ -2116,3 +2046,81 @@ The same mechanism as the reminder (docs/ux/reminder.md §2).
 | `make run` fails with `adb: more than one device/emulator` | Two or more targets attached. Set `ANDROID_SERIAL` (§2). |
 | `avdmanager create` prints `Could not load devices from …/devices.xml` | Harmless. The device profile is still applied and the AVD boots (§2). |
 | Works in Android Studio, fails in the terminal | Two different JDKs. Compare `./gradlew -version` with Studio's Gradle JDK setting. |
+
+---
+
+## 6. The release build
+
+`make release` is the only target that needs a secret. It reads four
+environment variables, writes a signed and shrunk APK, and ends in
+`apksigner verify` — because **nothing in AGP fails an unsigned release
+build**: it names the output `app-release-unsigned.apk`, exits 0, and that APK
+installs nowhere.
+
+Make the keystore once, never inside the repository, and keep a second copy
+somewhere you would still have it if this machine died. Losing it means nothing
+can ever update an installed Gawi again.
+
+```console
+$ keytool -genkeypair -v -keystore ~/keys/gawi-release.jks \
+    -alias gawi -keyalg RSA -keysize 4096 -validity 10000
+```
+
+`keytool` writes a **PKCS12** keystore by default, and PKCS12 cannot hold a key
+password that differs from the store's — it says *"Different store and key
+passwords not supported"* and ignores the one you gave. So `GAWI_KEY_PASSWORD`
+holds the same value as `GAWI_KEYSTORE_PASSWORD` unless the keystore was made
+with `-storetype JKS`.
+
+The build reads the *environment* and not the file, so export them first, and
+check the password against the keystore before paying for a build:
+
+```console
+$ set -a; . ./.env; set +a        # .env.example is the template
+$ printf '%s\n' "$GAWI_KEYSTORE_PASSWORD" | keytool -list \
+    -keystore "$GAWI_KEYSTORE_PATH" -alias "$GAWI_KEY_ALIAS"
+$ make release
+Verifies
+V2 Signer: certificate DN: CN=Gawi, O=Gawi, C=PH
+V2 Signer: certificate SHA-256 digest: 786135f69a3b…a0a62c6a
+APK:     app/build/outputs/apk/release/app-release.apk
+mapping: app/build/outputs/mapping/release/mapping.txt
+```
+
+**Read the DN, not just `Verifies`.** An assemble that is already up to date
+prints success in a second or two without repackaging anything, so `Verifies`
+on its own can be perfectly true of an APK signed by a key from some earlier
+experiment. The certificate is what ties the artifact to the keystore: its
+SHA-256 has to be the digest `keytool -list` printed above, which is why the
+target prints certificates rather than only the verdict.
+
+**The two tools print that digest differently**, which reads as a mismatch when
+it is not one: `keytool` groups it in colon-separated uppercase pairs,
+`apksigner` runs it together in lowercase. Strip and fold before comparing —
+`tr -d : | tr 'A-F' 'a-f'` — or compare the first and last groups by eye.
+
+**The `./` is load-bearing, and that is the shell's doing rather than a typo.**
+`.` takes a bare name as something to find on `$PATH`, so `. .env` fails with
+*"no such file or directory"* in zsh even standing in the directory that holds
+it — bash falls back to the working directory and zsh does not. `. ./.env`
+works in both.
+
+**What the `keytool -list` line buys.** A wrong password otherwise surfaces
+minutes later inside `packageRelease`, in a message naming the keystore rather
+than the `.env` that is actually wrong. This settles it in two seconds: a
+`PrivateKeyEntry` line and a SHA-256 fingerprint mean the file and the password
+agree, and *"keystore password was incorrect"* means the password is wrong and
+the keystore is fine. Piped rather than handed over as `-storepass`, so the
+value stays out of shell history — only the variable name is recorded. Keep the
+fingerprint it prints beside the password and the alias, since it is how an APK
+is later proved to have come from this key.
+
+`mapping.txt` travels with every release (PRD §5). Without it a stack trace off
+a shrunk build names `a.b.c` and nothing more, and it is per-build — the copy
+that can read an APK is the one written beside it.
+
+**Two things the release build takes away**, both of which shape §4's device
+work. It cannot install over a debug build, because the keys differ, so it wants
+an uninstall first and that destroys the event log. And `run-as` refuses on it
+outright — *"package not debuggable"* — so the adb route into `/data/data` is
+gone and the JSON export is the only way to read back what the app holds.
