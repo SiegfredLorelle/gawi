@@ -30,8 +30,11 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
                 // Absent unless the path is set, which is the state CI builds
                 // in — it holds no key, and `make lint` still has to reach
                 // :app:assembleDebug. Absent leaves `release` unsigned instead
-                // of failing configuration, so the four variables are required
-                // by `make release` alone, which checks them itself.
+                // of failing configuration, which is deliberate but means
+                // nothing here can catch a half-set environment: a config that
+                // is present and incomplete fails inside `packageRelease`,
+                // after R8 has run. `make release` checks all four, and that
+                // the path names a file, before it starts anything.
                 val releaseSigning = storePath.orNull?.let { path ->
                     signingConfigs.create(RELEASE) {
                         storeFile = file(path)
