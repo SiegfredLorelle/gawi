@@ -210,9 +210,8 @@ reason (2026-08-23).
 Written the day v0.2.0 was cut. That tag marks the source state after the
 accessibility re-hearing, 201 commits past `v0.1.0-alpha.1`: the visual
 identity finished, Momo in the tank and on the home screen, three widgets,
-the theme setting, About and licences, Insights with its retrospectives. It
-ships nothing installable — the release variant has never been signed — which
-is the fact that shapes what comes next. The order below was decided with the
+the theme setting, About and licences, Insights with its retrospectives. That tag ships nothing installable, which is
+the fact that puts signing first in the list below. The order below was decided with the
 maintainer, one question at a time; [CHANGELOG.md](../CHANGELOG.md) records
 what each tag contained.
 
@@ -252,6 +251,15 @@ kotlinx-serialization and Glance tested on the phone — first, so every later
 step is verified on the build that ships. `mapping.txt` travels with every
 release. `make release` joins `run` and `itest` as a stack-specific target
 (architecture §9).
+
+One keep rule is all R8 needs here, and it took a device to find: R8 drops the
+no-arg constructor of a class Glance reaches by name, which takes the Today
+widget's checkbox out silently — no crash, no message, only logcat. Room, Hilt,
+kotlinx-serialization and both WorkManager workers need nothing of their own,
+their artifacts' bundled rules being enough. The release build also refuses
+`run-as`, so the export is the only way to read the log on the build that
+ships, which is what the device work in
+[running.md](running.md) §4 now runs against (its §3 has the procedure).
 
 **Step 2 — the canvas-fidelity pass.** One design session before any UI code,
 and the standing practice from here on: every current screen goes on the

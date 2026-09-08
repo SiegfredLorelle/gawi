@@ -738,6 +738,7 @@ The template's Makefile contract maps to Gradle as:
 | `make test` | `./gradlew test` (module-generic: JVM modules' `test` plus Android modules' unit tests; a new module can never be silently skipped) |
 | `make itest` | `./gradlew :app:connectedDebugAndroidTest` — needs a device; not called by CI (see below) |
 | `make run` | `./gradlew :app:installDebug` + `adb shell am start` (see below) |
+| `make release` | `./gradlew :app:assembleRelease` + `apksigner verify` — needs the signing key; not called by CI (see below) |
 
 Deviations and notes:
 
@@ -753,6 +754,17 @@ Deviations and notes:
   stay stack-blind — it calls `make test` and does not have to know that this
   repo grew instrumented tests. It is also why §8's "CI runs unit tests only"
   needs no exception clause.
+- **`make release` is the third such addition**, and the only target that needs
+  a secret. It cannot run in CI for the same reason `itest` cannot — a runner
+  holds no signing key — so keeping it out of `lint` and `test` is again what
+  lets `ci.yml` stay stack-blind. It ends in `apksigner verify` rather than
+  trusting the assemble, because **nothing in AGP fails an unsigned release
+  build**: it names the output `app-release-unsigned.apk` and exits 0, and that
+  APK installs nowhere. The four `GAWI_KEYSTORE_*` variables reach the build as
+  Gradle providers rather than `System.getenv` reads, so the configuration cache
+  records them as inputs; unset, they leave `release` unsigned instead of
+  failing configuration, which is what keeps a keyless `assembleDebug` working.
+  R8 is on with the signing, and its keep rules are in `app/proguard-rules.pro`.
 - **`make lint` gained a repo-local step**, `scripts/check-citations.sh`. It is a
   step inside an existing target rather than a new one, so `ci.yml` needs no
   change and stays stack-blind — it calls `make lint` and does not have to know
@@ -797,9 +809,11 @@ Deviations and notes:
   produced one. It goes in `lint` and not `test` for two reasons: `test` is
   documented above as plain `./gradlew test`, module-generic, and an `:app:`
   task there would falsify that; and `lint` is CI's first Gradle gate, so a
-  packaging break fails early. Debug rather than release because release is
-  unsigned and R8 is deferred (running.md §3) — assembling it would add an
-  unsigned artifact and no information.
+  packaging break fails early. Debug rather than release because a runner holds no
+  signing key, so the only release build CI could produce is an unsigned one, and
+  it would pay R8's shrink on every gate to prove nothing this step does not
+  already prove. `make release` is where a shippable APK is packaged
+  (running.md §3).
 - **The citation check is a script, not a Gradle task.** A task would be the more
   idiomatic home — `build-logic/` owns build configuration, and no convention
   plugin registers a custom task today, so this is deliberately not the start of
@@ -833,9 +847,14 @@ Deviations and notes:
   forever. Without caching, every CI run pays a 5–10 minute cold Gradle build.
 - The wiring gets documented in `docs/stacks/kotlin-android.md` in the
   template's own style.
-- Secrets: nothing at MVP (no network). When release signing arrives — step 1
-  of the road to 1.0.0, PRD §5 — the keystore and its passwords stay out of
-  git; signing config paths go in `.env.example` with placeholders.
+- Secrets: nothing the *app* reads — it declares no network, so there is no
+  endpoint or key to hold. The *build* reads four, all for release signing.
+  `.env.example` names them with placeholders,
+  `AndroidApplicationConventionPlugin` reads them, and the keystore itself never
+  enters git: `*.jks` and `*.keystore` are gitignored, which is what has to stand
+  in for gitleaks, since gitleaks does not read binaries. A PKCS12 keystore —
+  `keytool`'s default — cannot hold a key password that differs from the store's,
+  so two of the four carry the same value unless the keystore is a JKS one.
 
 ## 10. Where a new file goes
 
