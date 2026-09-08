@@ -28,13 +28,18 @@
 ADB ?= adb
 
 # apksigner ships inside a versioned build-tools directory and never on PATH,
-# so the highest-versioned one installed is the default. `sort -V` and not a
-# plain sort, which orders 9.0.0 above 37.0.0 by comparing the first digit. It
-# still prefers a preview to the stable release of the same version, since -rc3
-# sorts after nothing at all — override APKSIGNER, as with ADB, when that
-# matters.
+# so the highest-versioned one under any of these roots is the default. Globbed
+# across all three rather than picking the first: an unset ANDROID_HOME leaves
+# an empty path that matches nothing, and the macOS default is the one the ADB
+# note above already documents.
+#
+# `sort -V` and not a plain sort, which orders 9.0.0 above 37.0.0 by comparing
+# the first digit. It still prefers a preview to the stable release of the same
+# version, since -rc3 sorts after nothing at all — override APKSIGNER, as with
+# ADB, when that matters.
+SDK_ROOTS := $(ANDROID_HOME) $(HOME)/Android/Sdk $(HOME)/Library/Android/sdk
 APKSIGNER ?= $(shell ls -d \
-  $(or $(ANDROID_HOME),$(HOME)/Android/Sdk)/build-tools/*/apksigner \
+  $(addsuffix /build-tools/*/apksigner,$(SDK_ROOTS)) \
   2>/dev/null | sort -V | tail -1)
 
 # AGP names this file app-release-unsigned.apk when no signing config resolved,
@@ -108,15 +113,21 @@ run: ## Build, install and launch the app on a device or emulator
 	$(ADB) shell am start -n com.gawi.app/.MainActivity
 
 # The only target that needs a secret. AndroidApplicationConventionPlugin reads
-# the four GAWI_KEYSTORE_* variables through Gradle's provider API, and an unset
+# the four GAWI_* variables through Gradle's provider API, and an unset
 # one leaves `release` unsigned rather than failing the build — which is what
-# lets CI assemble with no key, and what makes these guards the only place the
-# omission can be caught. All four are checked and not just the path, because a
-# missing alias or password reaches R8 and fails minutes later inside
-# packageRelease; and the path is checked as a *file*, because `.env.example`'s
-# placeholders are quoted strings that export perfectly well and are not paths.
-# Export them into the shell first with `set -a; . ./.env; set +a` — the `./`
-# because zsh looks a bare name up on PATH and not in the working directory.
+# lets CI assemble with no key, and what makes these guards the only place an
+# omission can be caught. They catch a variable that is unset and one that still
+# holds an `.env.example` placeholder, which is the realistic way this goes
+# wrong: the template is copied and only some lines are edited. Every
+# placeholder is a quoted non-empty string, so testing for emptiness alone
+# passes all four and the build reaches R8 before failing inside
+# packageRelease.
+#
+# What they do not catch is a password that is merely *wrong*. §6's
+# `keytool -list` pre-flight is for that, and it is two seconds against R8's
+# minutes. Export the four into the shell first with `set -a; . ./.env; set +a`
+# — the `./` because zsh looks a bare name up on PATH, not in the working
+# directory.
 #
 # apksigner rather than a Gradle assertion, because with no signing config at
 # all AGP names the output app-release-unsigned.apk and exits 0 — the guards
@@ -128,15 +139,23 @@ run: ## Build, install and launch the app on a device or emulator
 #
 # `mapping.txt` is printed because PRD §5 requires it to travel with every
 # release, and it is the only way to read a stack trace from a shrunk build.
-release: ## Build a signed, shrunk release APK (needs the GAWI_KEYSTORE_* vars)
-	@test -n "$(GAWI_KEYSTORE_PATH)" \
-	  || { echo "GAWI_KEYSTORE_PATH is unset — see .env.example"; exit 2; }
-	@test -n "$(GAWI_KEYSTORE_PASSWORD)" \
-	  || { echo "GAWI_KEYSTORE_PASSWORD is unset — see .env.example"; exit 2; }
-	@test -n "$(GAWI_KEY_ALIAS)" \
-	  || { echo "GAWI_KEY_ALIAS is unset — see .env.example"; exit 2; }
-	@test -n "$(GAWI_KEY_PASSWORD)" \
-	  || { echo "GAWI_KEY_PASSWORD is unset — see .env.example"; exit 2; }
+release: ## Build a signed, shrunk release APK (needs the GAWI_* vars)
+	@case "$(GAWI_KEYSTORE_PATH)" in \
+	  "") echo "GAWI_KEYSTORE_PATH is unset — see .env.example"; exit 2;; \
+	  "<"*">") echo "GAWI_KEYSTORE_PATH still holds a placeholder"; exit 2;; \
+	esac
+	@case "$(GAWI_KEYSTORE_PASSWORD)" in \
+	  "") echo "GAWI_KEYSTORE_PASSWORD is unset — see .env.example"; exit 2;; \
+	  "<"*">") echo "GAWI_KEYSTORE_PASSWORD still holds a placeholder"; exit 2;; \
+	esac
+	@case "$(GAWI_KEY_ALIAS)" in \
+	  "") echo "GAWI_KEY_ALIAS is unset — see .env.example"; exit 2;; \
+	  "<"*">") echo "GAWI_KEY_ALIAS still holds a placeholder"; exit 2;; \
+	esac
+	@case "$(GAWI_KEY_PASSWORD)" in \
+	  "") echo "GAWI_KEY_PASSWORD is unset — see .env.example"; exit 2;; \
+	  "<"*">") echo "GAWI_KEY_PASSWORD still holds a placeholder"; exit 2;; \
+	esac
 	@test -f "$(GAWI_KEYSTORE_PATH)" \
 	  || { echo "GAWI_KEYSTORE_PATH names no file: $(GAWI_KEYSTORE_PATH)"; exit 2; }
 	@test -n "$(APKSIGNER)" \
