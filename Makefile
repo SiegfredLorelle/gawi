@@ -28,10 +28,14 @@
 ADB ?= adb
 
 # apksigner ships inside a versioned build-tools directory and never on PATH,
-# so the newest installed one is the default. Override it the same way as ADB.
+# so the highest-versioned one installed is the default. `sort -V` and not a
+# plain sort, which orders 9.0.0 above 37.0.0 by comparing the first digit. It
+# still prefers a preview to the stable release of the same version, since -rc3
+# sorts after nothing at all — override APKSIGNER, as with ADB, when that
+# matters.
 APKSIGNER ?= $(shell ls -d \
   $(or $(ANDROID_HOME),$(HOME)/Android/Sdk)/build-tools/*/apksigner \
-  2>/dev/null | tail -1)
+  2>/dev/null | sort -V | tail -1)
 
 # AGP names this file app-release-unsigned.apk when no signing config resolved,
 # so the name itself is a signing check and `release` guards its inputs first.
@@ -69,7 +73,7 @@ fmt: ## Format the codebase
 # next `make run`. Debug and not release: `release` is the gate that packages a
 # shippable APK and it needs a key no runner holds, so the release assemble CI
 # could run would be unsigned, would pay R8's two minutes on every gate, and
-# would prove nothing this step does not (docs/running.md §3).
+# would prove nothing this step does not (docs/running.md §6).
 #
 # It is listed last for the reader, not the scheduler. Gradle takes command-line
 # order as a hint, and with org.gradle.parallel on, :app's compile and dex start
@@ -106,14 +110,18 @@ run: ## Build, install and launch the app on a device or emulator
 # The only target that needs a secret. AndroidApplicationConventionPlugin reads
 # the four GAWI_KEYSTORE_* variables through Gradle's provider API, and an unset
 # one leaves `release` unsigned rather than failing the build — which is what
-# lets CI assemble with no key, and what makes this guard the only place the
-# omission can be caught. `.env.example` names them; export them into the shell
-# first with `set -a; . ./.env; set +a` — the `./` because zsh looks a bare
-# name up on PATH and will not find it in the working directory.
+# lets CI assemble with no key, and what makes these guards the only place the
+# omission can be caught. All four are checked and not just the path, because a
+# missing alias or password reaches R8 and fails minutes later inside
+# packageRelease; and the path is checked as a *file*, because `.env.example`'s
+# placeholders are quoted strings that export perfectly well and are not paths.
+# Export them into the shell first with `set -a; . ./.env; set +a` — the `./`
+# because zsh looks a bare name up on PATH and not in the working directory.
 #
-# apksigner rather than a Gradle assertion, because nothing in AGP fails an
-# unsigned release build: the unsigned APK is the failure this target exists to
-# make impossible to ship. It prints the certificate and not just the verdict,
+# apksigner rather than a Gradle assertion, because with no signing config at
+# all AGP names the output app-release-unsigned.apk and exits 0 — the guards
+# above are what stop that reaching a release, and this is the check that says
+# so out loud. It prints the certificate and not just the verdict,
 # because `Verifies` says that an APK is signed and not *by whom* — and an
 # up-to-date assemble reports success without repackaging, so the DN is all
 # that separates the real key from one left over from a test.
@@ -123,6 +131,14 @@ run: ## Build, install and launch the app on a device or emulator
 release: ## Build a signed, shrunk release APK (needs the GAWI_KEYSTORE_* vars)
 	@test -n "$(GAWI_KEYSTORE_PATH)" \
 	  || { echo "GAWI_KEYSTORE_PATH is unset — see .env.example"; exit 2; }
+	@test -n "$(GAWI_KEYSTORE_PASSWORD)" \
+	  || { echo "GAWI_KEYSTORE_PASSWORD is unset — see .env.example"; exit 2; }
+	@test -n "$(GAWI_KEY_ALIAS)" \
+	  || { echo "GAWI_KEY_ALIAS is unset — see .env.example"; exit 2; }
+	@test -n "$(GAWI_KEY_PASSWORD)" \
+	  || { echo "GAWI_KEY_PASSWORD is unset — see .env.example"; exit 2; }
+	@test -f "$(GAWI_KEYSTORE_PATH)" \
+	  || { echo "GAWI_KEYSTORE_PATH names no file: $(GAWI_KEYSTORE_PATH)"; exit 2; }
 	@test -n "$(APKSIGNER)" \
 	  || { echo "apksigner not found — pass APKSIGNER=<path>"; exit 2; }
 	./gradlew :app:assembleRelease
