@@ -37,7 +37,12 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
                 // the path names a file, before it starts anything.
                 val releaseSigning = storePath.orNull?.let { path ->
                     signingConfigs.create(RELEASE) {
-                        storeFile = file(path)
+                        // rootProject and not the module: `file()` here would
+                        // resolve against :app, while `make release` tests the
+                        // same path from the repository root, so a relative one
+                        // would name two different files and pass the guard
+                        // before failing the build.
+                        storeFile = rootProject.file(path)
                         storePassword = storeSecret.orNull
                         keyAlias = alias.orNull
                         keyPassword = keySecret.orNull
@@ -74,5 +79,12 @@ private const val ENV_KEYSTORE_PASSWORD = "GAWI_KEYSTORE_PASSWORD"
 private const val ENV_KEY_ALIAS = "GAWI_KEY_ALIAS"
 private const val ENV_KEY_PASSWORD = "GAWI_KEY_PASSWORD"
 
-/** The build type and the signing config share a name; AGP creates neither. */
+/**
+ * The build type and the signing config share this name and are reached
+ * differently, which is why one call above creates and the other looks up: AGP
+ * pre-creates the `release` build type, and pre-creates a signing config only
+ * for `debug`. `:app:signingReport` shows it — `Variant: release` reports
+ * `Config: none` until the variables below are set. Normalising the lookup into
+ * a `create` breaks configuration.
+ */
 private const val RELEASE = "release"
