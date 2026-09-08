@@ -8,11 +8,12 @@
 # Wired for Kotlin/Android per docs/stacks/kotlin-android.md.
 # Do not rename the targets.
 #
-# `run` and `itest` are deliberate stack-specific additions on top of the shared
-# contract, recorded in docs/architecture.md §9 the way ci.yml's JDK step already
-# is. Nothing in CI calls either, so the sameness the paragraph above is
-# protecting is untouched: an app you cannot launch, and a test that needs a real
-# launcher, are the two things this file could not otherwise do.
+# `run`, `itest` and `release` are deliberate stack-specific additions on top of
+# the shared contract, recorded in docs/architecture.md §9 the way ci.yml's JDK
+# step already is. Nothing in CI calls any of the three, so the sameness the
+# paragraph above is protecting is untouched: an app you cannot launch, a test
+# that needs a real launcher, and a build that needs a key no runner holds are
+# the three things this file could not otherwise do.
 #
 # `test` and `itest` are separate because they are separate gates, not two ways
 # of saying the same thing: `./gradlew test` is the unit-test umbrella and never
@@ -20,11 +21,20 @@
 # only" true without ci.yml having to know that instrumented tests exist.
 
 .DEFAULT_GOAL := help
-.PHONY: help setup hooks fmt lint test itest run
+.PHONY: help setup hooks fmt lint test itest run release
 
 # Resolved from PATH. Override it if the SDK is somewhere unusual, e.g.
 #   make run ADB=~/Library/Android/sdk/platform-tools/adb
 ADB ?= adb
+
+# apksigner ships inside a versioned build-tools directory and never on PATH,
+# so the newest installed one is the default. Override it the same way as ADB.
+APKSIGNER ?= $(shell ls -d $(or $(ANDROID_HOME),$(HOME)/Android/Sdk)/build-tools/*/apksigner 2>/dev/null | tail -1)
+
+# AGP names this file app-release-unsigned.apk when no signing config resolved,
+# so the name itself is a signing check and `release` guards its inputs first.
+RELEASE_APK := app/build/outputs/apk/release/app-release.apk
+RELEASE_MAPPING := app/build/outputs/mapping/release/mapping.txt
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) \
@@ -54,8 +64,10 @@ fmt: ## Format the codebase
 # but `make`. Without it nothing in fmt/lint/test merges a manifest, merges
 # resources or dexes anything, so a green run would say nothing about whether
 # the app still builds into an APK and a packaging regression would wait for the
-# next `make run`. Debug and not release: release is unsigned and R8 is deferred
-# (docs/running.md §3), so assembling it would prove nothing more.
+# next `make run`. Debug and not release: `release` is the gate that packages a
+# shippable APK and it needs a key no runner holds, so the release assemble CI
+# could run would be unsigned, would pay R8's two minutes on every gate, and
+# would prove nothing this step does not (docs/running.md §3).
 #
 # It is listed last for the reader, not the scheduler. Gradle takes command-line
 # order as a hint, and with org.gradle.parallel on, :app's compile and dex start
@@ -88,3 +100,25 @@ itest: ## Run instrumented tests on a device (DESTROYS app data; not run by CI)
 run: ## Build, install and launch the app on a device or emulator
 	./gradlew :app:installDebug
 	$(ADB) shell am start -n com.gawi.app/.MainActivity
+
+# The only target that needs a secret. AndroidApplicationConventionPlugin reads
+# the four GAWI_KEYSTORE_* variables through Gradle's provider API, and an unset
+# one leaves `release` unsigned rather than failing the build — which is what
+# lets CI assemble with no key, and what makes this guard the only place the
+# omission can be caught. `.env.example` names them; export them into the shell
+# first, e.g. `set -a; . .env; set +a`.
+#
+# apksigner rather than a Gradle assertion, because nothing in AGP fails an
+# unsigned release build: the unsigned APK is the failure this target exists to
+# make impossible to ship. `mapping.txt` is printed because PRD §5 requires it
+# to travel with every release, and it is the only way to read a stack trace
+# from a shrunk build.
+release: ## Build a signed, shrunk release APK (needs the GAWI_KEYSTORE_* vars)
+	@test -n "$(GAWI_KEYSTORE_PATH)" \
+	  || { echo "GAWI_KEYSTORE_PATH is unset — see .env.example"; exit 2; }
+	@test -n "$(APKSIGNER)" \
+	  || { echo "apksigner not found — pass APKSIGNER=<path>"; exit 2; }
+	./gradlew :app:assembleRelease
+	$(APKSIGNER) verify --verbose $(RELEASE_APK)
+	@echo "APK:     $(RELEASE_APK)"
+	@echo "mapping: $(RELEASE_MAPPING)"
