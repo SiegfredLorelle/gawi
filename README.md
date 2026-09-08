@@ -9,9 +9,9 @@ your data never leaves the device. For what and why, read
 ## Status
 
 Pre-1.0. Version `0.2.0` (`versionCode 2`), tagged `v0.2.0` —
-a tag and release notes, **not an installable build**: the release variant has
-never been signed, so every phone still runs the debug build from source. Signing
-is the 1.0.0 deliverable. Not on any store. Build it from source with the
+a tag and release notes with **no artifact attached**. `make release` builds a
+signed, shrunk APK, so an installable build is one command away; the first one
+actually published is 1.0.0. Not on any store. Build it from source with the
 commands below; [CHANGELOG.md](CHANGELOG.md) records what each tag contained.
 
 Phase 0, the MVP, is feature-complete: habits, logging, streaks, the
@@ -77,6 +77,7 @@ linter; this happens once per machine.
 | `make test` | Run the test suite |
 | `make run` | Build, install and launch on a device or emulator |
 | `make itest` | Instrumented tests on a device — **destroys that device's app data** |
+| `make release` | Build a signed, shrunk release APK — needs the signing key |
 
 `make itest` is the one command here that can lose something. It uninstalls the
 app when it finishes, and `allowBackup` is off by design, so the event log goes

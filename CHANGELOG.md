@@ -10,8 +10,10 @@ says what the next tag will be is [docs/prd.md](docs/prd.md) §5.
 
 ## [Unreleased]
 
-Nothing yet. Next is the cleanup pass, then release signing, on the road to
-1.0.0 — the first tag with an installable build attached.
+The cleanup pass and release signing, on the road to 1.0.0. `make release`
+builds a signed, shrunk APK with its `mapping.txt` beside it; R8 needed exactly
+one keep rule, for the class Glance reaches by name. No artifact is published
+yet — the first one is 1.0.0, and `versionCode` stays 2 until then.
 
 ## [0.2.0] — 2026-09-04
 

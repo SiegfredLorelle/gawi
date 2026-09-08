@@ -102,7 +102,17 @@ captures/
 *.aab
 *.hprof
 .cxx/
+
+# Android signing material — binary keystores slip past gitleaks
+*.jks
+*.keystore
+keystore.properties
+signing.properties
 ```
+
+The signing block is not optional the moment a repo signs anything. `gitleaks`
+runs on both the pre-commit hook and CI and does **not** read binaries, so a
+committed keystore is caught by nothing but this file.
 
 ## 5. dependabot.yml
 
