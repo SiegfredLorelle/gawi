@@ -480,6 +480,13 @@ floor. Dimmed is a meaning here, not a leftover.
 
 ### 4.2 `CONTRAST_PIVOT` was wrong, and it blocked the hue retune
 
+**The pivot no longer has a client.** §7.3 removes the habit badge, which was
+the only surface that asked `glyphColorOn` which ink to draw on a hue. The fix
+below is kept because the *defect* generalises — a pivot derived from the wrong
+end of a luminance range picks the wrong ink on any coloured fill — and because
+it is what let §6 retune all eight hues without re-deriving their glyphs. The
+code goes with the badge, in step 4.
+
 **Fixed on 2026-08-23, before the hues, in `fix(ui): pick the better habit glyph
 colour`.** Kept in full rather than deleted, because the defect is the reason the
 retune was safe to do at all and because how it survived is worth remembering.
@@ -549,6 +556,12 @@ where the two options are equal; an earlier revision of this paragraph said 4.49
 which was simply wrong.
 
 ### 4.3 The hue labels are content descriptions, so they have to stay true
+
+**The labels go with the picker (§7.3).** Nothing announces a hue once there is
+no swatch to announce. The rule this section states is the durable half and is
+why it stays: a name shown to a screen reader in place of a value has to remain
+true of what is drawn, and a positional list is the shape that quietly stops
+being. §6.2 is the one time it caught something.
 
 `HabitEditorPickers.kt` holds `COLOR_LABELS`, a **positional** list of string
 resources — Red, Pink, Purple, Blue, Teal, Green, Yellow, Orange. TalkBack reads
@@ -812,6 +825,15 @@ since become a decision of this section's own:
 
 ## 6. The habit hues
 
+**Superseded by §7.3: a habit keeps no colour, so nothing draws these.** The
+eight had exactly two consumers, the editor's picker and the habit badge, and
+that decision removes both. What follows is kept as the record of how the
+shipped hexes were derived and of the two rules that failed on the way, because
+a habit's stored `color` is still raw hex in an append-only log and a reader
+may still need to know what those values were and why. It is rewritten when the
+code goes, not before — §6.1 to §6.3 describe machinery that is still in the
+app today.
+
 **Decision: keep eight slots; retune all eight to one tonal rule.**
 
 Eight rather than fewer, because the count is load-bearing in two places —
@@ -1023,38 +1045,49 @@ verified when the artboard was reviewed. Left as it stands rather than reconcile
 — which is exactly the case §7's opening paragraph warns about, so it is written
 down here rather than left to be found.
 
-### 7.3 The habit icon vocabulary is wire-neutral, and that is the finding
+### 7.3 A habit keeps neither an icon nor a colour, and the log never moves
 
-`HabitMetadata.icon` is **already an opaque `String`** in the domain, in
-`HabitCreated`/`HabitUpdated`, and in `WireV1`. So changing what the editor
-*offers* costs nothing in the log: store a stable *name*, render a bundled vector
-for it, and let an unrecognised string fall through to the text branch `HabitIcon`
-already has — which is exactly how today's emoji keep rendering. **No schema bump,
-no upcast-on-read, no migration.** This is the opposite of OQ-1's multi-tag change,
-which is a genuine event-payload bump.
+**Decided on the canvas-fidelity pass: no icon field, no colour picker, no
+leading dot. A habit's name is its identity.** Five options were drawn across
+the Today row, the habit list, detail and the editor — name only; a Lucide
+glyph on a neutral ground; a Lucide glyph in the habit's hue on that hue at low
+alpha; the colour as a leading dot; and the twelve emoji as built. The first
+won, and the reason is about authorship rather than pixels: picking a colour
+was a decision the app asked of the user on **every** habit, for a payoff a
+fifteen-row list did not deliver.
 
-`HabitPalette`'s KDoc objects that "drawable ids are not portable through an event
-log that has to survive an export and an import". That objection is correct and
-does **not** reach a name. Names also decouple the vocabulary from the artwork, so
-a licensed set now can become custom art later without the log noticing.
+**The finding that made this free is the one this section always carried.**
+`HabitMetadata.icon` and `.color` are **opaque `String`s** in the domain, in
+`HabitCreated`/`HabitUpdated`, and in `WireV1`. That was written down to show a
+vocabulary could be *replaced* without touching the log; it holds just as well
+for dropping one. **No schema bump, no upcast-on-read, no migration.** Both
+fields stay exactly where they are and stop being read. An export written
+before this still imports, and one written after still carries them.
 
-Three candidates are drawn on the canvas — the current emoji, Lucide (ISC,
-stroke-based; verify the licence at bundle time), and a custom rounded-fill set in
-Momo's language — at 42px and at 24px in both modes, because the small size is
-where a stroke set and a fill set diverge and it is the size that should decide.
+**What an editor save writes, because §6.3 refused the alternative.** With no
+picker there is nothing for the form to hold, so the two fields become
+*passthrough*: an edit carries the habit's stored values back unchanged, and a
+create writes the existing defaults. §6.3 rejected "offering nothing and
+letting the form open unselected" precisely because saving from that state
+would silently change a habit's colour, and that objection outlives the swatch
+it was written about — a form that no longer shows a field must not write one
+either.
 
-**One asymmetry worth stating**: Android renders colour emoji through its own font
-and **ignores the text colour**, so for the twelve emoji the badge hue is the only
-colour decision available and §4.2's whole pivot fix is inert. For a vector set the
-glyph colour is chosen by the corrected pivot, which is what keeps it legible on
-all eight hues rather than on some of them.
+**One measurement is worth keeping, because it says what was actually lost:
+nothing.** Android renders colour emoji through its own font and **ignores the
+text colour**, so for the twelve emoji the badge hue was the only colour
+decision available and §4.2's corrected pivot was inert. Deleting the badge
+gives up no contrast guarantee; there was none to give up. §4.2 and §4.3 record
+what that leaves them.
 
-**On generating icons on-device**, asked and answered: it fails on determinism
-before it fails on size. PRD §5 Phase 2 is LAN sync — devices union their event
-logs and must agree on what the data *is*. Artwork generated per-device from an
-opaque string means one habit rendering differently on each phone, and a
-regenerated icon differing from the one the user picked. Using AI to *draw* a fixed
-set at design time is a different activity, and is already PRD §5's plan for Momo.
+The candidate comparison this section commissioned — emoji against Lucide
+against a custom rounded-fill set, at 42px and 24px in both modes — is not
+needed and was not run. One answer from the same ground is worth keeping
+because it will be re-asked: **artwork generated per-device from an opaque
+string breaks sync before it breaks anything else.** PRD §5's Phase 2 is LAN
+sync, where devices union their logs and must agree on what the data *is*, and
+a regenerated glyph differing from the one a user picked is that disagreement.
+Drawing a fixed set at design time is a different activity.
 
 ### 7.4 What the widget set costs
 
