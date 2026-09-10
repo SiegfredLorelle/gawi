@@ -164,30 +164,40 @@ limbs.
 
 ### Regenerating: entry and exit
 
-Enters at the rollover that zeroes a streak. Exits at the first day with
-nothing outstanding (→ `thriving`), or after **3 logical days** without
-recovery, whichever comes first — otherwise an abandoned habit would pin
-Momo to a permanent guilt face, which is the failure mode this mood exists
-to avoid.
+Enters at the rollover that zeroes a streak. Exits when **that habit is
+completed again**, or after **3 logical days** if it is not, whichever comes
+first.
 
-The window is measured against `StreakSnapshot.brokenOn` — the day a break
-becomes *visible*, not the day the completion was missed — and in logical
-days for **both** schedules, so it runs `brokenOn` through `brokenOn + 2`.
-A weekly habit's `brokenOn` is a week start, so it regenerates only on the
-first three days of the week its streak zeroed. That is deliberate rather
-than a rounding of the weekly case: `regenerating` outranks `worried`, and a
-window that lasted the whole week would mask the now-or-never warning on
-exactly the days a weekly habit still has one chance left.
+**The early exit is the repair the line asks for.** It used to be the first day
+with nothing outstanding *at all* — a condition about the whole day rather than
+about the habit the panel names. So the line could say *"pick Stretch back up"*
+to somebody who had just picked Stretch back up, and go on saying it. The mood
+now ends on the completion it asked for, which is the only event that answers
+it.
 
-The 3-day figure is a guess, and **no amount of use settles it** — §6 below and
-PRD §8's OQ-3 both carry the reason, which is that the MVP mapping makes
-`regenerating` unobservable. Argued in those two rather than a third time here.
-(The 30-day trial named here until 2026-08-23 was waived, and could not have
-settled this either; PRD §8's OQ-3 was parked on Phase 1's fourth face instead,
-which is the build where this window first has a visible effect. That face
-landed 2026-08-25 and OQ-3 was decided as gills on 2026-09-03.) Grace mechanics,
-scheduled for 1.0.0 (PRD §5, step 3), change `recentlyBroken` and therefore this
-whole section when they land.
+**The 3 days are a backstop, not a model of recovery.** They exist for the
+habit that is never picked up again: without them an abandoned habit pins Momo
+to a permanent guilt face, which is the failure this mood exists to avoid, and
+no completion is ever coming to end it. That is a narrower job than the number
+used to have — it no longer has to say how long recovery takes, only how long
+to keep asking — and 3 is an adequate answer to it. The guess is retired by
+shrinking what it decides rather than by being measured.
+
+The backstop is counted against `StreakSnapshot.brokenOn` — the day a break
+becomes *visible*, not the day the completion was missed — and in logical days
+for **both** schedules, so it runs `brokenOn` through `brokenOn + 2`. A weekly
+habit's `brokenOn` is a week start, so it regenerates only on the first three
+days of the week its streak zeroed. That is deliberate rather than a rounding
+of the weekly case: `regenerating` outranks `worried`, and a window that lasted
+the whole week would mask the now-or-never warning on exactly the days a weekly
+habit still has one chance left. It is also why the window did not simply grow
+to match the seven clean days a gill takes to regrow: the gills carry that arc
+themselves (momo.md §3), on their own clock, and the face does not have to.
+
+**Gills make this face rarer, and mean more by it.** A streak no longer breaks
+on a miss — it breaks on the miss after the last spare gill is spent — so
+reaching this mood can take four missed days rather than one. What the face
+says is unchanged; what it costs to see it is not.
 
 ### MVP mapping — history since 2026-08-25
 
