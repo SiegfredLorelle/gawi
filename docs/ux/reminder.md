@@ -356,18 +356,50 @@ one the user finds the next morning, which is the whole point missed;
 `IMPORTANCE_HIGH` would be an interruption for something that is not urgent. Both
 are the user's to change in the channel's own settings.
 
-**No action buttons, and this is a PRD decision rather than a shortcut.**
-Quick-complete is PRD §4's explicit stretch goal, *"allowed to slip to Phase 1;
-documented so it isn't lost"*. §6.1.1's *"logging < 5 seconds"* is already
-satisfied by the widget, so a button here is a second path to a solved problem —
-and it would carry OQ-2 with it, which was unanswered when the reminder shipped: Android caps three
+**No action buttons yet, and the build has none — but they are specified.**
+Quick-complete was PRD §4's explicit stretch goal, *"allowed to slip to Phase 1;
+documented so it isn't lost"*, and it carried OQ-2 with it: Android caps three
 action buttons, and what to show when more than three habits remain is a real
-design question. **Answered 2026-09-03 (PRD §8, OQ-2): up to three buttons, one
-per habit left, each writing a completion under the widget's rules; four or more
-left, no buttons and the tap opens Today. Scheduled for 1.0.0 (PRD §5, step 3);
-until it lands this paragraph describes the build.** Deep-linking is out for a smaller reason: `:app` owns the
-navigation graph and Today is already the start destination, so a route would be
-a second way to express the same landing place, free to disagree with the graph.
+design question. **Answered (PRD §8, OQ-2) and scheduled for 1.0.0 (PRD §5,
+step 3): up to three buttons, one per outstanding habit, each writing a
+completion under the widget's rules; four or more left and there are none, the
+tap opening Today as it does today.** Until it lands, everything below this
+paragraph describes a build without them.
+
+**The button is labelled with the habit's name and nothing else.** The position
+is the verb — an action row under a reminder is not read as a list — and a
+*"Done: "* prefix would only make a long name truncate sooner. What it *speaks*
+cannot be the bare name, though: read alone, *"Read"* is an instruction rather
+than a habit, so each button's content description says what pressing it does,
+the way the Today row's `onClick(label = …)` already does.
+
+**The button carries the date; it must never resolve one when tapped.** The
+reminder fires before the day cutoff and the notification survives the night,
+so a user who taps it over breakfast would write a completion against *today*
+for a habit they owed *yesterday*. The `PendingIntent` therefore carries the
+logical date the notification was posted for, which is the same guard the Today
+row already keeps — *"the date travels with the row, so a tap writes to the day
+it was drawn for rather than to one resolved a moment later"*. It is the one
+part of this that is a correctness rule rather than a design choice.
+
+**A tap re-posts the notification rather than dismissing it.** The count in the
+body and the buttons under it are the same fact twice, so completing one habit
+out of three has to move both or the shade starts disagreeing with itself while
+the user is still looking at it. The fixed id already makes a re-post replace
+rather than stack, which is what makes this cheap; when the last outstanding
+habit goes, the notification goes with it, because there is nothing left for it
+to say.
+
+**Nothing is ranked, and that is why the cap is where it is.** With four
+outstanding there is no non-arbitrary way to choose three, and any rule that did
+— most at risk, longest streak, alphabetical — would be the app making a
+decision about somebody's day without saying so. Falling back to no buttons is
+not a degradation; it is the honest answer, and the tap still reaches the screen
+that shows all of them.
+
+Deep-linking is out for a smaller reason: `:app` owns the navigation graph and
+Today is already the start destination, so a route would be a second way to
+express the same landing place, free to disagree with the graph.
 
 ---
 
