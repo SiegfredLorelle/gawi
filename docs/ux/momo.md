@@ -193,8 +193,8 @@ three lines to that same standard.
 | Today | the tank: a 250 dp panel, water in `primaryContainer` to a second stop that is light in the light scheme and dark in the dark one, drained to `surfaceContainerHighest → surfaceContainerHigh` while regenerating, with four weeds and four bubbles keeping the mood's tempo behind the character | animated | **built** — `MascotPanel.kt`, `Habitat.kt` |
 | Widget | the Today widget's own background, above the rows, only when the host gives it 170 dp of height (two cells on most launchers, three on a small phone's); from 220 dp wide as well, on a flat `primaryContainer` pill beside the mood line and the woven day band ([widget.md](widget.md) §7) | the resting frame, `MomoFrame.rest`, rasterised by `drawMomo` at 72 dp, or 48 dp inside the pill | **built** — `widget/MomoBitmap.kt`, `TodayWidget.kt` |
 | Momo widget | her own 2×2 tile: flat `primaryContainer`, the tank colour without the gradient, and one word beneath her — no rows, no number ([widget.md](widget.md) §7) | the resting frame at 72 dp | **built 2026-08-29** — `widget/MomoWidget.kt` |
-| Reminder | the notification's small icon is alpha-only, so a silhouette — of the launcher mark, which is what holds at 24 dp | still | **built** — `app/res/drawable/ic_reminder.xml` |
-| Launcher | visual-identity §7.1's mark, derived from this character, on light `primaryContainer`; the woven thread as the monochrome layer | still | **built** — `app/res/mipmap-anydpi/ic_launcher.xml` |
+| Reminder | the notification's small icon is alpha-only, so a silhouette — of the launcher mark, which is what holds at 24 dp | still | **built**, and redrawn as the gill cluster in step 4 — `app/res/drawable/ic_reminder.xml` |
+| Launcher | visual-identity §7.1's mark — one gill cluster, no face — on `onPrimaryContainer`, the same geometry serving the monochrome layer | still | **built** with the retired face; redrawn in step 4 — `app/res/mipmap-anydpi/ic_launcher.xml` |
 
 **The tank is Today's alone.** It is drawn in `:feature:today`, not `:core:ui`,
 because only Today is a habitat: the widget and the reminder get the character
@@ -249,11 +249,12 @@ no-habits copy the face is decorative, so the copy is still read once. (What a
 launcher actually lets TalkBack reach is another matter — widget.md §7 records
 the Nothing launcher reading none of it on 2026-09-02.)
 
-**The reminder and the launcher use the mark, not the character.** The
-canvas's "Launcher icon" artboard measured the full character as mush at 40 px
-and the mark — two fronds a side, no blush, oversized eyes and mouth — as
-holding at 24. A notification small icon *is* 24 dp, so its silhouette is the
-mark's, eyes cut out with `evenOdd` so the face survives one colour.
+**The reminder and the launcher use the mark, not the character**, and since
+visual-identity §7.1 the mark has no face at all: one gill cluster, three dots
+around a paler circle. The canvas measured the full character as mush at 40 px,
+and a face survives being flattened to one tint no better — three lobes do. A
+notification small icon *is* 24 dp and alpha-only, so it is that same geometry
+with no `evenOdd` cut-outs left to preserve a face through.
 
 **The panel is 250 dp, not 96.** today-view §3 promised a box that does not
 move when the character replaces the placeholder, and the placeholder's box

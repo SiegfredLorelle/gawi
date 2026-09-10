@@ -347,9 +347,11 @@ since API 21 a small icon is drawn from its *alpha channel only* and tinted by t
 system, so a legacy full-colour bitmap renders as a silhouette at best and a filled
 blob at worst — and a platform `android.R.drawable` is not a stable appearance
 contract across API levels or OEM skins. Raised in PR review. Since 2026-08-25 the
-vector is **Momo's silhouette** — the launcher mark's, which is what holds at 24
-dp, with the eyes cut out so the face survives one colour ([momo.md](momo.md)
-§4) — and the launcher icon it once deferred to is built the same way.
+vector is **the launcher mark's silhouette**, which is what holds at 24 dp
+([momo.md](momo.md) §4). Since visual-identity §7.1 that mark is one gill
+cluster rather than a face, so step 4 redraws this file as three dots and drops
+the `evenOdd` eye cut-outs — there is no longer a face to carry through one
+colour, which makes it a simpler file than the one it replaces.
 
 `IMPORTANCE_DEFAULT`, which makes a sound. A habit nudge that arrives silently is
 one the user finds the next morning, which is the whole point missed;
