@@ -99,7 +99,7 @@ half-cosine is.
 |---|---|---|---|---|
 | Eyes | happy arcs, `M95,99 Q104,87 113,99` | open and round: filled 8.5 × 10.5 at (104, 96), highlight r 3.0 at (106.6, 92.6) | the same construction, larger: 9.7 × 12, highlight r 3.4 | sad arcs, `M95,95 Q104,103 113,95` |
 | Mouth | open smile, filled `M113,118 Q130,138 147,118 Z` | open smile | wavy line, 3.6 stroke | small line, `M119,121 Q130,130 141,121` |
-| Extras | two gold `#FFCE5C` eight-point stars: a 2.1 s pulse, the second 0.7 s behind the first, both drifting on a 6.3 s orbit of ±5 px | — | one sweat bead `#8FD3E8` at (186, 66), 2.6 s fall; gills hang 7 px lower | the right upper gill is **short** — reaches (191.6, 65.8) instead of (199.6, 59.5), stroke 5.5, smaller beads — inside a pulsing halo (r 20, 10–30 %), and it grows and settles on a 2.7 s cycle |
+| Extras | two gold `#FFCE5C` eight-point stars: a 2.1 s pulse, the second 0.7 s behind the first, both drifting on a 6.3 s orbit of ±5 px | — | one sweat bead `#8FD3E8` at (186, 66), 2.6 s fall; gills hang 7 px lower | the three right gills are **short** (below), the upper one inside a pulsing halo (r 20, 10–30 %) as it grows and settles on a 2.7 s cycle |
 | Float | 2.5 s, 7 px | 4.2 s, 7 px, tilting −1.1° | a 1.7 s fidget: ±2.5 px sideways, ±0.8°, no rise | 6 s, 7 px |
 | Breathe | 1.5 s | 3.4 s | 3.4 s | 5 s |
 | Gill sway | 1.5 s, ±4.5° | 2.9 s, ±4.5° | 4.4 s, ±4.5° | 4.6 s, ±4.5° |
@@ -132,14 +132,47 @@ travel to the ring, which is a different moment with its own motion. The
 fidelity page's board is the authoritative one; the four Momo motion boards
 that predate it still show the pulse alone.
 
+**Her right gills are the spare lives, and the left three are the ruler.** A
+gill is one spare life (PRD §8, OQ-3): a daily habit grows one per seven clean
+days, capped at three, and a missed day spends one rather than breaking the
+run. **The three right gills carry the count and the three left gills never
+change**, so the drawing always shows a full gill beside a spent one and the
+reader can tell which is which without having seen the character before. Three
+spare is the drawing above, untouched; two, one and none shorten the right
+gills from the top down.
+
+**A spent gill is the same drawing as the regrowing one**, so there is one
+recipe rather than two: every point pulled toward its own root at **0.661**,
+stroke 5.5, beads at three quarters. That factor is not a new number — applied
+to the full upper right gill it lands on (191.6, 65.8), which is where this
+section already put the regenerating one. A gill's root does not move, so the
+sway above is untouched: a short gill turns through the same ±4.5° at the same
+offset as a long one.
+
+**None left is the regenerating face, and that is why the two agree.** A streak
+can only break once the last spare is gone, so *zero spare* and *regenerating*
+are one moment seen twice — the mood table's REGENERATING column is this
+drawing at zero, and the halo marks the upper gill because that is the one
+growing back first.
+
+**She only shows a count she can name.** A gill belongs to a habit and there is
+one Momo for all of them, so an ambient count raises a question the screen
+cannot answer: *whose?* The panel already solved this once, by naming the habit
+in the regenerating line (today-view §4 picks the most recently broken), so the
+right gills follow that same habit and she is drawn full whenever the panel has
+no habit to name. The count is never put on a habit row: the row carries a
+checkbox, a streak and a dimmed state already, and a fourth signal there would
+be the screen explaining itself rather than showing itself.
+
 **A mood change is one Momo, not two.** The first build crossfaded two whole
 drawings over 0.55 s, and because each mood floats at its own tempo the two
 bodies sat at different heights while both were visible. Since 2026-08-26 the
-body, tail and five ordinary gills are drawn once from the two moods' frames at
-the same instant, interpolated by a progress that runs over 550 ms
+body, tail and the gills both moods draw alike are drawn once from the two
+moods' frames at the same instant, interpolated by a progress that runs over
+550 ms
 (`MomoMotion.TRANSITION_MILLIS`, Compose's fast-out-slow-in), and only what
 differs between two drawings crossfades: the eyes and mouth, the sparkles, the
-sweat bead, and the right upper gill, which is short while it regrows. The
+sweat bead, and any gill short on one side of the change and not the other. The
 water and the tank life (§4) drain and refill on the same progress. The Habitat
 & motion page's "Mood transition" board runs the same frame maths in the
 browser, which is where the duration was approved. With animations off the
