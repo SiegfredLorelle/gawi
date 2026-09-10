@@ -42,7 +42,8 @@ Rationale, in the order it mattered:
 
 1. **The list stays legible.** Habit rows sit on plain surface, never over
    a tinted, animated background. Row contrast is not a function of
-   Momo's mood.
+   Momo's mood — it is a function of the row's own state, which is what
+   lets §5 dim a row that owes nothing today without reopening this.
 2. **Mood is a self-contained panel.** A mood change restyles one bounded
    composable. Phase 1 swaps a Rive view into that box and touches nothing
    else on the screen.
@@ -231,6 +232,19 @@ Small decisions that were easier to make once drawn:
   `brokenStreak_speaksWhatWasLost` pin it, and hearing it is owed
   (docs/running.md §4) — including the order: the badge's description is on a
   child node after the name, so the name should still lead.
+- **A row that owes nothing today is dimmed, and that is not the same as
+  ticked.** Twelve empty checkboxes under a panel reading *"8 of 15 left
+  today"* is the screen contradicting itself: four of them were weekly habits
+  that had already met their target, or whose now-or-never day had not arrived.
+  The checkbox says *completed*; nothing said *owed*. So the rows §4's
+  `outstanding` excludes are drawn at reduced emphasis, and
+  `Mascot.isOutstanding` is what decides — the same predicate the panel already
+  counts with, computed per row in the mapper rather than a second time in the
+  composable. **Decided on the canvas-fidelity pass and not yet scheduled**
+  (PRD §5's 1.x); three forms were drawn and dimming won because it adds no
+  element, spends no width and needs no legend. It changes what a row *speaks*
+  as well as what it draws: a set of rows visually set aside that a screen
+  reader does not mention is information only some users get.
 - **An incomplete daily habit still shows its live streak.** Per
   `Streaks.dayStreak`, an unfinished current day has not broken anything —
   it simply has not extended it. A row unchecked at 09:00 must not read
