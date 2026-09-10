@@ -712,7 +712,8 @@ draws colour emoji through its own font, which no text face substitutes for, and
 non-widget main source finds 36 distinct non-ASCII characters; what is left after
 the glyphs and the emoji sits in KDoc (`√`, `≡`, `≥`) and is never drawn.
 
-Three things the code decided that this section had not:
+Four things the code decided that this section had not. The last of them has
+since become a decision of this section's own:
 
 - **The family is set on all *fifteen* Material roles, not the ten in the table
   above.** The table is still right about what the app draws, and that is what
@@ -722,14 +723,17 @@ Three things the code decided that this section had not:
   look like a choice rather than a gap. Covering all fifteen invents no sizes,
   which is what the "anything not in that table does not need a value" rule was
   actually guarding against.
-- **The face changed, and since 2026-08-30 one metric has too: positive tracking
-  is zeroed.** Every size and line height is still Material's, and
-  `GawiTypographyTest` asserts that against a fresh `Typography()` rather than
-  trusting the claim — the deviation is stated inside the comparison and again on
-  its own, so the equality cannot quietly widen. The sizes stay untouched for the
-  reason this bullet has always given: they are the one part already validated on
-  a device, across four feature modules since Phase 0, and moving the face and
-  the scale together would make any regression unattributable to either.
+- **The face changed, and two metrics have too: positive tracking is zeroed,
+  and four roles now carry a weight.** Every size and line height is still
+  Material's, and `GawiTypographyTest` asserts that against a fresh
+  `Typography()` rather than trusting the claim — each deviation is stated
+  inside the comparison and again on its own, so the equality cannot quietly
+  widen. That test's own name records the narrower invariant it was written
+  under, so the weight assignment renames it rather than only editing it. The
+  sizes stay untouched for the reason this bullet has always given: they are
+  the one part already validated on a device, across four feature modules since
+  Phase 0, and moving the face and the scale together would make any regression
+  unattributable to either.
 - **What `letterSpacing` was measured at, and why zero.** This bullet used to say
   the change was one to make while looking at a screen, and it was: three
   candidates were weighed — keep, halve, zero — and the two that decide it were
@@ -755,7 +759,7 @@ Three things the code decided that this section had not:
   since it was built, at the same nominal 16sp this scale calls `bodyLarge`. The
   two claimed to match and did not; zeroing closes a divergence rather than
   opening one, and `BitmapTextTest` now pins the widget's half of it.
-- **Four weight entries, all pointing at the same file, and the `wght` axis
+- **Six weight entries, all pointing at the same file, and the `wght` axis
   named explicitly on each.** Two of those decisions were corrected by review
   and by measurement after the first version of this bullet, so both are stated
   with what settles them.
@@ -783,12 +787,28 @@ Three things the code decided that this section had not:
   function is called.** A test asserts every entry names `wght`, so the tempting
   deletion goes red instead of shipping a uniformly thin app.
 
-  *Four rather than two, because the app can request more than it writes.*
-  Material's fifteen roles ask for W400 and W500, and nothing sets a weight by
-  hand — but Compose adds `Configuration.fontWeightAdjustment` to every request,
-  so with the system *Bold text* setting on the same roles ask for W700 and W800.
-  Registered, they hit real instances already in the file; unregistered, they get
-  platform synthesis over a genuine bold the app already shipped.
+  *Six, because the app can request more than it writes, and now it writes one
+  too.* Material's fifteen roles ask for W400 and W500 — but Compose adds
+  `Configuration.fontWeightAdjustment` to every request, so with the system
+  *Bold text* setting on, those become W700 and W800. Four roles ask for W600
+  of their own (below), which the same adjustment turns into W900. Six entries
+  is what covers the whole request set. Registered, each hits a real instance
+  in the file, whose `wght` axis runs 100 to 900; unregistered, it gets
+  platform synthesis over a genuine weight the app already ships.
+
+  *Which four roles take W600, and why 600 rather than the Bold already
+  registered.* `titleLarge` and `titleMedium` — the screen title and the
+  mascot's mood line — and `headlineSmall` and `displaySmall`, which the table
+  above shows are the two numeral roles: habit detail's streak number and the
+  largest numerals. 600 because **the widget had already chosen it**:
+  `BitmapText`'s SemiBold draws the Momo caption, the large Today header's mood
+  line, the Streaks header and the streak numerals. The app registered Bold and
+  ExtraBold and requested neither, so the two surfaces disagreed about emphasis
+  one home screen apart. §2 accepted a *typeface* seam there deliberately,
+  having measured that a Glance widget cannot be handed a bundled font; this
+  was a second seam nobody chose. Bold would close the gap in the wrong
+  direction — 700 is heavier than the widget's 600, so the surfaces would still
+  differ.
 
 ## 6. The habit hues
 
