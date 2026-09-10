@@ -965,15 +965,32 @@ comparison, four widget surfaces and the launcher mark.
 
 ### 7.1 Decided
 
-- **The launcher icon is Momo, drawn as a mark rather than scaled down.** Two
-  fronds a side instead of three, no blush, eyes and mouth oversized past their
-  in-app proportions, everything inside the adaptive icon's 72dp safe zone. The
-  full character measured as mush at 40px; the mark holds at 24. **The monochrome
-  layer is the woven thread, not the face** — an Android 13+ themed icon is a
-  single flat silhouette tinted by the system, and a face that loses its colours
-  becomes an inkblot. Two marks, one metaphor each, saying the same thing in
-  different registers. Held loosely: the mark derives from the character, so a
-  change of Momo's style redraws it rather than reopening it.
+- **The launcher icon is one gill cluster, and it has no face.** Three
+  frond-pink dots around one paler body-pink circle, on `onPrimaryContainer` —
+  the scheme's darkest teal. The face is not shrunk, it is gone: the full
+  character measured as mush at 40 px, and a mark of three lobes holds at 24.
+  **Removing the face removed the mark's only contrast**, which is the part
+  worth keeping: [momo.md](momo.md) §2 says Momo's silhouette is carried by the
+  ink of the eyes and the deeper coral of the gills, and a pale cluster on a
+  pale ground has neither — measured, her frond pink is 1.51:1 on light
+  `primaryContainer`. So **the ground inverts rather than the mark**, and on
+  `onPrimaryContainer` the dots measure **6.68:1** against the 3:1 a non-text
+  graphic asks for. Both are existing roles; no colour is invented.
+  **The monochrome layer is the same geometry, not a second mark** — three lobes
+  flattened to one tint are still three lobes, where a face becomes an inkblot —
+  so the colour layer, the themed layer and the reminder's alpha-only silhouette
+  are one drawing with different fills, and the old two-marks-two-metaphors
+  arrangement collapses on purpose. Held loosely: the mark derives from the
+  character, so a change of Momo's style redraws it rather than reopening it.
+- **Two things the mark was measured against, and one it was not.** The
+  right-hand dot sits at x 67 rather than 70 so the cluster reaches **31.1** of
+  the 33 units a launcher guarantees, which is why it needs no corrective scale.
+  A **stalk** connecting it to a body was drawn and refused: the cluster leaves
+  1.9 units of headroom, so a stem either runs off the frame or costs a third of
+  the mark's size. And **purple was explored and dropped** — rotating her pink
+  to violet at the same lightness measures 1.57:1 on the old ground, no better
+  than the pink, because the failure was two pale tones on a pale ground rather
+  than the hue.
 - **A streak widget must date its number.** Whatever else it shows, it carries an
   "as of" line. This follows directly from the reasoning that settled OQ-5: a
   streak reaches zero with *no new event*, so it is the one value whose staleness
@@ -1341,21 +1358,22 @@ and must be solid, so it is a different medium — it is now Momo's silhouette
   celebration on finishing the day all followed, designed on the canvas's
   "Habitat & motion" page (momo.md §3, §4, §6); streak milestones came from its
   "Milestone celebration" page (momo.md §6).
-- **The launcher icon is drawn and wired**, which was this bullet's half of it
-  rather than its design. §7.1's decision — Momo as a mark, the woven thread as
-  the monochrome layer — is `ic_launcher_foreground.xml` and
-  `ic_launcher_monochrome.xml`, transcribed from the canvas's "Launcher icon"
-  artboard on its 108 grid — inside a group that scales the mark by 0.85 and
-  the thread by 0.9 about the centre, because the artboard mocked its masks
-  over the whole 108 canvas while a launcher shows the central 72 and
-  guarantees only a 66 dp circle; review measured the fronds at 38.6 from
-  centre against a safe radius of 33 — under `mipmap-anydpi/ic_launcher.xml` — one file with
-  all three layers, because lint's `MonochromeLauncherIcon` *fails* an adaptive
-  icon without `<monochrome>` and does not count the API 33 element as unused;
-  a `-v33` split was tried first and measured against. The ground is light `primaryContainer` at
-  the value `Color.kt` ships, not the canvas's pre-retune hex — §3's rule that
-  the table wins — and `LauncherIconTest` pins the two against each other. The
-  manifest no longer names `sym_def_app_icon` anywhere.
+- **The launcher icon is drawn and wired, and it draws the face §7.1 retired.**
+  `ic_launcher_foreground.xml` and `ic_launcher_monochrome.xml` still hold the
+  two-mark arrangement — the character scaled 0.85 and the woven thread 0.9
+  about the centre, because the canvas artboard mocked its masks over the whole
+  108 grid while a launcher shows the central 72 and guarantees only a 66 dp
+  circle; review measured the fronds at 38.6 from centre against a safe radius
+  of 33. **Step 4 replaces both with §7.1's one geometry**, which needs no
+  corrective scale, and `ic_reminder.xml` with it; `LauncherIconTest` asserts
+  the retired foreground's paths, so it is rewritten rather than patched. What
+  survives the change is the wiring: all three layers in one
+  `mipmap-anydpi/ic_launcher.xml`, because lint's `MonochromeLauncherIcon`
+  *fails* an adaptive icon without `<monochrome>` and does not count the API 33
+  element as unused, and a `-v33` split was tried first and measured against.
+  The ground still comes from `Color.kt` rather than a canvas hex — §3's rule
+  that the table wins — and only which role it names changes. The manifest no
+  longer names `sym_def_app_icon` anywhere.
 - **Spacing.** `GawiSpacing` parks itself on OQ-4 along with the rest, but
   dimensions were genuinely not part of this brief. Its KDoc gets narrowed rather
   than rewritten.
