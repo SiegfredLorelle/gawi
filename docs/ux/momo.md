@@ -182,9 +182,9 @@ change is a cut: a fade is an animation too.
 are in the drawing rather than the copy: the character is dimmer, slower and
 visibly regrowing, and it is *not* sad — the mouth is small, not turned down,
 and the sad arcs are half the depth of the happy ones. PRD §3.5's "pick the
-thread back up" is what the halo says. Its copy line is the fourth face's first
-words and a placeholder like the other three (today-view §6): it should name
-the habit, and nothing tells the panel which habit yet.
+thread back up" is what the halo says. Its copy line names the habit and offers
+the repair, which is what §3 asked of it, and today-view §6 holds the other
+three lines to that same standard.
 
 ## 4. Where Momo appears
 
@@ -363,11 +363,12 @@ can measure it.
   tank colour with one word, and the large Today body that puts her on a pill
   beside the woven day band. The habitat stays here: none of the three draws
   the weeds.
-- **Momo's real copy.** Every line but one is still placeholder. What the
-  regenerating line needed to name a habit does exist (today-view §6):
-  `Mascot.recentlyBrokenHabits` returns the ids of the habits inside the three-day window, most recently
-  broken first, and the regenerating line names the first of them — §3's
-  "names the habit and offers the repair", which until now named an artboard.
+- **Momo's real copy**, settled as the lines already written (today-view §6).
+  What the regenerating line needed to name a habit does exist:
+  `Mascot.recentlyBrokenHabits` returns the ids of the habits still
+  regenerating, most recently broken first, and the regenerating line names the
+  first of them — §3's "names the habit and offers the repair", which until now
+  named an artboard.
   Ids rather than a wider `Mood`, for the reason today-view §6 gave: one type
   should not carry both which drawing and which habit. The ordering is the
   product decision in it — most recently broken, because the line is about what

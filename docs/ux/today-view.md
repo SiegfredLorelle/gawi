@@ -437,10 +437,17 @@ Small decisions that were easier to make once drawn:
   the biggest loss is a way of scolding, and §3 says this state must never
   do that. The mood still gates it — `thriving` outranks `regenerating`,
   so a finished day holds a live break with nothing to say about it.
-- Momo's own copy. Every line the panel shows is placeholder, chosen to
-  make the three Phase 0 states distinguishable rather than to be read —
-  with one exception since 2026-08-31, the regenerating line, which now
-  says the one thing §3 actually specified about it.
+- **Momo's own copy is settled, and it is the copy that is already there.**
+  Every line was written to make the Phase 0 states distinguishable rather
+  than to be read, and the drafting round for 1.0.0 (PRD §5, step 3) set
+  alternatives beside each of them and kept the originals. The rule those
+  lines had already found is why: **the mood line says how she is, and the
+  count line directly beneath it says how the day is.** A mood line that also
+  counts is the panel saying one thing twice, which is what every drafted
+  alternative that reached for more warmth ended up doing. The regenerating
+  line is the model rather than the exception — it names the habit, offers the
+  repair and blames nobody — and the other three are now held to it as
+  written.
 - **`regenerating` is visible**, with its own face and its own line
   ([momo.md](momo.md) §3), and the line names the habit. The unnamed line is
   kept for the state it belongs to. **A habit already ticked today is never
