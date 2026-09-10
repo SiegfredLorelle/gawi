@@ -24,9 +24,14 @@ to admit (§2), and where the gear points (§4).
 
 ## 1. Three settings, not the PRD's four
 
-`UserSettings` holds `dayCutoff`, `weekStart` and `reminderTime`, and since
-2026-08-26 `theme` as well (§7). The PRD's fourth, **timezone behaviour, is
-deliberately absent** — from the data type as much as from this screen.
+`UserSettings` holds `dayCutoff`, `weekStart` and `reminderTime`, `theme` (§7),
+and — decided on the canvas-fidelity pass, not yet built — a boolean for
+whether the end-of-day notification is sent at all. That last one is the only
+field here that turns a feature off rather than configuring one, and it is
+deliberately *not* a second threshold: it silences the notification and leaves
+`reminderTime` doing its other job, which is telling the mascot when to start
+looking worried. The PRD's fourth, **timezone behaviour, is deliberately
+absent** — from the data type as much as from this screen.
 
 It is absent because it has exactly one value. The behaviour is "use the device
 zone", which `DeviceClock` supplies per call, on every call. A control offering
@@ -40,7 +45,10 @@ this section is where it stops being only a code comment.
 ever meant: of the four capabilities the PRD lists, three are here and timezone
 behaviour is deliberately not. The theme is a different kind of setting
 entirely — it counts nothing, buckets nothing and changes no query — which is
-why it sits under its own header rather than becoming a fourth row among these.
+why it sits under its own header rather than joining the rows above. That
+argument once rested on those rows being unlabelled; §2 gives them a name, so
+it now rests on the only thing it ever needed, which is that they are a
+different kind of setting.
 
 Revisit if a second timezone policy is ever wanted — "pin my habits to the zone
 I created them in" is the plausible one, and it is a real feature with real
@@ -49,8 +57,23 @@ consequences for logical dates, not a preference.
 ## 2. Every row says what it changes, and the cutoff says what it does not
 
 Each row carries a line of explanation under the value. Not a help icon, not a
-first-run tour: all three of these change how the app counts a day or a week,
+first-run tour: what these rows change is how the app counts a day or a week,
 and a reader who has to go looking for that will not go.
+
+**The group has a name now: *Your day*.** It was the one group on this screen
+without a heading, and the argument for leaving it bare was that every
+candidate ("General", "Preferences") said less than the rows do on their own.
+That argument is right about those candidates and is the test a name has to
+pass. *Your day* passes it: it says the thing all three rows have in common and
+that none of them says alone — they decide when a day and a week begin and end.
+It also stops the screen opening on three unlabelled rows whose structure only
+becomes visible at the first heading further down.
+
+**And a fourth row joined them: an off switch for the notification.** It is the
+one row in the group that changes nothing about counting, so its explanation
+line carries the load §2 exists for — it has to say that the time above still
+drives the mascot when the switch is off, or the switch reads as turning off
+more than it does.
 
 The day cutoff's line is the one that matters, because what a reader would
 assume is wrong. Moving the cutoff **does not re-file anything already logged**.
@@ -79,15 +102,29 @@ happen — which is exactly the kind of silent half-working the honest copy abov
 existed to avoid. So an error line appears under the row, with its own target
 that leads to the permission or to system settings.
 
-**One combination is refused**, and it is the first settings write on this screen
-that can be: the reminder time may not equal the day cutoff. `reminderOn`
-resolves that pair to the logical day's *start* rather than its end, so it is
-meaningless rather than merely odd — and once the notification existed it meant
-one posted at the top of every day, which also used up that day's one reminder.
-Refused from **both** rows, since either can create the collision.
-[reminder.md](reminder.md) §1 and §3 have the argument, including why
-`SettingsMessage`'s KDoc was right that a picker cannot express an invalid time
-and wrong that this made refusal impossible.
+**There are two ways for the reminder to be silent, and only one of them is an
+error.** Android refusing the permission is a state the user did not choose and
+may not know about, which is what the error line is for. The switch being off
+is a choice, and an error over a choice is the screen arguing with its own
+user. So the line is conditional on the permission and not on the outcome:
+switch off and permission granted says nothing, because nothing is wrong. Both
+off is the case to get right — the error still belongs there, since turning the
+switch back on would not help until the permission is.
+
+**One combination is refused**, and it is the first settings write on this
+screen that can be: the reminder time may not equal the day cutoff.
+`reminderOn` resolves that pair to the logical day's *start* rather than its
+end, so it is meaningless rather than merely odd — and once the notification
+existed it meant one posted at the top of every day, which also used up that
+day's one reminder. Refused from **both** rows, since either can create the
+collision — and unconditionally, whatever the switch says. Half the reason
+above is about the notification and lapses when it is off; the other half, that
+`reminderOn` resolves the pair to the day's start rather than its end, does
+not, and the mascot still reads that time. A refusal that came and went with a
+switch would also let a user save a collision and then discover it by turning
+something on. [reminder.md](reminder.md) §1 and §3 have the argument, including
+why `SettingsMessage`'s KDoc was right that a picker cannot express an invalid
+time and wrong that this made refusal impossible.
 
 It is its **own** target and not a state on the row, because the row's tap
 already means "change the time" and that stays worth doing while notifications
@@ -99,6 +136,12 @@ than before it.
 
 Both time rows and the week-start row open a dialog holding the half-made
 choice, and hand it back only on confirm. Cancel always means nothing changed.
+
+**The off switch is the first control here that this does not cover**, and it
+does not need covering. There is no half-made state to hold: a switch has two
+positions, both legal, and the gesture *is* the decision. What it does need is
+to be reversible in one tap, which it is — the reason pick-then-confirm exists
+is that a dialog's dismissal is ambiguous, and a switch has no dismissal.
 
 The alternative — writing on every tick of a picker — was rejected for a reason
 specific to this screen: the store is the single source of truth for what is
@@ -177,20 +220,24 @@ CSV of completions" is about the first two, and that subsection is where the
 distinction is drawn. Read the two together: the argument here is what makes the
 CSV's copy load-bearing rather than decorative.
 
-**They are a section with a heading; the three settings above are not.** The
-habit list already made this choice for its archived group — the obvious group
-goes unlabelled and only the one that needs saying gets a name. Labelling both
-would mean inventing a word for "the three settings", and every candidate
-("General", "Preferences") says less than the rows do on their own. No divider
-either: a rule and a heading are two devices doing one job, and there is no
-`HorizontalDivider` anywhere in this app to be consistent with.
+**They are a section with a heading, and so is the group above them now.** This
+used to be the contrast: the obvious group went unlabelled, the way the habit
+list leaves its active habits unlabelled and names only the archived ones, and
+the objection to naming it was that every candidate ("General", "Preferences")
+said less than the rows do on their own. §2 records the name that passes that
+test rather than failing it. What survives here is the narrower rule the
+paragraph was really defending — a heading has to earn its line — and the
+choice it made about dividers: a rule and a heading are two devices doing one
+job, and there is no `HorizontalDivider` anywhere in this app to be consistent
+with.
 
 **One row composable, and a nullable value.** A `SettingRow`'s middle line is
-`titleMedium` in the primary colour and it means *this is what the setting is set
-to*; three rows teach a reader that before they reach the Data section. "Export a copy"
-is not a value, and pre-staging the nudge by writing "Last exported: never" there
-before anything stored it would have been copy the store cannot back — the one
-thing §2 argues against.
+`titleMedium` in the primary colour and it means *this is what the setting is
+set to*; the rows above teach a reader that before they reach the Data section
+— and the off switch is the second thing in the app with no value line at all,
+after the import row below. "Export a copy" is not a value, and pre-staging the
+nudge by writing "Last exported: never" there before anything stored it would
+have been copy the store cannot back — the one thing §2 argues against.
 
 The nudge then landed and the convergence went one step further than this section
 predicted. It said the export row would *become* a `SettingRow` and that
@@ -378,14 +425,16 @@ cases where a count is zero get their own string rather than reading "0 added".
 — stored as a fourth `UserSettings` field and drawn by `GawiTheme`, which has
 taken a `darkTheme` parameter since it was written and needed no change at all.
 
-**It is a section of its own rather than a fourth row**, and that is the whole
-of what this screen had to decide. §2's argument is that every row here says
-what it changes because all three change *how a day or a week is counted* — the
-cutoff prospectively, the week start retroactively, the reminder in two places.
-A row that changes only paint, sitting fourth among them under the same silent
-grouping, would blunt that. The header is what separates the two kinds, in
-exactly the shape §6 already gave the Data section for rows that are not
-settings at all.
+**It is a section of its own rather than a row among the others**, and that is
+the whole of what this screen had to decide. The rows under §2's *Your day* are
+there because they decide when a day and a week begin and end — the cutoff
+prospectively, the week start retroactively, the reminder in two places, and
+the switch saying which of those two it silences. A row that changes only paint
+does not belong to that, and a header is what says so. This argument used to
+lean on those rows being unlabelled, which made "a fourth row among them" the
+thing to avoid; now that they have a name, it leans on the name not covering
+paint — which is the stronger version of the same point, and the shape §6
+already gave the Data section for rows that are not settings at all.
 
 **A radio dialog, not a segmented control.** Three named alternatives are the
 same shape as seven, so this reuses the week-start dialog rather than
@@ -758,10 +807,13 @@ visual-identity.md §5 and §7.5 left open: nothing packaged `licenses/` and
 there was no screen to show it on. Canvas page 12 "About" has the boards.
 
 **A fourth section, not two more rows.** §7 gave Appearance its own header
-because it is a different *kind* of thing from the three rows that count days,
-and §6 gave Data one for rows that are not settings at all. Version and Licences
-are not settings either, so the same rule puts them under a header of their own,
-last on the screen, where a reader who wants a preference never has to pass them.
+because it is a different *kind* of thing from the rows that decide when a day
+begins, §2 has since named that group *Your day*, and §6 gave Data one for rows
+that are not settings at all — so every group on this screen is named, and the
+rule is uniform rather than a contrast between the labelled and the obvious.
+Version and Licences are not settings either, so the same rule puts them under
+a header of their own, last on the screen, where a reader who wants a
+preference never has to pass them.
 
 **The version sits in the help line, not the value line.** §6's argument stands:
 the `titleMedium` primary middle line means *this is what it is set to*, and a
