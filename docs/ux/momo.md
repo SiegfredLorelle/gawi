@@ -97,9 +97,9 @@ half-cosine is.
 
 | | THRIVING | CONTENT | WORRIED | REGENERATING |
 |---|---|---|---|---|
-| Eyes | happy arcs, `M95,99 Q104,87 113,99` | happy arcs | round, 9.7 × 12 with a highlight | sad arcs, `M95,95 Q104,103 113,95` |
+| Eyes | happy arcs, `M95,99 Q104,87 113,99` | open and round: filled 8.5 × 10.5 at (104, 96), highlight r 3.0 at (106.6, 92.6) | the same construction, larger: 9.7 × 12, highlight r 3.4 | sad arcs, `M95,95 Q104,103 113,95` |
 | Mouth | open smile, filled `M113,118 Q130,138 147,118 Z` | open smile | wavy line, 3.6 stroke | small line, `M119,121 Q130,130 141,121` |
-| Extras | two gold `#FFCE5C` eight-point stars, 2.1 s pulse | — | one sweat bead `#8FD3E8` at (186, 66), 2.6 s fall; gills hang 7 px lower | the right upper gill is **short** — reaches (191.6, 65.8) instead of (199.6, 59.5), stroke 5.5, smaller beads — inside a pulsing halo (r 20, 10–30 %), and it grows and settles on a 2.7 s cycle |
+| Extras | two gold `#FFCE5C` eight-point stars: a 2.1 s pulse, the second 0.7 s behind the first, both drifting on a 6.3 s orbit of ±5 px | — | one sweat bead `#8FD3E8` at (186, 66), 2.6 s fall; gills hang 7 px lower | the right upper gill is **short** — reaches (191.6, 65.8) instead of (199.6, 59.5), stroke 5.5, smaller beads — inside a pulsing halo (r 20, 10–30 %), and it grows and settles on a 2.7 s cycle |
 | Float | 2.5 s, 7 px | 4.2 s, 7 px, tilting −1.1° | a 1.7 s fidget: ±2.5 px sideways, ±0.8°, no rise | 6 s, 7 px |
 | Breathe | 1.5 s | 3.4 s | 3.4 s | 5 s |
 | Gill sway | 1.5 s, ±4.5° | 2.9 s, ±4.5° | 4.4 s, ±4.5° | 4.6 s, ±4.5° |
@@ -108,6 +108,29 @@ half-cosine is.
 
 A blink is the canvas's `steps(1,end)`: the eyes are 12 % tall between 96 % and
 98 % of the period, and open otherwise.
+
+**Content and worried share an eye, and only its size separates them.** Both
+are a filled ellipse of `MomoPalette.Ink` centred at (104, 96) and (156, 96),
+each with a white highlight at (106.6, 92.6) and (158.6, 92.6) — up and to the
+right, in the same place on both. What differs is scale, and only scale:
+content's ellipse is 8.5 × 10.5 against worried's 9.7 × 12, and its highlight
+r 3.0 against r 3.4. The mood carrying anxiety is drawn the wider-eyed of the
+two; nothing else moves. Thriving keeps the arc, and that is what makes the arc
+*thriving's* — a squint of delight rather than the face content wears by
+default. Two moods drawn alike is the failure this separation exists to
+prevent, and it is the one the four faces were measured against on the canvas's
+fidelity page.
+
+**The sparkles pulse, and now they drift.** The pulse is the scale and rotation
+the canvas specified and the app has always drawn — 0.72 to 1.12 about each
+star's own centre, 70° with it, opacity 0.35 to 1, over 2.1 s, with the second
+star 0.7 s behind the first. The **orbit is new**: ±5 px over 6.3 s, three
+times the pulse period so the two cycles never beat against each other. It
+belongs to the drawing of a sparkle rather than to `sparkleStar`, whose
+geometry §6's milestone ring also uses — a drift built into the star would
+travel to the ring, which is a different moment with its own motion. The
+fidelity page's board is the authoritative one; the four Momo motion boards
+that predate it still show the pulse alone.
 
 **A mood change is one Momo, not two.** The first build crossfaded two whole
 drawings over 0.55 s, and because each mood floats at its own tempo the two
@@ -134,7 +157,7 @@ the habit, and nothing tells the panel which habit yet.
 
 | Surface | Ground | Motion | Status |
 |---|---|---|---|
-| Today | the tank: a 250 dp panel, water in `primaryContainer → primaryFixedDim`, drained to `surfaceContainerHighest → surfaceContainerHigh` while regenerating, with four weeds and four bubbles keeping the mood's tempo behind the character | animated | **built** — `MascotPanel.kt`, `Habitat.kt` |
+| Today | the tank: a 250 dp panel, water in `primaryContainer` to a second stop that is light in the light scheme and dark in the dark one, drained to `surfaceContainerHighest → surfaceContainerHigh` while regenerating, with four weeds and four bubbles keeping the mood's tempo behind the character | animated | **built** — `MascotPanel.kt`, `Habitat.kt` |
 | Widget | the Today widget's own background, above the rows, only when the host gives it 170 dp of height (two cells on most launchers, three on a small phone's); from 220 dp wide as well, on a flat `primaryContainer` pill beside the mood line and the woven day band ([widget.md](widget.md) §7) | the resting frame, `MomoFrame.rest`, rasterised by `drawMomo` at 72 dp, or 48 dp inside the pill | **built** — `widget/MomoBitmap.kt`, `TodayWidget.kt` |
 | Momo widget | her own 2×2 tile: flat `primaryContainer`, the tank colour without the gradient, and one word beneath her — no rows, no number ([widget.md](widget.md) §7) | the resting frame at 72 dp | **built 2026-08-29** — `widget/MomoWidget.kt` |
 | Reminder | the notification's small icon is alpha-only, so a silhouette — of the launcher mark, which is what holds at 24 dp | still | **built** — `app/res/drawable/ic_reminder.xml` |
@@ -162,10 +185,23 @@ leans the weeds 22° outward, greys them and stops the bubbles. The numbers are
 the Habitat & motion page's defaults, approved 2026-08-26. Colours are roles
 and a highlight: weeds `primary` at 55 % (light `#1F6F78` is the canvas's
 `#027273`, dark `#7FD4DC` its `#6CE0E1`), drained weeds `outline`, bubbles the
-same white as Momo's eye highlight so both themes read as the canvas did — and
-so the drain is a role swap, not a second `saturated()`. The habitat is
-`:feature:today`'s, like the tank, and nothing about it crosses the widget
-edge.
+same white as Momo's eye highlight — and so the drain is a role swap, not a
+second `saturated()`. The habitat is `:feature:today`'s, like the tank, and
+nothing about it crosses the widget edge.
+
+**The dark tank's second stop is its own, and the weeds are why.** The gradient
+ran `primaryContainer → primaryFixedDim` in both schemes, and Material
+specifies the `*Fixed` roles as theme-invariant, so both declarations of
+`primaryFixedDim` hold the same light teal. The dark tank therefore ended on a
+*light* colour a few units from the dark weed's own `primary`, and the weed
+measured **1.00:1** against it: the right-hand pair, placed from the right
+edge, disappeared into the corner it was drawn on. Raising the alpha does not
+help, because what is wrong is not that the weed is faint but that it is the
+same colour as the ground; nor does a darker ink, which buys the bottom of the
+gradient and loses the top. So the dark scheme takes its own second stop, dark
+enough that `primary` at 55 % reads at both ends. The drained pair was already
+per-scheme, so this makes the two pairs consistent in kind rather than making
+an exception for one.
 
 **The widget draws `drawMomo`, not four drawables.** visual-identity §7.4
 priced Momo-on-a-widget as "a static vector drawable per mood: four assets"
@@ -195,10 +231,12 @@ still one box in one place — and its height is the tank's, fixed rather than a
 floor: the character has a size, and the copy beneath it is what grows with
 the font scale.
 
-**Colour follows the theme, the character does not.** The water is theme
-roles so it is right in both schemes with no second palette; Momo is §2's own
-colours in both, and the only thing that varies them is the regenerating
-desaturation, done arithmetically in `drawMomo` so a test can measure it.
+**Colour follows the theme, the character does not.** The water is theme roles
+so it is right in both schemes with no second palette — the intent a
+theme-invariant `*Fixed` role quietly broke, and what the second stop above
+restores. Momo is §2's own colours in both, and the only thing that varies them
+is the regenerating desaturation, done arithmetically in `drawMomo` so a test
+can measure it.
 
 ## 5. Accessibility
 
