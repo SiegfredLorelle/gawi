@@ -443,6 +443,29 @@ already reminded and silence that evening's real reminder — §1's late-wake
 case, reached from a new direction. The re-post posts directly under the fixed
 id.
 
+**So it does not consult the off switch either, and that needs saying rather
+than inheriting.** §3 rules out a post-time switch check for one reason — that
+`evaluate()` stamps the journal first, so a silenced day would consume its own
+reminder. A re-post stamps nothing, so that reason does not reach it and the
+answer has to be argued here. It is this: the switch gates the end-of-day
+*nudge*, and a re-post is not one. It is the acknowledgement of a tap the user
+made a moment ago on a notification in front of them, and the window is real —
+being nudged is exactly what sends somebody to the setting, so the switch can
+go off between the post and the tap. Suppressing the re-post there would leave
+the count contradicting the button they just pressed, which is the state the
+paragraph above exists to prevent. **The permission is still honoured**, and for
+free: the check is the first statement of `ReminderNotifier.post`, and the
+notification's id is private to that class, so a re-post goes through the same
+door.
+
+**A re-post must not re-alert, and today's builder would.** The channel is
+`IMPORTANCE_DEFAULT`, which makes a sound, and nothing sets
+`setOnlyAlertOnce` — so every `notify()` on the fixed id would buzz again. One
+tap becoming a second alert is wrong on its own, and it is the version of the
+paragraph above that would feel indefensible: a user who has just switched the
+reminder off would be *sounded at* for completing a habit. The first post
+alerts; a re-post replaces its content silently.
+
 **Nothing is ranked, and that is why the cap is where it is.** With four
 outstanding there is no non-arbitrary way to choose three, and any rule that did
 — most at risk, longest streak, alphabetical — would be the app making a
