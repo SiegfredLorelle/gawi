@@ -20,14 +20,14 @@ class StreakUiTest {
 
     @Test
     fun `a daily streak is counted in days`() {
-        assertEquals(StreakUi.Days(4), StreakSnapshot(current = 4, previous = 0, brokenOn = null).toUi(daily))
+        assertEquals(StreakUi.Days(4), StreakSnapshot(current = 4, previous = 0, brokenOn = null, spare = 0).toUi(daily))
     }
 
     @Test
     fun `a weekly streak is counted in weeks, never as the same number`() {
         // §5: "A daily habit's streak is a count; a weekly habit's is in weeks.
         // The two must never be styled as the same number."
-        val snapshot = StreakSnapshot(current = 3, previous = 0, brokenOn = null)
+        val snapshot = StreakSnapshot(current = 3, previous = 0, brokenOn = null, spare = 0)
         assertEquals(StreakUi.Weeks(3), snapshot.toUi(weekly))
         assertEquals(StreakUi.Days(3), snapshot.toUi(daily))
     }
@@ -35,7 +35,7 @@ class StreakUiTest {
     @Test
     fun `a broken streak keeps what was lost as context`() {
         // §5: the row reads 0 next to "was 4".
-        val broken = StreakSnapshot(current = 0, previous = 4, brokenOn = LocalDate.parse("2026-08-16"))
+        val broken = StreakSnapshot(current = 0, previous = 4, brokenOn = LocalDate.parse("2026-08-16"), spare = 0)
         assertEquals(StreakUi.Broken(previous = 4, weekly = false), broken.toUi(daily))
         assertEquals(StreakUi.Broken(previous = 4, weekly = true), broken.toUi(weekly))
     }

@@ -1,5 +1,6 @@
 package com.gawi.core.domain.streak
 
+import com.gawi.core.domain.mascot.Mascot
 import java.time.LocalDate
 
 /**
@@ -21,15 +22,37 @@ import java.time.LocalDate
  * reads zero is what lets a caller ask "did this break just now" by comparing
  * against today, and it is never in the future.
  *
+ * **A non-null [brokenOn] therefore means nothing was completed at or after it**,
+ * and that is what delivers today-view §4's mended-habit exit with no rule of
+ * its own: a later completion would have restarted the run, and a run that then
+ * broke again would carry the later date. So a caller asking "is this habit
+ * still broken" never has to ask "has it been mended since" as a second
+ * question. [Mascot.recentlyBroken] leans on this; a change here that let a
+ * break outlive its repair would break it silently.
+ *
  * A habit with no completions at all is [NONE] — not a break, just nothing yet.
  *
  * Produced by [Streaks.snapshot], which is pure in the completion set, so this
  * survives a projection rebuild unchanged.
  */
-data class StreakSnapshot(val current: Int, val previous: Int, val brokenOn: LocalDate?) {
+data class StreakSnapshot(
+    val current: Int,
+    val previous: Int,
+    val brokenOn: LocalDate?,
+    /**
+     * Spare lives left in this run, 0..[Streaks.MAX_SPARE] — the gills Momo
+     * draws (docs/ux/momo.md §3).
+     *
+     * **Zero whenever [current] is**, and not by coincidence: a run can only
+     * break once the last spare is spent, so a broken streak has none left by
+     * construction. That is what makes "zero spare" and "regenerating" one
+     * moment seen twice, which is the agreement momo.md §3 draws the face on.
+     */
+    val spare: Int,
+) {
 
     companion object {
-        /** No completions yet: nothing running, nothing broken. */
-        val NONE = StreakSnapshot(current = 0, previous = 0, brokenOn = null)
+        /** No completions yet: nothing running, nothing broken, nothing spare. */
+        val NONE = StreakSnapshot(current = 0, previous = 0, brokenOn = null, spare = 0)
     }
 }

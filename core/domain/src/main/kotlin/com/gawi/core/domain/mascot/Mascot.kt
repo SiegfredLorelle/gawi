@@ -22,8 +22,7 @@ import java.time.temporal.ChronoUnit
  *
  * Provisional in the way today-view §4 is provisional: this is Phase 1 behaviour, written
  * down so the MVP placeholder and the eventual Rive state machine are driven by
- * one rule. Grace mechanics — decided as gills, scheduled (PRD OQ-3, §5) —
- * change what "recently broken" means and therefore this whole file.
+ * one rule.
  */
 object Mascot {
 
@@ -40,9 +39,12 @@ object Mascot {
      * instead of being masked by the recovery face. For a weekly habit that
      * means the first three days of the week its streak zeroed.
      *
-     * The 3 is a guess. PRD §8's OQ-3 is decided as gills, so this number is
-     * re-examined when gills are built (PRD §5, 1.0.0 step 3) and stays 3 and
-     * a guess until then.
+     * **Three days is a backstop rather than a model of recovery.** The ordinary
+     * way out is that the habit is mended, which [recentlyBroken] answers
+     * without a second rule; this window is only for the habit that is never
+     * picked up again, where no completion is ever coming to end the state and
+     * an abandoned habit would otherwise pin Momo to a permanent guilt face.
+     * That is a narrow enough job for 3 to answer it (today-view §4).
      */
     const val REGENERATING_WINDOW_DAYS = 3L
 
@@ -189,6 +191,12 @@ object Mascot {
      * yet, which is nothing to recover from rather than a break. A `brokenOn`
      * after [today] means the caller paired a snapshot with a date it was not
      * computed for; it is not a break that has happened, so it does not count.
+     *
+     * **A mended habit cannot reach here**, which is today-view §4's exit from
+     * the recovery state and needs no rule of its own: a habit completed again
+     * — or, for a weekly one, one that has met its week's target — has a
+     * positive `current` and therefore a null `brokenOn`. [StreakSnapshot]
+     * states why that holds.
      */
     private fun recentlyBroken(streak: StreakSnapshot, today: LocalDate): Boolean {
         val brokenOn = streak.brokenOn ?: return false

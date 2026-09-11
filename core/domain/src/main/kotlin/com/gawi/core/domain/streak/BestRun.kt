@@ -23,6 +23,13 @@ import java.time.LocalDate
  *   clocks, imports) and they must not lengthen a run, the same rule
  *   [Streaks.weekStreak] applies.
  *
+ * **Deliberately blind to spare lives**, which is where this parts company with
+ * [Streaks] (PRD §8, OQ-3). A run's spare lives are earned from units that may
+ * lie outside the window, so a window cannot say whether a gap inside it was
+ * forgiven without reading the history it exists to exclude. The question here
+ * is how many units in a row the user actually turned up for, and a forgiven
+ * miss is not one of them.
+ *
  * There is no "worst run" beside this, and that is a decision rather than an
  * omission: every habit's worst run is zero, so the number carries nothing.
  */
