@@ -15,35 +15,38 @@ import java.time.LocalDate
  *
  * Liveness semantics: an unfinished current day (or a current week still
  * below target) does not break a streak — it simply hasn't extended it yet.
- * A finished day/week that missed resets to zero. Grace mechanics are
- * decided as gills and not yet built (PRD OQ-3).
+ * A finished day/week that missed spends a spare life if the run has one and
+ * breaks the run only when it has none ([replay], PRD §8 OQ-3).
  */
 object Streaks {
 
-    /** Length of the consecutive-day run ending at today (if completed) or yesterday. */
-    fun dayStreak(completedDates: Set<LocalDate>, today: LocalDate): Int {
-        val anchor = when {
-            today in completedDates -> today
-            today.minusDays(1) in completedDates -> today.minusDays(1)
-            else -> return 0
-        }
-        var streak = 0
-        var cursor = anchor
-        while (cursor in completedDates) {
-            streak++
-            cursor = cursor.minusDays(1)
-        }
-        return streak
-    }
+    /**
+     * The most spare lives a run can hold — the three right gills Momo draws
+     * (docs/ux/momo.md §3).
+     */
+    const val MAX_SPARE = 3
+
+    /**
+     * Clean units — completed days, or weeks that met their target — that earn
+     * one spare life.
+     *
+     * Deliberately not [Schedule.DAYS_PER_WEEK], which is also 7. That one is
+     * how long a week is and this one is what a spare life costs; tying them
+     * together would make a change to either silently move the other, and this
+     * one counts weeks as readily as days.
+     */
+    const val CLEAN_PER_SPARE = 7
+
+    /** Length of the run ending at today, counting only units actually completed. */
+    fun dayStreak(completedDates: Set<LocalDate>, today: LocalDate): Int = dailySnapshot(completedDates, today).current
 
     /**
      * Consecutive calendar weeks with at least [Schedule.Weekly.timesPerWeek]
-     * distinct completed dates, ending at the current week (if it already
-     * hit) or the previous one. Dates after [today] are ignored — replay
-     * accepts future-dated completions (fast device clocks, imports) and they
-     * must not pre-fill a week. Weeks are keyed by their start date via
-     * [weekStart] arithmetic — never by week-of-year numbers, which
-     * misbucket the days around New Year.
+     * distinct completed dates, ending at the current week. Dates after [today]
+     * are ignored — replay accepts future-dated completions (fast device
+     * clocks, imports) and they must not pre-fill a week. Weeks are keyed by
+     * their start date via [weekStart] arithmetic — never by week-of-year
+     * numbers, which misbucket the days around New Year.
      *
      * Takes the [Schedule.Weekly] rather than a bare count so the 1..7 bound
      * that type enforces cannot be bypassed here. A raw target degrades
@@ -51,27 +54,13 @@ object Streaks {
      * weeks with no completions are not keys in the grouping to begin with,
      * and anything above 7 can never be met.
      */
-    fun weekStreak(completedDates: Set<LocalDate>, schedule: Schedule.Weekly, today: LocalDate, weekStart: DayOfWeek): Int {
-        val hitWeeks = hitWeeks(completedDates, schedule, today, weekStart)
-        val currentWeek = weekStartOn(today, weekStart)
-        val anchor = when {
-            currentWeek in hitWeeks -> currentWeek
-            currentWeek.minusWeeks(1) in hitWeeks -> currentWeek.minusWeeks(1)
-            else -> return 0
-        }
-        var streak = 0
-        var cursor = anchor
-        while (cursor in hitWeeks) {
-            streak++
-            cursor = cursor.minusWeeks(1)
-        }
-        return streak
-    }
+    fun weekStreak(completedDates: Set<LocalDate>, schedule: Schedule.Weekly, today: LocalDate, weekStart: DayOfWeek): Int =
+        weeklySnapshot(completedDates, schedule, today, weekStart).current
 
     /**
      * The streak plus the context the Today view needs to render a break:
      * the run that was lost and the date it was lost on (docs/ux/today-view.md
-     * §5, the `was 4` beside a `0`).
+     * §5, the `was 4` beside a `0`), and the spare lives the run is carrying.
      *
      * This is a pure function of [completedDates], [schedule], [today] and
      * [weekStart] — deliberately, and it is the one property worth protecting
@@ -79,15 +68,14 @@ object Streaks {
      * cached streak row ever held", which depends on when the app happened to
      * be opened: a user away for a week never observes the intermediate values,
      * so a rebuild would disagree with the incremental path and architecture
-     * §4's incremental-≡-rebuild invariant would not hold. Re-running the same
-     * calculator anchored at the last success has no such history.
+     * §4's incremental-≡-rebuild invariant would not hold. Replaying the run
+     * forward from its first completion has no such history.
      *
      * [StreakSnapshot.brokenOn] also answers the mood spec's `recentlyBroken`
-     * input (today-view §4) with nothing stored, as `brokenOn == today` for a
-     * daily habit and `brokenOn == the current week's start` for a weekly one.
-     * Like [StreakSnapshot.current] itself, it is denominated in the schedule's
-     * own unit, so a caller needs the schedule to read it — the same schedule
-     * it already needs to know whether a `3` means days or weeks.
+     * input (today-view §4) with nothing stored. Like [StreakSnapshot.current]
+     * itself, it is denominated in the schedule's own unit, so a caller needs
+     * the schedule to read it — the same schedule it already needs to know
+     * whether a `3` means days or weeks.
      */
     fun snapshot(completedDates: Set<LocalDate>, schedule: Schedule, today: LocalDate, weekStart: DayOfWeek): StreakSnapshot =
         when (schedule) {
@@ -95,54 +83,100 @@ object Streaks {
             is Schedule.Weekly -> weeklySnapshot(completedDates, schedule, today, weekStart)
         }
 
-    private fun dailySnapshot(completedDates: Set<LocalDate>, today: LocalDate): StreakSnapshot {
-        val current = dayStreak(completedDates, today)
-        // Future-dated completions exist (fast clocks, imports) and must not
-        // count as the last success, so the search is bounded at today.
-        val lastCompleted = completedDates.filter { !it.isAfter(today) }.maxOrNull()
-        return when {
-            current > 0 -> StreakSnapshot(current, previous = 0, brokenOn = null)
-
-            lastCompleted == null -> StreakSnapshot.NONE
-
-            else -> StreakSnapshot(
-                current = 0,
-                previous = dayStreak(completedDates, lastCompleted),
-                // Two days on, not one. An unfinished day does not break a
-                // streak, so the day after the last completion still reads
-                // positive; the first day this reads zero is the one after
-                // that, and that is the day the user sees the break.
-                brokenOn = lastCompleted.plusDays(2),
-            )
-        }
-    }
+    // Future-dated completions exist (fast clocks, imports) and must neither
+    // extend a run nor earn a spare life, so the set is bounded at today. The
+    // weekly case is bounded inside hitWeeks instead, which BestRun shares.
+    private fun dailySnapshot(completedDates: Set<LocalDate>, today: LocalDate): StreakSnapshot =
+        replay(completedDates.filterTo(mutableSetOf()) { !it.isAfter(today) }, now = today) { it.plusDays(1) }
 
     private fun weeklySnapshot(
         completedDates: Set<LocalDate>,
         schedule: Schedule.Weekly,
         today: LocalDate,
         weekStart: DayOfWeek,
-    ): StreakSnapshot {
-        val current = weekStreak(completedDates, schedule, today, weekStart)
-        val lastHitWeek = hitWeeks(completedDates, schedule, today, weekStart)
-            .filter { !it.isAfter(weekStartOn(today, weekStart)) }
-            .maxOrNull()
+    ): StreakSnapshot =
+        replay(hitWeeks(completedDates, schedule, today, weekStart), now = weekStartOn(today, weekStart)) { it.plusWeeks(1) }
+
+    /**
+     * Walks the run forward from its first success to [now], one unit at a
+     * time, and reports where it ended up.
+     *
+     * **Forward rather than backwards from [now], which is what gills cost.**
+     * Whether a gap breaks the run depends on the spare lives earned before it
+     * (PRD §8 OQ-3), and those are a property of the history rather than of the
+     * gap, so there is nothing to read at the gap itself. One unit is a day for
+     * a daily habit and a week that met its target for a weekly one; [hit] and
+     * [now] are already denominated in it, so this counts either without
+     * knowing which.
+     *
+     * The four branches are the rule, in precedence order:
+     *
+     * - A completed unit extends the run and the clean count. At
+     *   [MAX_SPARE] the clean count *holds* rather than banking, so a spare
+     *   life always costs a fresh [CLEAN_PER_SPARE] however long ago it was
+     *   spent (docs/ux/momo.md §3).
+     * - [now] itself is never judged: an unfinished day, or a week still below
+     *   its target, has not broken anything yet — it simply has not extended
+     *   the run.
+     * - A missed unit with a spare life spends it. **The run is preserved and
+     *   not extended**: it counts units the user turned up for, so a forgiven
+     *   miss leaves the number where it was rather than moving it. Spending
+     *   restarts the clean count.
+     * - A missed unit with nothing spare breaks the run, dating the break one
+     *   unit on — which is when [StreakSnapshot.current] first reads zero,
+     *   the invariant that type states.
+     *
+     * The break only records a run that was live, so a long trailing gap
+     * cannot re-date a break it did not cause. A later break does overwrite an
+     * earlier one, which is right: the snapshot describes the most recent.
+     */
+    private fun replay(hit: Set<LocalDate>, now: LocalDate, next: (LocalDate) -> LocalDate): StreakSnapshot {
+        var unit = hit.minOrNull() ?: return StreakSnapshot.NONE
+        var run = 0
+        var spare = 0
+        var clean = 0
+        var previous = 0
+        var brokenOn: LocalDate? = null
+
+        while (!unit.isAfter(now)) {
+            when {
+                unit in hit -> {
+                    run++
+                    // Two statements rather than one nested pair, and they
+                    // compose because the clean count is provably 0 at the cap:
+                    // reaching it is what last zeroed it, and the guard below
+                    // has kept it there since. So "the cap does not bank" and
+                    // "a spend starts a fresh seven" are the same line.
+                    if (spare < MAX_SPARE) clean++
+                    if (clean == CLEAN_PER_SPARE) {
+                        spare++
+                        clean = 0
+                    }
+                }
+
+                unit == now -> Unit
+
+                spare > 0 -> {
+                    spare--
+                    clean = 0
+                }
+
+                else -> {
+                    if (run > 0) {
+                        previous = run
+                        brokenOn = next(unit)
+                    }
+                    run = 0
+                    spare = 0
+                    clean = 0
+                }
+            }
+            unit = next(unit)
+        }
+
         return when {
-            current > 0 -> StreakSnapshot(current, previous = 0, brokenOn = null)
-
-            lastHitWeek == null -> StreakSnapshot.NONE
-
-            else -> StreakSnapshot(
-                current = 0,
-                // Anchored on the last day of the week that was hit, so
-                // weekStreak's own "ignore dates after today" filter measures
-                // the run as it stood when it ended rather than clipping it.
-                previous = weekStreak(completedDates, schedule, lastHitWeek.plusWeeks(1).minusDays(1), weekStart),
-                // The start of the first week this reads zero — two weeks on
-                // for the same reason the daily case is two days on. A week
-                // still below target has not broken anything yet.
-                brokenOn = lastHitWeek.plusWeeks(2),
-            )
+            run > 0 -> StreakSnapshot(current = run, previous = 0, brokenOn = null, spare = spare)
+            else -> StreakSnapshot(current = 0, previous = previous, brokenOn = brokenOn, spare = 0)
         }
     }
 

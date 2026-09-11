@@ -26,7 +26,7 @@ class MascotMoodTest {
     private fun weekly(timesPerWeek: Int, completionsThisWeek: Int = 0, streak: StreakSnapshot = StreakSnapshot.NONE) =
         HabitMoodState(habitId(2), Schedule.Weekly(timesPerWeek), archived = false, completedToday = false, completionsThisWeek, streak)
 
-    private fun brokeOn(day: LocalDate) = StreakSnapshot(current = 0, previous = 4, brokenOn = day)
+    private fun brokeOn(day: LocalDate) = StreakSnapshot(current = 0, previous = 4, brokenOn = day, spare = 0)
 
     private fun moodOf(vararg habits: HabitMoodState, at: LocalTime = morning, on: LocalDate = today) =
         Mascot.mood(MoodInputs(habits.toList(), on, LocalDateTime.of(on, at), reminder, LocalTime.MIDNIGHT, DayOfWeek.MONDAY))

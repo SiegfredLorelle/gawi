@@ -122,12 +122,23 @@ fun todayHabit(
     streak = streak,
 )
 
-/** A live run of [current], in whatever unit the habit's schedule counts in. */
-fun running(current: Int): StreakSnapshot = StreakSnapshot(current = current, previous = 0, brokenOn = null)
+/**
+ * A live run of [current], in whatever unit the habit's schedule counts in,
+ * carrying [spare] spare lives.
+ *
+ * [spare] defaults to none because most callers are asking about the number a
+ * row draws rather than about gills; a test that is about gills passes it.
+ */
+fun running(current: Int, spare: Int = 0): StreakSnapshot = StreakSnapshot(current = current, previous = 0, brokenOn = null, spare = spare)
 
-/** A run of [previous] that has since been lost, and reads zero as of [brokenOn]. */
+/**
+ * A run of [previous] that has since been lost, and reads zero as of [brokenOn].
+ *
+ * No spare parameter: a run only breaks once its last spare life is spent, so a
+ * broken snapshot has none by construction (StreakSnapshot.spare).
+ */
 fun broken(previous: Int, brokenOn: LocalDate = LocalDate.parse("2026-08-16")): StreakSnapshot =
-    StreakSnapshot(current = 0, previous = previous, brokenOn = brokenOn)
+    StreakSnapshot(current = 0, previous = previous, brokenOn = brokenOn, spare = 0)
 
 /**
  * What `observeHabitDetail` returns. [today] defaults to [FIXED_DATE] and

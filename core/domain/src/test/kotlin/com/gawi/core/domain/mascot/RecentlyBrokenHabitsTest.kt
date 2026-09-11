@@ -36,7 +36,7 @@ class RecentlyBrokenHabitsTest {
         archived = archived,
         completedToday = completedToday,
         completionsThisWeek = 0,
-        streak = if (brokenOn == null) StreakSnapshot.NONE else StreakSnapshot(0, previous = 4, brokenOn = brokenOn),
+        streak = if (brokenOn == null) StreakSnapshot.NONE else StreakSnapshot(0, previous = 4, brokenOn = brokenOn, spare = 0),
     )
 
     private fun inputsOf(vararg habits: HabitMoodState, on: LocalDate = today) = MoodInputs(
