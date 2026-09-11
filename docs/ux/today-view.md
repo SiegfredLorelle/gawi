@@ -164,16 +164,29 @@ limbs.
 
 ### Regenerating: entry and exit
 
-Enters at the rollover that zeroes a streak. Exits when **that habit is
-completed again**, or after **3 logical days** if it is not, whichever comes
-first.
+Enters at the rollover that zeroes a streak. **There are two ways out, and a
+backstop.** The day goes clear, and rule 1 above draws thriving instead — that
+one is precedence rather than an exit, and it is unchanged. Or the broken habit
+is mended, which ends the state itself. Failing both, it lapses after **3
+logical days**.
 
-**The early exit is the repair the line asks for.** It used to be the first day
-with nothing outstanding *at all* — a condition about the whole day rather than
-about the habit the panel names. So the line could say *"pick Stretch back up"*
-to somebody who had just picked Stretch back up, and go on saying it. The mood
-now ends on the completion it asked for, which is the only event that answers
-it.
+**The mended-habit exit is the repair the line asks for**, and it is the one
+this section did not have. Rule 1 answers for the whole day: finish everything
+and the face is thriving whatever is broken underneath. What nothing answered
+was the habit the panel *names* — so the line could say *"pick Stretch back up"*
+to somebody who had just picked Stretch back up and go on saying it for two more
+days, for as long as some other habit kept the day from going clear.
+
+**For a weekly habit, mended means the week's target met**, not a completion
+written. A completion short of the target leaves the streak at zero with
+`brokenOn` still set (`Streaks.weeklySnapshot`), which is the same fact §6 below
+already turns into the reason the unnamed line exists. Reusing the streak's own
+predicate is what stops a weekly habit leaving this state on a tick that
+repaired nothing.
+
+`Mascot.mood` tests only the window today, so the mended check is what step 3
+adds to it; `recentlyBrokenHabits` already filters `completedToday` for the
+daily case, which is the half that exists.
 
 **The 3 days are a backstop, not a model of recovery.** They exist for the
 habit that is never picked up again: without them an abandoned habit pins Momo
