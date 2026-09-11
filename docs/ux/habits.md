@@ -57,13 +57,14 @@ would be silently overwritten with defaults.
 
 Fields are fixed by `HabitMetadata(name, icon, color, schedule, tag)`.
 
-**Superseded in part by [visual-identity.md](visual-identity.md) §7.3: the form
-offers no icon and no colour.** `icon` and `color` stay in `HabitMetadata` and
-in the wire format, unread — an edit carries a habit's stored values back
-unchanged and a create writes the defaults — so nothing in the log moves and
-`parseHabitColor` is still needed for what is already in it. The bullet below
-is kept as the record of why the pickers were shaped the way they were, and is
-rewritten when they are deleted in step 4, not before.
+**Superseded in part by [visual-identity.md](visual-identity.md) §7.3: a habit
+keeps no icon and no colour, so the form will offer neither.** Both fields stay
+in `HabitMetadata` and in the wire format and stop being read — an edit carries
+a habit's stored values back unchanged and a create writes the defaults — so
+nothing in the log moves. What follows is kept because a habit's stored `color`
+is still raw hex in an append-only log and a reader may still need to know what
+those values were and why. It is rewritten when the code goes, not before — the
+bullet below describes pickers that are still in the app today.
 
 - **Name** — free text. A blank name is `CommandError.BlankName`, and it is the
   **only** thing the domain rejects about metadata. Submitted **untrimmed**,
@@ -342,14 +343,6 @@ would append a second identical habit if saved again.
   upcast-on-read, not a UI change.
 - **No habit-count limit** is specified anywhere, and none is enforced. The list
   is a `LazyColumn`, so this is fine until some other part of the app cares.
-- **A habit whose stored icon or colour is not in `HabitPalette` opens the
-  editor with nothing selected in that picker.** Closed twice over, and worth
-  recording because the two closures disagree about which fix landed:
-  visual-identity §6.3 chose appending the stored value as a leading "current"
-  swatch, and §7.3 then removed the picker entirely. The passthrough rule §7.3
-  writes is what actually answers this — a form that no longer shows a field
-  must not write one either — so a stored value survives an edit whether or not
-  it was ever offered.
 - **A `Saved` event can be lost** if the Route's collector is cancelled between
   `receive()` and the callback, leaving the habit saved but the editor open with
   Save latched. Narrow enough to accept: the same window exists for a rejection
