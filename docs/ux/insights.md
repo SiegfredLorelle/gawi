@@ -659,9 +659,23 @@ so the PRD's "best/worst" is built as "best", and this is where that is decided.
 
 The hit-week rule is `Streaks.hitWeeks`, now `internal` and called from
 `BestRun` rather than copied into it — "which weeks count" is written once in
-`:core:domain`, so the weekly best run on Insights and the weekly streak on Today
-cannot come to disagree about the same dates. The walk itself is linear: a run
-is walked from its head only, the date whose predecessor is absent.
+`:core:domain`, so the two cannot disagree about *which* weeks met the target.
+The walk itself is linear: a run is walked from its head only, the date whose
+predecessor is absent.
+
+**They can disagree about a run's length, though, and since gills they do.** A
+streak on Today spans a miss a spare gill forgave; a best run here does not
+(`BestRun`, PRD §8 OQ-3). Fourteen clean days, a forgiven miss and two more
+completions read as a 16-day streak on Today and a best run of 14 here. That is
+a wider gap than the one this section rejected above — clipping a run at
+yesterday, which would have cost exactly one day — and it is taken anyway,
+because this one is a difference in the question rather than in the arithmetic.
+A window cannot say whether a gap inside it was forgiven without reading the
+lives earned outside it, which is the history the window exists to exclude. So
+Today answers what the user kept alive and Insights answers what they turned up
+for, and the second is the honest one for a retrospective. Revisit the wording
+on the screen when step 4 draws the gills and the two numbers are visible
+together for the first time.
 
 ### 9.4 The trend measures turning up
 
