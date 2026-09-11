@@ -139,7 +139,21 @@ run. **The three right gills carry the count and the three left gills never
 change**, so the drawing always shows a full gill beside a spent one and the
 reader can tell which is which without having seen the character before. Three
 spare is the drawing above, untouched; two, one and none shorten the right
-gills from the top down.
+gills **from the bottom up**, so the count is always readable as how far the
+shortening has climbed: three long, then the lowest short, then the lower two,
+then all three.
+
+**The order is bottom-up because the top gill is the one that grows back
+first**, and that is the gill the regenerating halo has always marked. Spending
+from the top instead would make the lowest gill the last spent and so the first
+to return, which would move the halo to the bottom of the cluster and move
+`REGROWING_GILL` with it. Nothing is gained for it. The rule a calculator needs
+is the one sentence above: a gill's index counts up from the bottom, and the
+first `3 − spare` of them are short.
+
+**None of this is built.** `drawGills` shortens exactly one gill and takes no
+count at all, so what this section fixes is where the drawing is going rather
+than what the app draws today.
 
 **A spent gill is the same drawing as the regrowing one**, so there is one
 recipe rather than two: every point pulled toward its own root at **0.661**,
@@ -152,8 +166,8 @@ offset as a long one.
 **None left is the regenerating face, and that is why the two agree.** A streak
 can only break once the last spare is gone, so *zero spare* and *regenerating*
 are one moment seen twice — the mood table's REGENERATING column is this
-drawing at zero, and the halo marks the upper gill because that is the one
-growing back first.
+drawing at zero, halo included, and the order above is what puts that halo on
+the upper gill.
 
 **She only shows a count she can name.** A gill belongs to a habit and there is
 one Momo for all of them, so an ambient count raises a question the screen
