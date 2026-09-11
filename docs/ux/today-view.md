@@ -254,7 +254,10 @@ Small decisions that were easier to make once drawn:
   `row_doesNotSpeakTheIcon`, `streak_speaksItsUnit` and
   `brokenStreak_speaksWhatWasLost` pin it, and hearing it is owed
   (docs/running.md §4) — including the order: the badge's description is on a
-  child node after the name, so the name should still lead.
+  child node after the name, so the name should still lead. **The icon half of
+  this retires in step 4**: a habit keeps none (visual-identity.md §7.3), and a
+  row with no icon has nothing decorative to silence. What survives is the
+  streak's own phrasing, which is the half that was never about the icon.
 - **A row that owes nothing today is dimmed, and that is not the same as
   ticked.** Twelve empty checkboxes under a panel reading *"8 of 15 left
   today"* is the screen contradicting itself: four of them were weekly habits
