@@ -456,7 +456,7 @@ this is kept true rather than remembered.
 **What records the export is not a setting**, and the boundary is worth stating
 because the obvious place is wrong. The stamp lives in the settings preferences
 file under its own key, read and written by `ExportJournal`, and deliberately
-*not* as a fourth `UserSettings` field: that type is compared to decide whether
+*not* as a `UserSettings` field at all: that type is compared to decide whether
 `observeToday()` has to re-run, so a field changing on every export would
 restart the streak sweep under an open screen. The nudge also needs to know
 whether the log holds anything at all, which is not a preference in any reading,

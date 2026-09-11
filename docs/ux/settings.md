@@ -1,4 +1,4 @@
-# Settings: four preferences, and the PRD's fourth that is not one
+# Settings: three of the PRD's four, and the fourth that is not one
 
 Companion to [the PRD](../prd.md) §5 and §7, and to
 [the architecture](../architecture.md) §2, §3 and §5. The PRD specifies these
@@ -22,7 +22,7 @@ to admit (§2), and where the gear points (§4).
 
 ---
 
-## 1. Three settings, not the PRD's four
+## 1. Three of the PRD's four, and what has joined them since
 
 `UserSettings` holds `dayCutoff`, `weekStart` and `reminderTime`, `theme` (§7),
 and — decided on the canvas-fidelity pass, not yet built — a boolean for
@@ -40,15 +40,14 @@ user who opens it looking for a fix for a travel problem would find nothing and
 learn nothing. `UserSettings`' own KDoc has said this since it was written, and
 this section is where it stops being only a code comment.
 
-**There is a fourth setting now, and it is not the PRD's.** The theme landed
-2026-08-26 (§7), which leaves this section's title true in the only sense it
-ever meant: of the four capabilities the PRD lists, three are here and timezone
-behaviour is deliberately not. The theme is a different kind of setting
-entirely — it counts nothing, buckets nothing and changes no query — which is
-why it sits under its own header rather than joining the rows above. That
-argument once rested on those rows being unlabelled; §2 gives them a name, so
-it now rests on the only thing it ever needed, which is that they are a
-different kind of setting.
+**Two settings have joined since, and neither is the PRD's.** The theme landed
+2026-08-26 (§7) and the reminder switch is decided but unbuilt, which leaves
+this heading true in the only sense it ever meant: of the four capabilities the
+PRD lists, three are here and timezone behaviour is deliberately not. Counting
+`UserSettings`' fields is a different sum and always has been. The theme is a
+different kind of setting entirely — it counts nothing, buckets nothing and
+changes no query — which is why it sits under its own header rather than
+joining the rows above (§7).
 
 Revisit if a second timezone policy is ever wanted — "pin my habits to the zone
 I created them in" is the plausible one, and it is a real feature with real
@@ -422,8 +421,8 @@ cases where a count is zero get their own string rather than reading "0 added".
 ## 7. Appearance: the one setting that counts nothing
 
 **Decided and built 2026-08-26.** Three modes — follow the system, Light, Dark
-— stored as a fourth `UserSettings` field and drawn by `GawiTheme`, which has
-taken a `darkTheme` parameter since it was written and needed no change at all.
+— stored as a `UserSettings` field and drawn by `GawiTheme`, which has taken a
+`darkTheme` parameter since it was written and needed no change at all.
 
 **It is a section of its own rather than a row among the others**, and that is
 the whole of what this screen had to decide. The rows under §2's *Your day* are
@@ -494,17 +493,20 @@ path** — the JSON event log is the only thing an import can rebuild from — a
 two assertions keep that true where a comment could not: the CSV archive is not
 given `ExportJournal`, so it cannot stamp the last-export time, and `csvHelp`
 takes no `ExportRecency`, so the row cannot show the nudge (§6). **And
-`lastExportedAt` is not a fourth `UserSettings` field**, written up on
+`lastExportedAt` is not a `UserSettings` field at all**, written up on
 `ExportJournal`: `OfflineFirstHabitRepository` dedupes the Today query on the
 `(settings, logical date)` pair, so a field that changed on every export would
 make that dedupe miss and restart the streak sweep under an open screen, and the
 nudge needs a second signal `UserSettings` cannot carry at all — whether the log
-holds anything. It shares the preferences *file*, which is safe because `update`
-assigns only its own three keys, and two tests pin that in both directions. The
-three preferences are what the user set; when an export last happened is a record
-of what the app did — the same distinction §6 draws about the two rows. One build
-constraint from the same work is still live: `TooManyFunctions` caps a *file* at
-eleven, which is why the Data section's mapper functions sit in
+holds anything. **That test is about how often a field changes, not how many
+there are**, which is why §1's reminder switch passes it and this does not: a
+boolean flipped by hand re-emits the query when it is flipped, which is the
+point of flipping it. The journal shares the preferences *file*, which is safe
+because `update` assigns only the settings keys, and two tests pin that in both
+directions. Those keys are what the user set; when an export last happened is a
+record of what the app did — the same distinction §6 draws about the two rows.
+One build constraint from the same work is still live: `TooManyFunctions` caps
+a *file* at eleven, which is why the Data section's mapper functions sit in
 `SettingsDataMapper.kt`.
 
 - **`ContentResolverEventArchive` has no behavioural test, and that is now a
