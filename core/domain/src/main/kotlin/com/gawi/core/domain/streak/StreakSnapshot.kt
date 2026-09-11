@@ -1,6 +1,5 @@
 package com.gawi.core.domain.streak
 
-import com.gawi.core.domain.mascot.Mascot
 import java.time.LocalDate
 
 /**
@@ -27,8 +26,8 @@ import java.time.LocalDate
  * its own: a later completion would have restarted the run, and a run that then
  * broke again would carry the later date. So a caller asking "is this habit
  * still broken" never has to ask "has it been mended since" as a second
- * question. [Mascot.recentlyBroken] leans on this; a change here that let a
- * break outlive its repair would break it silently.
+ * question. `Mascot`'s recovery rule leans on this; a change here that let a
+ * break outlive its repair would end that state's exit silently.
  *
  * A habit with no completions at all is [NONE] — not a break, just nothing yet.
  *
@@ -45,8 +44,13 @@ data class StreakSnapshot(
      *
      * **Zero whenever [current] is**, and not by coincidence: a run can only
      * break once the last spare is spent, so a broken streak has none left by
-     * construction. That is what makes "zero spare" and "regenerating" one
-     * moment seen twice, which is the agreement momo.md §3 draws the face on.
+     * construction.
+     *
+     * **The converse does not hold, and a drawing must not assume it.** Every
+     * run shorter than [Streaks.CLEAN_PER_SPARE] also reports zero, having had
+     * no time to earn one — so zero spare alone does not mean regenerating,
+     * and keying the halo off this field would draw a healthy three-day-old
+     * habit as broken. `brokenOn` is what says the run is over.
      */
     val spare: Int,
 ) {
