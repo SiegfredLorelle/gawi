@@ -80,6 +80,7 @@ internal fun StreakSnapshot.toEntity(habitId: HabitId, computedFor: LocalDate): 
     currentStreak = current,
     previousStreak = previous,
     brokenOn = brokenOn?.toString(),
+    spareGills = spare,
     computedForDate = computedFor.toString(),
 )
 
@@ -101,5 +102,6 @@ internal fun TodayHabitRow.toDomain(): TodayHabit = TodayHabit(
         current = currentStreak,
         previous = previousStreak,
         brokenOn = brokenOn?.let(LocalDate::parse),
+        spare = spareGills,
     ),
 )

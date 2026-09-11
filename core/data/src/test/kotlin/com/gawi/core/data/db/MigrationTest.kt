@@ -57,7 +57,7 @@ class MigrationTest {
         val name = "migration-v1-to-v2.db"
         context.getDatabasePath(name).also { it.parentFile?.mkdirs() }.delete()
 
-        createV1(name) { db ->
+        createAt(version = 1, name = name) { db ->
             db.execSQL(
                 """
                 INSERT INTO events (id, type, schema_version, occurred_at, tz_offset_min, payload)
@@ -93,18 +93,71 @@ class MigrationTest {
     }
 
     /**
-     * Builds the v1 database from the committed schema and hands it to [seed].
+     * A v2 database survives to v3 and the spare-gill count arrives at zero.
+     *
+     * Zero is the honest value rather than a shortfall: the column counts spare
+     * lives a streak was carrying, a migration has no way to know, and
+     * `PROJECTION_VERSION` fills it by replaying the log. Asserting zero is
+     * asserting the migration does not *invent* spare lives — three would read
+     * exactly like three earned.
+     *
+     * It also proves the schema check passes on open. `ALTER TABLE … ADD
+     * COLUMN` appends, so the migrated table's column order differs from the
+     * one Room generates; this is what says Room does not mind.
+     */
+    @Test
+    fun `v2 opens at v3 with the log intact and no spare gills invented`() {
+        val name = "migration-v2-to-v3.db"
+        context.getDatabasePath(name).also { it.parentFile?.mkdirs() }.delete()
+
+        createAt(version = 2, name = name) { db ->
+            db.execSQL(
+                """
+                INSERT INTO events (id, type, schema_version, occurred_at, tz_offset_min, payload)
+                VALUES ('$EVENT_ID', 'habit_created', 1, 1000, 0, '{}')
+                """.trimIndent(),
+            )
+            db.execSQL(
+                """
+                INSERT INTO habit_streaks (habit_id, current_streak, previous_streak, broken_on, computed_for_date)
+                VALUES ('$HABIT_ID', 9, 0, NULL, '2026-08-17')
+                """.trimIndent(),
+            )
+        }
+
+        val database = with(Migrations) {
+            Room.databaseBuilder(context, GawiDatabase::class.java, name)
+                .addGawiMigrations()
+                .build()
+        }
+
+        database.openHelper.readableDatabase.use { db ->
+            db.query("SELECT id FROM events").use { events ->
+                assertTrue("the migration lost the event log", events.moveToFirst())
+                assertEquals(EVENT_ID, events.getString(0))
+            }
+            db.query("SELECT current_streak, spare_gills FROM habit_streaks").use { streaks ->
+                assertTrue("the migration lost the streak row", streaks.moveToFirst())
+                assertEquals(9, streaks.getInt(0))
+                assertEquals("the migration invented spare lives", 0, streaks.getInt(1))
+            }
+        }
+        database.close()
+    }
+
+    /**
+     * Builds a database at [version] from its committed schema and hands it to [seed].
      *
      * `room_master_table` and its identity hash are part of the schema rather
      * than an implementation detail to skip: Room reads that hash on open and
      * refuses a database whose schema it cannot verify, so a v1 file without it
      * would fail for a reason that has nothing to do with the migration.
      */
-    private fun createV1(name: String, seed: (SQLiteDatabase) -> Unit) {
+    private fun createAt(version: Int, name: String, seed: (SQLiteDatabase) -> Unit) {
         // org.json rather than kotlinx-serialization: it is on the platform
         // already, and :core:data does not otherwise have a JSON parser on its
         // test classpath. Reading a build artifact is not the wire format.
-        val schema = JSONObject(File(V1_SCHEMA).readText()).getJSONObject("database")
+        val schema = JSONObject(File("$SCHEMA_DIR/$version.json").readText()).getJSONObject("database")
         SQLiteDatabase.openOrCreateDatabase(context.getDatabasePath(name), null).use { db ->
             val entities = schema.getJSONArray("entities")
             for (i in 0 until entities.length()) {
@@ -121,13 +174,13 @@ class MigrationTest {
                 "INSERT OR REPLACE INTO room_master_table (id, identity_hash) VALUES (42, ?)",
                 arrayOf(schema.getString("identityHash")),
             )
-            db.version = 1
+            db.version = version
             seed(db)
         }
     }
 
     private companion object {
-        const val V1_SCHEMA = "schemas/com.gawi.core.data.db.GawiDatabase/1.json"
+        const val SCHEMA_DIR = "schemas/com.gawi.core.data.db.GawiDatabase"
         const val EVENT_ID = "00000000-0000-7000-8000-000000000001"
         const val HABIT_ID = "00000000-0000-7000-8000-00000000000a"
     }

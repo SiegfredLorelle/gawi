@@ -38,4 +38,6 @@ internal data class TodayHabitRow(
     val previousStreak: Int,
     @ColumnInfo(name = "broken_on")
     val brokenOn: String?,
+    @ColumnInfo(name = "spare_gills")
+    val spareGills: Int,
 )

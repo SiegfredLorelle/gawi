@@ -5,7 +5,7 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 /**
- * Every schema migration, and so far only one.
+ * Every schema migration.
  *
  * **All of these are derived-table migrations, and that is not a coincidence.**
  * [GawiDatabase]'s KDoc splits schema change in two: a derived table can be
@@ -43,8 +43,28 @@ internal object Migrations {
         }
     }
 
+    /**
+     * Adds `habit_streaks.spare_gills` for [com.gawi.core.domain.streak.StreakSnapshot.spare].
+     *
+     * `NOT NULL DEFAULT 0` because Room generates the column that way and
+     * hand-written DDL that disagrees is a crash on open rather than a failing
+     * test. The default is also the honest value for a row that somehow
+     * survives without being rewritten: no spare lives, which is what a streak
+     * computed before gills existed was worth.
+     *
+     * `PROJECTION_VERSION` goes to 3 in the same change, so the next start
+     * replays the log and every row gets a real count rather than the default.
+     */
+    // The pair is the migration's name; naming each would name it after itself.
+    @Suppress("MagicNumber")
+    val V2_TO_V3 = object : Migration(2, 3) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE habit_streaks ADD COLUMN spare_gills INTEGER NOT NULL DEFAULT 0")
+        }
+    }
+
     /** In order. Private, so [addGawiMigrations] is the only way to apply them. */
-    private val ALL = listOf(V1_TO_V2)
+    private val ALL = listOf(V1_TO_V2, V2_TO_V3)
 
     /**
      * Adds every migration to a builder, one call each.

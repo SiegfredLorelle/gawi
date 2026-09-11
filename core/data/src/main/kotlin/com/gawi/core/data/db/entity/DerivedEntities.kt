@@ -104,6 +104,12 @@ internal data class HabitStreakEntity(
     val previousStreak: Int,
     @ColumnInfo(name = "broken_on")
     val brokenOn: String?,
+    // The declared default matches the migration's DDL exactly. Room compares
+    // the two on open and refuses a database whose schema it cannot verify, so
+    // a column added with a default and declared without one is a crash rather
+    // than a failing test.
+    @ColumnInfo(name = "spare_gills", defaultValue = "0")
+    val spareGills: Int,
     @ColumnInfo(name = "computed_for_date")
     val computedForDate: String,
 )
