@@ -204,7 +204,7 @@ three lines to that same standard.
 
 | Surface | Ground | Motion | Status |
 |---|---|---|---|
-| Today | the tank: a 250 dp panel, water in `primaryContainer` to a second stop that is light in the light scheme and dark in the dark one, drained to `surfaceContainerHighest → surfaceContainerHigh` while regenerating, with four weeds and four bubbles keeping the mood's tempo behind the character | animated | **built** — `MascotPanel.kt`, `Habitat.kt` |
+| Today | the tank: a 250 dp panel, water in `primaryContainer` to a second stop that is light in the light scheme and dark in the dark one, drained to `surfaceContainerHighest → surfaceContainerHigh` while regenerating, with four weeds and four bubbles keeping the mood's tempo behind the character | animated | **built** except the second stop, which is still the theme-invariant `primaryFixedDim`; per-scheme in step 4 — `MascotPanel.kt`, `Habitat.kt` |
 | Widget | the Today widget's own background, above the rows, only when the host gives it 170 dp of height (two cells on most launchers, three on a small phone's); from 220 dp wide as well, on a flat `primaryContainer` pill beside the mood line and the woven day band ([widget.md](widget.md) §7) | the resting frame, `MomoFrame.rest`, rasterised by `drawMomo` at 72 dp, or 48 dp inside the pill | **built** — `widget/MomoBitmap.kt`, `TodayWidget.kt` |
 | Momo widget | her own 2×2 tile: flat `primaryContainer`, the tank colour without the gradient, and one word beneath her — no rows, no number ([widget.md](widget.md) §7) | the resting frame at 72 dp | **built 2026-08-29** — `widget/MomoWidget.kt` |
 | Reminder | the notification's small icon is alpha-only, so a silhouette — of the launcher mark, which is what holds at 24 dp | still | **built**, and redrawn as the gill cluster in step 4 — `app/res/drawable/ic_reminder.xml` |
@@ -248,7 +248,9 @@ same colour as the ground; nor does a darker ink, which buys the bottom of the
 gradient and loses the top. So the dark scheme takes its own second stop, dark
 enough that `primary` at 55 % reads at both ends. The drained pair was already
 per-scheme, so this makes the two pairs consistent in kind rather than making
-an exception for one.
+an exception for one. **Decided, not yet built**: `MascotPanel.kt` still builds
+the gradient from `primaryFixedDim`, so the 1.00:1 above is what the dark tank
+draws today.
 
 **The widget draws `drawMomo`, not four drawables.** visual-identity §7.4
 priced Momo-on-a-widget as "a static vector drawable per mood: four assets"
@@ -282,9 +284,9 @@ the font scale.
 **Colour follows the theme, the character does not.** The water is theme roles
 so it is right in both schemes with no second palette — the intent a
 theme-invariant `*Fixed` role quietly broke, and what the second stop above
-restores. Momo is §2's own colours in both, and the only thing that varies them
-is the regenerating desaturation, done arithmetically in `drawMomo` so a test
-can measure it.
+will restore. Momo is §2's own colours in both, and the only thing that varies
+them is the regenerating desaturation, done arithmetically in `drawMomo` so a
+test can measure it.
 
 ## 5. Accessibility
 
