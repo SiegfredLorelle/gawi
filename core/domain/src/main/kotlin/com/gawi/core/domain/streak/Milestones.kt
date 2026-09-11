@@ -15,10 +15,10 @@ package com.gawi.core.domain.streak
  */
 @Suppress("MagicNumber")
 object Milestones {
-    /** Consecutive days, for a daily habit. */
+    /** Days of run length, for a daily habit — see [com.gawi.core.domain.streak.StreakSnapshot.current]. */
     val DAYS: List<Int> = listOf(7, 30, 100)
 
-    /** Consecutive weeks hitting the target, for a weekly habit. */
+    /** Weeks of run length, for a weekly habit. */
     val WEEKS: List<Int> = listOf(4, 12, 52)
 
     /** The ladder for a schedule's unit. */

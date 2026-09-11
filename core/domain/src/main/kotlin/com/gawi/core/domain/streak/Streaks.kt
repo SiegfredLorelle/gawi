@@ -41,8 +41,10 @@ object Streaks {
     fun dayStreak(completedDates: Set<LocalDate>, today: LocalDate): Int = dailySnapshot(completedDates, today).current
 
     /**
-     * Consecutive calendar weeks with at least [Schedule.Weekly.timesPerWeek]
-     * distinct completed dates, ending at the current week. Dates after [today]
+     * Calendar weeks that met [Schedule.Weekly.timesPerWeek] distinct completed
+     * dates, counted up to the current week — **not necessarily consecutive**,
+     * since a missed week the run had a spare life for is forgiven rather than
+     * counted ([replay]). Dates after [today]
      * are ignored — replay accepts future-dated completions (fast device
      * clocks, imports) and they must not pre-fill a week. Weeks are keyed by
      * their start date via [weekStart] arithmetic — never by week-of-year
@@ -114,7 +116,9 @@ object Streaks {
      * - A completed unit extends the run and the clean count. At
      *   [MAX_SPARE] the clean count *holds* rather than banking, so a spare
      *   life always costs a fresh [CLEAN_PER_SPARE] however long ago it was
-     *   spent (docs/ux/momo.md §3).
+     *   spent. momo.md §3 fixes the seven and the cap; that the clock holds at
+     *   the cap and restarts on a spend is §3's "on their own clock" spelled
+     *   out, and §3 carries the consequence a user can feel.
      * - [now] itself is never judged: an unfinished day, or a week still below
      *   its target, has not broken anything yet — it simply has not extended
      *   the run.

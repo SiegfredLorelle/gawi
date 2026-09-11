@@ -51,15 +51,18 @@
          as a bare "1", "7" and "1 w" (docs/running.md §4, 2026-09-02). Two
          screens say the same fact, so the words live here; the widget keeps
          its own ("7 days", spokenLabel) because its rows carry nothing else.
-         "in a row" is the Today panel's own milestone phrase. Real plurals: 1
-         is every first completion. -->
+         It does NOT say "in a row", though the Today panel's milestone phrase
+         does: a run spans a miss a spare gill forgave (docs/ux/momo.md §3), so
+         consecutiveness is the one thing this number cannot promise. The word
+         "streak" carries what is left, and the break form below is its twin.
+         Real plurals: 1 is every first completion. -->
     <plurals name="ui_streak_days_spoken">
-        <item quantity="one">%1$d day in a row</item>
-        <item quantity="other">%1$d days in a row</item>
+        <item quantity="one">streak of %1$d day</item>
+        <item quantity="other">streak of %1$d days</item>
     </plurals>
     <plurals name="ui_streak_weeks_spoken">
-        <item quantity="one">%1$d week in a row</item>
-        <item quantity="other">%1$d weeks in a row</item>
+        <item quantity="one">streak of %1$d week</item>
+        <item quantity="other">streak of %1$d weeks</item>
     </plurals>
     <!-- A break says so and keeps its unit: "was 12w" would read as "was 12 w". -->
     <plurals name="ui_streak_broken_days_spoken">

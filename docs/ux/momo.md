@@ -143,6 +143,16 @@ gills **from the bottom up**, so the count is always readable as how far the
 shortening has climbed: three long, then the lowest short, then the lower two,
 then all three.
 
+**The clock holds at three and restarts on a spend.** Seven clean days buy a
+gill and the count then resets, so at three spare a further run banks nothing —
+sixty clean days and seven clean days leave her in the same place. Spending one
+starts a fresh seven from that day, which is what makes a spent gill always cost
+the same to get back rather than returning free to a long-running habit. The
+consequence a user can feel is the second half: hold three gills through two
+clean months, miss one day, and the third gill is seven clean days away again.
+Neither half is in PRD §8's OQ-3, which fixes only the seven and the cap; they
+are settled here because this is the section a calculator is written against.
+
 **The order is bottom-up because the top gill is the one that grows back
 first**, and that is the gill the regenerating halo has always marked. Spending
 from the top instead would make the lowest gill the last spent and so the first
