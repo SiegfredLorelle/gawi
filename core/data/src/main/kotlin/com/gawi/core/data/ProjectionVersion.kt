@@ -12,9 +12,12 @@ package com.gawi.core.data
  * rule that fills them changes, so Room sees nothing wrong and leaves rows in
  * place that current code would never have written.
  *
- * **It stands at 2 because of `HabitState.createdOn`**, a change that moved a
- * column *and* changed what fills it, so both versions had to move: the
- * migration adds the column and this replays the log to populate it. A schema
- * bump on its own leaves every habit's start date null.
+ * **It stands at 3 because of gills**, and for two reasons rather than one. A
+ * column moved — `habit_streaks.spare_gills` — so a schema bump was needed
+ * too, and a schema bump on its own leaves that column at its default. But
+ * `Streaks` also forgives gaps now, so the same log produces a different
+ * `current_streak`, `previous_streak` and `broken_on` for any habit that ever
+ * ran seven clean units. The second reason is the one a reader is liable to
+ * miss, and it is the one this constant exists for.
  */
-internal const val PROJECTION_VERSION = 2
+internal const val PROJECTION_VERSION = 3

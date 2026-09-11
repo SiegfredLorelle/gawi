@@ -117,6 +117,34 @@ class TodayMoodTest {
     }
 
     @Test
+    fun `mending the broken habit ends the recovery mood`() = runTest {
+        start()
+        val broken = createHabit("stretch")
+        // A second habit, left undone, so the day never goes clear: rule 1
+        // would otherwise draw thriving and say nothing about the repair
+        // (docs/ux/today-view.md §4).
+        createHabit("read")
+        store.repository.addCompletion(broken, store.today())
+
+        // Two days on, so the day between is a finished miss and the run is
+        // gone. One completion earns no spare life, so it breaks at the first.
+        store.clock.advanceDays(2)
+        store.repository.refreshStreaks()
+
+        store.repository.observeToday().test {
+            assertEquals(Mood.REGENERATING, Mascot.mood(awaitItem().moodInputs()))
+
+            store.repository.addCompletion(broken, store.today())
+
+            // The exit is the snapshot's doing rather than a rule of its own:
+            // the completion restarts the run, so `current` is positive and
+            // `brokenOn` is null, and nothing asks a second question.
+            assertNotEquals(Mood.REGENERATING, Mascot.mood(awaitItem().moodInputs()))
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
     fun `a reminder edit does not re-run the streak sweep`() = runTest {
         start(FakeSettingsSource(UserSettings(reminderTime = LocalTime.of(21, 0))))
         val habit = createHabit()

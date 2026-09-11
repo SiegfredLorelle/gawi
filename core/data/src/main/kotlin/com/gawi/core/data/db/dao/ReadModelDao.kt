@@ -45,7 +45,8 @@ internal interface ReadModelDao {
                    AND w.logical_date <= :today) AS week_count,
                COALESCE(s.current_streak, 0) AS current_streak,
                COALESCE(s.previous_streak, 0) AS previous_streak,
-               s.broken_on AS broken_on
+               s.broken_on AS broken_on,
+               COALESCE(s.spare_gills, 0) AS spare_gills
           FROM habits h
           LEFT JOIN completions t
                  ON t.habit_id = h.habit_id AND t.logical_date = :today
@@ -80,7 +81,8 @@ internal interface ReadModelDao {
                    AND w.logical_date <= :today) AS week_count,
                COALESCE(s.current_streak, 0) AS current_streak,
                COALESCE(s.previous_streak, 0) AS previous_streak,
-               s.broken_on AS broken_on
+               s.broken_on AS broken_on,
+               COALESCE(s.spare_gills, 0) AS spare_gills
           FROM habits h
           LEFT JOIN completions t
                  ON t.habit_id = h.habit_id AND t.logical_date = :today

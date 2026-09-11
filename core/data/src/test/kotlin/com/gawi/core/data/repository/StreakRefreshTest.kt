@@ -35,6 +35,11 @@ class StreakRefreshTest {
     @After
     fun tearDown() = store.close()
 
+    private companion object {
+        /** What one spare life costs, per PRD §8 OQ-3 — `Streaks.CLEAN_PER_SPARE`. */
+        const val SEVEN_CLEAN_DAYS = 7
+    }
+
     private suspend fun createHabit(name: String = "read", schedule: Schedule = Schedule.Daily): HabitId =
         (store.repository.createHabit(metadata(name, schedule)) as CommandResult.Accepted).payload
 
@@ -68,6 +73,31 @@ class StreakRefreshTest {
         store.repository.refreshStreaks()
 
         assertEquals(start.plusDays(2).toString(), store.snapshot().streaks.single().brokenOn)
+    }
+
+    @Test
+    fun `a spare life is earned and spent on the sweep, not only on a command`() = runTest {
+        val habit = createHabit()
+        // Seven clean days earns one (PRD §8 OQ-3). The clock moves with them
+        // rather than the dates being written ahead: a completion on a future
+        // logical date is refused by the command, so a loop over plusDays would
+        // quietly log one day and assert on it.
+        repeat(SEVEN_CLEAN_DAYS) { day ->
+            if (day > 0) store.clock.advanceDays(1)
+            store.repository.addCompletion(habit, store.today())
+        }
+        assertEquals(1, store.snapshot().streaks.single().spareGills)
+
+        // Two days on with nothing logged, so the day between is a finished
+        // miss. Only the rollover sweep runs here — no command is issued — so
+        // this is what proves the count travels that path too.
+        store.clock.advanceDays(2)
+        store.repository.refreshStreaks()
+
+        val forgiven = store.snapshot().streaks.single()
+        assertEquals(SEVEN_CLEAN_DAYS, forgiven.currentStreak)
+        assertEquals(0, forgiven.spareGills)
+        assertNull("the run was forgiven, not broken", forgiven.brokenOn)
     }
 
     @Test
