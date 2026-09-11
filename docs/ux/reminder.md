@@ -388,8 +388,8 @@ documented so it isn't lost"*, and it carried OQ-2 with it: Android caps three
 action buttons, and what to show when more than three habits remain is a real
 design question. **Answered (PRD §8, OQ-2) and scheduled for 1.0.0 (PRD §5,
 step 3): up to three buttons, one per outstanding habit, each writing a
-completion under the widget's rules; four or more left and there are none, the
-tap opening Today as it does today.** Until it lands, everything below this
+completion; four or more left and there are none, the tap opening Today as it
+does today.** Until it lands, everything below this
 paragraph describes a build without them.
 
 **The button is labelled with the habit's name and nothing else.** The position
@@ -408,6 +408,22 @@ row already keeps — *"the date travels with the row, so a tap writes to the da
 it was drawn for rather than to one resolved a moment later"*. It is the one
 part of this that is a correctness rule rather than a design choice.
 
+**Which is why `ToggleHabitAction` cannot be reused, though it looks like the
+same tap.** The widget resolves the date at tap time on purpose, because a
+Glance session is short and the *drawn* date is the value most likely to be
+stale. A notification is the opposite case: it outlives its own day, so the
+drawn date is the trustworthy one and *now* is what has gone stale. The two
+surfaces need opposite rules, and the widget's own KDoc argues for the one it
+has.
+
+**And the button completes; it never toggles.** `ToggleHabitAction` undoes a
+completion when the row is already done, which on a widget is a mis-tap the
+user can fix where it happened. Here the row was drawn hours ago: a habit ticked
+in the app since then would be *un*-ticked by a button still labelled with its
+name, in a surface the user is not looking at. So each button is an idempotent
+completion for its carried date — pressing it twice writes what pressing it once
+did, and nothing removes a completion from the shade.
+
 **A tap re-posts the notification rather than dismissing it.** The count in the
 body and the buttons under it are the same fact twice, so completing one habit
 out of three has to move both or the shade starts disagreeing with itself while
@@ -415,6 +431,17 @@ the user is still looking at it. The fixed id already makes a re-post replace
 rather than stack, which is what makes this cheap; when the last outstanding
 habit goes, the notification goes with it, because there is nothing left for it
 to say.
+
+**The re-post counts against the carried date too, and does not go through
+`evaluate()`.** Both follow from the paragraph above. Recounting against *today*
+after the cutoff would contradict the buttons it is posted beside, so the body
+counts the same day the buttons write to — and past midnight it is no longer
+describing "today", which the copy has to survive. Going through `evaluate()`
+would be worse than wrong: that is the function that stamps `ReminderJournal`
+(§1), so a quick-complete tap after the cutoff would mark the new day as
+already reminded and silence that evening's real reminder — §1's late-wake
+case, reached from a new direction. The re-post posts directly under the fixed
+id.
 
 **Nothing is ranked, and that is why the cap is where it is.** With four
 outstanding there is no non-arbitrary way to choose three, and any rule that did
