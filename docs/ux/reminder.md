@@ -65,7 +65,7 @@ what keeps `ReminderJournal` internal.
 PRD §6.1.5's *"one reminder max per day"*, and it is shaped after
 `ExportJournal` — same preferences file, its own key, `IOException`-only
 `catch` — because it is the same kind of thing: a record of what the app *did*,
-not a preference the user set, so not a fourth `UserSettings` field.
+not a preference the user set, so not a `UserSettings` field at all.
 
 **Its failures resolve the opposite way round from `ExportJournal`'s, and two
 classes in one file resolving failures in opposite directions is exactly what a
@@ -268,11 +268,35 @@ The row already existed and already admitted the notification was unbuilt. A
 cold prompt on first run arrives before the user has any habits, or any reason to
 want a reminder, and is the version most likely to be refused permanently.
 
-**The permission is the on/off switch.** There is no fourth `UserSettings`
-field. Notifications allowed means the reminder runs; revoked in system settings
-means it does not, and the row says so. The PRD asks for a configurable time and
-not for a toggle, and a second source of truth for one behaviour is one more
-thing to keep in sync.
+**The permission is not the on/off switch, and this reverses what this section
+used to say.** It refused a `UserSettings` toggle on the ground that a second
+source of truth for one behaviour is one more thing to keep in sync. The
+canvas-fidelity pass overruled it, and the reason the refusal missed is that
+these are not two sources of truth for one behaviour — they answer different
+questions. A revoked permission is an **error**: the user asked for a reminder
+and the system is preventing it, and the row has to say so. The switch is a
+**choice**: the user does not want one, and there is nothing to report
+([settings.md](settings.md) §2). Collapsing them made the only way to stop the
+notification an act performed outside the app, in a screen this app does not
+own, which reads as the app having no answer.
+
+**Off is read at the wake, not at the arming, and not at the post.** The switch
+is checked inside `evaluate()`, which returns `Silent` — the same shape the
+threshold re-check above already has. The other two placements are both wrong
+and each for a recorded reason. Not arming the work at all would break the
+mutual chain §2 describes, where `ReminderWorker` arms the rollover: the
+rollover wake would lose one of its two arming links, which is the failure §2
+already lost a day to. Refusing at post time is too late, because `evaluate()`
+stamps the journal *before* anything is posted, so a switched-off day would
+consume its own reminder. Read at the wake, a silenced day leaves the journal
+unstamped and both wakes armed, and flipping the switch back costs nothing.
+
+**It is a fifth `UserSettings` field, and the argument §8 of settings.md makes
+against adding fields does not reach it.** That argument is about the Today
+query's `(settings, logical date)` dedupe, and what it refuses is a field that
+changes *on every export* — one that would make the dedupe miss and restart the
+streak sweep under an open screen. A boolean a user flips by hand re-emits that
+query once, when they flip it, which is what it is for.
 
 ### Three details that are each a small trap
 
