@@ -966,9 +966,16 @@ comparison, four widget surfaces and the launcher mark.
 ### 7.1 Decided
 
 - **The launcher icon is one gill cluster, and it has no face.** Three
-  frond-pink dots around one paler body-pink circle, on `onPrimaryContainer` —
-  the scheme's darkest teal. The face is not shrunk, it is gone: the full
-  character measured as mush at 40 px, and a mark of three lobes holds at 24.
+  frond-pink dots around one paler body-pink circle, on the **light** scheme's
+  `onPrimaryContainer`, `#00353A` — the darkest teal the palette holds. The
+  scheme has to be named: the dark scheme declares that role as `#B2E7EE`, a
+  pale teal on which the same pink measures about 1.5:1 and the mark vanishes
+  exactly as it does on the ground this replaces. A launcher icon has one
+  ground and does not follow the system theme —
+  `gawiLauncherBackground()`'s KDoc says so and cites this section — so the
+  role name alone is an instruction an implementer can follow off a cliff.
+  The face is not shrunk, it is gone: the full character measured as mush at
+  40 px, and a mark of three lobes holds at 24.
   **Removing the face removed the mark's only contrast**, which is the part
   worth keeping: [momo.md](momo.md) §2 says Momo's silhouette is carried by the
   ink of the eyes and the deeper coral of the gills, and a pale cluster on a

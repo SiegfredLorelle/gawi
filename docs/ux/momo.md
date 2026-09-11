@@ -208,7 +208,7 @@ three lines to that same standard.
 | Widget | the Today widget's own background, above the rows, only when the host gives it 170 dp of height (two cells on most launchers, three on a small phone's); from 220 dp wide as well, on a flat `primaryContainer` pill beside the mood line and the woven day band ([widget.md](widget.md) §7) | the resting frame, `MomoFrame.rest`, rasterised by `drawMomo` at 72 dp, or 48 dp inside the pill | **built** — `widget/MomoBitmap.kt`, `TodayWidget.kt` |
 | Momo widget | her own 2×2 tile: flat `primaryContainer`, the tank colour without the gradient, and one word beneath her — no rows, no number ([widget.md](widget.md) §7) | the resting frame at 72 dp | **built 2026-08-29** — `widget/MomoWidget.kt` |
 | Reminder | the notification's small icon is alpha-only, so a silhouette — of the launcher mark, which is what holds at 24 dp | still | **built**, and redrawn as the gill cluster in step 4 — `app/res/drawable/ic_reminder.xml` |
-| Launcher | visual-identity §7.1's mark — one gill cluster, no face — on `onPrimaryContainer`, the same geometry serving the monochrome layer | still | **built** with the retired face; redrawn in step 4 — `app/res/mipmap-anydpi/ic_launcher.xml` |
+| Launcher | visual-identity §7.1's mark — one gill cluster, no face — on the light scheme's `onPrimaryContainer` (`#00353A`), the same geometry serving the monochrome layer | still | **built** with the retired face; redrawn in step 4 — `app/res/mipmap-anydpi/ic_launcher.xml` |
 
 **The tank is Today's alone.** It is drawn in `:feature:today`, not `:core:ui`,
 because only Today is a habitat: the widget and the reminder get the character
