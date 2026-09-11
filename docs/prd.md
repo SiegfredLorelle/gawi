@@ -50,7 +50,7 @@ Me (v1), on Android. Later: privacy-conscious self-improvers who want motivating
 
 ## 4. Core Concepts / Data Model (conceptual)
 
-- **Habit** — a recurring activity. Fields: name, icon/color, schedule, **optional tag** (e.g., career, health, language), archived flag.
+- **Habit** — a recurring activity. Fields: name, icon/color (stored, no longer offered — §4), schedule, **optional tag** (e.g., career, health, language), archived flag.
   - Schedules: `daily` (expected every day) or `weekly(n)` (n times per week, **not tied to specific days** — 3/3 on any days counts).
 - **Completion (event)** — binary checkmark: habit ID, timestamp, logical date (respecting day boundary), optional free-text note. Append-only; deletions are tombstones.
 - **Tag** — a simple label on a habit. One tag per habit at MVP (revisit multi-tag later). Powers effort-distribution insights.
@@ -91,7 +91,7 @@ launcher and Accessibility Scanner are still owed. `docs/running.md` §3 covers 
 the app onto a phone.
 
 **Habits**
-- Create/edit/archive habits: name, icon/color, schedule (daily or n-per-week), optional tag.
+- Create/edit/archive habits: name, schedule (daily or n-per-week), optional tag. *(Icon and colour dropped in step 2 — [docs/ux/visual-identity.md](ux/visual-identity.md) §7.3; both fields stay in the data type, unread.)*
 - Weekly habits show per-week progress ("2/3 this week"), week start per settings.
 
 **Logging**

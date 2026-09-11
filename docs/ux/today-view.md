@@ -307,8 +307,10 @@ Small decisions that were easier to make once drawn:
   dashed, a real dash needing a drawn stroke rather than a border; and the
   strip is five cells, because "Fri 15 renders" is only true if the strip
   reaches a day further back than it can write to.
-- **Habit colour appears as the tint behind the row's icon** — one place,
-  set once in the create/edit form.
+- **A habit has no colour and no icon, so the row draws neither**
+  (visual-identity.md §7.3). The colour used to be the tint behind the row's
+  icon, set once in the create/edit form; both go in step 4, and the row is
+  left with the name, the streak and the checkbox.
 - **The widget carries no mascot at MVP.** It is a bare checklist; the
   emotive indicator is a Today-view element only. Phase 1 does put Momo in
   the widget and the reminder (PRD §5) — that treatment is not designed
