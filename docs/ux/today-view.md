@@ -184,9 +184,17 @@ already turns into the reason the unnamed line exists. Reusing the streak's own
 predicate is what stops a weekly habit leaving this state on a tick that
 repaired nothing.
 
-`Mascot.mood` tests only the window today, so the mended check is what step 3
-adds to it; `recentlyBrokenHabits` already filters `completedToday` for the
-daily case, which is the half that exists.
+**The exit needs no rule of its own, which building it is what showed.** It
+falls out of `StreakSnapshot`'s own invariant: a break is dated one unit after
+the miss that caused it, so a completion at or after `brokenOn` would have
+restarted the run, and a run that then broke again would carry the later date.
+A non-null `brokenOn` therefore means nothing has been completed since — daily
+by the completion, weekly by the week's target, because a met week is what puts
+the current week back in the run. So `Mascot.recentlyBroken` reading `brokenOn`
+alone is already reading "broken and not since mended", and `HabitMoodState`
+needs no new field. What the mechanism costs is vigilance rather than code: the
+invariant is stated in `StreakSnapshot`, and a change that let a break outlive
+its repair would end this state's exit silently.
 
 **The 3 days are a backstop, not a model of recovery.** They exist for the
 habit that is never picked up again: without them an abandoned habit pins Momo
