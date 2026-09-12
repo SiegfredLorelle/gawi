@@ -212,7 +212,7 @@ internal fun TodayChip(mascot: MascotUi, milestone: Milestone?, modifier: Modifi
         // Sized by the Box: a Canvas with no size of its own measures 0 x 0,
         // and a test that only asked whether the node existed would pass on
         // an empty chip.
-        Box(Modifier.size(ChipFace)) { Momo(mascot.mood, animated = false) }
+        Box(Modifier.size(ChipFace)) { Momo(mascot.mood, animated = false, spare = mascot.spare) }
         Text(
             // The milestone owns the label while it runs, the way it owns the
             // tank and the panel's line. MilestoneState keeps `current` set for

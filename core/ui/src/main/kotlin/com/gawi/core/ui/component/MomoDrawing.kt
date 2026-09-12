@@ -109,7 +109,12 @@ private fun DrawScope.drawGills(frame: MomoFrame, spare: Int, regrowing: Float, 
             rotate(frame.gills[index], pivot = gill.root) {
                 when {
                     isRegrowing -> {
-                        if (regrowing < 1f) gill.draw(this, tint, alpha = 1f - regrowing)
+                        // It fades from whatever it was already drawn as — short
+                        // when the count had already spent it. Fading from the
+                        // full one regardless pops a spent gill back to full
+                        // length for the length of the mood change.
+                        val settled = if (index in spent) ShortGills[index] else gill
+                        if (regrowing < 1f) settled.draw(this, tint, alpha = 1f - regrowing)
                         withTransform({
                             scale(0.82f + 0.24f * frame.regrow, pivot = gill.root)
                             rotate(-3f + 6f * frame.regrow, pivot = gill.root)

@@ -194,10 +194,12 @@ full whenever it names nobody, which content and thriving always do, having no
 risk to report. *About to break* is the habit with the fewest spare lives among
 those still owed today, ties keeping the user's own order, which is the
 tie-break today-view §6 already settled on for the same reason: which habit the
-panel names must not flicker. **A run that has already broken is not a
-candidate** — its zero lasts until the habit is picked up again, so counting it
-would pin the drawing to nothing left and name the same abandoned habit every
-evening. The count is never put on a habit row: the row carries a
+panel names must not flicker. **Only a run that exists can be about to
+break.** A run that has already broken reports zero until the habit is picked up
+again, so counting it would pin the drawing to nothing left and name the same
+abandoned habit every evening; and a habit with no completions at all reports
+zero too, so it would win the comparison outright and have her mourn a streak
+that never existed. Neither is at risk, because neither has anything to lose. The count is never put on a habit row: the row carries a
 checkbox, a streak and a dimmed state already, and a fourth signal there would
 be the screen explaining itself rather than showing itself.
 
