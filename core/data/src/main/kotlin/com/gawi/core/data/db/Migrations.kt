@@ -29,8 +29,10 @@ internal object Migrations {
      * went to 2 in the same change, so the next start replays the log and
      * rewrites every row regardless — and adding a column cannot get the
      * recreated schema subtly wrong. Hand-written DDL has to match what Room
-     * generates exactly, down to column order, and a mismatch is a crash on
-     * open rather than a failing test.
+     * generates, and a mismatch is a crash on open rather than a failing test.
+     * Not column *order*, though: Room compares each column by name, affinity,
+     * nullability, primary-key position and default, never by ordinal, which is
+     * what lets `V2_TO_V3` append one — `MigrationTest` pins it.
      *
      * The column is nullable with no default, which is also what the projection
      * writes for a habit whose `HabitCreated` has not arrived. So a row that
@@ -46,11 +48,10 @@ internal object Migrations {
     /**
      * Adds `habit_streaks.spare_gills` for [com.gawi.core.domain.streak.StreakSnapshot.spare].
      *
-     * `NOT NULL DEFAULT 0` because Room generates the column that way and
-     * hand-written DDL that disagrees is a crash on open rather than a failing
-     * test. The default is also the honest value for a row that somehow
-     * survives without being rewritten: no spare lives, which is what a streak
-     * computed before gills existed was worth.
+     * `NOT NULL DEFAULT 0` matches what Room generates for the column, which
+     * `HabitStreakEntity` argues. The default is also the honest value for a row
+     * that somehow survives without being rewritten: no spare lives, which is
+     * what a streak computed before gills existed was worth.
      *
      * `PROJECTION_VERSION` goes to 3 in the same change, so the next start
      * replays the log and every row gets a real count rather than the default.

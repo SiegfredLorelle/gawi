@@ -21,10 +21,14 @@ import java.time.LocalDate
  * reads zero is what lets a caller ask "did this break just now" by comparing
  * against today, and it is never in the future.
  *
- * **A non-null [brokenOn] therefore means nothing was completed at or after it**,
+ * **A non-null [brokenOn] therefore means no unit succeeded at or after it**,
  * and that is what delivers today-view §4's mended-habit exit with no rule of
- * its own: a later completion would have restarted the run, and a run that then
- * broke again would carry the later date. So a caller asking "is this habit
+ * its own: a later success would have restarted the run, and a run that then
+ * broke again would carry the later date. A *unit* rather than a completion,
+ * because the two differ for a weekly habit: the replay walks weeks that met
+ * their target, so a completion short of the target can sit at or after
+ * [brokenOn] without clearing it — which is the same fact that lets the panel
+ * be regenerating about a habit ticked today. So a caller asking "is this habit
  * still broken" never has to ask "has it been mended since" as a second
  * question. `Mascot`'s recovery rule leans on this; a change here that let a
  * break outlive its repair would end that state's exit silently.

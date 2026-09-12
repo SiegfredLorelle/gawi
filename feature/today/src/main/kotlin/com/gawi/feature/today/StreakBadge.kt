@@ -44,8 +44,8 @@ import com.gawi.core.ui.theme.GawiSpacing
  *
  * **What it says is not what it draws.** "3" and "3w" are silent about what
  * they count, and TalkBack 17 reads them as a bare *"1"*, *"7"* and *"1 w"*
- * (docs/running.md §4), so the badge speaks [spokenStreak]'s words
- * — *"3 days in a row"*, *"1 week in a row"*, *"Streak broken, was 12 days"* —
+ * (docs/running.md §4), so the badge speaks [spokenStreak]'s words — whatever
+ * they are, which is that function's to say and not worth a second copy here —
  * the same words habit detail speaks, from `:core:ui`. `clearAndSetSemantics`
  * rather than `semantics`, because a leaf with both a text and a description is
  * read twice on that TalkBack; and it comes *after* [celebrated], because a
