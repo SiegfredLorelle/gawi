@@ -424,7 +424,7 @@ The correctness core of the app. All of it lives in `:core:domain`.
 - Week bucketing uses the configurable week start (default Monday). Weekly
   habits are `n` completions anywhere in the week — not tied to specific days.
 - Streaks are computed from completions: **day-streaks** for daily habits,
-  **week-streaks** (consecutive weeks hitting n/n) for weekly habits. A missed
+  **week-streaks** (weeks hitting n/n) for weekly habits. A missed
   day/week spends a spare life if the run has one and resets it only when it has
   none — gills, PRD OQ-3. The count is derived rather than logged, so `Streaks`
   replays the run forward from its first completion and no event carries it.
