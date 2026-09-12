@@ -1,7 +1,10 @@
 package com.gawi.app
 
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import com.gawi.core.ui.component.MomoPalette
+import com.gawi.core.ui.theme.WCAG_NON_TEXT_FLOOR
+import com.gawi.core.ui.theme.contrastRatio
 import com.gawi.core.ui.theme.gawiLauncherBackground
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -62,12 +65,17 @@ class LauncherIconTest {
         assertTrue("a -v33 variant would be a second copy to keep in step", !RES.resolve("mipmap-anydpi-v33").exists())
     }
 
+    /**
+     * The XML copy and the Kotlin value are the same colour. Which role that is
+     * moved when the face went (§7.1) and could move again; that they agree
+     * cannot, because an adaptive icon is XML and cannot read Kotlin.
+     */
     @Test
-    fun `the icon's ground is the scheme's primaryContainer, not a third value`() {
+    fun `the icon's ground is the scheme's, not a third value`() {
         val context = RuntimeEnvironment.getApplication()
         val resolved = context.getColor(R.color.ic_launcher_background)
         assertEquals(
-            "ic_launcher_background and GawiLightColors.primaryContainer disagree",
+            "ic_launcher_background and gawiLauncherBackground disagree",
             Integer.toHexString(gawiLauncherBackground().toArgb()),
             Integer.toHexString(resolved),
         )
@@ -100,23 +108,29 @@ class LauncherIconTest {
         }
     }
 
+    /**
+     * The mark has no face, and nothing about it is drawn with a line
+     * (docs/ux/visual-identity.md §7.1). It is three frond dots and one paler
+     * body circle: every path is a fill, and the stroked mouth that used to be
+     * here went with the face rather than being restyled.
+     */
     @Test
-    fun `the mark's mouth is a stroke, not a wedge`() {
-        // Exactly one path with no fill: a filled mouth closes into a slice of
-        // pie, and adding a fill is the easiest "fix" for a stroke that looks thin.
-        val strokes = paths(FOREGROUND).filter { it.getAttribute("android:fillColor").isEmpty() }
-        assertEquals("one stroke-only path, the mouth", 1, strokes.size)
+    fun `the mark is filled shapes, with nothing stroked`() {
+        val stroked = paths(FOREGROUND).filter { it.getAttribute("android:strokeColor").isNotEmpty() }
+        assertTrue("a faceless mark has nothing to draw with a line, found $stroked", stroked.isEmpty())
     }
 
     /**
      * The mark's colours are the character's, hand-copied from [MomoPalette]
      * because a drawable cannot read Kotlin. Compared as ints, not hex strings
-     * — a string comparison is not a colour comparison. Every colour the file
-     * uses must be one of hers.
+     * — a string comparison is not a colour comparison.
+     *
+     * **Two, not four.** `Ink` and `Mouth` were the face's, and listing them
+     * here would let the face back in one path at a time.
      */
     @Test
     fun `the mark is drawn in Momo's own colours`() {
-        val palette = listOf(MomoPalette.Bead, MomoPalette.Body, MomoPalette.Ink, MomoPalette.Mouth).map { it.toArgb() }
+        val palette = listOf(MomoPalette.Bead, MomoPalette.Body).map { it.toArgb() }
         paths(FOREGROUND).forEachIndexed { index, path ->
             listOf("android:fillColor", "android:strokeColor")
                 .map { path.getAttribute(it) }
@@ -128,11 +142,38 @@ class LauncherIconTest {
         }
     }
 
-    /** The eyes are holes, and only because of this attribute: under nonZero both wind to 2 and the face is a blob. */
+    /**
+     * The mark reads on its ground, which is a claim this file did not use to
+     * make.
+     *
+     * With a face, contrast was not the claim: momo.md §2 says an illustration
+     * carries its silhouette with the ink of the eyes and the deeper coral of
+     * the gills. Take the face away and the cluster has neither, so the ground
+     * inverted and the ratio became the reason it works
+     * (docs/ux/visual-identity.md §7.1). A non-text graphic takes 3:1.
+     */
     @Test
-    fun `the reminder's eyes are cut out with evenOdd`() {
-        val body = paths(REMINDER).single { it.getAttribute("android:fillType").isNotEmpty() }
-        assertEquals("evenOdd", body.getAttribute("android:fillType"))
+    fun `the mark clears the non-text floor on its own ground`() {
+        val ground = gawiLauncherBackground()
+        paths(FOREGROUND).forEach { path ->
+            val argb = path.getAttribute("android:fillColor").removePrefix("#").toLong(16).toInt()
+            val ratio = contrastRatio(Color(argb), ground)
+            assertTrue("a fill measured $ratio on the launcher ground", ratio >= WCAG_NON_TEXT_FLOOR)
+        }
+    }
+
+    /**
+     * The reminder cuts nothing out any more.
+     *
+     * `evenOdd` was there to hold two eyes open through one colour on an
+     * alpha-only icon. There is no face to hold open (docs/ux/reminder.md §4),
+     * and leaving the attribute on a cluster whose circles overlap would punch
+     * holes where the lobes cross.
+     */
+    @Test
+    fun `the reminder cuts nothing out of itself`() {
+        val cut = paths(REMINDER).filter { it.getAttribute("android:fillType") == "evenOdd" }
+        assertTrue("a faceless silhouette has no holes to preserve, found $cut", cut.isEmpty())
     }
 
     private fun layer(icon: Element, name: String): String {

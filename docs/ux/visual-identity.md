@@ -1368,16 +1368,18 @@ and must be solid, so it is a different medium — it is now Momo's silhouette
   celebration on finishing the day all followed, designed on the canvas's
   "Habitat & motion" page (momo.md §3, §4, §6); streak milestones came from its
   "Milestone celebration" page (momo.md §6).
-- **The launcher icon is drawn and wired, and it draws the face §7.1 retired.**
-  `ic_launcher_foreground.xml` and `ic_launcher_monochrome.xml` still hold the
-  two-mark arrangement — the character scaled 0.85 and the woven thread 0.9
-  about the centre, because the canvas artboard mocked its masks over the whole
-  108 grid while a launcher shows the central 72 and guarantees only a 66 dp
-  circle; review measured the fronds at 38.6 from centre against a safe radius
-  of 33. **Step 4 replaces both with §7.1's one geometry**, which needs no
-  corrective scale, and `ic_reminder.xml` with it; `LauncherIconTest` asserts
-  the retired foreground's paths, so it is rewritten rather than patched. What
-  survives the change is the wiring: all three layers in one
+- **The launcher icon is drawn and wired, and it draws §7.1's mark.**
+  `ic_launcher_foreground.xml`, `ic_launcher_monochrome.xml` and
+  `ic_reminder.xml` are **one geometry with three fills**: three frond dots and
+  one paler body circle, the canvas board's 1.35 about the centre baked into
+  the coordinates so the right dot reaches 31.1 of the 33 a launcher
+  guarantees. **No corrective scale**, which is what the two-mark arrangement
+  before it needed — the character at 0.85 and the woven thread at 0.9, because
+  its fronds reached 38.6 against that same 33. `LauncherIconTest` asserted the
+  retired foreground's mouth and its eye cut-outs, so it was rewritten rather
+  than patched, and it now measures a ratio: with no face the mark has no ink
+  to carry its silhouette, so **6.68:1 on the new ground is the reason it
+  works** rather than an incidental. What survives the change is the wiring: all three layers in one
   `mipmap-anydpi/ic_launcher.xml`, because lint's `MonochromeLauncherIcon`
   *fails* an adaptive icon without `<monochrome>` and does not count the API 33
   element as unused, and a `-v33` split was tried first and measured against.
