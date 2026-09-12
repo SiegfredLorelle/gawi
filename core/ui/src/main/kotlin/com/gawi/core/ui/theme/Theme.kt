@@ -3,6 +3,8 @@ package com.gawi.core.ui.theme
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 
 /**
  * The app's Compose theme: the designed light and dark schemes from
@@ -47,9 +49,25 @@ import androidx.compose.runtime.Composable
  */
 @Composable
 fun GawiTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
-    MaterialTheme(
-        colorScheme = if (darkTheme) GawiDarkColors else GawiLightColors,
-        typography = GawiTypography,
-        content = content,
-    )
+    CompositionLocalProvider(LocalGawiDarkTheme provides darkTheme) {
+        MaterialTheme(
+            colorScheme = if (darkTheme) GawiDarkColors else GawiLightColors,
+            typography = GawiTypography,
+            content = content,
+        )
+    }
 }
+
+/**
+ * Whether the dark scheme is the one in force.
+ *
+ * Material 3's `ColorScheme` carries no light/dark flag, and
+ * [isSystemInDarkTheme] is the wrong question here — `UserSettings.theme` can
+ * override the device (docs/ux/settings.md §7), so a drawing that asked the
+ * system would disagree with the palette around it.
+ *
+ * **For a value that has to differ per scheme, not for picking between roles.**
+ * A role that already differs is the answer nearly every time; this is for the
+ * case where none does, which is [gawiTankFarStop].
+ */
+val LocalGawiDarkTheme = staticCompositionLocalOf { false }
