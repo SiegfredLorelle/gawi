@@ -435,8 +435,10 @@ private fun moodCopy(mood: Mood): Int = when (mood) {
  * The redesign's tank, 250 by the phone's width, as the Momo Motion page drew
  * it and the user approved it (momo.md §4). Replaces the 96dp floor the copy
  * alone needed.
+ *
+ * Internal so the empty screen can seed its first measurement with it.
  */
-private val TankHeight = 250.dp
+internal val TankHeight = 250.dp
 private val TankCorner = 20.dp
 
 /** The chip's face. Small enough to sit on one line of the app bar beside a count. */

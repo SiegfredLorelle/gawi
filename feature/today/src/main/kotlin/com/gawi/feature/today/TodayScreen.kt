@@ -4,9 +4,11 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -24,10 +26,17 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import com.gawi.core.domain.mascot.Mood
 import com.gawi.core.domain.model.HabitId
 import com.gawi.core.ui.component.GawiIconButton
 import com.gawi.core.ui.component.GawiIcons
@@ -134,17 +143,7 @@ internal fun TodayScreen(state: TodayUiState, actions: TodayActions, snackbarHos
             // the chip exists but *when* it
             // appears — the trigger is the panel leaving the viewport entirely,
             // which on a short list never happens.
-            is TodayUiState.Empty -> {
-                Column(
-                    Modifier
-                        .fillMaxSize()
-                        .padding(insets)
-                        .verticalScroll(rememberScrollState()),
-                ) {
-                    MascotPanel(MascotUi(state.mood, remaining = 0, total = 0, subject = null), motion)
-                    EmptyToday(onAddHabit = actions.onAddHabit, modifier = Modifier.fillMaxWidth())
-                }
-            }
+            is TodayUiState.Empty -> EmptyTodayScreen(state.mood, motion, actions.onAddHabit, Modifier.padding(insets))
 
             is TodayUiState.Habits ->
                 HabitList(state, motion, listState, actions.onToggle, Modifier.fillMaxSize().padding(insets))
@@ -181,6 +180,43 @@ private fun HabitList(
                 // was drawn for rather than to one resolved a moment later.
                 onToggle = { onToggle(row.id, row.completed, state.logicalDate) },
                 pulse = if (row.id in pulsing) pulse else null,
+            )
+        }
+    }
+}
+
+/**
+ * The screen before there is anything to log: the tank, and a notice centred in
+ * what is left below it (docs/ux/today-view.md §5).
+ *
+ * Its own composable because the height it hands the notice has to be measured
+ * rather than assumed — the panel is the tank plus its mood line, and the line
+ * grows with the font scale, so subtracting the tank alone would push the
+ * notice below the fold by the height of a sentence.
+ */
+@Composable
+private fun EmptyTodayScreen(mood: Mood, motion: TodayMotion, onAddHabit: () -> Unit, modifier: Modifier = Modifier) {
+    BoxWithConstraints(modifier.fillMaxSize()) {
+        val viewport = maxHeight
+        // Seeded at the tank so the first frame is already close to right.
+        var panel by remember { mutableStateOf(TankHeight) }
+        val density = LocalDensity.current
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+            MascotPanel(
+                MascotUi(mood, remaining = 0, total = 0, subject = null),
+                motion,
+                Modifier.onSizeChanged { panel = with(density) { it.height.toDp() } },
+            )
+            EmptyToday(
+                onAddHabit = onAddHabit,
+                // A minimum and never a weight: a weighted child of a scrolling
+                // column is measured to exactly the space left over and cannot
+                // grow past it, so a large font scale would clip the notice with
+                // the very scroll that exists to prevent it.
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = (viewport - panel).coerceAtLeast(0.dp))
+                    .testTag("today:empty"),
             )
         }
     }
