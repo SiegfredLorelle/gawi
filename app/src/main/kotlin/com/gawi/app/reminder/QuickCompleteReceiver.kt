@@ -15,7 +15,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.time.LocalDate
 
 /** The habit the tapped button belongs to. A plain string; see [ReminderNotifier]. */
@@ -34,6 +37,18 @@ internal const val EXTRA_IDS = "com.gawi.app.reminder.IDS"
 internal const val EXTRA_NAMES = "com.gawi.app.reminder.NAMES"
 
 private const val TAG = "QuickComplete"
+
+/**
+ * One tap at a time, across every broadcast this receiver gets.
+ *
+ * File scope rather than a field, because the platform builds a fresh receiver
+ * per broadcast and two taps must still queue behind one another. What it buys
+ * is that [quickComplete]'s read of the day happens after the previous tap's
+ * write, which is the half of the two-taps problem that ordering *can* fix;
+ * `kotlinx`'s `Mutex` is FIFO, so the shade settles in the order the buttons
+ * were pressed.
+ */
+private val tapLock = Mutex()
 
 /**
  * One tap on a reminder's action button: complete that habit for the date the
@@ -74,12 +89,14 @@ internal class QuickCompleteReceiver : BroadcastReceiver() {
                 val entryPoint = EntryPointAccessors.fromApplication(context, ReminderEntryPoint::class.java)
                 val notifier = entryPoint.reminderNotifier()
                 val request = requestFrom(intent) ?: return@launch
-                quickComplete(
-                    habits = entryPoint.habitRepository(),
-                    repost = { remind -> notifier.repost(remind) },
-                    cancel = { notifier.cancel() },
-                    request = request,
-                )
+                tapLock.withLock {
+                    quickComplete(
+                        habits = entryPoint.habitRepository(),
+                        repost = { remind -> notifier.repost(remind) },
+                        cancel = { notifier.cancel() },
+                        request = request,
+                    )
+                }
             } catch (e: Throwable) {
                 currentCoroutineContext().ensureActive()
                 // Logged, not dropped. There is no snackbar behind a notification,
@@ -120,14 +137,21 @@ internal data class QuickCompleteRequest(
  * **[EXTRA_TOTAL] is checked too, not defaulted.** A total below the number of
  * habits carried would re-post *"1 of 0 left today"* — the body and the buttons
  * disagreeing, which is the one failure the shade must never show.
+ *
+ * **So is the tapped id**, and for the reason [outstandingFrom] gives about the
+ * ones beside it: `HabitId` validates in its own `init`, so an unchecked one
+ * would throw out of the first statement of [quickComplete] instead of reaching
+ * the null promised here — and it would throw in a broadcast, where the only
+ * thing between it and the default handler is the receiver's guard.
  */
 internal fun requestFrom(intent: Intent): QuickCompleteRequest? {
-    val habitId = intent.getStringExtra(EXTRA_HABIT_ID)
+    val habitId = intent.getStringExtra(EXTRA_HABIT_ID)?.takeIf { runCatching { HabitId(it) }.isSuccess }
     val date = runCatching { LocalDate.parse(intent.getStringExtra(EXTRA_DATE)) }.getOrNull()
 
-    // One return rather than a guard clause each: detekt allows two returns and
-    // four conditions per function, and "all of it or none of it" is what this
-    // is anyway.
+    // One return rather than a guard clause each, and the malformed cases folded
+    // into the values above rather than added here: detekt allows two returns
+    // and three conditions per function, and "all of it or none of it" is what
+    // this is anyway.
     return outstandingFrom(intent)?.let { habits ->
         val total = intent.getIntExtra(EXTRA_TOTAL, 0)
         if (habitId == null || date == null || total < habits.size) {
@@ -180,13 +204,29 @@ private fun outstandingFrom(intent: Intent): List<OutstandingHabit>? {
  * completion on today for a habit owed yesterday — which architecture §5's
  * three-day window accepts rather than refuses, so it would be silent.
  *
- * **What is left afterwards is carried, not recounted**, and that has a cost
- * worth stating: a habit completed in the app since the notification was posted
- * still shows a button, and pressing it re-adds a completion that is already
- * there. The alternative is worse — `HabitRepository.observeToday` answers for
- * the *current* logical date, so recounting a notification tapped the next
- * morning would need a second way to decide what is outstanding, beside
- * `Mascot.isOutstanding`, for a date nothing else asks about.
+ * **The carried list decides the candidates; the log decides which are left.**
+ * Nothing re-derives what is *outstanding* for the carried date — that needs the
+ * schedule, and `HabitRepository.observeToday` only ever answers for the current
+ * logical date, so it would mean a second way to decide outstanding beside
+ * `Mascot.isOutstanding`. What it does ask is the far cheaper question: of the
+ * habits this button carried, which already have a completion on that day. That
+ * is a fact rather than a judgement, and one grouped query
+ * ([HabitRepository.observeCompletionDatesByHabit] with the carried date at both
+ * ends) answers it for all of them at once. Still no clock: the date goes in, it
+ * is not resolved here.
+ *
+ * **That is also what makes two taps in flight safe, and serialising alone would
+ * not have been.** Each button's `PendingIntent` was filled in when the
+ * notification was posted, so a second tap carries a list that predates the
+ * first tap's write — ordering the two would still have left the later one
+ * re-posting a button for a habit already done. Reading the day back is what
+ * closes it, and [tapLock] is what guarantees the read happens after the write
+ * it should see.
+ *
+ * A read that fails leaves the shade untouched and the write standing, the same
+ * shape as the refused branch below. There is deliberately no fallback to the
+ * unreconciled list: re-posting a button for a completed habit is the defect
+ * this paragraph exists to remove.
  *
  * **A refused write leaves the shade exactly as it is**, and that is the one
  * branch here that is not obvious. The carried date is days old once a
@@ -215,7 +255,11 @@ internal suspend fun quickComplete(
         return
     }
 
-    val remaining = request.outstanding.filterNot { it.id.value == request.habitId }
+    // containsKey, not the value: a habit with nothing in the range is absent
+    // rather than present with an empty set, which the read's own KDoc states.
+    val done = habits.observeCompletionDatesByHabit(request.logicalDate, request.logicalDate).first()
+    val remaining = request.outstanding.filterNot { done.containsKey(it.id) }
+
     if (remaining.isEmpty()) {
         // Nothing left for it to say.
         cancel()
