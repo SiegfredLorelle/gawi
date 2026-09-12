@@ -286,8 +286,8 @@ private fun HabitHeader(state: HabitDetailUiState.Detail) {
  *
  * The rendering is this screen's own; the `StreakUi` decision behind it and
  * the *spoken* form are shared with the Today row, which draws the same state
- * as a compact badge. Spoken as one node in [spokenStreak]'s words — *"12 days
- * in a row"*, *"Streak broken, was 4 weeks"* — because the drawn `3w` and
+ * as a compact badge. Spoken as one node in [spokenStreak]'s words, which that
+ * function states rather than this one, because the drawn `3w` and
  * `was 4w` read as "3 w" on TalkBack 17, and the broken form is three stops
  * (docs/running.md §4). `clearAndSetSemantics`, so the texts are drawn and not
  * read after the description. The no-completions line is already words and
