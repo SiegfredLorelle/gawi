@@ -280,19 +280,22 @@ Small decisions that were easier to make once drawn:
   as well as what it draws: a set of rows visually set aside that a screen
   reader does not mention is information only some users get.
 - **The empty screen centres its notice in the space below the tank.**
-  `EmptyToday` already asks for `Arrangement.Center` and it decides nothing,
-  because the column wraps its content: the notice and its button sit directly
-  under the 250 dp tank with the rest of the screen blank beneath them. The
-  notice takes the height that is left instead, which keeps §3's promise that
-  the mascot slot does not move when the character replaces the placeholder — a
-  shorter tank and a floating one were both drawn, and both buy composition by
-  making Momo one size on a fresh install and another the moment a habit
-  exists. **The leftover height is a minimum, not a weight.** A weighted child
-  of a scrolling column is measured to exactly the space left over and cannot
-  grow past it, so at a large font scale the notice is clipped by the scroll
-  that exists to prevent exactly that; a minimum height centres the same way
-  and still lets the column push past the viewport. Decided on the
-  canvas-fidelity pass. The habit list and Insights already centre theirs
+  `EmptyToday` asks for `Arrangement.Center`, and it takes the height left
+  below the panel so that arrangement has something to centre in — otherwise
+  the column wraps its content and the notice sits directly under the 250 dp
+  tank with the rest of the screen blank beneath it. This keeps §3's promise
+  that the mascot slot does not move when the character replaces the
+  placeholder — a shorter tank and a floating one were both drawn, and both buy
+  composition by making Momo one size on a fresh install and another the moment
+  a habit exists. **The leftover height is a minimum, not a weight.** A weighted
+  child of a scrolling column is measured to exactly the space left over and
+  cannot grow past it, so at a large font scale the notice is clipped by the
+  scroll that exists to prevent exactly that; a minimum height centres the same
+  way and still lets the column push past the viewport. Substituting a weight
+  reddens two tests, which is how that claim is held rather than believed.
+  **The leftover is measured, not assumed**: the panel is the tank plus its mood
+  line and the line grows with the font scale, so subtracting the tank alone
+  would push the notice below the fold by the height of a sentence. The habit list and Insights already centre theirs
   through `:core:ui`'s `Notice`, and Settings on a fresh install is not an
   empty state at all — an unwritten preferences file reads as defaults, so it
   draws the full list.

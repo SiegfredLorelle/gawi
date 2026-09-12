@@ -1,11 +1,14 @@
 package com.gawi.feature.today
 
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
@@ -13,10 +16,13 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import com.gawi.core.domain.mascot.Mood
 import com.gawi.core.domain.model.HabitId
 import com.gawi.core.domain.testing.habitId
@@ -24,11 +30,13 @@ import com.gawi.core.testing.AnimationsOffRule
 import com.gawi.core.ui.streak.StreakUi
 import com.gawi.core.ui.theme.GawiTheme
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
+import org.robolectric.annotation.Config
 import java.time.LocalDate
 import com.gawi.core.ui.R as UiR
 
@@ -723,6 +731,49 @@ class TodayScreenTest {
             resources.getQuantityString(R.plurals.today_gills_left, 1, 1),
             useUnmergedTree = true,
         ).assertDoesNotExist()
+    }
+
+    /**
+     * The empty screen centres its notice in the space below the tank, which it
+     * can only do if it is given that space (docs/ux/today-view.md §5).
+     *
+     * Asserted as the notice reaching the bottom of the viewport rather than as
+     * "the title looks centred": a notice that merely wraps its content centres
+     * its own children just as happily, so that would pass on the layout this
+     * replaces.
+     */
+    @Test
+    @Config(qualifiers = "+h900dp")
+    fun `the empty notice takes the space below the tank`() {
+        compose.setContent {
+            GawiTheme { TodayScreen(TodayUiState.Empty(Mood.CONTENT), NO_ACTIONS, SnackbarHostState()) }
+        }
+
+        val root = compose.onRoot().getUnclippedBoundsInRoot()
+        val notice = compose.onNodeWithTag("today:empty").getUnclippedBoundsInRoot()
+        val shortfall = root.bottom - notice.bottom
+        // Measured on this viewport: 0 dp with the minimum in place, 370 dp
+        // without it. A tall screen deliberately — on a short one the notice
+        // already overflows and both layouts measure the same, which is how
+        // the first version of this test passed on the bug.
+        assertTrue("the notice stops $shortfall above the bottom of the screen", shortfall < 1.dp)
+    }
+
+    /**
+     * And it is a minimum, not a weight. A weighted child of a scrolling column
+     * is measured to exactly the space left over and cannot grow past it, so at
+     * a large font scale the notice would be clipped by the very scroll that
+     * exists to prevent that (docs/ux/today-view.md §5).
+     */
+    @Test
+    fun `a large font scale grows the empty notice rather than clipping it`() {
+        compose.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(density = 2f, fontScale = 2f)) {
+                GawiTheme { TodayScreen(TodayUiState.Empty(Mood.CONTENT), NO_ACTIONS, SnackbarHostState()) }
+            }
+        }
+
+        compose.onNodeWithText(string(R.string.today_add_habit)).performScrollTo().assertIsDisplayed()
     }
 
     /**
