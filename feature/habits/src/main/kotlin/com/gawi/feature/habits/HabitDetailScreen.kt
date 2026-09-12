@@ -37,12 +37,10 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextAlign
 import com.gawi.core.ui.component.GawiIconButton
 import com.gawi.core.ui.component.GawiIcons
-import com.gawi.core.ui.component.HabitIcon
 import com.gawi.core.ui.component.Notice
 import com.gawi.core.ui.streak.StreakUi
 import com.gawi.core.ui.streak.spokenStreak
 import com.gawi.core.ui.theme.GawiSpacing
-import com.gawi.core.ui.theme.glyphColorOn
 
 /**
  * One habit, stateless.
@@ -239,13 +237,6 @@ private fun HabitHeader(state: HabitDetailUiState.Detail) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(GawiSpacing.Gap),
     ) {
-        // Larger than the list's and the Today row's: this is the screen the
-        // habit is the subject of, not one line in a list of them.
-        HabitIcon(
-            icon = state.icon,
-            tint = state.iconTint,
-            style = MaterialTheme.typography.titleMedium,
-        )
         Column(verticalArrangement = Arrangement.spacedBy(GawiSpacing.Line)) {
             Text(text = state.name, style = MaterialTheme.typography.headlineSmall)
             Text(

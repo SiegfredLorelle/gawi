@@ -139,22 +139,6 @@ class TodayScreenTest {
     }
 
     /**
-     * The merged row does not carry the icon. TalkBack 17 read a row as
-     * "checked. books. Read. 1. Check box" — the emoji by its Unicode name,
-     * ahead of the habit (docs/running.md §4, 2026-09-02); `HabitIcon` clears
-     * its semantics now.
-     */
-    @Test
-    fun row_doesNotSpeakTheIcon() {
-        compose.setContent { GawiTheme { TodayScreen(HABITS, NO_ACTIONS, SnackbarHostState()) } }
-        compose.onNode(hasScrollAction()).performScrollToNode(hasText(READ.name))
-
-        compose.onNodeWithText(READ.name).assert(hasText(READ.icon).not())
-        // Still drawn, just not spoken — the unmerged tree keeps the cleared glyph.
-        compose.onNodeWithText(READ.icon, useUnmergedTree = true).assertIsDisplayed()
-    }
-
-    /**
      * The badge speaks its unit and the drawn number is not in the row's text.
      * A daily and a weekly row together, because the point of the two spoken
      * forms is that "3" and "1w" no longer sound alike; a singular alongside,
@@ -976,8 +960,6 @@ class TodayScreenTest {
         val READ = HabitRowUi(
             id = habitId(1),
             name = "read",
-            icon = "R",
-            iconTint = null,
             completed = true,
             weekProgress = null,
             streak = StreakUi.Days(count = 3),
@@ -987,8 +969,6 @@ class TodayScreenTest {
         val WALK = HabitRowUi(
             id = habitId(2),
             name = "walk",
-            icon = "W",
-            iconTint = null,
             completed = false,
             weekProgress = null,
             streak = StreakUi.None,

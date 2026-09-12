@@ -1907,7 +1907,7 @@ differently, which is what is left.
 ### Accessibility — *device only, and the layer no test reaches*
 
 The automated half is already in `make test`: WCAG contrast ratios in
-`WidgetTextColourTest` and `HabitColorTest`, the 48 dp touch-target floor in
+`WidgetTextColourTest` and `TankContrastTest`, the 48 dp touch-target floor in
 three screen tests, and semantics — roles, content descriptions, disabled
 state — throughout. Architecture §8 records why the one automated ruleset worth
 wanting is not wired up yet. What is left is what a ruleset cannot judge:
@@ -1936,9 +1936,9 @@ which is the defect visual-identity §4.3 describes — and it needs no TalkBack
       because this TalkBack says *checked* for a Compose checkbox and nothing
       for the other state, and the weekly ratio is spoken **as drawn**, *"1/3
       this week"*, because `today_week_progress` has no spoken twin. A *"1 of 3
-      this week"* string and `ICON_LABELS` for the icon picker's platform-named
-      cells are the two follow-ups. Open for the day-cutoff **picker** itself,
-      the one part of the three flows no pass has driven.
+      this week"* string is the follow-up; the icon picker's was retired with
+      the picker (visual-identity §7.3). Open for the day-cutoff **picker**
+      itself, the one part of the three flows no pass has driven.
 - [x] **A TalkBack pass over the Insights screen.** Two pickers and a list, and
       the thing to listen for is whether a bar row makes sense read aloud: the
       label, the total, and nothing announcing the bar itself. The bars carry no

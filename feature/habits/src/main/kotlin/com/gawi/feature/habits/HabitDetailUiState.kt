@@ -1,7 +1,6 @@
 package com.gawi.feature.habits
 
 import androidx.annotation.StringRes
-import androidx.compose.ui.graphics.Color
 import com.gawi.core.domain.model.HabitId
 import com.gawi.core.ui.streak.StreakUi
 import java.time.LocalDate
@@ -34,9 +33,6 @@ internal sealed interface HabitDetailUiState {
     data class Detail(
         val id: HabitId,
         val name: String,
-        val icon: String,
-        /** Null when the stored colour does not parse; the header falls back to a theme role. */
-        val iconTint: Color?,
         val schedule: ScheduleUi,
         /** Null rather than blank — the header draws nothing at all for an untagged habit. */
         val tag: String?,

@@ -2,6 +2,7 @@ package com.gawi.feature.habits
 
 import androidx.compose.ui.graphics.Color
 import com.gawi.core.domain.model.Schedule
+import com.gawi.core.domain.projection.HabitMetadata
 import com.gawi.core.domain.testing.habitId
 import com.gawi.core.testing.FIXED_DATE
 import com.gawi.core.testing.broken
@@ -11,7 +12,6 @@ import com.gawi.core.testing.habitState
 import com.gawi.core.testing.running
 import com.gawi.core.testing.todayHabit
 import com.gawi.core.ui.streak.StreakUi
-import com.gawi.core.ui.theme.HabitPalette
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -49,12 +49,6 @@ class HabitsUiMapperTest {
         assertTrue(state is HabitListUiState.Habits)
         assertEquals(1, (state as HabitListUiState.Habits).archived.size)
         assertTrue(state.active.isEmpty())
-    }
-
-    @Test
-    fun `a row carries the parsed colour and falls back when it is not one`() {
-        assertEquals(Color(0xFF7E57C2), habitState(color = "#7E57C2").toRowUi().iconTint)
-        assertNull(habitState(color = "not a colour").toRowUi().iconTint)
     }
 
     @Test
@@ -109,10 +103,11 @@ class HabitsUiMapperTest {
         assertFalse(form.editing)
         assertEquals("", form.name)
         assertFalse(form.canSave)
-        // Icon and colour are already chosen, so typing a name is the only thing
-        // between a first run and a first habit.
-        assertEquals(HabitPalette.DefaultIcon, form.icon)
-        assertEquals(HabitPalette.DefaultColor, form.color)
+        // The two passthrough fields are already filled, so typing a name is the
+        // only thing between a first run and a first habit — and a create writes
+        // what the log has always held (docs/ux/visual-identity.md §7.3).
+        assertEquals(HabitMetadata.DEFAULT_ICON, form.icon)
+        assertEquals(HabitMetadata.DEFAULT_COLOR, form.color)
         assertEquals(ScheduleUi.Daily, form.schedule)
     }
 
@@ -142,13 +137,24 @@ class HabitsUiMapperTest {
     }
 
     /**
-     * A swatch without a name would announce itself as raw hex, and the labels
-     * are matched to colours by position, so the two lists have to stay level.
+     * The passthrough contract: a form that no longer shows a field must not
+     * write one either (docs/ux/visual-identity.md §7.3).
+     *
+     * A habit keeps no icon and no colour, and neither is offered — but both
+     * are still in `HabitMetadata`, in `HabitUpdated` and on the wire. An edit
+     * that saved the defaults instead of what was stored would silently rewrite
+     * every habit's two opaque fields on the first save after this change, and
+     * every assertion about names, schedules and tags would stay green.
      */
     @Test
-    fun `every palette colour has a name to be read out`() {
-        assertEquals(HabitPalette.Colors.size, COLOR_LABELS.size)
-        assertEquals(COLOR_LABELS.size, COLOR_LABELS.toSet().size)
+    fun `an edit carries the stored icon and colour back unchanged`() {
+        val stored = habitState(name = "read", icon = "\uD83E\uDDD8", color = "#26A69A")
+
+        val metadata = stored.toForm().copy(name = "read more").toMetadata()
+
+        assertEquals("read more", metadata.name)
+        assertEquals("\uD83E\uDDD8", metadata.icon)
+        assertEquals("#26A69A", metadata.color)
     }
 
     @Test

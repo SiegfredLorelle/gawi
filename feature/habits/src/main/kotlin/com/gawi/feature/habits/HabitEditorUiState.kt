@@ -38,30 +38,22 @@ internal sealed interface HabitEditorUiState {
     data class Form(
         val editing: Boolean,
         val name: String,
+        /**
+         * Passthrough, and neither is shown (docs/ux/visual-identity.md §7.3).
+         * Held on the form so an edit writes the habit's stored values back
+         * unchanged: a form that no longer shows a field must not write one
+         * either, and clearing them would be writing one.
+         */
         val icon: String,
         val color: String,
         val schedule: ScheduleUi,
         val tag: String,
-        /**
-         * The colour this habit was opened with, or null for a new one.
-         *
-         * Carried so the picker can keep offering a colour `HabitPalette` no
-         * longer does (docs/ux/visual-identity.md §6.3). It has to be *held*
-         * rather than derived from [color], for the reason this whole class is
-         * held: derived from the live value, the extra swatch disappears on the
-         * first tap, the row reflows under the finger and every remaining
-         * swatch shifts one place — and the original colour becomes unreachable
-         * without abandoning the form. `selectableBorder` picks a border over a
-         * scale so that nothing reflows on tap; this is the same rule one level
-         * up.
-         */
-        val originalColor: String?,
     ) : HabitEditorUiState {
 
         /**
          * A blank name is the only thing the domain rejects about metadata, and
-         * the only thing this form can get wrong: the colour and icon are picked
-         * from a fixed palette and the weekly target is clamped.
+         * the only thing this form can get wrong: the icon and colour are
+         * carried through untouched and the weekly target is clamped.
          *
          * Untrimmed, matching `Commands.createHabit`, which tests
          * `name.isBlank()` on the string it is given. Agreeing by construction

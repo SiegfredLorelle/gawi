@@ -124,14 +124,6 @@ private fun EditorForm(form: HabitEditorUiState.Form, onEdit: (HabitEditorUiStat
             modifier = Modifier.fillMaxWidth(),
         )
 
-        LabelledSection(R.string.habits_icon_label) {
-            IconPicker(form, onEdit)
-        }
-
-        LabelledSection(R.string.habits_color_label) {
-            ColorPicker(form, onEdit)
-        }
-
         LabelledSection(R.string.habits_schedule_label) {
             SchedulePicker(form, onEdit)
         }

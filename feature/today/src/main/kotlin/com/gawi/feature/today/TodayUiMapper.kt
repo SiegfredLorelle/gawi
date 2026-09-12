@@ -8,7 +8,6 @@ import com.gawi.core.domain.mascot.Mood
 import com.gawi.core.domain.mascot.MoodInputs
 import com.gawi.core.domain.model.Schedule
 import com.gawi.core.ui.streak.toUi
-import com.gawi.core.ui.theme.parseHabitColor
 
 /**
  * The read model as the screen draws it — docs/ux/today-view.md §5's rules, in
@@ -70,8 +69,6 @@ private fun subject(mood: Mood, inputs: MoodInputs, live: List<TodayHabit>): Mas
 internal fun TodayHabit.toRowUi(): HabitRowUi = HabitRowUi(
     id = habit.id,
     name = habit.name,
-    icon = habit.icon,
-    iconTint = parseHabitColor(habit.color),
     completed = completedToday,
     weekProgress = when (val schedule = habit.schedule) {
         is Schedule.Daily -> null

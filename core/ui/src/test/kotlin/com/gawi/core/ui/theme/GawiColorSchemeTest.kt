@@ -24,7 +24,7 @@ import org.junit.Test
  *
  *  - **A fill against the page.** `surfaceVariant` and the container roles sit
  *    close to `surface` on purpose — they are grounds (the icon-picker swatch,
- *    [HabitIcon]'s fallback circle, the strip's today cell), and the contrast
+ *    the strip's today cell), and the contrast
  *    they owe is to their own contents, which is what the pairs below check.
  *    Holding a fill to 3:1 against the page would pin the wrong property and
  *    force every quiet surface to look like a button. Two fills against *each
@@ -90,29 +90,13 @@ class GawiColorSchemeTest {
     }
 
     @Test
-    fun `every habit hue is visible as a badge on both surfaces`() {
-        // A habit's colour is a graphic that carries meaning, so 3:1 rather
-        // than 4.5:1 — the glyph drawn on top of it is text and HabitColorTest
-        // holds that to the text floor. Here because the floor is a property of
-        // the surface the badge sits on, which is this file's subject.
-        schemes.forEach { (theme, scheme) ->
-            HabitPalette.Colors.forEach { hex ->
-                val ratio = contrastRatio(parseHabitColor(hex)!!, scheme.surface)
-                assertTrue("$theme badge $hex drew at $ratio", ratio >= WCAG_NON_TEXT_FLOOR)
-            }
-        }
-    }
-
-    @Test
-    fun `background and surface agree, because the glyph tests depend on it`() {
-        // Not a style rule — a dependency between two test files. HabitIcon and
-        // ColorPicker composite a habit's tint over `background` before choosing
-        // its glyph, while HabitColorTest measures those glyphs against
-        // `surface`, and the badge assertions here use `surface` too. While the
-        // two roles are equal that is the same measurement. If they ever diverge
-        // both files keep passing and start measuring a background nothing draws
-        // on, which is precisely how the widget's 1.59:1 defect survived. So the
-        // assumption is pinned here rather than left in a comment.
+    fun `background and surface agree, because every ink here is measured on one of them`() {
+        // Not a style rule. Material's `Scaffold` paints `background` while
+        // every contrast assertion in this file measures `surface`. While the
+        // two roles are equal that is the same measurement; if they diverged,
+        // these assertions would keep passing against a ground the app no
+        // longer paints — which is precisely how the widget's 1.59:1 defect
+        // survived. So the assumption is pinned rather than left in a comment.
         schemes.forEach { (theme, scheme) ->
             assertEquals("$theme draws on a background that is not its surface", scheme.surface, scheme.background)
         }
@@ -185,7 +169,7 @@ private fun ColorScheme.pairings(): List<Pairing> = buildList {
     text("inverseOnSurface on inverseSurface", inverseOnSurface, inverseSurface)
 
     // secondaryContainer is a *ground*, not just an accent: RetroStrip fills
-    // today's cell with it and HabitIcon uses it for a habit with no readable
+    // today's cell with it, and it is the ground a coloured fill sits on
     // colour, so content lands on top of it. Missing that is how a 4.24:1
     // weekday letter reached a device — the roles below are the ones actually
     // drawn there, and enumerating a container as a ground is the general

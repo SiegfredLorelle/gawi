@@ -431,7 +431,7 @@ wasteful all the same.
 
 One thing it deliberately does not assert: `surfaceVariant` and the container
 roles sit at 1.2-2.0:1 against `surface`, and that is correct. They are fills —
-the icon-picker swatch, `HabitIcon`'s fallback circle — and what they owe
+a chip's ground, the tank behind Momo — and what they owe
 contrast to is their own contents, not the page. Holding a fill to 3:1 would pin
 the wrong property and force every quiet surface to look like a button.
 
@@ -480,12 +480,13 @@ floor. Dimmed is a meaning here, not a leftover.
 
 ### 4.2 `CONTRAST_PIVOT` was wrong, and it blocked the hue retune
 
-**The pivot no longer has a client.** §7.3 removes the habit badge, which was
-the only surface that asked `glyphColorOn` which ink to draw on a hue. The fix
-below is kept because the *defect* generalises — a pivot derived from the wrong
-end of a luminance range picks the wrong ink on any coloured fill — and because
-it is what let §6 retune all eight hues without re-deriving their glyphs. The
-code goes with the badge, in step 4.
+**The pivot has no client, and the code is gone with the badge.** §7.3 removed
+the habit badge, which was the only surface that asked `glyphColorOn` which ink
+to draw on a hue. What follows is kept because the *defect* generalises — a
+pivot derived from the wrong end of a luminance range picks the wrong ink on any
+coloured fill — and because it is what let §6 retune all eight hues without
+re-deriving their glyphs. The next coloured fill this app draws will need it
+again, and this is where it is written down.
 
 **Fixed on 2026-08-23, before the hues, in `fix(ui): pick the better habit glyph
 colour`.** Kept in full rather than deleted, because the defect is the reason the

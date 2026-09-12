@@ -535,8 +535,6 @@ class HabitDetailScreenTest {
         ) = HabitDetailUiState.Detail(
             id = id,
             name = name,
-            icon = "📖",
-            iconTint = null,
             schedule = schedule,
             tag = tag,
             archived = archived,

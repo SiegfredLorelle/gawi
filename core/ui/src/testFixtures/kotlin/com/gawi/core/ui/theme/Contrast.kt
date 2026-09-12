@@ -7,10 +7,10 @@ import androidx.compose.ui.graphics.luminance
  * WCAG relative contrast between two opaque colours.
  *
  * Test fixtures rather than production because nothing the app draws needs to
- * know a ratio — [glyphColorOn] only needs to know which side of the pivot a
- * colour falls on. The tests need the number so they can assert the property
- * the pivot and the palette exist to deliver rather than the constants that
- * deliver it.
+ * know a ratio — a scheme either clears a floor or it does not, and which is
+ * settled once, here. The tests need the number so they can assert the
+ * property a palette exists to deliver rather than the constants that deliver
+ * it.
  *
  * Published from `:core:ui` rather than held in `:core:testing` because the
  * colours it measures are this module's: a test set that wants the formula
@@ -20,7 +20,7 @@ import androidx.compose.ui.graphics.luminance
  * linearisation and the 0.2126/0.7152/0.0722 weighting — so the arithmetic is
  * not repeated here. It reads RGB and ignores alpha, which is right for a
  * resolved colour; a translucent one has to be composited first, the way
- * `glyphColorOn` does it.
+ * `TankContrastTest` does for the weeds.
  */
 fun contrastRatio(a: Color, b: Color): Float {
     val high = maxOf(a.luminance(), b.luminance())
