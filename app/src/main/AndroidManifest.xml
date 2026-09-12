@@ -75,6 +75,16 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- The reminder's quick-complete buttons (docs/ux/reminder.md §4). Not
+             exported: the only sender is a PendingIntent this app built, and it
+             carries the logical date the notification was posted for, so an
+             intent from anywhere else could write a completion to a day of its
+             choosing. No intent-filter for the same reason — the buttons name
+             this class outright. -->
+        <receiver
+            android:name=".reminder.QuickCompleteReceiver"
+            android:exported="false" />
     </application>
 
 </manifest>

@@ -8,7 +8,8 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 
 /**
- * How a worker reaches the graph.
+ * How the reminder's own components reach the graph: two workers and the
+ * quick-complete receiver.
  *
  * The same seam, and the same argument, as `:widget`'s `WidgetEntryPoint`: a
  * `ListenableWorker` is constructed by WorkManager's own factory, not by Hilt, so
@@ -30,7 +31,7 @@ import dagger.hilt.components.SingletonComponent
  */
 @EntryPoint
 @InstallIn(SingletonComponent::class)
-internal interface WorkerEntryPoint {
+internal interface ReminderEntryPoint {
 
     fun reminderCheck(): ReminderCheck
 
