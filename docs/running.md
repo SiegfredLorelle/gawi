@@ -1274,30 +1274,55 @@ posted" for every app on the device including the ones that certainly did post.
       Add a fourth and post again: the buttons go entirely and the tap opens
       Today. Four is the case OQ-2 exists for, so check it deliberately — three
       buttons chosen out of four looks like success from the outside.
+      Passed on an emulator (API 37): three drew *Read · Water · Journal*, and
+      four drew none. Unticked because this block's target is a phone.
 - [ ] **A tap writes, and moves the count with it.** Press one button. The habit
       is ticked on Today, the body drops by one, and that button is gone while
       the others remain. `adb shell cmd notification list | grep com.gawi.app`
       shows **one** row, not two — the fixed id is what makes a re-post replace.
+      Passed on an emulator: *"3 of 4"* with three buttons became *"2 of 4"*
+      with two, one row throughout, and Today showed the habit ticked.
 - [ ] **A tap does not make a second sound.** The same press as above, with the
       device unmuted and the shade closed. The first post of the evening sounds;
       the re-post after a tap must not. This is the one a unit test cannot
       reach, and the flag behind it is one a reader would set for every post.
+      Half-answered on an emulator: `dumpsys notification` showed the first post
+      at `flags=AUTO_CANCEL` and the re-post at `ONLY_ALERT_ONCE|AUTO_CANCEL`,
+      which is what the platform reads. Nobody has yet **heard** it.
 - [ ] **The last habit takes the notification away.** Press the remaining
       buttons. When none is left the notification is gone rather than showing
-      *"0 of N left today"*.
+      *"0 of N left today"*. Passed on an emulator: the shade emptied and Today
+      read *"Nothing left today"*.
 - [ ] **A tap the next morning writes to the night before.** Post a reminder,
       then let the day cutoff pass without tapping — force-idle through
       midnight, or move the cutoff close as the check above does. Tap a button
       *after* the rollover. The completion must land on the day the notification
       was posted for, which is now **yesterday** on habit detail. This is §4's
       one correctness rule, and its failure is silent: the three-day retro
-      window accepts a write to today, so nothing refuses it.
+      window accepts a write to today, so nothing refuses it. **Not runnable on
+      a Play-store emulator image**: `adb root` is refused so the clock cannot
+      be moved, and raising the cutoff moves the logical day *backwards*, not
+      forwards. It needs a `google_apis` AVD that allows root, or a phone
+      carried past its own midnight.
+- [ ] **A refused write leaves the notification alone.** The other side of the
+      carried date, and reachable in a minute: with a reminder posted, raise
+      **Day starts at** past now, which moves the logical day back so the
+      carried date is in the *future*, and tap a button. Nothing is written, the
+      notification does not change, and logcat says
+      `a quick-complete tap was refused: FutureLogicalDate`. Dropping the button
+      here would report a completion that never happened. Passed on an emulator
+      (API 37) exactly so; put the cutoff back to 12:00 AM afterwards.
 - [ ] **TalkBack speaks the verb, not just the name.** With TalkBack on, focus a
       button. It must announce *"Complete Read"*, not *"Read"* — a notification
       action has no content description, so the spoken form rides in the title
       as a `TtsSpan` and only a real screen reader shows whether the platform
       kept it. If it reads the bare name, the span is being stripped: drop to
-      the plain name and say so in docs/ux/reminder.md §4.
+      the plain name and say so in docs/ux/reminder.md §4. **This one needs an
+      ear or the speech overlay.** On an emulator TalkBack focused each button
+      and spoke, but it logs no text, `uiautomator` flattens spans out of the
+      dump, and the overlay that would show the words is a TalkBack preference
+      no unrooted shell can set — so nothing was learnt. Either half is safe to
+      ship: a stripped span leaves the bare name, which is the fallback.
 
 ### Habit detail
 
