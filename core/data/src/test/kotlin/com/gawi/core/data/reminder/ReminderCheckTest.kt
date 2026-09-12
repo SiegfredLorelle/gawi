@@ -143,6 +143,18 @@ class ReminderCheckTest {
     /** The default clock sits at 09:00 UTC; the default reminder is 21:00. */
     private fun evening() = FakeDeviceClock(Instant.parse("2026-08-17T21:30:00Z"))
 
+    /**
+     * The whole decision for one outstanding habit, date included.
+     *
+     * The date comes from the store rather than being written out, so these read
+     * as "the day the rows were queried for" — which is what the notification
+     * carries to its buttons. The fixture clock is never today's, so a
+     * `LocalDate.now()` in place of the snapshot's date reddens every one of
+     * these rather than passing by coincidence.
+     */
+    private suspend fun remindOf(id: HabitId, name: String = "read", total: Int = 1) =
+        ReminderDecision.Remind(store.today(), listOf(OutstandingHabit(id, name)), total)
+
     @Test
     fun `nothing is said before the reminder time, even with a habit outstanding`() = runTest {
         val check = check()
@@ -154,9 +166,9 @@ class ReminderCheckTest {
     @Test
     fun `an outstanding habit is reported once the reminder time has passed`() = runTest {
         val check = check(clock = evening())
-        createHabit()
+        val habit = createHabit()
 
-        assertEquals(ReminderDecision.Remind(outstanding = 1, total = 1), check.evaluate())
+        assertEquals(remindOf(habit), check.evaluate())
     }
 
     /** PRD §6.1.5's *"silent when all done"*. */
@@ -174,9 +186,9 @@ class ReminderCheckTest {
     @Test
     fun `a second evaluation on the same day says nothing`() = runTest {
         val check = check(clock = evening())
-        createHabit()
+        val habit = createHabit()
 
-        assertEquals(ReminderDecision.Remind(outstanding = 1, total = 1), check.evaluate())
+        assertEquals(remindOf(habit), check.evaluate())
         assertEquals(ReminderDecision.Silent, check.evaluate())
     }
 
@@ -184,12 +196,12 @@ class ReminderCheckTest {
     fun `the next day reminds again`() = runTest {
         val clock = evening()
         val check = check(clock = clock)
-        createHabit()
+        val habit = createHabit()
 
-        assertEquals(ReminderDecision.Remind(outstanding = 1, total = 1), check.evaluate())
+        assertEquals(remindOf(habit), check.evaluate())
         clock.advanceDays(1)
 
-        assertEquals(ReminderDecision.Remind(outstanding = 1, total = 1), check.evaluate())
+        assertEquals(remindOf(habit), check.evaluate())
     }
 
     /**
@@ -205,9 +217,9 @@ class ReminderCheckTest {
         val check = check(clock = evening())
 
         assertEquals(ReminderDecision.Silent, check.evaluate())
-        createHabit()
+        val habit = createHabit()
 
-        assertEquals(ReminderDecision.Remind(outstanding = 1, total = 1), check.evaluate())
+        assertEquals(remindOf(habit), check.evaluate())
     }
 
     /**
@@ -238,9 +250,9 @@ class ReminderCheckTest {
     @Test
     fun `a wake a minute early still reports`() = runTest {
         val check = check(clock = FakeDeviceClock(Instant.parse("2026-08-17T20:59:30Z")))
-        createHabit()
+        val habit = createHabit()
 
-        assertEquals(ReminderDecision.Remind(outstanding = 1, total = 1), check.evaluate())
+        assertEquals(remindOf(habit), check.evaluate())
     }
 
     /**
@@ -264,11 +276,11 @@ class ReminderCheckTest {
     fun `the total counts every habit, not only the outstanding ones`() = runTest {
         val clock = evening()
         val check = check(clock = clock)
-        createHabit("read")
+        val open = createHabit("read")
         val done = createHabit("swim")
         store.repository.addCompletion(done, store.today())
 
-        assertEquals(ReminderDecision.Remind(outstanding = 1, total = 2), check.evaluate())
+        assertEquals(remindOf(open, total = 2), check.evaluate())
     }
 
     /**
@@ -285,13 +297,13 @@ class ReminderCheckTest {
         val settings = FakeSettingsSource(UserSettings(dayCutoff = LocalTime.of(3, 0), reminderTime = LocalTime.of(1, 30)))
         val clock = FakeDeviceClock(Instant.parse("2026-08-18T01:00:00Z"))
         val check = check(clock = clock, settings = settings)
-        createHabit()
+        val habit = createHabit()
 
         assertEquals(LocalDate.parse("2026-08-17"), store.today())
         assertEquals(ReminderDecision.Silent, check.evaluate())
 
         clock.instant = Instant.parse("2026-08-18T01:45:00Z")
-        assertEquals(ReminderDecision.Remind(outstanding = 1, total = 1), check.evaluate())
+        assertEquals(remindOf(habit), check.evaluate())
     }
 
     @Test
@@ -420,7 +432,37 @@ class ReminderCheckTest {
         )
         val check = checkOver(snapshot)
 
-        assertEquals(ReminderDecision.Remind(outstanding = 1, total = 1), check.evaluate())
+        assertEquals(
+            ReminderDecision.Remind(today, listOf(OutstandingHabit(habitId(1), "read")), total = 1),
+            check.evaluate(),
+        )
+    }
+
+    /**
+     * The buttons are drawn from this list, so its order is the order they appear
+     * in — and nothing here may choose it. With four outstanding there is no
+     * non-arbitrary way to pick three, which is why the notifier drops the buttons
+     * entirely rather than ranking (PRD §8, OQ-2).
+     *
+     * The snapshot is injected for the same reason the test above injects one:
+     * `TestStore` mints ids in creation order, so a `sortedBy { it.id }` would
+     * pass against it by coincidence. These ids sort the other way from the rows.
+     */
+    @Test
+    fun `the habits are reported in the order the rows came in`() = runTest {
+        val today = LocalDate.parse("2026-08-17")
+        val snapshot = TodaySnapshot(
+            habits = listOf(row(habitId(3), archived = false), row(habitId(1), archived = false)),
+            today = today,
+            now = today.atTime(21, 30),
+            reminderTime = LocalTime.of(21, 0),
+            dayCutoff = LocalTime.MIDNIGHT,
+            weekStart = DayOfWeek.MONDAY,
+        )
+
+        val decision = checkOver(snapshot).evaluate() as ReminderDecision.Remind
+
+        assertEquals(listOf(habitId(3), habitId(1)), decision.outstanding.map { it.id })
     }
 
     /** Both wakes are always in the future, which is what keeps a delay non-negative. */
