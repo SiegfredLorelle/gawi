@@ -1,5 +1,7 @@
 package com.gawi.core.testing
 
+import com.gawi.core.domain.command.CommandError
+import com.gawi.core.domain.command.CommandResult
 import com.gawi.core.domain.testing.habitId
 import com.gawi.core.domain.testing.uuid
 import kotlinx.coroutines.flow.first
@@ -18,6 +20,38 @@ class FixturesTest {
         ids.forEach { assertTrue(it, Regex("[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-8[0-9a-f]{3}-[0-9a-f]{12}").matches(it)) }
         assertEquals(ids, ids.sorted())
         assertEquals(ids.size, ids.toSet().size)
+    }
+
+    /**
+     * A subject that writes and then reads back must see its own write, or a
+     * read-after-write cannot be tested through this fake at all.
+     */
+    @Test
+    fun `a completion the fake accepted shows up in a ranged read`() = runTest {
+        val repository = FakeHabitRepository()
+
+        repository.addCompletion(habitId(1), FIXED_DATE)
+
+        assertEquals(
+            mapOf(habitId(1) to setOf(FIXED_DATE)),
+            repository.observeCompletionDatesByHabit(FIXED_DATE, FIXED_DATE).first(),
+        )
+    }
+
+    /**
+     * The other half, and the one that is easy to get wrong: a rejection here is
+     * a *value*, not a throw, so the write still runs to completion. The attempt
+     * is recorded; the state a read is served from must not move.
+     */
+    @Test
+    fun `a completion the fake rejected shows up in neither read nor state`() = runTest {
+        val repository = FakeHabitRepository()
+        repository.result = CommandResult.Rejected(CommandError.RetroWindowExceeded)
+
+        repository.addCompletion(habitId(1), FIXED_DATE)
+
+        assertTrue(repository.observeCompletionDatesByHabit(FIXED_DATE, FIXED_DATE).first().isEmpty())
+        assertTrue("the attempt is still recorded", repository.completions.isNotEmpty())
     }
 
     @Test
