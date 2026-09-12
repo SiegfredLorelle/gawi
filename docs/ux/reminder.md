@@ -9,8 +9,9 @@ decided.
 
 **Status:** decided and built 2026-08-21, in `:core:data` (the decision), `:app`
 (the workers and the notification) and `:feature:settings` (the permission).
-This is the second half of PRD §6.1's first criterion, the widget having been
-the first.
+The quick-complete buttons §4 specifies landed with 1.0.0's step 3, adding a
+receiver to `:app`; they are the *"notification action"* half of PRD §6.1's
+first criterion, which until then only the widget answered.
 
 It ships **two** scheduled wakes, and only one of them is a notification. The
 other is the day-rollover refresh that [widget.md](widget.md) §4 and §6 leave
@@ -382,22 +383,30 @@ one the user finds the next morning, which is the whole point missed;
 `IMPORTANCE_HIGH` would be an interruption for something that is not urgent. Both
 are the user's to change in the channel's own settings.
 
-**No action buttons yet, and the build has none — but they are specified.**
-Quick-complete was PRD §4's explicit stretch goal, *"allowed to slip to Phase 1;
-documented so it isn't lost"*, and it carried OQ-2 with it: Android caps three
-action buttons, and what to show when more than three habits remain is a real
-design question. **Answered (PRD §8, OQ-2) and scheduled for 1.0.0 (PRD §5,
-step 3): up to three buttons, one per outstanding habit, each writing a
-completion; four or more left and there are none, the tap opening Today as it
-does today.** Until it lands, everything below this
-paragraph describes a build without them.
+**Up to three action buttons, one per outstanding habit, and none at four or
+more.** Quick-complete was PRD §4's explicit stretch goal, *"allowed to slip to
+Phase 1; documented so it isn't lost"*, and it carried OQ-2 with it: Android caps
+three action buttons, and what to show when more than three habits remain is a
+real design question. PRD §8 answered it and PRD §5's step 3 built it. Each
+button writes a completion; at four or more there are none and the tap opens
+Today.
 
 **The button is labelled with the habit's name and nothing else.** The position
 is the verb — an action row under a reminder is not read as a list — and a
 *"Done: "* prefix would only make a long name truncate sooner. What it *speaks*
 cannot be the bare name, though: read alone, *"Read"* is an instruction rather
-than a habit, so each button's content description says what pressing it does,
-the way the Today row's `onClick(label = …)` already does.
+than a habit.
+
+**A notification action has no content description, and that is an API fact
+rather than an oversight.** `NotificationCompat.Action.Builder` offers none —
+the title is both what is drawn and what a screen reader announces — so the
+split the Today row makes with `onClick(label = …)` cannot be made the same way
+here. It is made inside the title instead: the name carries a `TtsSpan` whose
+text is *"Complete Read"*, which is a `ParcelableSpan` and so survives the trip
+to the shade. `ReminderNotifierTest` pins that the span is set; whether the
+platform keeps it on an action title is a device check
+([running.md](../running.md) §4), and the fallback if it does not is the bare
+name.
 
 **The button carries the date; it must never resolve one when tapped.** The
 reminder fires before the day cutoff and the notification survives the night,
@@ -436,12 +445,24 @@ to say.
 `evaluate()`.** Both follow from the paragraph above. Recounting against *today*
 after the cutoff would contradict the buttons it is posted beside, so the body
 counts the same day the buttons write to — and past midnight it is no longer
-describing "today", which the copy has to survive. Going through `evaluate()`
-would be worse than wrong: that is the function that stamps `ReminderJournal`
-(§1), so a quick-complete tap after the cutoff would mark the new day as
-already reminded and silence that evening's real reminder — §1's late-wake
-case, reached from a new direction. The re-post posts directly under the fixed
-id.
+describing "today". The copy survives that rather than changing: knowing it is
+stale needs `today`, and resolving `today` in the tap path is the one thing this
+section rules out. Going through `evaluate()` would be worse than wrong: that is
+the function that stamps `ReminderJournal` (§1), so a quick-complete tap after
+the cutoff would mark the new day as already reminded and silence that evening's
+real reminder — §1's late-wake case, reached from a new direction. The re-post
+posts directly under the fixed id.
+
+**What is left is carried by the button, not recounted.** Each `PendingIntent`
+holds the whole outstanding list as it stood at post time, so a tap drops the
+habit it wrote and re-posts the rest without reading anything. That is what
+keeps the tap free of a clock, and the alternative is worse:
+`HabitRepository.observeToday` answers for the *current* logical date, so a tap
+the next morning would need a second way to decide what is outstanding, beside
+`Mascot.isOutstanding`, for a date nothing else asks about. The cost is real and
+small — a habit completed in the app since the post still shows a button, and
+pressing it re-adds a completion that is already there, which architecture §4's
+idempotent collapse absorbs.
 
 **So it does not consult the off switch either, and that needs saying rather
 than inheriting.** §3 rules out a post-time switch check for one reason — that
@@ -454,17 +475,25 @@ being nudged is exactly what sends somebody to the setting, so the switch can
 go off between the post and the tap. Suppressing the re-post there would leave
 the count contradicting the button they just pressed, which is the state the
 paragraph above exists to prevent. **The permission is still honoured**, and for
-free: the check is the first statement of `ReminderNotifier.post`, and the
-notification's id is private to that class, so a re-post goes through the same
-door.
+free: `ReminderNotifier.post` and `repost` share one body whose first statement
+is the check, and the notification's id is private to that class, so a re-post
+goes through the same door.
 
-**A re-post must not re-alert, and today's builder would.** The channel is
-`IMPORTANCE_DEFAULT`, which makes a sound, and nothing sets
-`setOnlyAlertOnce` — so every `notify()` on the fixed id would buzz again. One
-tap becoming a second alert is wrong on its own, and it is the version of the
-paragraph above that would feel indefensible: a user who has just switched the
-reminder off would be *sounded at* for completing a habit. The first post
-alerts; a re-post replaces its content silently.
+**A re-post must not re-alert, and the flag that stops it belongs to the
+re-post alone.** The channel is `IMPORTANCE_DEFAULT`, which makes a sound, so
+without `setOnlyAlertOnce` every `notify()` on the fixed id would buzz again.
+One tap becoming a second alert is wrong on its own, and it is the version of
+the paragraph above that would feel indefensible: a user who has just switched
+the reminder off would be *sounded at* for completing a habit.
+
+Setting it on every post would be the wrong fix, though, and it is the obvious
+one. The flag suppresses the sound whenever a notification with that id is
+*already showing* — and `setAutoCancel` clears this one only on a tap, so a
+reminder ignored overnight is still there when the next evening's is posted.
+A blanket `setOnlyAlertOnce` would therefore silence tomorrow's real reminder
+for anyone who left today's unread. So it is a parameter: the first post
+alerts, a re-post replaces its content silently, and
+`ReminderNotifierTest` asserts both directions.
 
 **Nothing is ranked, and that is why the cap is where it is.** With four
 outstanding there is no non-arbitrary way to choose three, and any rule that did
@@ -598,9 +627,6 @@ mutation-checked against the code before the fix.
   channel-set-to-None. Checking it needs the channel id, which belongs to `:app`,
   and coupling `:feature:settings` to it for one edge case was declined. The row
   would say the reminder will arrive, and it would not.
-- **Quick-complete actions** (PRD §4, OQ-2). Deferred to Phase 1 on the PRD's own
-  terms; §4 above has the reasoning. **Decided 2026-09-03 and scheduled for
-  1.0.0**; §4 records the shape.
 - **The wake can drift, and nothing measures how far.** Delivery is inside
   eligibility rather than delivery — architecture §7 calls it *deliberately
   inexact*, and there is no flex interval to quote because these are one-time
@@ -609,10 +635,14 @@ mutation-checked against the code before the fix.
   in §1 is what stops drift becoming a *wrong* reminder rather than a late one.
   A user who never opens the app relies entirely on the mutual chain in §2.
 - **No test proves a notification reaches the shade.** `ReminderCheckTest` pins
-  every decision and `ReminderSchedulerTest` pins the scheduling, but the post
-  itself is only exercised by hand — [running.md](../running.md) §4 has the
-  checks. This is the same gap the widget has for *"a write in the app moves the
-  widget"*, and for the same reason: the framework is the part not under test.
+  every decision, `ReminderSchedulerTest` the scheduling, and
+  `ReminderNotifierTest` what this app asks the platform for — the buttons, the
+  cap, the carried extras and the alert flag. What none of them reaches is the
+  platform's own half: that the row appears, that the small icon holds at 24 dp,
+  that a `TtsSpan` on an action title survives. [running.md](../running.md) §4
+  has those by hand. This is the same gap the widget has for *"a write in the app
+  moves the widget"*, and for the same reason: the framework is the part not
+  under test.
 - **Nor does any test pin which wakes an edit re-arms**, which is the one
   property `replaceWhatMoved` exists for. No test calls its `start()` — the
   only caller is `GawiApplication` — `replaceWhatMoved` is private, and
