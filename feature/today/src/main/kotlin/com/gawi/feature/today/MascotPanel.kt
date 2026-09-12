@@ -35,6 +35,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.gawi.core.domain.mascot.Mood
+import com.gawi.core.domain.streak.Streaks
 import com.gawi.core.ui.component.Momo
 import com.gawi.core.ui.component.MomoPalette
 import com.gawi.core.ui.component.rememberFrameClock
@@ -86,7 +87,7 @@ internal fun MascotPanel(mascot: MascotUi, motion: TodayMotion, modifier: Modifi
         verticalArrangement = Arrangement.spacedBy(GawiSpacing.Gap),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Tank(mascot.mood, motion.animationsOn, motion.celebration, motion.milestone)
+        Tank(mascot, motion.animationsOn, motion.celebration, motion.milestone)
         Text(
             text = copy,
             style = MaterialTheme.typography.titleMedium,
@@ -244,17 +245,21 @@ internal fun TodayChip(mascot: MascotUi, milestone: Milestone?, modifier: Modifi
  * in, for the reasons [rememberCelebration] gives. Everything that moves is
  * read inside a draw or layout lambda, so a frame redraws two canvases and
  * recomposes nothing.
+ *
+ * Takes the whole [MascotUi] rather than a mood and a gill count: those are one
+ * habit's answer (docs/ux/momo.md §3), and two parameters could be handed two
+ * different habits'.
  */
 @Composable
 private fun Tank(
-    mood: Mood,
+    mascot: MascotUi,
     animationsOn: Boolean,
     celebration: CelebrationState,
     milestone: MilestoneState,
     modifier: Modifier = Modifier,
 ) {
     val scheme = MaterialTheme.colorScheme
-    val transition = rememberMoodTransition(mood, animationsOn)
+    val transition = rememberMoodTransition(mascot.mood, animationsOn)
     val seconds = rememberFrameClock(animationsOn)
     val full = listOf(scheme.primaryContainer, scheme.primaryFixedDim)
     val drained = listOf(scheme.surfaceContainerHighest, scheme.surfaceContainerHigh)
@@ -304,7 +309,9 @@ private fun Tank(
         Momo(
             transition,
             seconds,
-            Modifier
+            spare = mascot.spare,
+            modifier = Modifier
+                .then(spokenGills(mascot.spare)?.let { g -> Modifier.semantics { contentDescription = g } } ?: Modifier)
                 .fillMaxSize()
                 .padding(GawiSpacing.Row)
                 .offset {
@@ -342,18 +349,34 @@ private fun chipMilestoneCopy(milestone: Milestone): Int =
     if (milestone.weekly) R.plurals.today_chip_milestone_weeks else R.plurals.today_chip_milestone_days
 
 /**
- * The panel's line — one per mood (today-view §4), and for regenerating the one
- * that names the habit.
+ * The drawn gill count, in words, or null when there is nothing to say.
  *
- * The name is [MascotUi.regeneratingHabit] rather than anything worked out here:
- * which habit a break belongs to is a decision, and `TodayUiMapper` is where
- * this module's decisions are asserted without a device. The mood is not
- * re-tested for it either — the mapper sets the field only for
- * [Mood.REGENERATING], so a non-null name *is* that state.
+ * A picture described before its caption, which is the order the panel's Column
+ * already reads in — and not the mood, which the caption is already the
+ * description of (momo.md §5), so nothing is said twice. **Silent at three**,
+ * because a full cluster is Momo having nothing to report rather than a count
+ * worth speaking (momo.md §3).
+ */
+@Composable
+private fun spokenGills(spare: Int): String? = when {
+    spare >= Streaks.MAX_SPARE -> null
+    spare == 0 -> stringResource(R.string.today_gills_none)
+    else -> pluralStringResource(R.plurals.today_gills_left, spare, spare)
+}
+
+/**
+ * The panel's line — one per mood (today-view §4), and for the two moods that
+ * can name a habit, the one that names it.
+ *
+ * The name is [MascotUi.subject] rather than anything worked out here: which
+ * habit a mood belongs to is a decision, and `TodayUiMapper` is where this
+ * module's decisions are asserted without a device. The mood *is* re-read, and
+ * has to be — unlike the regenerating field this replaces, a subject can come
+ * from either of two moods, and they do not share a sentence.
  */
 @Composable
 private fun moodLine(mascot: MascotUi): String {
-    val named = mascot.regeneratingHabit
+    val named = mascot.subject?.name
     return when {
         // The empty case gets its own line rather than sharing content's.
         // today-view §4's rule 0 makes a habitless first run `content`
@@ -366,7 +389,14 @@ private fun moodLine(mascot: MascotUi): String {
         // the repair, and it never scolds. The unnamed line below is what shows
         // when the mood is regenerating and no habit can be named — see
         // Mascot.recentlyBrokenHabits, which will not name one already ticked.
-        named != null -> stringResource(R.string.today_mood_regenerating_named, named)
+        named != null && mascot.mood == Mood.REGENERATING ->
+            stringResource(R.string.today_mood_regenerating_named, named)
+
+        // The same shape one mood earlier: it names the habit and warns without
+        // counting, because the count line directly beneath already counts and
+        // the gills already show what this habit has left (docs/ux/momo.md §3).
+        named != null && mascot.mood == Mood.WORRIED ->
+            stringResource(R.string.today_mood_worried_named, named)
 
         else -> stringResource(moodCopy(mascot.mood))
     }

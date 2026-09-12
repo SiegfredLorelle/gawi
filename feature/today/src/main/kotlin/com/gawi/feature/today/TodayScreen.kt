@@ -141,7 +141,7 @@ internal fun TodayScreen(state: TodayUiState, actions: TodayActions, snackbarHos
                         .padding(insets)
                         .verticalScroll(rememberScrollState()),
                 ) {
-                    MascotPanel(MascotUi(state.mood, remaining = 0, total = 0, regeneratingHabit = null), motion)
+                    MascotPanel(MascotUi(state.mood, remaining = 0, total = 0, subject = null), motion)
                     EmptyToday(onAddHabit = actions.onAddHabit, modifier = Modifier.fillMaxWidth())
                 }
             }

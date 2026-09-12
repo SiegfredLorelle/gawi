@@ -676,6 +676,56 @@ class TodayScreenTest {
     }
 
     /**
+     * The second mood that can name a habit (docs/ux/momo.md §3): worried names
+     * the run about to break, so the gills she is drawing have a name attached.
+     *
+     * The unnamed line is asserted absent for the reason the regenerating test
+     * gives — keeping the old copy would compile and satisfy every mapper
+     * assertion.
+     */
+    @Test
+    fun worried_namesTheHabitAboutToBreak() {
+        compose.setContent {
+            GawiTheme { TodayScreen(AT_RISK, NO_ACTIONS, SnackbarHostState()) }
+        }
+
+        compose.onNodeWithText(resources.getString(R.string.today_mood_worried_named, WALK.name)).assertIsDisplayed()
+        compose.onNodeWithText(string(R.string.today_mood_worried)).assertDoesNotExist()
+    }
+
+    /**
+     * The drawn count reaches a screen reader. A gill count that only exists in
+     * pixels is information sighted users alone get, which is the failure the
+     * accessibility pass exists to catch.
+     */
+    @Test
+    fun `the gill count Momo draws is spoken`() {
+        compose.setContent {
+            GawiTheme { TodayScreen(AT_RISK, NO_ACTIONS, SnackbarHostState()) }
+        }
+
+        val spoken = resources.getQuantityString(R.plurals.today_gills_left, 1, 1)
+        compose.onNodeWithContentDescription(spoken, useUnmergedTree = true).assertIsDisplayed()
+    }
+
+    /**
+     * A full cluster is Momo having nothing to report rather than a count worth
+     * speaking, so the description is absent rather than saying "three".
+     */
+    @Test
+    fun `a full Momo says nothing about her gills`() {
+        compose.setContent {
+            GawiTheme { TodayScreen(HABITS, NO_ACTIONS, SnackbarHostState()) }
+        }
+
+        compose.onNode(hasContentDescription(string(R.string.today_gills_none)), useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithContentDescription(
+            resources.getQuantityString(R.plurals.today_gills_left, 1, 1),
+            useUnmergedTree = true,
+        ).assertDoesNotExist()
+    }
+
+    /**
      * All four faces, each with its own line — the today-view §4 mapping is no longer
      * three-to-four. The tag proves the mood reached the drawing and the copy
      * proves the line beside it agrees; a screen test cannot see pixels
@@ -898,7 +948,7 @@ class TodayScreenTest {
             mood = Mood.CONTENT,
             remaining = 1,
             logicalDate = LOGICAL_DATE,
-            regeneratingHabit = null,
+            subject = null,
         )
 
         /**
@@ -911,7 +961,21 @@ class TodayScreenTest {
             mood = Mood.REGENERATING,
             remaining = 2,
             logicalDate = LOGICAL_DATE,
-            regeneratingHabit = WALK.name,
+            subject = MascotSubject(WALK.name, spare = 0),
+        )
+
+        /**
+         * Worried, with the run closest to breaking — momo.md §3's "the one
+         * about to break". Two gills spent of three, so the drawing has
+         * something to say and the line has a habit to name. WALK rather than
+         * READ for the reason [REGENERATING] gives.
+         */
+        val AT_RISK = TodayUiState.Habits(
+            rows = listOf(READ, WALK),
+            mood = Mood.WORRIED,
+            remaining = 2,
+            logicalDate = LOGICAL_DATE,
+            subject = MascotSubject(WALK.name, spare = 1),
         )
 
         /**
@@ -927,7 +991,7 @@ class TodayScreenTest {
             mood = Mood.WORRIED,
             remaining = 3,
             logicalDate = LOGICAL_DATE,
-            regeneratingHabit = null,
+            subject = null,
         )
 
         /**
@@ -948,7 +1012,7 @@ class TodayScreenTest {
             mood = Mood.THRIVING,
             remaining = 0,
             logicalDate = LOGICAL_DATE,
-            regeneratingHabit = null,
+            subject = null,
         )
     }
 }

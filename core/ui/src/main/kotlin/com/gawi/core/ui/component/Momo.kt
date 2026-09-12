@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import com.gawi.core.domain.mascot.Mood
+import com.gawi.core.domain.streak.Streaks
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
@@ -70,9 +71,9 @@ import kotlin.math.sin
  * on the frame clock, and the timeout it produces names nothing here.
  */
 @Composable
-fun Momo(mood: Mood, modifier: Modifier = Modifier, animated: Boolean = true) {
+fun Momo(mood: Mood, modifier: Modifier = Modifier, animated: Boolean = true, spare: Int = Streaks.MAX_SPARE) {
     val animationsOn by rememberAnimationsEnabled(animated)
-    Momo(rememberMoodTransition(mood, animationsOn), animationsOn, modifier)
+    Momo(rememberMoodTransition(mood, animationsOn), animationsOn, modifier, spare)
 }
 
 /**
@@ -83,8 +84,8 @@ fun Momo(mood: Mood, modifier: Modifier = Modifier, animated: Boolean = true) {
  * a mood change stands.
  */
 @Composable
-fun Momo(transition: MoodTransitionState, animationsOn: Boolean, modifier: Modifier = Modifier) {
-    Momo(transition, rememberFrameClock(animationsOn), modifier)
+fun Momo(transition: MoodTransitionState, animationsOn: Boolean, modifier: Modifier = Modifier, spare: Int = Streaks.MAX_SPARE) {
+    Momo(transition, rememberFrameClock(animationsOn), modifier, spare)
 }
 
 /**
@@ -94,7 +95,7 @@ fun Momo(transition: MoodTransitionState, animationsOn: Boolean, modifier: Modif
  * effects that happen to start on the same frame.
  */
 @Composable
-fun Momo(transition: MoodTransitionState, seconds: State<Float>, modifier: Modifier = Modifier) {
+fun Momo(transition: MoodTransitionState, seconds: State<Float>, modifier: Modifier = Modifier, spare: Int = Streaks.MAX_SPARE) {
     // fillMaxSize is load-bearing: the caller sizes the box, and a Canvas with
     // no size of its own measures 0 x 0 — which is a tank with nothing in it,
     // while every test that only asked whether the node existed stays green.
@@ -103,7 +104,7 @@ fun Momo(transition: MoodTransitionState, seconds: State<Float>, modifier: Modif
     Canvas(modifier.fillMaxSize().testTag("momo:${transition.to}")) {
         val t = transition.current
         val s = seconds.value
-        drawMomo(t.from, t.to, t.progress, MomoFrame.between(MomoFrame.at(t.from, s), MomoFrame.at(t.to, s), t.progress))
+        drawMomo(t.from, t.to, t.progress, MomoFrame.between(MomoFrame.at(t.from, s), MomoFrame.at(t.to, s), t.progress), spare)
     }
 }
 

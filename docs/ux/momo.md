@@ -161,9 +161,9 @@ to return, which would move the halo to the bottom of the cluster and move
 is the one sentence above: a gill's index counts up from the bottom, and the
 first `3 − spare` of them are short.
 
-**None of this is built.** `drawGills` shortens exactly one gill and takes no
-count at all, so what this section fixes is where the drawing is going rather
-than what the app draws today.
+**The drawing is built.** `drawGills` takes the count and shortens the right
+gills bottom-up, and a spent gill is the regrowing one's own drawing rather than
+a second transcription of it — one recipe, so the two can never disagree.
 
 **A spent gill is the same drawing as the regrowing one**, so there is one
 recipe rather than two: every point pulled toward its own root at **0.661**,
@@ -173,20 +173,49 @@ section already put the regenerating one. A gill's root does not move, so the
 sway above is untouched: a short gill turns through the same ±4.5° at the same
 offset as a long one.
 
-**None left is the regenerating face, and that is why the two agree.** A streak
-can only break once the last spare is gone, so *zero spare* and *regenerating*
-are one moment seen twice — the mood table's REGENERATING column is this
-drawing at zero, halo included, and the order above is what puts that halo on
-the upper gill.
+**None left is the regenerating drawing, but it is not always that face.** A
+streak can only break once the last spare is gone, so the mood table's
+REGENERATING column is this drawing at zero, halo included, and the order above
+is what puts that halo on the upper gill. **Zero is reachable without a break**,
+though: a run too young to have banked its first gill reports zero too, and that
+habit is one miss from losing a real streak rather than one that has already
+lost it. So the halo is keyed to the mood and never to the count —
+`StreakSnapshot.spare` says so where it is declared, and the drawing obeys it.
 
-**She only shows a count she can name.** A gill belongs to a habit and there is
-one Momo for all of them, so an ambient count raises a question the screen
-cannot answer: *whose?* The panel already solved this once, by naming the habit
-in the regenerating line (today-view §4 picks the most recently broken), so the
-right gills follow that same habit and she is drawn full whenever the panel has
-no habit to name. The count is never put on a habit row: the row carries a
+**She only shows a count she can name, and two moods can name one.** A gill
+belongs to a habit and there is one Momo for all of them, so an ambient count
+raises a question the screen cannot answer: *whose?* The panel already solved
+this once, by naming the habit in the regenerating line (today-view §4 picks the
+most recently broken). **Worried names the other one, the run about to break**,
+and the right gills follow whichever habit the line has just named — leaving her
+full whenever it names nobody, which content and thriving always do, having no
+risk to report. *About to break* is the habit with the fewest spare lives among
+those still owed today, ties keeping the user's own order, which is the
+tie-break today-view §6 already settled on for the same reason: which habit the
+panel names must not flicker. **A run that has already broken is not a
+candidate** — its zero lasts until the habit is picked up again, so counting it
+would pin the drawing to nothing left and name the same abandoned habit every
+evening. The count is never put on a habit row: the row carries a
 checkbox, a streak and a dimmed state already, and a fourth signal there would
 be the screen explaining itself rather than showing itself.
+
+**The count is an evening thing, and that is deliberate.** Worried needs
+something outstanding *and* the day near its cutoff (today-view §4), so the
+gills stay full until then — which is when *about to break* is most nearly true.
+Letting content name a weak habit too was drawn and refused: a second string,
+and a busier morning for a number nobody can act on yet.
+
+**The worried line gains a named form**, *"Momo is getting worried about X."* It
+is the regenerating line's shape one mood earlier — it names the habit and warns
+without counting, because the count line directly beneath already counts and the
+gills already show what this habit has left (today-view §6).
+
+**The drawn count is spoken.** A gill count that exists only in pixels is
+information sighted users alone get, so the tank carries it as a description
+ahead of its caption: the picture described, then the line that names the habit.
+Not the mood, which the caption already is (§5), so nothing is said twice — and
+silent at three, because a full cluster is Momo having nothing to report rather
+than a count worth speaking.
 
 **A mood change is one Momo, not two.** The first build crossfaded two whole
 drawings over 0.55 s, and because each mood floats at its own tempo the two
