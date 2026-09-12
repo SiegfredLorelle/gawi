@@ -23,8 +23,10 @@ import com.gawi.core.ui.R
 internal val OutfitWeights = listOf(
     FontWeight.Normal,
     FontWeight.Medium,
+    FontWeight.SemiBold,
     FontWeight.Bold,
     FontWeight.ExtraBold,
+    FontWeight.Black,
 )
 
 /**
@@ -54,16 +56,19 @@ internal val OutfitWeights = listOf(
  * every entry names `wght`, so the deletion fails a test rather than shipping a
  * thin app.
  *
- * **Four weights, because that is what the app can *request*, not what it
- * writes.** Material's fifteen roles ask for W400 and W500, and no source in
- * `:core:ui`, `:feature:*` or `:app` sets a weight by hand. But Compose installs
- * an `AndroidFontResolveInterceptor` carrying
- * `Configuration.fontWeightAdjustment` and adds it to **every** request, so with
- * the system's *Bold text* accessibility setting on (+300 on API 31+) the same
- * roles ask for W700 and W800. Registered, those resolve to real instances
- * already sitting in this file; unregistered, they fall to the nearest entry plus
- * platform synthesis — fake bold drawn over a genuine bold the app already
- * shipped. Four entries and one asset is the cheaper half of that trade.
+ * **Six weights, because that is what the app can *request*, not what it
+ * writes.** Material's fifteen roles ask for W400 and W500, and four roles ask
+ * for W600 of their own ([GawiTypography]) — no other source in `:core:ui`,
+ * `:feature:*` or `:app` sets a weight by hand. But Compose installs an
+ * `AndroidFontResolveInterceptor` carrying `Configuration.fontWeightAdjustment`
+ * and adds it to **every** request, so with the system's *Bold text*
+ * accessibility setting on (+300 on API 31+) those same roles ask for W700,
+ * W800 and W900. Registered, each resolves to a real instance already sitting
+ * in this file; unregistered, it falls to the nearest entry plus platform
+ * synthesis — fake bold drawn over a genuine bold the app already shipped. Six
+ * entries and one asset is the cheaper half of that trade, and the set is
+ * closed: the axis stops at 900, so nothing the adjustment can ask for is
+ * missing.
  *
  * **This font's `cmap` covers 360 characters, and that is a live constraint
  * even though nothing visibly fails on it.** Five glyphs the app would
@@ -122,8 +127,9 @@ private val Default = Typography()
  * `TextUnit.coerceAtMost` requires both units to be the same type and would
  * throw on an unspecified role if Compose ever ships one.
  */
-private fun TextStyle.inOutfit(): TextStyle = copy(
+private fun TextStyle.inOutfit(weight: FontWeight = fontWeight ?: FontWeight.Normal): TextStyle = copy(
     fontFamily = Outfit,
+    fontWeight = weight,
     letterSpacing = if (letterSpacing.isSpecified && letterSpacing.value > 0f) 0.sp else letterSpacing,
 )
 
@@ -185,12 +191,12 @@ private fun TextStyle.inOutfit(): TextStyle = copy(
 val GawiTypography: Typography = Typography(
     displayLarge = Default.displayLarge.inOutfit(),
     displayMedium = Default.displayMedium.inOutfit(),
-    displaySmall = Default.displaySmall.inOutfit(),
+    displaySmall = Default.displaySmall.inOutfit(FontWeight.SemiBold),
     headlineLarge = Default.headlineLarge.inOutfit(),
     headlineMedium = Default.headlineMedium.inOutfit(),
-    headlineSmall = Default.headlineSmall.inOutfit(),
-    titleLarge = Default.titleLarge.inOutfit(),
-    titleMedium = Default.titleMedium.inOutfit(),
+    headlineSmall = Default.headlineSmall.inOutfit(FontWeight.SemiBold),
+    titleLarge = Default.titleLarge.inOutfit(FontWeight.SemiBold),
+    titleMedium = Default.titleMedium.inOutfit(FontWeight.SemiBold),
     titleSmall = Default.titleSmall.inOutfit(),
     bodyLarge = Default.bodyLarge.inOutfit(),
     bodyMedium = Default.bodyMedium.inOutfit(),

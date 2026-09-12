@@ -741,8 +741,10 @@ since become a decision of this section's own:
   Material's, and `GawiTypographyTest` asserts that against a fresh
   `Typography()` rather than trusting the claim — each deviation is stated
   inside the comparison and again on its own, so the equality cannot quietly
-  widen. That test's own name records the narrower invariant it was written
-  under, so the weight assignment renames it rather than only editing it. The
+  widen. The test that named only two of those deviations is renamed for the
+  third rather than merely edited, and which four roles carry the weight is
+  asserted on its own beside the tracking, since the equality reads the weight
+  back and would pass on any assignment at all. The
   sizes stay untouched for the reason this bullet has always given: they are
   the one part already validated on a device, across four feature modules since
   Phase 0, and moving the face and the scale together would make any regression
