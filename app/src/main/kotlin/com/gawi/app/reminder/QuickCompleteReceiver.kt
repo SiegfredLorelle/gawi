@@ -49,13 +49,18 @@ private const val TAG = "QuickComplete"
 internal class QuickCompleteReceiver : BroadcastReceiver() {
 
     /**
-     * **The whole body is guarded.** A `BroadcastReceiver` has nothing between a
-     * throw here and the thread's default handler, so an unguarded failure is
-     * process death on a tap — the same reason `:widget`'s `ToggleHabitAction`
-     * guards its own, and an `Error` walks past `catch (e: Exception)`.
+     * **Everything but `goAsync` is guarded, and the graph lookups are inside
+     * on purpose.** A `BroadcastReceiver` has nothing between a throw here and
+     * the thread's default handler, so an unguarded failure is process death on
+     * a tap — the same reason `:widget`'s `ToggleHabitAction` guards its own,
+     * and an `Error` walks past `catch (e: Exception)`. Resolving the entry
+     * point is a real thrower rather than a formality: it is a Hilt provision,
+     * and doing it above the `try` would both escape the guard and leak the
+     * `PendingResult` this never gets to `finish()`.
      *
-     * `goAsync` because the write is suspending and `onReceive` is not: without
-     * it the process may be killed the moment this returns, mid-commit.
+     * `goAsync` stays outside because it has to: it must run synchronously
+     * before `onReceive` returns, and it is what keeps the process alive across
+     * the suspending write that follows.
      *
      * Not unit-testable — it needs a real broadcast. [quickComplete] is the seam
      * that holds the decision, and [requestFrom] the one that holds the parsing.
@@ -63,11 +68,11 @@ internal class QuickCompleteReceiver : BroadcastReceiver() {
     @Suppress("TooGenericExceptionCaught", "SwallowedException")
     override fun onReceive(context: Context, intent: Intent) {
         val pending = goAsync()
-        val entryPoint = EntryPointAccessors.fromApplication(context, ReminderEntryPoint::class.java)
-        val notifier = entryPoint.reminderNotifier()
 
         CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
             try {
+                val entryPoint = EntryPointAccessors.fromApplication(context, ReminderEntryPoint::class.java)
+                val notifier = entryPoint.reminderNotifier()
                 val request = requestFrom(intent) ?: return@launch
                 quickComplete(
                     habits = entryPoint.habitRepository(),
@@ -112,23 +117,49 @@ internal data class QuickCompleteRequest(
  * malformed for the same reason: a notification with nothing outstanding has no
  * buttons to have been pressed.
  *
- * The two arrays are read as one list and only as far as the shorter of them,
- * because nothing downstream can tell a name from a missing name.
+ * **[EXTRA_TOTAL] is checked too, not defaulted.** A total below the number of
+ * habits carried would re-post *"1 of 0 left today"* — the body and the buttons
+ * disagreeing, which is the one failure the shade must never show.
  */
 internal fun requestFrom(intent: Intent): QuickCompleteRequest? {
     val habitId = intent.getStringExtra(EXTRA_HABIT_ID)
     val date = runCatching { LocalDate.parse(intent.getStringExtra(EXTRA_DATE)) }.getOrNull()
+
+    // One return rather than a guard clause each: detekt allows two returns and
+    // four conditions per function, and "all of it or none of it" is what this
+    // is anyway.
+    return outstandingFrom(intent)?.let { habits ->
+        val total = intent.getIntExtra(EXTRA_TOTAL, 0)
+        if (habitId == null || date == null || total < habits.size) {
+            null
+        } else {
+            QuickCompleteRequest(habitId, date, habits, total)
+        }
+    }
+}
+
+/**
+ * The habits a button carried, or null if anything about them is wrong.
+ *
+ * **`HabitId` validates in its own `init`**, so building the list inline would
+ * throw out of a broadcast on a malformed id rather than reaching the null
+ * [requestFrom] documents — and it would throw while assembling the *re-post*,
+ * so the completion the user actually asked for would be lost with it. Each id
+ * is therefore tried rather than trusted, and one bad entry rejects the lot.
+ *
+ * The two arrays are read as one list and only as far as the shorter of them,
+ * because nothing downstream can tell a name from a missing name.
+ */
+private fun outstandingFrom(intent: Intent): List<OutstandingHabit>? {
     val ids = intent.getStringArrayExtra(EXTRA_IDS) ?: emptyArray()
     val names = intent.getStringArrayExtra(EXTRA_NAMES) ?: emptyArray()
-    val outstanding = ids.zip(names) { id, name -> OutstandingHabit(HabitId(id), name) }
-
-    // One return rather than four guard clauses: detekt allows two per function,
-    // and "all four or nothing" is what this is anyway.
-    return if (habitId == null || date == null || outstanding.isEmpty()) {
-        null
-    } else {
-        QuickCompleteRequest(habitId, date, outstanding, intent.getIntExtra(EXTRA_TOTAL, 0))
+    val habits = ids.zip(names) { id, name ->
+        runCatching { OutstandingHabit(HabitId(id), name) }.getOrNull()
     }
+
+    // A missing array zips to nothing, which is refused by the same clause that
+    // refuses an empty one — so neither needs a guard of its own.
+    return habits.takeIf { it.isNotEmpty() && null !in it }?.filterNotNull()
 }
 
 /**
