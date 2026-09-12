@@ -6,11 +6,13 @@ import com.gawi.core.data.repository.HabitRepository
 import com.gawi.core.data.settings.SettingsSource
 import com.gawi.core.data.time.DeviceClock
 import com.gawi.core.domain.mascot.Mascot
+import com.gawi.core.domain.model.HabitId
 import com.gawi.core.domain.time.logicalDate
 import com.gawi.core.domain.time.reminderOn
 import kotlinx.coroutines.flow.first
 import java.time.Duration
 import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalDateTime
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -86,22 +88,31 @@ class ReminderCheck @Inject internal constructor(
         // incomplete daily habit would become a phantom outstanding here while
         // the chip stayed right.
         val live = snapshot.habits.filterNot { it.habit.archived }
-        val outstanding = live.count { row ->
-            Mascot.isOutstanding(row.toMoodState(), snapshot.today, snapshot.weekStart)
-        }
+        // Kept in the snapshot's order, which is the order the Today view draws.
+        // That is the whole of "nothing is ranked" (docs/ux/reminder.md §4): with
+        // four outstanding there is no non-arbitrary way to choose three, so the
+        // notifier drops the buttons entirely rather than sorting. A `sortedBy`
+        // here would be the app deciding which habit matters without saying so.
+        val outstanding = live
+            .filter { row -> Mascot.isOutstanding(row.toMoodState(), snapshot.today, snapshot.weekStart) }
+            .map { row -> OutstandingHabit(row.habit.id, row.habit.name) }
 
         // A `when` rather than three guard clauses, so the order these are
         // decided in is one visible list rather than something a reader has to
         // reconstruct from a sequence of early returns. The threshold check above
         // stays an early return because it avoids work rather than ordering it.
         return when {
-            outstanding == 0 -> ReminderDecision.Silent
+            outstanding.isEmpty() -> ReminderDecision.Silent
 
             journal.alreadyReminded(snapshot.today) -> ReminderDecision.Silent
 
             else -> {
                 journal.record(snapshot.today)
-                ReminderDecision.Remind(outstanding = outstanding, total = live.size)
+                ReminderDecision.Remind(
+                    logicalDate = snapshot.today,
+                    outstanding = outstanding,
+                    total = live.size,
+                )
             }
         }
     }
@@ -252,10 +263,34 @@ sealed interface ReminderDecision {
     data object Silent : ReminderDecision
 
     /**
-     * Post a reminder about [outstanding] of [total] habits.
+     * Post a reminder about [outstanding] of [total] habits, for [logicalDate].
      *
      * [total] is every non-archived habit, so the copy can say *"2 of 5 left"* the
      * way the Today view's chip does rather than inventing a second phrasing.
+     *
+     * **[logicalDate] is carried rather than resolved again downstream**, and it
+     * is the one correctness rule in docs/ux/reminder.md §4. A notification
+     * outlives its own day: it is posted before the day cutoff and is still there
+     * at breakfast, so a quick-complete button that resolved *now* when tapped
+     * would write a completion against today for a habit owed yesterday — which
+     * architecture §5's three-day retroactive window **accepts** rather than
+     * refuses, making it a silent wrong answer. This is the opposite of the
+     * widget's rule, and deliberately so: a Glance session is short, so there the
+     * drawn date is the stale one.
+     *
+     * **[outstanding] names the habits rather than counting them**, because the
+     * buttons are labelled with them. It is in the order the Today view draws,
+     * and nothing sorts it — [ReminderCheck.evaluate] says why.
      */
-    data class Remind(val outstanding: Int, val total: Int) : ReminderDecision
+    data class Remind(val logicalDate: LocalDate, val outstanding: List<OutstandingHabit>, val total: Int) : ReminderDecision
 }
+
+/**
+ * One habit the reminder is about: enough to label a button and to write its
+ * completion, and nothing else.
+ *
+ * Not [com.gawi.core.data.model.TodayHabit], which carries a streak, a schedule
+ * and today's completion state — none of which survives the trip through a
+ * `PendingIntent`, and all of which would be stale by the time one is tapped.
+ */
+data class OutstandingHabit(val id: HabitId, val name: String)
