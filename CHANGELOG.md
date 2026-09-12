@@ -15,6 +15,13 @@ builds a signed, shrunk APK with its `mapping.txt` beside it; R8 needed exactly
 one keep rule, for the class Glance reaches by name. No artifact is published
 yet — the first one is 1.0.0, and `versionCode` stays 2 until then.
 
+Since then: Momo's gills carry a spare life per seven clean units, and the
+end-of-day reminder grew **quick-complete buttons** — one per outstanding habit
+up to three, none at four or more, each writing a completion for the date the
+notification was posted for rather than for whenever it is tapped. That closes
+PRD §6.1's first criterion on both its halves, the widget having answered only
+one of them ([docs/ux/reminder.md](docs/ux/reminder.md) §4).
+
 ## [0.2.0] — 2026-09-04
 
 Marks the tip of main once the release branch merged: 201 commits of work

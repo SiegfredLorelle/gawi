@@ -67,7 +67,7 @@ All data is an **append-only event log** (habit created/edited/archived, complet
 **Complete as of 2026-08-22.** Every bullet below is built and every §6 criterion
 is met; the one bullet that did not ship — notification quick-complete actions —
 was formally moved to Phase 1 on its own terms, which the bullet explicitly
-allowed.
+allowed, and has since been built there.
 
 **The 30-day trial was waived on 2026-08-23** and Phase 1 was started instead —
 the success criterion at the end of this section records what that costs, and §8
@@ -100,7 +100,7 @@ the app onto a phone.
 - **Retroactive logging: up to 3 days back only.** Editing a past day triggers a confirmation with an honesty prompt ("You're logging for a previous day — make sure this is accurate. Be true to yourself."). (**Built 2026-08-21** — [docs/ux/habits.md](ux/habits.md) §7. The prompt is UI friction only; architecture §5 keeps the window a command validation, so the domain refuses an out-of-range day whatever the screen believed.)
 - Android **home-screen widget**: today's habits, tap to complete without opening the app. **Built 2026-08-21** — a tap toggles, so it undoes too; [docs/ux/widget.md](ux/widget.md) records the decisions and what a widget cannot keep current on its own.
 - **End-of-day reminder notification** if due habits remain incomplete as the day boundary approaches (configurable time, e.g., 21:00). Silent when everything is done. One reminder max per day. (**Built 2026-08-21** — [docs/ux/reminder.md](ux/reminder.md).)
-- **Notification quick-complete actions** (complete a habit directly from the reminder): MVP **stretch goal**, and **moved to Phase 1 on 2026-08-21**, which this bullet explicitly allowed. The reminder shipped as open-the-app only. The deciding reason was not complexity: §6.1's one-tap criterion was already met by the widget, so an action button is a second path to a solved problem, and it would carry OQ-2 — unanswered — along with it. Still committed. [docs/ux/reminder.md](ux/reminder.md) §4. **OQ-2 was answered on 2026-09-03 (§8) and the action is scheduled for 1.0.0 (§5, step 3).**
+- **Notification quick-complete actions** (complete a habit directly from the reminder): MVP **stretch goal**, and **moved to Phase 1 on 2026-08-21**, which this bullet explicitly allowed. The deciding reason was not complexity: §6.1's one-tap criterion was already met by the widget, so an action button is a second path to a solved problem, and it would carry OQ-2 — unanswered — along with it. **Built in 1.0.0's step 3** once §8 answered OQ-2: up to three buttons, one per outstanding habit, each an idempotent completion for the date the notification was posted for. [docs/ux/reminder.md](ux/reminder.md) §4.
 
 **Motivation**
 - Daily habits: day-streak counter. Weekly habits: **week-streak** (weeks hitting n/n; not necessarily consecutive, since the bullet below spends a gill on a missed one). (**Visible on both its surfaces as of 2026-08-21** — see §6.6.)
@@ -140,7 +140,8 @@ cheapest-unblocked first:
    as though one tag were permanent.
 3. **Notification quick-complete actions** — was blocked on **OQ-2** (what to do
    when more than three habits remain, Android's action-button cap), which §8
-   has since decided. Not urgent even then: §6.1 is satisfied by the widget.
+   has since decided. Not urgent even then: §6.1 was satisfied by the widget.
+   Built in 1.0.0's step 3, which is where the order below finally put it.
 4. **Momo** — was blocked on **OQ-4** (art style), a design decision before it
    was an engineering one, and §8 has since closed it. `Mood` already computed
    all four states; what was missing was art, not logic
@@ -196,7 +197,7 @@ reason (2026-08-23).
   - **What was actually done (2026-08-25): none of the above.** Rive was researched to an integration brief and dropped on one fact — since 2025-10-20 its free plan cannot export a `.riv`, and this project does not pay for tooling. The character was already drawn, in all four moods with a motion spec, on the Claude Design canvas that settled the visual identity; that motion is rigid (translate, rotate, scale, opacity), so it is drawn and animated in Compose directly, with no runtime and no asset. [docs/ux/momo.md](ux/momo.md) §1 has the reasoning and Lottie's standing as the fallback.
 
 **Other Phase 1**
-- Notification quick-complete actions (if not shipped in MVP).
+- Notification quick-complete actions (if not shipped in MVP). (**Built 2026-09-12** in 1.0.0's step 3 — [docs/ux/reminder.md](ux/reminder.md) §4.)
 - Insights v1: per-habit heatmap/calendar history, completion-rate trends. (**Both built — 2026-08-24.** A calendar month of two-state days stepped by two arrows, and a five-month rate trend under it, on a screen reached from habit detail's "see full history". [docs/ux/insights.md](ux/insights.md) §8 records what building them settled, including the four places the plan and the design artboard turned out to be wrong.)
 - **Tag-based effort distribution**: share of completions per tag over a selected period. (**Built 2026-08-24**, as one breakdown of a new top-level Insights screen reached from Today's app bar — §7's "where is it reached from" had no answer while the metric had no per-habit screen to hang off. The period is Month, Quarter or Year, which settles §7's last open question. Totals rather than percentages, for the reason [docs/ux/insights.md](ux/insights.md) §5 gives about OQ-1.)
 - **Beyond what this section asked for**, and worth recording rather than leaving to be discovered: that screen also carries an app-wide headline and a per-habit adherence list, which is the first line of Phase 1.5 below. Everything in the app until then reported on one habit or one day, and the gap was raised as soon as the heatmap was reviewable. The retrospectives now have a screen to grow out of rather than a blank module.
@@ -310,7 +311,10 @@ canvas against alternatives and **settled as the lines already written**
 ([docs/ux/today-view.md](ux/today-view.md) §6). **The gill calculator is
 built** — the domain value and its JVM tests, cached beside the streak it
 belongs to; the panel and the drawing ride with step 4, which rewrites the same
-two Momo files. What is left of this step is the notification's buttons.
+two Momo files. **The buttons are built too, and the step is closed.** The
+reminder's decision now carries the logical date and the habits themselves, a
+non-exported receiver writes the completion that date, and a tap re-posts under
+the fixed id rather than dismissing.
 
 **Step 4 — polish.** Everything step 2 marked, item by item, verified on the
 emulator against its artboard; and the naming sweep — Kotlin identifiers,
@@ -370,7 +374,7 @@ privacy policy stop being polish and become requirements.
 
 ## 6. Key UX Requirements
 
-1. Logging < 5 seconds: widget or notification action, one tap. (**The widget satisfies this as of 2026-08-21.** The notification *action* has now been deferred to Phase 1 on §4's own terms — the criterion is met, so a second one-tap path would carry OQ-2 for no gain. [docs/ux/reminder.md](ux/reminder.md) §4. **OQ-2 answered 2026-09-03; the action is 1.0.0 step 3.**)
+1. Logging < 5 seconds: widget or notification action, one tap. (**Met on both halves.** The widget satisfied it on 2026-08-21, which is why the notification *action* could be deferred to Phase 1 on §4's own terms — a second one-tap path would have carried OQ-2 for no gain while the criterion was already met. The action landed in 1.0.0's step 3 once OQ-2 was answered, so the "or" now has two working sides. [docs/ux/reminder.md](ux/reminder.md) §4.)
 2. Today view is the app's home screen.
 3. Notes/tags never add friction to the base flow — always optional, always secondary. (**Built 2026-08-21** — the note is a long-press on a day already logged, on habit detail; nothing on the way to logging one asks about it. [docs/ux/habits.md](ux/habits.md) §7.)
 4. Retroactive edits carry deliberate friction (confirmation + honesty prompt) but stay possible within 3 days; same-day undo is frictionless. (**Built 2026-08-21** — the strip draws the day outside the window shut rather than refusing a tap on it, and the prompt appears for an undo as well as a completion, since §5's "editing a past day" covers both. [docs/ux/habits.md](ux/habits.md) §7.)
@@ -383,7 +387,7 @@ privacy policy stop being polish and become requirements.
 - **Widget:** Jetpack Glance (Compose-based app widgets).
 - **Storage:** Room over SQLite; event-log tables + derived-state tables/views for fast reads.
 - **IDs:** UUIDv7 for all events.
-- **Reminders:** WorkManager for the end-of-day reminder check; notification actions via standard PendingIntents if quick-complete ships. **`POST_NOTIFICATIONS` is the app's first and only hand-declared permission**, requested from the settings reminder row rather than at first launch; it cannot move data off the device, so "no network permission at MVP" below is untouched.
+- **Reminders:** WorkManager for the end-of-day reminder check; quick-complete via standard PendingIntents onto a non-exported receiver, each carrying the logical date it was posted for. **`POST_NOTIFICATIONS` is the app's first and only hand-declared permission**, requested from the settings reminder row rather than at first launch; it cannot move data off the device, so "no network permission at MVP" below is untouched.
 - **No network permission at MVP.**
 - **Schema versioning** embedded in the event log; migrations replay-safe (sync prerequisite).
 
@@ -395,7 +399,7 @@ privacy policy stop being polish and become requirements.
 ## 8. Open Questions
 
 - **OQ-1, settled: multi-tag, eventually.** *Multi-tag per habit, or is one tag enough?* The proposal held for the MVP and one tag is what ships, but the answer to the question as asked is that one tag is *not* enough for good. It is committed and **deliberately not assigned to a phase** — what is decided is the direction, not the date. The cost is known and is why it is not being rushed: `HabitMetadata.tag` is a single field in the domain *and in the wire format*, so this is an event-payload schema bump with an upcast-on-read rather than a UI change, which the event log's embedded schema versioning (§7) exists to absorb. The practical consequence today is a prohibition rather than a task — nothing new should be built as though one tag were permanent, and §5's Phase 1 item 2 is where that bites first.
-- **OQ-2, decided: up to three buttons, none above three.** *Notification quick-complete UX when more than three habits remain, given that Android caps action buttons at three.* One to three habits left: a button each, and a tap writes the completion under the same rules as the widget tap. Four or more: no buttons, the notification opens Today. Nothing ranks habits silently and nothing offers "complete all", which would sit badly beside the retroactive-logging honesty prompt. Scheduled in §5's 1.0.0 step 3; [docs/ux/reminder.md](ux/reminder.md) §4 and §6 take the detail.
+- **OQ-2, decided and built: up to three buttons, none above three.** *Notification quick-complete UX when more than three habits remain, given that Android caps action buttons at three.* One to three habits left: a button each. Four or more: no buttons, the notification opens Today. Nothing ranks habits silently and nothing offers "complete all", which would sit badly beside the retroactive-logging honesty prompt. **A tap does not write under the same rules as the widget tap**, which is what building it settled: the widget resolves the date when it is tapped because a Glance session is short, and a notification is the opposite case — it outlives its own day, so the button carries the date it was drawn for and never resolves one. It completes rather than toggling, for the same reason. Built in §5's 1.0.0 step 3; [docs/ux/reminder.md](ux/reminder.md) §4 takes the detail.
 - **OQ-3, decided: gills, and both numbers are now answered.** *Streak freeze / grace day mechanics.* A gill is a spare life. A daily habit grows one per seven clean days, capped at three; a missed day burns one automatically and the streak count is preserved; with none left the streak breaks as today and Momo regenerates. Weekly habits get the same in weeks. Nothing to tap: Momo's gills show the count, which is the visual the character already has — **her three right gills carry it and the left three stay full as the reference**, and she shows a count only when the panel can name the habit it belongs to ([docs/ux/momo.md](ux/momo.md) §3). **The second number is settled too.** `Mascot.REGENERATING_WINDOW_DAYS = 3` was a guess at how long a broken streak keeps Momo regenerating, unobservable while Phase 0 folded `regenerating` onto `neutral`; the mood now ends when the broken habit is **completed again**, and the 3 days survive only as a backstop against a habit that never is — a narrower job, which is how the guess retires without being measured ([docs/ux/today-view.md](ux/today-view.md) §4). **The count is derived, never logged**: it is a pure function of the completion set like every calculator beside it, so there is no new event and the wire format does not move, and `dayStreak` becomes a forward replay because whether a gap is forgiven depends on the lives earned before it. **Built in §5's 1.0.0 step 3**, down to the cached count; the derived streak table gained a column for it, which is the kind of schema change the log rebuilds and architecture §4 allows freely. The drawing rides with step 4.
 - **OQ-4, settled: flat, drawn in code, and the whole visual identity with it.** Mascot art style (round/chibi? pixel? flat vector?), and static-first vs animated-first. (Species and name decided: Momo the axolotl.) **The app's launcher icon is part of this question, not a separate one** (noted 2026-08-22) — it is Android's default placeholder today, and a mark drawn before the character would have to be redrawn to match it. §5's Phase 1 has the detail. **Widened 2026-08-23 to the whole visual identity: the app's colour scheme, its typography and the habit hues are part of this question too.** Not a new decision so much as the discovery of an old one — `core/ui`'s `GawiTheme` is stock Material 3 and its KDoc already says why ("Momo's palette is PRD OQ-4 and undesigned — inventing one here would mean choosing it in the module least able to explain the choice"), and `HabitPalette`'s says the same of its hues. Both had parked themselves here; nothing recorded that they had. The practical consequence is that this question now blocks more than a character, which is why §5's Phase 1 order was inverted to put it first. It has two halves with different lead times — palette, typography and hues, then Momo's art and the icon — and only the first half blocks Insights. **Two surfaces, not one:** a Glance tree is `RemoteViews` and cannot consume a Compose theme (architecture §2), so the widget takes any palette a second time, and `WidgetTextColourDarkTest` and its light twin must be re-run against the new values.
 
@@ -409,7 +413,7 @@ privacy policy stop being polish and become requirements.
 - **Building it but not using it.** **Unmitigated as of 2026-08-23.** The 30-day personal-use criterion was this risk's only mitigation and it was waived (§5), so the risk is now carried open rather than covered. Nothing in Phase 1 restores it — shipping more features is the opposite move — so the honest statement is that this risk is live and accepted. Written down because an unmitigated risk that still *lists* a mitigation is worse than one that admits it has none.
 - **Streak resets causing abandonment.** Mitigation: OQ-3's escape hatch — gills, whose count is built (§5, §8); a run now survives three finished misses rather than none, though nothing draws the count until step 4, so a user cannot yet see what they have left. **Half of this mitigation is gone**: "observe own behavior in a trial" had no replacement and was not given one, so what remains is the escape hatch without the evidence that would have sized it.
 - **Mascot becomes an art project.** Mitigation: emotive indicator at MVP; static expressions before animation; Rive state machine keeps engineering simple.
-- **Notification quick-complete complexity.** Mitigation: explicitly allowed to slip to Phase 1; documented so it isn't lost.
+- **Notification quick-complete complexity.** Mitigation: explicitly allowed to slip to Phase 1; documented so it isn't lost. **Closed** — it slipped as designed and was built in 1.0.0's step 3.
 - **Emulator friction on Arch.** Mitigation: KVM setup notes above; physical device as primary target; macOS fallback.
 - **Monetization vs privacy tension.** Mitigation: E2E-encrypted cloud; local/LAN always free.
 

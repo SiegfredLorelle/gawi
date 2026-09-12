@@ -38,10 +38,11 @@ per-habit history calendar and completion-rate trend reached from habit detail,
 and an Insights screen reporting on every habit at once over a month, quarter or
 year, stepped back through the calendar for retrospectives
 ([docs/ux/insights.md](docs/ux/insights.md)). An accessibility pass was heard on
-a real device ([docs/running.md](docs/running.md) §4). The one Phase 1 bullet
-still open is the reminder's quick-complete action, decided and scheduled; two
-questions Phase 1 raised and left open, grace mechanics and Momo's real copy,
-are scheduled beside it.
+a real device ([docs/running.md](docs/running.md) §4). Phase 1's last open
+bullet, the reminder's quick-complete action, is built: up to three buttons on
+the end-of-day reminder, each completing a habit for the day the notification
+was posted for. The two questions Phase 1 raised and left open — grace
+mechanics, decided as gills, and Momo's real copy — are answered with it.
 
 What comes next, and in what order, is recorded in [PRD §5](docs/prd.md): a
 cleanup pass, then release signing, then the first installable release as
