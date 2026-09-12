@@ -8,6 +8,7 @@ import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import com.gawi.core.domain.mascot.Mood
+import com.gawi.core.domain.streak.Streaks
 import com.gawi.core.ui.component.MomoFrame
 import com.gawi.core.ui.component.drawMomo
 import org.junit.Assert.assertArrayEquals
@@ -138,19 +139,43 @@ class MomoRenderTest {
         assertTrue("mid=$mid full=$full", mid in 1 until full)
     }
 
-    private fun renderBetween(from: Mood, to: Mood, t: Float, seconds: Float = 0f): IntArray {
+    /**
+     * A gill the count has already spent stays spent through a mood change.
+     *
+     * The regrowing gill crossfades between two drawings, and the one it fades
+     * *from* has to be the one that was on screen. At zero spare the top right
+     * gill is already short, so fading from the full-length drawing pops it
+     * back to full for the length of the change — a habit whose streak has just
+     * broken would grow a gill on its way to losing one.
+     *
+     * Asserted against both references rather than a threshold: the entering
+     * frame should sit nearer the spent drawing than the full one.
+     */
+    @Test
+    fun `a gill the count already spent stays spent while the mood changes`() {
+        fun outerBeads(p: IntArray) = pinkIn(p, left = 196, top = 44, right = 216, bottom = 66)
+        val spent = outerBeads(render(Mood.WORRIED, spare = 0))
+        val full = outerBeads(render(Mood.WORRIED, spare = Streaks.MAX_SPARE))
+        val entering = outerBeads(renderBetween(Mood.WORRIED, Mood.REGENERATING, 0.02f, spare = 0))
+        assertTrue(
+            "entering=$entering should be nearer spent=$spent than full=$full",
+            entering - spent < full - entering,
+        )
+    }
+
+    private fun renderBetween(from: Mood, to: Mood, t: Float, seconds: Float = 0f, spare: Int = Streaks.MAX_SPARE): IntArray {
         val bitmap = ImageBitmap(WIDTH, HEIGHT)
         CanvasDrawScope().draw(Density(1f), LayoutDirection.Ltr, Canvas(bitmap), Size(WIDTH.toFloat(), HEIGHT.toFloat())) {
-            drawMomo(from, to, t, MomoFrame.between(MomoFrame.at(from, seconds), MomoFrame.at(to, seconds), t))
+            drawMomo(from, to, t, MomoFrame.between(MomoFrame.at(from, seconds), MomoFrame.at(to, seconds), t), spare)
         }
         val map = bitmap.toPixelMap()
         return IntArray(WIDTH * HEIGHT) { i -> argb(map[i % WIDTH, i / WIDTH].value) }
     }
 
-    private fun render(mood: Mood, seconds: Float = 0f): IntArray {
+    private fun render(mood: Mood, seconds: Float = 0f, spare: Int = Streaks.MAX_SPARE): IntArray {
         val bitmap = ImageBitmap(WIDTH, HEIGHT)
         CanvasDrawScope().draw(Density(1f), LayoutDirection.Ltr, Canvas(bitmap), Size(WIDTH.toFloat(), HEIGHT.toFloat())) {
-            drawMomo(mood, MomoFrame.at(mood, seconds))
+            drawMomo(mood, MomoFrame.at(mood, seconds), spare)
         }
         val map = bitmap.toPixelMap()
         return IntArray(WIDTH * HEIGHT) { i -> argb(map[i % WIDTH, i / WIDTH].value) }

@@ -102,6 +102,19 @@ class WeakestOutstandingHabitTest {
     }
 
     @Test
+    fun `a habit with no completions at all has no run to lose`() {
+        // StreakSnapshot.NONE reports zero spare like a spent run does, so
+        // without the live-run filter a habit added this morning would win
+        // outright and have Momo mourn a streak that never existed.
+        assertEquals(habitId(1), weakest(habit(1, live(spare = 0, current = 2)), habit(2, StreakSnapshot.NONE)))
+    }
+
+    @Test
+    fun `a fresh install has nobody at risk`() {
+        assertNull(weakest(habit(1, StreakSnapshot.NONE), habit(2, StreakSnapshot.NONE)))
+    }
+
+    @Test
     fun `a weekly habit still comfortably ahead is not outstanding`() {
         val weekly = habit(2, live(spare = 0), schedule = Schedule.Weekly(timesPerWeek = 2))
         assertEquals(habitId(1), weakest(habit(1, live(spare = 2)), weekly))

@@ -151,11 +151,16 @@ object Mascot {
      * own order — the same tie-break [recentlyBrokenHabits] settles on, for the
      * same reason: which habit the panel names must not flicker.
      *
-     * **A run that has already broken is not about to break.** A habit carrying
-     * a `brokenOn` reports zero spare until it is picked up again, so counting
-     * it here would pin the drawing to zero and name the same abandoned habit
-     * every evening for ever. Those belong to [recentlyBrokenHabits] while they
-     * are inside [REGENERATING_WINDOW_DAYS] and to nobody afterwards.
+     * **Only a run that exists can be about to break**, which is why the filter
+     * is `current > 0` and not a null `brokenOn`. It rules out two habits at
+     * once. One that has already broken reports zero spare until it is picked
+     * up again, so counting it would pin the drawing to zero and name the same
+     * abandoned habit every evening for ever — those belong to
+     * [recentlyBrokenHabits] while they are inside [REGENERATING_WINDOW_DAYS]
+     * and to nobody afterwards. And one with no completions at all is
+     * [StreakSnapshot.NONE], which also reports zero: it would win this
+     * comparison outright and have Momo mourn a habit that has never had a
+     * streak to lose.
      *
      * **Zero spare from this function is not a break**, which is why the halo
      * must stay keyed to the mood: a run too young to have banked its first
@@ -164,7 +169,7 @@ object Mascot {
      */
     fun weakestOutstandingHabit(inputs: MoodInputs): HabitId? = inputs.habits
         .filterNot { it.archived }
-        .filter { it.streak.brokenOn == null }
+        .filter { it.streak.current > 0 }
         .filter { isOutstanding(it, inputs.today, inputs.weekStart) }
         .minByOrNull { it.streak.spare }
         ?.id
