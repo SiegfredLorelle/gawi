@@ -33,10 +33,6 @@ import androidx.compose.runtime.staticCompositionLocalOf
  * rasterising the widget's text closes, and docs/ux/visual-identity.md §5
  * records the trade.
  *
- * A habit's own colour is per-row and comes from the event log, not from here;
- * [HabitPalette] is what the editor offers and [glyphColorOn] decides what is
- * drawn on top of it.
- *
  * **Which of the two is drawn is the user's.** `UserSettings.theme` holds
  * System, Light or Dark; `MainActivity` resolves that against
  * [isSystemInDarkTheme] and passes the answer in, and on API 31 and up it also

@@ -175,21 +175,6 @@ class HabitListScreenTest {
     }
 
     /**
-     * The icon badge is not in the tree. On this unmerged row it was a stop of
-     * its own, reading the emoji's Unicode name (docs/running.md §4,
-     * 2026-09-02). Pinned here because `:core:ui`, which owns `HabitIcon`, has
-     * no Compose tests.
-     */
-    @Test
-    fun iconBadge_isDecorative() {
-        render(HabitListUiState.Habits(active = listOf(READ), archived = emptyList()))
-
-        compose.onAllNodesWithText(READ.icon).assertCountEquals(0)
-        // Cleared from semantics, not from the screen — the unmerged tree keeps it.
-        compose.onAllNodesWithText(READ.icon, useUnmergedTree = true).assertCountEquals(1)
-    }
-
-    /**
      * Tapping a habit opens it, and does not archive it.
      *
      * The two actions sit in the same row, so this is the pair worth pinning
@@ -251,8 +236,6 @@ class HabitListScreenTest {
         val READ = HabitListRowUi(
             id = habitId(1),
             name = "read",
-            icon = "📖",
-            iconTint = null,
             schedule = ScheduleUi.Daily,
             archived = false,
         )
@@ -261,8 +244,6 @@ class HabitListScreenTest {
         val SWIM = HabitListRowUi(
             id = habitId(2),
             name = "swim",
-            icon = "🏃",
-            iconTint = null,
             schedule = ScheduleUi.Weekly(3),
             archived = false,
         )
@@ -271,8 +252,6 @@ class HabitListScreenTest {
         val OLD = HabitListRowUi(
             id = habitId(3),
             name = "journal",
-            icon = "✍️",
-            iconTint = null,
             schedule = ScheduleUi.Daily,
             archived = true,
         )

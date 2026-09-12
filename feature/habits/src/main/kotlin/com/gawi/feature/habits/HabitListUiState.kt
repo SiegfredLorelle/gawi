@@ -1,6 +1,5 @@
 package com.gawi.feature.habits
 
-import androidx.compose.ui.graphics.Color
 import com.gawi.core.domain.model.HabitId
 
 /**
@@ -19,9 +18,9 @@ import com.gawi.core.domain.model.HabitId
  * because a habit you have put away still has to be findable to bring back, and
  * a section heading says that with no state to keep.
  *
- * Internal throughout, like Today's: these types carry `Color` and `HabitId`,
- * which arrive on implementation-scope dependencies. The two Route composables
- * are this module's whole API.
+ * Internal throughout, like Today's: these types carry `HabitId`, which arrives
+ * on an implementation-scope dependency. The two Route composables are this
+ * module's whole API.
  */
 internal sealed interface HabitListUiState {
 
@@ -41,12 +40,4 @@ internal sealed interface HabitListUiState {
  * changing a habit, not for doing it. `observeAllHabits` does not read them
  * either, so there is nothing here to leave stale.
  */
-internal data class HabitListRowUi(
-    val id: HabitId,
-    val name: String,
-    val icon: String,
-    /** Null when the stored colour does not parse; the row falls back to a theme role. */
-    val iconTint: Color?,
-    val schedule: ScheduleUi,
-    val archived: Boolean,
-)
+internal data class HabitListRowUi(val id: HabitId, val name: String, val schedule: ScheduleUi, val archived: Boolean)

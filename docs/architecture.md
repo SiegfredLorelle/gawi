@@ -713,7 +713,7 @@ this app's was added — both versions declare the same four.
     claim that pinning needs the user is not being retracted on a guess.
 
   What *is* asserted instead, at the layer where it is cheap: WCAG contrast
-  ratios in `WidgetTextColourTest`, `HabitColorTest` and `GawiColorSchemeTest`,
+  ratios in `WidgetTextColourTest`, `TankContrastTest` and `GawiColorSchemeTest`,
   the 48dp touch-target floor in three screen tests, and semantics — roles,
   content descriptions, disabled state — throughout. `docs/running.md` §4 carries
   what only a device and a person can check.

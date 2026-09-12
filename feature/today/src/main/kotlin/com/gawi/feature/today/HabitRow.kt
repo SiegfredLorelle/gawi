@@ -21,9 +21,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
-import com.gawi.core.ui.component.HabitIcon
 import com.gawi.core.ui.theme.GawiSpacing
-import com.gawi.core.ui.theme.glyphColorOn
 
 /**
  * One habit, as §5 draws it: a colour-tinted icon, the name, a weekly habit's
@@ -33,9 +31,8 @@ import com.gawi.core.ui.theme.glyphColorOn
  * completion in one tap, and giving the row the toggle also means assistive
  * technology reads one node with a checkbox role rather than a label and a
  * control that happen to sit together. That one node says the name, a weekly
- * row's progress and the streak in words ([StreakBadge]); the icon is silent
- * ([HabitIcon]). Without either, a device says the emoji's name and a bare
- * number (docs/running.md §4).
+ * row's progress and the streak in words ([StreakBadge]); without the words a
+ * device says a bare number (docs/running.md §4).
  */
 @Composable
 internal fun HabitRow(row: HabitRowUi, onToggle: (Boolean) -> Unit, modifier: Modifier = Modifier, pulse: (() -> Float)? = null) {
@@ -56,7 +53,6 @@ internal fun HabitRow(row: HabitRowUi, onToggle: (Boolean) -> Unit, modifier: Mo
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(GawiSpacing.Gap),
     ) {
-        HabitIcon(icon = row.icon, tint = row.iconTint)
         HabitTitles(row, Modifier.weight(1f))
         StreakBadge(row.streak, pulse = pulse)
         Checkbox(

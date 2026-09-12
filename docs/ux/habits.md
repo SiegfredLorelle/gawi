@@ -82,8 +82,8 @@ bullet below describes pickers that are still in the app today.
   survive an export and an import, and a drawable resource id would not. They
   are decorative wherever a name sits beside them — `HabitIcon` clears its
   semantics, since 2026-09-02, after a device read the emoji's Unicode name as
-  its own stop; only the editor's picker speaks them, by those platform names.
-  A positional `ICON_LABELS` mirroring `COLOR_LABELS` is the follow-up there.
+  its own stop. **Retired entirely by visual-identity §7.3**: a habit keeps no
+  icon, so there is nothing left to silence and no picker left to name.
 - **Schedule** — daily, or weekly with a target. **The target is capped at
   1..7, and the cap is load-bearing.** `Schedule.Weekly` validates with
   `require`, so an out-of-range target **throws** rather than returning a

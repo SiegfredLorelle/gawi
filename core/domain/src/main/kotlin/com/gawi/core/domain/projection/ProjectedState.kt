@@ -14,8 +14,29 @@ data class WriteStamp(val occurredAt: Instant, val eventId: EventId) : Comparabl
     override fun compareTo(other: WriteStamp): Int = compareValuesBy(this, other, WriteStamp::occurredAt, WriteStamp::eventId)
 }
 
-/** The habit fields that move together under whole-record LWW. */
-data class HabitMetadata(val name: String, val icon: String, val color: String, val schedule: Schedule, val tag: String?)
+/**
+ * The habit fields that move together under whole-record LWW.
+ *
+ * **[icon] and [color] are passthrough and nothing reads them**
+ * (docs/ux/visual-identity.md §7.3). A habit keeps neither, so no screen shows
+ * one and no form offers one — but both are opaque strings the log already
+ * carries, and dropping them from the wire would be a schema change for a
+ * decision that needs none. An edit writes the habit's stored values back
+ * unchanged and a create writes [DEFAULT_ICON] and [DEFAULT_COLOR], because a
+ * form that no longer shows a field must not write one either. An export made
+ * before the decision still imports; one made after still carries them.
+ */
+data class HabitMetadata(val name: String, val icon: String, val color: String, val schedule: Schedule, val tag: String?) {
+    companion object {
+        /**
+         * What a create writes, and the only reason these two literals still
+         * exist. They are the first entries of the palette this replaced, kept
+         * so that what a new habit puts in the log does not move.
+         */
+        const val DEFAULT_ICON = "📖"
+        const val DEFAULT_COLOR = "#F22935"
+    }
+}
 
 /**
  * Everything the log has said about one habit id, as **three** independent

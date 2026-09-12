@@ -633,10 +633,6 @@ docs/running.md §4 has the boxes.
   rather than overlooked — a preview image is a drawn asset, so it belongs on the
   design canvas before it belongs in `res/` — but it means the platform range
   where the picker says least is exactly the one with no preview at all.
-- **A habit's colour and icon are not drawn.** `HabitPalette` and
-  `parseHabitColor` are `:core:ui`, which a Glance tree cannot consume (the
-  theme is Compose UI). Drawing them means Glance-side colour parsing, which is
-  a duplicate of a rule that already exists — deferred rather than duplicated.
 - **`BIND_APPWIDGET` on the receiver, offered by `/security-review` and not
   taken.** The review found no vulnerability on this branch, and enumerated
   what a third-party app can actually drive against the exported receiver by

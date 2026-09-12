@@ -122,8 +122,6 @@ class MilestoneFrameTest {
             HabitRowUi(
                 habitId(1),
                 "read",
-                "R",
-                null,
                 completed = true,
                 weekProgress = null,
                 streak = StreakUi.Days(7),
@@ -132,8 +130,6 @@ class MilestoneFrameTest {
             HabitRowUi(
                 habitId(2),
                 "walk",
-                "W",
-                null,
                 completed = true,
                 weekProgress = null,
                 streak = StreakUi.Weeks(4),
@@ -142,8 +138,6 @@ class MilestoneFrameTest {
             HabitRowUi(
                 habitId(3),
                 "new",
-                "N",
-                null,
                 completed = true,
                 weekProgress = null,
                 streak = StreakUi.Days(30),

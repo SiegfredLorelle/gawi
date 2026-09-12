@@ -324,9 +324,10 @@ lifts the test-source exclusion, and adds a script for resource file and id
 names, which detekt does not see, so it is done once.
 
 **Step 5 — verification, on the release build.** All of running.md §4's
-unticked boxes on the phone; the four accessibility follow-ups the re-hearing
-recorded (icon-picker labels, an image glyph for the widget's 32 dp control,
-the Momo widget's clickable experiment, a spoken weekly ratio); the
+unticked boxes on the phone; the accessibility follow-ups the re-hearing
+recorded (an image glyph for the widget's 32 dp control, the Momo widget's
+clickable experiment, a spoken weekly ratio — the fourth, icon-picker labels,
+retired with the picker in step 4); the
 Accessibility Scanner sweep that document already calls pre-release.
 
 **Step 6 — tag.** `v1.0.0`, a CHANGELOG entry, the APK and `mapping.txt` on the

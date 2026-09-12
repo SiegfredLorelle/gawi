@@ -3,11 +3,10 @@ package com.gawi.feature.habits
 import com.gawi.core.data.model.HabitDetail
 import com.gawi.core.domain.command.Commands
 import com.gawi.core.domain.model.Schedule
+import com.gawi.core.domain.projection.HabitMetadata
 import com.gawi.core.domain.projection.HabitState
 import com.gawi.core.ui.date.weekdayLetter
 import com.gawi.core.ui.streak.toUi
-import com.gawi.core.ui.theme.HabitPalette
-import com.gawi.core.ui.theme.parseHabitColor
 
 /**
  * The read model as the habits screens draw it.
@@ -31,8 +30,6 @@ internal fun List<HabitState>.toListUiState(): HabitListUiState {
 internal fun HabitState.toRowUi(): HabitListRowUi = HabitListRowUi(
     id = id,
     name = name,
-    icon = icon,
-    iconTint = parseHabitColor(color),
     schedule = schedule.toUi(),
     archived = archived,
 )
@@ -46,26 +43,23 @@ internal fun HabitState.toForm(): HabitEditorUiState.Form = HabitEditorUiState.F
     schedule = schedule.toUi(),
     // Nullable in the model, a field on screen. The inverse of toMetadata.
     tag = tag.orEmpty(),
-    // What the log actually holds, kept so the picker can still offer it.
-    originalColor = color,
 )
 
 /**
  * A new habit, before anything has been chosen.
  *
- * Starts daily and on the palette's first entries rather than on nothing, so
- * the form is savable the moment a name is typed. An unchosen icon or colour
- * would be a second and third thing to get wrong on the way to a first habit.
+ * Starts daily, and carries the passthrough icon and colour the log still holds
+ * a place for (`HabitMetadata`, docs/ux/visual-identity.md §7.3). Neither is
+ * shown or chosen; a create writes the defaults so that what lands in the log
+ * does not move.
  */
 internal fun newHabitForm(): HabitEditorUiState.Form = HabitEditorUiState.Form(
     editing = false,
     name = "",
-    icon = HabitPalette.DefaultIcon,
-    color = HabitPalette.DefaultColor,
+    icon = HabitMetadata.DEFAULT_ICON,
+    color = HabitMetadata.DEFAULT_COLOR,
     schedule = ScheduleUi.Daily,
     tag = "",
-    // Nothing to preserve: a new habit starts on the palette by construction.
-    originalColor = null,
 )
 
 /**
@@ -83,8 +77,6 @@ internal fun newHabitForm(): HabitEditorUiState.Form = HabitEditorUiState.Form(
 internal fun HabitDetail.toDetailUiState(): HabitDetailUiState.Detail = HabitDetailUiState.Detail(
     id = habit.habit.id,
     name = habit.habit.name,
-    icon = habit.habit.icon,
-    iconTint = parseHabitColor(habit.habit.color),
     schedule = habit.habit.schedule.toUi(),
     // Blank to null, the same translation toForm does in the other direction.
     tag = habit.habit.tag?.takeUnless { it.isBlank() },

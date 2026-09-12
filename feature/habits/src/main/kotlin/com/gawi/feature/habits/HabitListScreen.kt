@@ -36,10 +36,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.gawi.core.ui.component.GawiIconButton
 import com.gawi.core.ui.component.GawiIcons
-import com.gawi.core.ui.component.HabitIcon
 import com.gawi.core.ui.component.Notice
 import com.gawi.core.ui.theme.GawiSpacing
-import com.gawi.core.ui.theme.glyphColorOn
 
 /**
  * The habit list, stateless.
@@ -143,7 +141,6 @@ private fun HabitManageRow(row: HabitListRowUi, actions: HabitListActions, modif
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(GawiSpacing.Gap),
     ) {
-        HabitIcon(icon = row.icon, tint = row.iconTint)
         HabitTitles(row, Modifier.weight(1f), onOpen = { actions.onOpen(row.id) })
         val spoken = stringResource(
             if (row.archived) R.string.habits_unarchive_spoken else R.string.habits_archive_spoken,

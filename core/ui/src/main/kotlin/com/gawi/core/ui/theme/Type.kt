@@ -95,11 +95,10 @@ internal val OutfitWeights = listOf(
  * size in one `Row`, where a fallback would be more visible than the app-bar
  * case.
  *
- * **The habit-icon emoji are a different question and not an omission here.**
- * `HabitPalette`'s twelve icons are outside this `cmap` too, and always will be:
- * Android draws colour emoji through its own emoji font, which no text face
- * substitutes for — docs/ux/visual-identity.md §4.2 covers that and its
- * consequence for tint.
+ * **Emoji are a different question and not an omission here.** Android draws
+ * colour emoji through its own emoji font, which no text face substitutes for,
+ * so none of them would resolve from this file whatever its `cmap` held —
+ * docs/ux/visual-identity.md §4.2 covers that and its consequence for tint.
  */
 internal val Outfit = FontFamily(OutfitWeights.map(::outfitAt))
 

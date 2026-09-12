@@ -7,7 +7,6 @@ import com.gawi.core.domain.mascot.Mood
 import com.gawi.core.domain.model.HabitId
 import com.gawi.core.ui.streak.StreakUi
 import com.gawi.core.ui.theme.GawiTheme
-import com.gawi.core.ui.theme.parseHabitColor
 import java.time.LocalDate
 
 /**
@@ -34,8 +33,6 @@ private val PREVIEW_ROWS = listOf(
     HabitRowUi(
         id = previewId("1"),
         name = "read",
-        icon = "📖",
-        iconTint = parseHabitColor("#A94FF6"),
         completed = true,
         weekProgress = null,
         streak = StreakUi.Days(count = LIVE_DAY_STREAK),
@@ -43,8 +40,6 @@ private val PREVIEW_ROWS = listOf(
     HabitRowUi(
         id = previewId("2"),
         name = "exercise",
-        icon = "🏃",
-        iconTint = parseHabitColor("#249899"),
         completed = false,
         weekProgress = WeekProgress(done = WEEKLY_DONE, target = WEEKLY_TARGET),
         streak = StreakUi.Weeks(count = LIVE_WEEK_STREAK),
@@ -52,8 +47,6 @@ private val PREVIEW_ROWS = listOf(
     HabitRowUi(
         id = previewId("3"),
         name = "journal",
-        icon = "✍",
-        iconTint = parseHabitColor("#EF6C00"),
         completed = false,
         weekProgress = null,
         streak = StreakUi.Broken(previous = LOST_DAY_STREAK, weekly = false),
@@ -63,8 +56,6 @@ private val PREVIEW_ROWS = listOf(
         // A parseable but unusable colour. The theme's content role would be
         // invisible on this in light mode, so the glyph picks its own.
         name = "meditate",
-        icon = "M",
-        iconTint = parseHabitColor("#000000"),
         completed = false,
         weekProgress = null,
         streak = StreakUi.None,
@@ -74,8 +65,6 @@ private val PREVIEW_ROWS = listOf(
         // Translucent, so what the glyph really sits on is this blended with
         // the surface behind it rather than the colour as written.
         name = "walk",
-        icon = "W",
-        iconTint = parseHabitColor("#40FFFFFF"),
         completed = false,
         weekProgress = null,
         streak = StreakUi.None,
@@ -85,8 +74,6 @@ private val PREVIEW_ROWS = listOf(
         // An unparseable colour, which the event log can hold and a row has to
         // survive: this one falls back to a theme role.
         name = "stretch",
-        icon = "?",
-        iconTint = parseHabitColor("not a colour"),
         completed = false,
         weekProgress = null,
         streak = StreakUi.None,

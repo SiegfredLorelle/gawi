@@ -259,13 +259,13 @@ Small decisions that were easier to make once drawn:
   made the same call in `spokenLabel`). The words are `:core:ui`'s
   `spokenStreak`, shared with habit detail's panel (habits.md §7). Both via
   `clearAndSetSemantics`, which is why the drawn `3` is not in the row's text;
-  `row_doesNotSpeakTheIcon`, `streak_speaksItsUnit` and
+  `streak_speaksItsUnit` and
   `brokenStreak_speaksWhatWasLost` pin it, and hearing it is owed
   (docs/running.md §4) — including the order: the badge's description is on a
   child node after the name, so the name should still lead. **The icon half of
-  this retires in step 4**: a habit keeps none (visual-identity.md §7.3), and a
-  row with no icon has nothing decorative to silence. What survives is the
-  streak's own phrasing, which is the half that was never about the icon.
+  this is gone**: a habit keeps none (visual-identity.md §7.3), and a row with
+  no icon has nothing decorative to silence. What survives is the streak's own
+  phrasing, which is the half that was never about the icon.
 - **A row that owes nothing today is dimmed, and that is not the same as
   ticked.** Twelve empty checkboxes under a panel reading *"8 of 15 left
   today"* is the screen contradicting itself: four of them were weekly habits
@@ -322,9 +322,10 @@ Small decisions that were easier to make once drawn:
   strip is five cells, because "Fri 15 renders" is only true if the strip
   reaches a day further back than it can write to.
 - **A habit has no colour and no icon, so the row draws neither**
-  (visual-identity.md §7.3). The colour used to be the tint behind the row's
-  icon, set once in the create/edit form; both go in step 4, and the row is
-  left with the name, the streak and the checkbox.
+  (visual-identity.md §7.3). The colour was the tint behind the row's icon, set
+  once in the create/edit form; the row is the name, the streak and the
+  checkbox. Both fields stay in the log as passthrough, so nothing about the
+  wire format moved.
 - **The widget carries no mascot at MVP.** It is a bare checklist; the
   emotive indicator is a Today-view element only. Phase 1 does put Momo in
   the widget and the reminder (PRD §5) — that treatment is not designed

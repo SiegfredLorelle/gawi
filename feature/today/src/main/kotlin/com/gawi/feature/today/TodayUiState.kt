@@ -1,6 +1,5 @@
 package com.gawi.feature.today
 
-import androidx.compose.ui.graphics.Color
 import com.gawi.core.domain.mascot.Mood
 import com.gawi.core.domain.model.HabitId
 import com.gawi.core.domain.streak.Streaks
@@ -26,7 +25,7 @@ import java.time.LocalDate
  * for it the exception would leave the ViewModel's sharing coroutine and take
  * the process down on the app's only screen.
  *
- * Internal throughout. These types carry `Color`, `Mood` and `HabitId`, all of
+ * Internal throughout. These types carry `Mood` and `HabitId`, both of
  * which arrive on implementation-scope dependencies, so exposing them would
  * publish a surface no consumer could compile against. [TodayRoute] is this
  * module's whole API.
@@ -110,9 +109,6 @@ internal data class MascotUi(
 internal data class HabitRowUi(
     val id: HabitId,
     val name: String,
-    val icon: String,
-    /** Null when the stored colour does not parse; the row falls back to a theme role. */
-    val iconTint: Color?,
     val completed: Boolean,
     /** Non-null only for a weekly schedule — §5 draws "2/3 this week" for those alone. */
     val weekProgress: WeekProgress?,

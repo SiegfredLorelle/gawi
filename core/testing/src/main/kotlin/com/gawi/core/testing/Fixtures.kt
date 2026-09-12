@@ -5,10 +5,10 @@ import com.gawi.core.data.model.TodayHabit
 import com.gawi.core.data.model.TodaySnapshot
 import com.gawi.core.domain.model.HabitId
 import com.gawi.core.domain.model.Schedule
+import com.gawi.core.domain.projection.HabitMetadata
 import com.gawi.core.domain.projection.HabitState
 import com.gawi.core.domain.streak.StreakSnapshot
 import com.gawi.core.domain.testing.habitId
-import com.gawi.core.ui.theme.HabitPalette
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -65,8 +65,8 @@ fun daysAgo(back: Long): LocalDate = FIXED_DATE.minusDays(back)
 fun habitState(
     id: HabitId = habitId(1),
     name: String = "read",
-    icon: String = "📖",
-    color: String = HabitPalette.DefaultColor,
+    icon: String = HabitMetadata.DEFAULT_ICON,
+    color: String = HabitMetadata.DEFAULT_COLOR,
     schedule: Schedule = Schedule.Daily,
     tag: String? = null,
     archived: Boolean = false,
