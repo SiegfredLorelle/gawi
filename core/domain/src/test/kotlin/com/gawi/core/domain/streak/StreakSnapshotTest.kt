@@ -8,6 +8,12 @@ import java.time.LocalDate
 
 class StreakSnapshotTest {
 
+    // Generous: the bounded walk takes microseconds, and an unbounded one would
+    // take hours. Anything between the two is a regression, not a slow machine.
+    private companion object {
+        const val ANCIENT_DATE_TIMEOUT_MILLIS = 5_000L
+    }
+
     // A Monday, so week arithmetic reads plainly against the default week start.
     private val today = LocalDate.parse("2026-08-17")
 
@@ -131,6 +137,23 @@ class StreakSnapshotTest {
 
         assertEquals(askedOnTheDay, askedAgainAfterRecovery)
         assertEquals(StreakSnapshot(current = 0, previous = 3, brokenOn = date("2026-08-14"), spare = 0), askedOnTheDay)
+    }
+
+    @Test(timeout = ANCIENT_DATE_TIMEOUT_MILLIS)
+    fun `a completion from long before the run costs nothing to replay`() {
+        // The replay walks forward from the first completion, so its cost would
+        // follow the calendar rather than the log if a dead gap were counted
+        // unit by unit. Nothing bounds how far back a logical date can sit: the
+        // retro window is a command rule that does not reach replay
+        // (architecture §4) and an imported log carries what it was written
+        // with. LocalDate.MIN is the worst such date, and it must neither move
+        // the answer nor be walked to.
+        val run = dates("2026-08-16", "2026-08-17")
+
+        val withAncient = daily(run + LocalDate.MIN)
+
+        assertEquals(daily(run), withAncient)
+        assertEquals(StreakSnapshot(current = 2, previous = 0, brokenOn = null, spare = 0), withAncient)
     }
 
     @Test
