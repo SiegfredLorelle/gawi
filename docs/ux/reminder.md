@@ -453,16 +453,25 @@ the cutoff would mark the new day as already reminded and silence that evening's
 real reminder — §1's late-wake case, reached from a new direction. The re-post
 posts directly under the fixed id.
 
-**What is left is carried by the button, not recounted.** Each `PendingIntent`
-holds the whole outstanding list as it stood at post time, so a tap drops the
-habit it wrote and re-posts the rest without reading anything. That is what
-keeps the tap free of a clock, and the alternative is worse:
-`HabitRepository.observeToday` answers for the *current* logical date, so a tap
-the next morning would need a second way to decide what is outstanding, beside
-`Mascot.isOutstanding`, for a date nothing else asks about. The cost is real and
-small — a habit completed in the app since the post still shows a button, and
-pressing it re-adds a completion that is already there, which architecture §4's
-idempotent collapse absorbs.
+**The button carries the candidates; the log says which are left.** Each
+`PendingIntent` holds the whole outstanding list as it stood at post time, and a
+tap asks one question of the log before re-posting: of those habits, which
+already have a completion on the carried date. Nothing re-derives what is
+*outstanding* — that needs the schedule, and `HabitRepository.observeToday` only
+answers for the *current* logical date, so it would mean a second way to decide
+outstanding beside `Mascot.isOutstanding`, for a date nothing else asks about.
+Asking which are already done is a fact rather than a judgement, and
+`observeCompletionDatesByHabit` answers it for all of them in one query with the
+carried date at both ends. The tap still resolves no clock: the date goes in, it
+is never worked out.
+
+**That is also what makes two taps in flight safe.** A second button's
+`PendingIntent` was filled in when the notification was posted, so its list
+predates the first tap's write — which is why *ordering the two is not enough on
+its own*, and the obvious fix is the wrong one. Reading the day back is what
+settles it; a lock around the tap is what guarantees the read happens after the
+write it should see. The same read closes a smaller thing for free: a habit
+completed in the app since the post no longer keeps a button in the shade.
 
 **A refused write leaves the shade exactly as it is.** The carried date is the
 one thing that can put a tap outside architecture §5's three-day retroactive
@@ -636,18 +645,6 @@ mutation-checked against the code before the fix.
   channel-set-to-None. Checking it needs the channel id, which belongs to `:app`,
   and coupling `:feature:settings` to it for one edge case was declined. The row
   would say the reminder will arrive, and it would not.
-- **Two taps in flight can leave the shade contradicting itself.** Each button
-  carries the outstanding list as it stood at post time, so tapping a second
-  before the first re-post lands makes both compute their remainder from the
-  same stale list, and the last `notify()` wins: a button can survive for a
-  habit just completed, and the body can over-count. Both *writes* land
-  correctly — it is a display defect, it self-heals on the next tap or the next
-  evening's post, and `FLAG_UPDATE_CURRENT` narrows the window because a re-post
-  rewrites the surviving buttons' extras. Serialising the receiver would **not**
-  close it, which is the trap: the second tap's intent was already filled in.
-  Closing it needs the notifier to remember what it last posted — process state
-  in a class that deliberately holds none, plus a second path for when the
-  process has died — so it is recorded rather than fixed.
 - **The wake can drift, and nothing measures how far.** Delivery is inside
   eligibility rather than delivery — architecture §7 calls it *deliberately
   inexact*, and there is no flex interval to quote because these are one-time
