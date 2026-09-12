@@ -74,7 +74,7 @@ class GawiTypographyTest {
     }
 
     @Test
-    fun `only the face and the tracking changed - every other metric is Material's`() {
+    fun `only the face, the tracking and four weights changed - every other metric is Material's`() {
         val stock = Typography()
         roles.forEach { (name, role) ->
             val ours = role(GawiTypography)
@@ -88,11 +88,36 @@ class GawiTypographyTest {
             // Compose adds later. An earlier version pinned four of about a
             // dozen and still called itself "every metric".
             val tracking = if (theirs.letterSpacing.value > 0f) 0.sp else theirs.letterSpacing
+            // The weight is read back rather than named, for the same reason
+            // the tracking is: which four roles carry W600 is stated outright
+            // below, so naming them here too would be one fact in two places
+            // and this equality would stop being about everything else.
             assertEquals(
                 "$name is not Material's metrics in Outfit at zeroed tracking",
-                theirs.copy(fontFamily = Outfit, letterSpacing = tracking),
+                theirs.copy(fontFamily = Outfit, letterSpacing = tracking, fontWeight = ours.fontWeight),
                 ours,
             )
+        }
+    }
+
+    /**
+     * Which four roles carry W600, stated outright for the reason the tracking
+     * deviation is: the equality above reads the weight back, so it would pass
+     * on any assignment at all.
+     *
+     * The screen title and the mascot's mood line, and the two numeral roles —
+     * habit detail's streak number and the largest numerals. 600 because the
+     * widget had already chosen it (`BitmapText`'s SemiBold), and the app
+     * registered Bold and requested neither, so the two surfaces disagreed
+     * about emphasis one home screen apart (docs/ux/visual-identity.md §5).
+     */
+    @Test
+    fun `four roles ask for SemiBold and the rest keep Material's weight`() {
+        val stock = Typography()
+        val semiBold = setOf("displaySmall", "headlineSmall", "titleLarge", "titleMedium")
+        roles.forEach { (name, role) ->
+            val expected = if (name in semiBold) FontWeight.SemiBold else role(stock).fontWeight
+            assertEquals("$name asks for the wrong weight", expected, role(GawiTypography).fontWeight)
         }
     }
 
@@ -168,6 +193,10 @@ class GawiTypographyTest {
         assertTrue(
             "W800 is unregistered, so Bold text gets synthesis over a real bold",
             FontWeight.ExtraBold in registered,
+        )
+        assertTrue(
+            "W900 is unregistered, so Bold text over a W600 role gets synthesis",
+            FontWeight.Black in registered,
         )
         assertEquals(
             "OutfitWeights must describe the family it claims to document",
