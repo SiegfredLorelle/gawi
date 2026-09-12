@@ -129,6 +129,7 @@ fun SettingsRoute(onBack: () -> Unit, onOpenLicences: () -> Unit) {
             onDayCutoffChange = viewModel::onDayCutoffChange,
             onWeekStartChange = viewModel::onWeekStartChange,
             onReminderTimeChange = viewModel::onReminderTimeChange,
+            onReminderEnabledChange = viewModel::onReminderEnabledChange,
             onThemeChange = viewModel::onThemeChange,
             // The wall-clock date, not the logical one — see exportFileName.
             onExport = { exportTo.launch(exportFileName(LocalDate.now())) },

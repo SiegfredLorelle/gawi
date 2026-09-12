@@ -39,6 +39,20 @@ data class UserSettings(
     val dayCutoff: LocalTime = LocalTime.MIDNIGHT,
     val weekStart: DayOfWeek = DayOfWeek.MONDAY,
     val reminderTime: LocalTime = DEFAULT_REMINDER_TIME,
+    /**
+     * Whether the end-of-day notification is sent at all (docs/ux/settings.md
+     * §1).
+     *
+     * **Not a second threshold.** It silences the notification and leaves
+     * [reminderTime] doing its other job, which is telling the mascot when to
+     * start looking worried (today-view §4) — so the time above stays set,
+     * stays drawn and stays read while this is false. It is the only field here
+     * that turns a feature off rather than configuring one.
+     *
+     * Defaults true: an app that shipped the reminder on does not turn it off
+     * under a user who never asked.
+     */
+    val reminderEnabled: Boolean = true,
     val theme: ThemeMode = ThemeMode.SYSTEM,
 ) {
 

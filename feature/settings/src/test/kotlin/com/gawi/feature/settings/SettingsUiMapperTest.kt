@@ -33,7 +33,7 @@ class SettingsUiMapperTest {
         val state = settings.toUiState(version = "1.2.3")
 
         assertEquals(
-            SettingsUiState.Settings(LocalTime.of(3, 30), DayOfWeek.SUNDAY, LocalTime.of(22, 15), ThemeMode.SYSTEM, "1.2.3"),
+            SettingsUiState.Settings(LocalTime.of(3, 30), DayOfWeek.SUNDAY, LocalTime.of(22, 15), true, ThemeMode.SYSTEM, "1.2.3"),
             state,
         )
     }

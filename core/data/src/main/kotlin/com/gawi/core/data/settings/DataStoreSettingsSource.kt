@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
@@ -109,6 +110,7 @@ class DataStoreSettingsSource @Inject constructor(private val dataStore: DataSto
             preferences[DAY_CUTOFF] = updated.dayCutoff.toSecondOfDay()
             preferences[WEEK_START] = updated.weekStart.value
             preferences[REMINDER_TIME] = updated.reminderTime.toSecondOfDay()
+            preferences[REMINDER_ENABLED] = updated.reminderEnabled
             preferences[THEME] = updated.theme.code
         }
     }
@@ -119,12 +121,18 @@ class DataStoreSettingsSource @Inject constructor(private val dataStore: DataSto
             dayCutoff = preferences.int(DAY_CUTOFF).asLocalTime(defaults.dayCutoff),
             weekStart = preferences.int(WEEK_START).asDayOfWeek(defaults.weekStart),
             reminderTime = preferences.int(REMINDER_TIME).asLocalTime(defaults.reminderTime),
+            // Absent reads as the default rather than as false: an install that
+            // predates the switch had the reminder on.
+            reminderEnabled = preferences.boolean(REMINDER_ENABLED) ?: defaults.reminderEnabled,
             theme = ThemeMode.fromCode(preferences.int(THEME)) ?: defaults.theme,
         )
     }
 
     /** The stored [key], or null if it is absent *or* holds something else. */
     private fun Preferences.int(key: Preferences.Key<Int>): Int? = asMap()[key] as? Int
+
+    /** As [int], and null for the same two reasons. */
+    private fun Preferences.boolean(key: Preferences.Key<Boolean>): Boolean? = asMap()[key] as? Boolean
 
     private fun Int?.asLocalTime(default: LocalTime): LocalTime =
         if (this != null && this in 0 until SECONDS_PER_DAY) LocalTime.ofSecondOfDay(toLong()) else default
@@ -136,6 +144,7 @@ class DataStoreSettingsSource @Inject constructor(private val dataStore: DataSto
         val DAY_CUTOFF = intPreferencesKey("day_cutoff_second_of_day")
         val WEEK_START = intPreferencesKey("week_start_iso")
         val REMINDER_TIME = intPreferencesKey("reminder_second_of_day")
+        val REMINDER_ENABLED = booleanPreferencesKey("reminder_enabled")
         val THEME = intPreferencesKey("theme_mode")
 
         const val SECONDS_PER_DAY = 24 * 60 * 60

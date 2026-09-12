@@ -769,6 +769,76 @@ class SettingsScreenTest {
             .assertHeightIsAtLeast(MIN_TOUCH_TARGET)
     }
 
+    // ---- The reminder switch (docs/ux/settings.md §1-§3) ----
+
+    /**
+     * The three time rows gained a heading, and it is the group's own name
+     * rather than "General" — those candidates said less than the rows do
+     * (docs/ux/settings.md §2).
+     */
+    @Test
+    fun theTimeRows_openUnderTheirOwnHeading() {
+        render(STORED)
+
+        compose.onNodeWithText(string(R.string.settings_your_day_header)).performScrollTo().assertIsDisplayed()
+    }
+
+    /** The row names the thing a user came looking for, not the mood threshold. */
+    @Test
+    fun theReminderRow_isNamedForTheReminder() {
+        render(STORED)
+
+        compose.onNodeWithText(string(R.string.settings_reminder_label)).performScrollTo().assertIsDisplayed()
+    }
+
+    /**
+     * A switch, and the gesture is the decision: no dialog, no confirm
+     * (docs/ux/settings.md §3).
+     */
+    @Test
+    fun theSwitch_reportsTheNewPositionOnTheTap() {
+        val toggles = mutableListOf<Boolean>()
+        render(STORED.copy(reminderEnabled = true), NO_ACTIONS.copy(onReminderEnabledChange = { toggles += it }))
+
+        compose.onNodeWithText(string(R.string.settings_reminder_switch_label)).performScrollTo().performClick()
+
+        assertEquals(listOf(false), toggles)
+    }
+
+    /**
+     * **There are two ways for the reminder to be silent and only one is an
+     * error** (docs/ux/settings.md §2). Switching it off is a choice, and an
+     * error over a choice is the screen arguing with its own user.
+     */
+    @Test
+    fun switchedOffWithThePermissionGranted_saysNothingIsWrong() {
+        render(STORED.copy(reminderEnabled = false), notificationsAllowed = true)
+
+        compose.onAllNodesWithText(string(R.string.settings_reminder_blocked)).assertCountEquals(0)
+    }
+
+    /**
+     * Both off is the case to get right: the error still belongs there, because
+     * turning the switch back on would not help until the permission is.
+     */
+    @Test
+    fun switchedOffWithThePermissionDenied_stillSaysWhatIsWrong() {
+        render(STORED.copy(reminderEnabled = false), notificationsAllowed = false)
+
+        compose.onNodeWithText(string(R.string.settings_reminder_blocked)).performScrollTo().assertIsDisplayed()
+    }
+
+    /**
+     * The time is still set, still drawn and still drives the mascot while the
+     * switch is off — which is the whole of what the help line promises.
+     */
+    @Test
+    fun switchedOff_keepsTheTimeOnScreen() {
+        render(STORED.copy(reminderEnabled = false))
+
+        compose.onNodeWithText(formatTime(STORED.reminderTime, is24Hour = true)).performScrollTo().assertIsDisplayed()
+    }
+
     private fun render(
         state: SettingsUiState,
         actions: SettingsActions = NO_ACTIONS,
@@ -829,6 +899,7 @@ class SettingsScreenTest {
             dayCutoff = LocalTime.of(3, 0),
             weekStart = DayOfWeek.SUNDAY,
             reminderTime = LocalTime.of(22, 30),
+            reminderEnabled = true,
             theme = ThemeMode.DARK,
             version = "1.2.3",
         )
@@ -837,6 +908,7 @@ class SettingsScreenTest {
             onDayCutoffChange = {},
             onWeekStartChange = {},
             onReminderTimeChange = {},
+            onReminderEnabledChange = {},
             onThemeChange = {},
             onExport = {},
             onExportCompletions = {},

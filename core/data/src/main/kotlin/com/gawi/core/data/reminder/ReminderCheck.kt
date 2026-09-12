@@ -78,7 +78,20 @@ class ReminderCheck @Inject internal constructor(
      */
     suspend fun evaluate(): ReminderDecision {
         val snapshot = repository.observeToday().first()
-        if (snapshot.outsideTheReminderWindow()) return ReminderDecision.Silent
+
+        // Two silences that reach the same answer before the journal is
+        // touched, so neither uses up the day's one reminder.
+        //
+        // The switch is read from the settings rather than carried on the
+        // snapshot, because it decides nothing the snapshot's arithmetic uses:
+        // the time it silences still drives the mascot, so threading it through
+        // the mood context would re-run the Today flow on every toggle for a
+        // value Today does not read. The wake still fires and still finds
+        // nothing to say, which is what lets turning it back on take effect at
+        // the next one with nothing re-armed (docs/ux/settings.md §1).
+        if (!settings.observe().first().reminderEnabled || snapshot.outsideTheReminderWindow()) {
+            return ReminderDecision.Silent
+        }
 
         // Filtered here rather than trusted from observeToday's SQL, so the
         // agreement with the Today chip is this function's property rather than

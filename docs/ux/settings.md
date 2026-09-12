@@ -25,12 +25,14 @@ to admit (§2), and where the gear points (§4).
 ## 1. Three of the PRD's four, and what has joined them since
 
 `UserSettings` holds `dayCutoff`, `weekStart` and `reminderTime`, `theme` (§7),
-and — decided on the canvas-fidelity pass, not yet built — a boolean for
-whether the end-of-day notification is sent at all. That last one is the only
+and `reminderEnabled` — whether the end-of-day notification is sent at all.
+That last one is the only
 field here that turns a feature off rather than configuring one, and it is
 deliberately *not* a second threshold: it silences the notification and leaves
 `reminderTime` doing its other job, which is telling the mascot when to start
-looking worried. The PRD's fourth, **timezone behaviour, is deliberately
+looking worried. `ReminderCheck` reads it before it reads anything else and
+before the journal is touched, so a day spent switched off has not used up its
+one reminder and turning it back on that evening still reminds. The PRD's fourth, **timezone behaviour, is deliberately
 absent** — from the data type as much as from this screen.
 
 It is absent because it has exactly one value. The behaviour is "use the device
@@ -41,8 +43,8 @@ learn nothing. `UserSettings`' own KDoc has said this since it was written, and
 this section is where it stops being only a code comment.
 
 **Two settings have joined since, and neither is the PRD's.** The theme landed
-2026-08-26 (§7) and the reminder switch is decided but unbuilt, which leaves
-this heading true in the only sense it ever meant: of the four capabilities the
+2026-08-26 (§7) and the reminder switch with the canvas-fidelity pass's rows,
+which leaves this heading true in the only sense it ever meant: of the four capabilities the
 PRD lists, three are here and timezone behaviour is deliberately not. Counting
 `UserSettings`' fields is a different sum and always has been. The theme is a
 different kind of setting entirely — it counts nothing, buckets nothing and

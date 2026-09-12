@@ -32,6 +32,7 @@ internal fun UserSettings.toUiState(
     dayCutoff = dayCutoff,
     weekStart = weekStart,
     reminderTime = reminderTime,
+    reminderEnabled = reminderEnabled,
     theme = theme,
     version = version,
     dataTask = dataTask,
