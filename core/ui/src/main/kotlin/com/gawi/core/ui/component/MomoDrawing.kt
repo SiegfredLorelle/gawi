@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.drawscope.withTransform
 import com.gawi.core.domain.mascot.Mood
+import com.gawi.core.domain.streak.Streaks
 
 /** The design space the geometry below is written in. */
 val MomoDesignSize: Size = Size(260f, 200f)
@@ -34,7 +35,7 @@ val MomoDesignSize: Size = Size(260f, 200f)
  * `MomoFrameTest` for the maths; the pixels need Robolectric, which this module
  * does not take, so `MomoRenderTest` in `:feature:today` draws them.
  */
-fun DrawScope.drawMomo(mood: Mood, frame: MomoFrame) = drawMomo(mood, mood, 1f, frame)
+fun DrawScope.drawMomo(mood: Mood, frame: MomoFrame, spare: Int = Streaks.MAX_SPARE) = drawMomo(mood, mood, 1f, frame, spare)
 
 /**
  * Draws Momo part-way through a mood change: [progress] of the way from [from]
@@ -47,7 +48,7 @@ fun DrawScope.drawMomo(mood: Mood, frame: MomoFrame) = drawMomo(mood, mood, 1f, 
  * At 0 and 1, and whenever the two moods are the same, this is exactly
  * [drawMomo] of one mood: the single-mood overload is this call.
  */
-fun DrawScope.drawMomo(from: Mood, to: Mood, progress: Float, frame: MomoFrame) {
+fun DrawScope.drawMomo(from: Mood, to: Mood, progress: Float, frame: MomoFrame, spare: Int = Streaks.MAX_SPARE) {
     val scale = minOf(size.width / MomoDesignSize.width, size.height / MomoDesignSize.height)
     val dx = (size.width - MomoDesignSize.width * scale) / 2f
     val dy = (size.height - MomoDesignSize.height * scale) / 2f
@@ -63,7 +64,7 @@ fun DrawScope.drawMomo(from: Mood, to: Mood, progress: Float, frame: MomoFrame) 
             val tint = { c: Color -> c.saturated(frame.saturation) }
             val wasRegrowing = if (from == Mood.REGENERATING) 1f else 0f
             val willRegrow = if (to == Mood.REGENERATING) 1f else 0f
-            drawGills(frame, regrowing = wasRegrowing + (willRegrow - wasRegrowing) * t, tint)
+            drawGills(frame, spare, regrowing = wasRegrowing + (willRegrow - wasRegrowing) * t, tint)
             drawBody(frame, tint)
             // The blush is every mood's, so it is drawn once and never fades.
             drawEllipse(Offset(92f, 114f), 11f, 7f, tint(MomoPalette.Blush), alpha = 0.40f)
@@ -79,33 +80,49 @@ fun DrawScope.drawMomo(from: Mood, to: Mood, progress: Float, frame: MomoFrame) 
 }
 
 /**
- * The six gills, the right upper one blended between its full length and its
- * regrowing stub by [regrowing] — 1 while regenerating, 0 otherwise, and in
- * between during a change to or from that mood. The halo comes and goes with
- * the stub.
+ * The six gills: the left three fixed, the right three carrying [spare] spare
+ * lives, shortened from the bottom up so the count reads as how far the
+ * shortening has climbed (docs/ux/momo.md §3).
+ *
+ * [regrowing] is the top right gill's own blend — 1 while regenerating, 0
+ * otherwise, and in between during a change to or from that mood — and the halo
+ * comes and goes with it. That gill is keyed to the mood rather than to [spare]
+ * because zero spare and regenerating are one moment seen twice: a streak can
+ * only break once the last spare is gone. Keying it to [spare] instead would
+ * draw a habit three clean days old as broken, since a run too young to have
+ * banked anything also reports zero.
  */
-private fun DrawScope.drawGills(frame: MomoFrame, regrowing: Float, tint: (Color) -> Color) {
+private fun DrawScope.drawGills(frame: MomoFrame, spare: Int, regrowing: Float, tint: (Color) -> Color) {
+    val spent = SpendOrder.take(Streaks.MAX_SPARE - spare.coerceIn(0, Streaks.MAX_SPARE))
     translate(top = frame.gillDrop) {
         Gills.forEachIndexed { index, gill ->
-            val blend = if (index == REGROWING_GILL) regrowing else 0f
-            if (blend > 0f) {
+            val isRegrowing = index == REGROWING_GILL && regrowing > 0f
+            if (isRegrowing) {
                 // The halo sits behind the short gill, breathing with it.
                 drawCircle(
                     tint(MomoPalette.Bead),
                     radius = 20f * (0.8f + 0.32f * frame.regrow),
                     center = Offset(190f, 68f),
-                    alpha = (0.10f + 0.20f * frame.regrow) * blend,
+                    alpha = (0.10f + 0.20f * frame.regrow) * regrowing,
                 )
             }
             rotate(frame.gills[index], pivot = gill.root) {
-                if (blend < 1f) gill.draw(this, tint, alpha = 1f - blend)
-                if (blend > 0f) {
-                    withTransform({
-                        scale(0.82f + 0.24f * frame.regrow, pivot = gill.root)
-                        rotate(-3f + 6f * frame.regrow, pivot = gill.root)
-                    }) {
-                        RegrowingGill.draw(this, tint, alpha = (0.72f + 0.28f * frame.regrow) * blend)
+                when {
+                    isRegrowing -> {
+                        if (regrowing < 1f) gill.draw(this, tint, alpha = 1f - regrowing)
+                        withTransform({
+                            scale(0.82f + 0.24f * frame.regrow, pivot = gill.root)
+                            rotate(-3f + 6f * frame.regrow, pivot = gill.root)
+                        }) {
+                            ShortGills[index].draw(this, tint, alpha = (0.72f + 0.28f * frame.regrow) * regrowing)
+                        }
                     }
+
+                    // A spent gill is the regrowing one's drawing held still:
+                    // one recipe, so the two can never disagree.
+                    index in spent -> ShortGills[index].draw(this, tint, alpha = 1f)
+
+                    else -> gill.draw(this, tint, alpha = 1f)
                 }
             }
         }
@@ -206,11 +223,33 @@ private fun DrawScope.drawEllipse(centre: Offset, rx: Float, ry: Float, color: C
 
 private class Bead(val x: Float, val y: Float, val r: Float)
 
-private class Gill(val root: Offset, val tip: Offset, vararg val beads: Bead, val stroke: Float = 7.5f) {
+private class Gill(val root: Offset, val tip: Offset, val beads: List<Bead>, val stroke: Float = 7.5f) {
+    /** The form the geometry below is written in; [Gills] is a list of literals. */
+    constructor(root: Offset, tip: Offset, vararg beads: Bead) : this(root, tip, beads.toList())
+
     fun draw(scope: DrawScope, tint: (Color) -> Color, alpha: Float) = with(scope) {
         drawLine(tint(MomoPalette.Accent), root, tip, strokeWidth = stroke, cap = StrokeCap.Round, alpha = alpha)
         beads.forEach { drawCircle(tint(MomoPalette.Bead), it.r, Offset(it.x, it.y), alpha = alpha) }
     }
+
+    /**
+     * This gill spent: every point pulled toward its own [root] at [SHORT_REACH]
+     * (docs/ux/momo.md §3). The root itself does not move, so the sway above is
+     * untouched — a short gill turns through the same angle at the same offset
+     * as a long one.
+     */
+    fun shortened() = Gill(
+        root,
+        root + (tip - root) * SHORT_REACH,
+        beads.map {
+            Bead(
+                root.x + (it.x - root.x) * SHORT_REACH,
+                root.y + (it.y - root.y) * SHORT_REACH,
+                it.r * SHORT_BEAD,
+            )
+        },
+        SHORT_STROKE,
+    )
 }
 
 /** Left top to bottom, then right top to bottom — the order [MomoFrame.gills] uses. */
@@ -271,18 +310,31 @@ private val Gills = listOf(
     ),
 )
 
-/** The right upper gill, while it regrows: the same root, a shorter reach, smaller beads. */
+/**
+ * The gill the halo marks, and the last of the three to be spent: the top right
+ * one, which is therefore the first to grow back (docs/ux/momo.md §3). The
+ * bottom-up spend order below exists to keep it here.
+ */
 private const val REGROWING_GILL = 3
-private val RegrowingGill = Gill(
-    Offset(176f, 78f),
-    Offset(191.6f, 65.8f),
-    Bead(183.3f, 60.0f, 5.9f),
-    Bead(192.5f, 65.1f, 7.4f),
-    Bead(195.2f, 75.3f, 5.9f),
-    Bead(184.0f, 67.7f, 4.6f),
-    Bead(188.1f, 73.1f, 4.6f),
-    stroke = 5.5f,
-)
+
+/**
+ * Which right gill is spent first, and then next: bottom-up, so the count reads
+ * as how far the shortening has climbed. [Gills] runs left top-to-bottom then
+ * right top-to-bottom, so the right cluster is 3, 4, 5 from the top.
+ */
+private val SpendOrder = listOf(5, 4, 3)
+
+/** How far a spent gill reaches, as a fraction of its own full length. */
+private const val SHORT_REACH = 0.661f
+private const val SHORT_BEAD = 0.75f
+private const val SHORT_STROKE = 5.5f
+
+/**
+ * Every gill spent, indexed alongside [Gills] so a spent one is its own drawing
+ * shortened rather than a second transcription of it. Only the right three are
+ * ever drawn from here.
+ */
+private val ShortGills = Gills.map { it.shortened() }
 
 private val EyeStroke = Stroke(4.5f, cap = StrokeCap.Round)
 
