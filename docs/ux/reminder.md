@@ -464,6 +464,15 @@ small — a habit completed in the app since the post still shows a button, and
 pressing it re-adds a completion that is already there, which architecture §4's
 idempotent collapse absorbs.
 
+**A refused write leaves the shade exactly as it is.** The carried date is the
+one thing that can put a tap outside architecture §5's three-day retroactive
+window — a notification that survived a long enough gap — and that window is a
+command rule, so the domain refuses it. Dropping the button anyway would report
+a completion that was never written, which is the same class of silent wrong
+answer the carried date exists to prevent, arrived at from the far end. So the
+notification is left alone: the button is still there, and it still owes
+something.
+
 **So it does not consult the off switch either, and that needs saying rather
 than inheriting.** §3 rules out a post-time switch check for one reason — that
 `evaluate()` stamps the journal first, so a silenced day would consume its own

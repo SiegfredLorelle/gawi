@@ -2,6 +2,8 @@ package com.gawi.app.reminder
 
 import com.gawi.core.data.reminder.OutstandingHabit
 import com.gawi.core.data.reminder.ReminderDecision
+import com.gawi.core.domain.command.CommandError
+import com.gawi.core.domain.command.CommandResult
 import com.gawi.core.domain.testing.habitId
 import com.gawi.core.testing.FIXED_DATE
 import com.gawi.core.testing.FakeHabitRepository
@@ -83,6 +85,24 @@ class QuickCompleteTest {
 
         assertTrue(cancelled)
         assertNull(reposted)
+    }
+
+    /**
+     * A refused write must not look like a successful one.
+     *
+     * The reachable case is a notification that outlived architecture §5's
+     * three-day retroactive window: the domain refuses the date, and dropping
+     * the button anyway would say the habit was logged when nothing was.
+     */
+    @Test
+    fun `a refused write leaves the notification alone`() = runTest {
+        val habits = habits()
+        habits.result = CommandResult.Rejected(CommandError.RetroWindowExceeded)
+
+        tap(habits, read, listOf(read, swim))
+
+        assertNull(reposted)
+        assertTrue("the notification was taken down on a refused write", !cancelled)
     }
 
     /**
