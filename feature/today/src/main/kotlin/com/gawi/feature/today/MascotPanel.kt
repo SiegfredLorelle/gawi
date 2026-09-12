@@ -41,6 +41,8 @@ import com.gawi.core.ui.component.MomoPalette
 import com.gawi.core.ui.component.rememberFrameClock
 import com.gawi.core.ui.component.rememberMoodTransition
 import com.gawi.core.ui.theme.GawiSpacing
+import com.gawi.core.ui.theme.LocalGawiDarkTheme
+import com.gawi.core.ui.theme.gawiTankFarStop
 
 /**
  * Momo's slot — docs/ux/today-view.md §3, with the character in it.
@@ -261,7 +263,7 @@ private fun Tank(
     val scheme = MaterialTheme.colorScheme
     val transition = rememberMoodTransition(mascot.mood, animationsOn)
     val seconds = rememberFrameClock(animationsOn)
-    val full = listOf(scheme.primaryContainer, scheme.primaryFixedDim)
+    val full = listOf(scheme.primaryContainer, gawiTankFarStop(LocalGawiDarkTheme.current))
     val drained = listOf(scheme.surfaceContainerHighest, scheme.surfaceContainerHigh)
     val colours = HabitatColours(weed = scheme.primary, weedDrained = scheme.outline, bubble = MomoPalette.Highlight)
     // Built once per scheme, not per frame: a Brush caches its native shader

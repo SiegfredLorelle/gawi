@@ -304,3 +304,20 @@ fun gawiWindowBackground(darkTheme: Boolean): Color = gawiRole(GawiRole.Surface,
  * the themed monochrome layer instead (docs/ux/visual-identity.md §7.1).
  */
 fun gawiLauncherBackground(): Color = GawiLightColors.primaryContainer
+
+/**
+ * The far stop of the Today tank's water (docs/ux/momo.md §4).
+ *
+ * **Not a `*Fixed` role.** Material specifies those as theme-invariant, so both
+ * schemes declare `primaryFixedDim` as the same light teal — and the dark tank
+ * therefore ended on a *light* colour a few units from the dark weed's own
+ * `primary`, measuring 1.00:1, with the right-hand pair invisible in the corner
+ * it was drawn on. Raising the weed's alpha does not help and a darker ink buys
+ * the bottom of the gradient at the cost of the top, so the stop is what moves.
+ *
+ * The dark scheme takes `onPrimary`: the tone the palette has already chosen to
+ * read against `primary`, which is exactly what a weed drawn in `primary` at
+ * 55 % needs underneath it. Light is unchanged — it never had the defect, and
+ * its own second stop is the one the canvas specified.
+ */
+fun gawiTankFarStop(darkTheme: Boolean): Color = if (darkTheme) GawiDarkColors.onPrimary else GawiLightColors.primaryFixedDim

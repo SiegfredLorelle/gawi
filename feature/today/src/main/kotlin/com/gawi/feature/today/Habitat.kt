@@ -242,7 +242,9 @@ private val Lanes = listOf(
 
 /** The weeds' roots sit this far above the tank floor, as the canvas's SVG does. */
 private const val FLOOR_INSET = 4f
-private const val WEED_ALPHA = 0.55f
+
+/** Internal so the tank's contrast test measures the alpha the drawing uses. */
+internal const val WEED_ALPHA = 0.55f
 
 /** Bubbles start this far above the floor and rise this far, dp — the canvas's `bottom:12px` and `translateY(-150px)`. */
 private const val BUBBLE_START = 12f
