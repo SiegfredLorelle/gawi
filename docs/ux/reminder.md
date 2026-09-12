@@ -374,9 +374,11 @@ blob at worst — and a platform `android.R.drawable` is not a stable appearance
 contract across API levels or OEM skins. Raised in PR review. Since 2026-08-25 the
 vector is **the launcher mark's silhouette**, which is what holds at 24 dp
 ([momo.md](momo.md) §4). Since visual-identity §7.1 that mark is one gill
-cluster rather than a face, so step 4 redraws this file as three dots and drops
-the `evenOdd` eye cut-outs — there is no longer a face to carry through one
-colour, which makes it a simpler file than the one it replaces.
+cluster rather than a face, so the file is three dots and one paler circle with
+no `evenOdd` cut-outs — there is no longer a face to carry through one colour,
+which makes it a simpler file than the one it replaced. The attribute could not
+simply stay: on a cluster whose circles overlap, even-odd winding punches holes
+where the lobes cross.
 
 `IMPORTANCE_DEFAULT`, which makes a sound. A habit nudge that arrives silently is
 one the user finds the next morning, which is the whole point missed;

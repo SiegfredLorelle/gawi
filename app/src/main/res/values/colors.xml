@@ -23,14 +23,16 @@
          second scheme colour to exist twice, and LauncherIconTest pins it
          against the Kotlin value so it cannot drift.
 
-         Momo's body measures about 1.16:1 against this ground, the fronds
-         1.5:1 — deliberately. It is the same pairing as the Today tank
-         (pastel body on primaryContainer water), approved on the canvas's
-         "Launcher icon" artboard, and docs/ux/momo.md §2 states the rule:
-         Momo is an illustration, so contrast against the ground is not a
-         floor; what carries the silhouette is the ink of the eyes and the
-         mouth's deeper coral, which read on any teal. No test measures a
-         ratio here because no ratio is the claim; docs/running.md §4 looks
-         at the drawer instead. -->
-    <color name="ic_launcher_background">#B4E9F0</color>
+         The light scheme's onPrimaryContainer, and the scheme has to be
+         named: the dark scheme declares that role as a pale teal on which
+         the same pink measures about 1.5:1 and the mark vanishes. A launcher
+         icon has one ground and does not follow the system theme.
+
+         The ground inverted rather than the mark, because removing the face
+         removed the only contrast the mark had — momo.md §2 says the
+         silhouette is carried by the ink of the eyes and the deeper coral of
+         the gills, and a faceless cluster has neither. On this ground the
+         dots measure 6.68:1 against the 3:1 a non-text graphic asks for
+         (docs/ux/visual-identity.md §7.1). -->
+    <color name="ic_launcher_background">#00353A</color>
 </resources>

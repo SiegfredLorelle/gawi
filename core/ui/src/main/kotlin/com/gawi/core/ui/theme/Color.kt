@@ -303,7 +303,7 @@ fun gawiWindowBackground(darkTheme: Boolean): Color = gawiRole(GawiRole.Surface,
  * choice: launchers cache icons, and on Android 13+ a dark home screen shows
  * the themed monochrome layer instead (docs/ux/visual-identity.md §7.1).
  */
-fun gawiLauncherBackground(): Color = GawiLightColors.primaryContainer
+fun gawiLauncherBackground(): Color = GawiLightColors.onPrimaryContainer
 
 /**
  * The far stop of the Today tank's water (docs/ux/momo.md §4).
