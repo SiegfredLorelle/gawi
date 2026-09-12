@@ -1201,6 +1201,13 @@ Every check below needs the reminder time moved to a couple of minutes ahead, in
 Settings. **Put it back to 21:00 afterwards**, for the reason §4's rollover check
 gives about itself: leaving it moved is how a later run passes vacuously.
 
+**The button checks each need a set number of habits outstanding**, so seed once
+rather than per box: create four habits and complete or un-complete them on
+Today until the count the box names is left. The count in the notification's
+body is what confirms you got it right before the buttons are worth reading —
+they are the same fact twice (docs/ux/reminder.md §4), so a body disagreeing
+with the buttons is itself the failure.
+
 **How to see whether anything was posted, and why it matters here.** Two of the
 checks below assert an *absence* — silent when everything is done, and one per
 day — so a command that cannot see a notification makes both pass without
@@ -1262,6 +1269,35 @@ posted" for every app on the device including the ones that certainly did post.
       the cutoff close. It must post **nothing**. A reminder at 00:30 saying *"5
       of 5 left today"* is the bug: it describes a brand-new day, and it would
       consume that day's one reminder so the real 21:00 one never comes.
+- [ ] **Three outstanding gets three buttons; four gets none.** With three left,
+      the notification carries a button per habit, labelled with the name alone.
+      Add a fourth and post again: the buttons go entirely and the tap opens
+      Today. Four is the case OQ-2 exists for, so check it deliberately — three
+      buttons chosen out of four looks like success from the outside.
+- [ ] **A tap writes, and moves the count with it.** Press one button. The habit
+      is ticked on Today, the body drops by one, and that button is gone while
+      the others remain. `adb shell cmd notification list | grep com.gawi.app`
+      shows **one** row, not two — the fixed id is what makes a re-post replace.
+- [ ] **A tap does not make a second sound.** The same press as above, with the
+      device unmuted and the shade closed. The first post of the evening sounds;
+      the re-post after a tap must not. This is the one a unit test cannot
+      reach, and the flag behind it is one a reader would set for every post.
+- [ ] **The last habit takes the notification away.** Press the remaining
+      buttons. When none is left the notification is gone rather than showing
+      *"0 of N left today"*.
+- [ ] **A tap the next morning writes to the night before.** Post a reminder,
+      then let the day cutoff pass without tapping — force-idle through
+      midnight, or move the cutoff close as the check above does. Tap a button
+      *after* the rollover. The completion must land on the day the notification
+      was posted for, which is now **yesterday** on habit detail. This is §4's
+      one correctness rule, and its failure is silent: the three-day retro
+      window accepts a write to today, so nothing refuses it.
+- [ ] **TalkBack speaks the verb, not just the name.** With TalkBack on, focus a
+      button. It must announce *"Complete Read"*, not *"Read"* — a notification
+      action has no content description, so the spoken form rides in the title
+      as a `TtsSpan` and only a real screen reader shows whether the platform
+      kept it. If it reads the bare name, the span is being stripped: drop to
+      the plain name and say so in docs/ux/reminder.md §4.
 
 ### Habit detail
 
