@@ -21,6 +21,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import com.gawi.core.domain.mascot.Mood
@@ -257,6 +258,17 @@ data class MomoFrame(
      * phase, and `(sparkle + 0.667) % 1` snaps twice a cycle.
      */
     val sparkleLag: Float,
+    /**
+     * Where thriving's first sparkle has drifted to, design px.
+     *
+     * An offset rather than a phase because the drift is an orbit and not a
+     * rise and fall, and computed here with the other periods rather than in
+     * the drawing — `sparkleStar`'s geometry is §6's milestone ring's too, and
+     * a drift built into the star would travel to a moment with its own motion.
+     */
+    val sparkleDrift: Offset,
+    /** The second sparkle, the same orbit at [sparkleLag]'s offset. */
+    val sparkleDriftLag: Offset,
     /** Worried's sweat bead, 0..1 through its fall; null when there is none. */
     val bead: Float?,
     /** Regenerating's halo and regrowing gill, 0..1 through their pulse. */
@@ -286,6 +298,8 @@ data class MomoFrame(
                 eyeOpen = m.blinkPeriod?.let { blink(seconds, it) } ?: 1f,
                 sparkle = wave(seconds, 2.1f),
                 sparkleLag = wave(seconds + 0.7f, 2.1f),
+                sparkleDrift = drift(seconds),
+                sparkleDriftLag = drift(seconds + 0.7f),
                 bead = if (fidget) (seconds / 2.6f) % 1f else null,
                 regrow = wave(seconds, 2.7f),
                 saturation = m.saturation,
@@ -327,6 +341,16 @@ data class MomoFrame(
         /** 0 at the start of a period, 1 halfway, 0 again at the end: `ease-in-out` there and back. */
         private fun wave(seconds: Float, period: Float): Float = 0.5f - 0.5f * cos(TAU * seconds / period)
 
+        /**
+         * A sparkle's place on its orbit: ±[SPARKLE_ORBIT] px over
+         * [SPARKLE_ORBIT_PERIOD] s, three times the 2.1 s pulse so the two
+         * cycles never beat against each other (docs/ux/momo.md §3).
+         */
+        private fun drift(seconds: Float): Offset {
+            val angle = TAU * seconds / SPARKLE_ORBIT_PERIOD
+            return Offset(SPARKLE_ORBIT * cos(angle), SPARKLE_ORBIT * sin(angle))
+        }
+
         /** The canvas's `steps(1,end)` blink: closed between 96% and 98% of the period. */
         private fun blink(seconds: Float, period: Float): Float {
             val phase = (seconds / period) % 1f
@@ -334,6 +358,9 @@ data class MomoFrame(
         }
 
         private const val TAU = (2 * PI).toFloat()
+
+        private const val SPARKLE_ORBIT = 5f
+        private const val SPARKLE_ORBIT_PERIOD = 6.3f
 
         // The CSS animation-delays, negative there so each gill starts part way
         // through its cycle; as an offset added to the clock they come out the

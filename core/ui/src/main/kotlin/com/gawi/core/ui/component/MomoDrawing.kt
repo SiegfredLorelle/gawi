@@ -187,8 +187,8 @@ private fun DrawScope.drawFace(mood: Mood, frame: MomoFrame, tint: (Color) -> Co
         }
     }
     if (mood == Mood.THRIVING) {
-        sparkle(Offset(46f, 47f), SparkleLarge, frame.sparkle, alpha)
-        sparkle(Offset(214f, 37.3f), SparkleSmall, frame.sparkleLag, alpha)
+        sparkle(Offset(46f, 47f), SparkleLarge, frame.sparkle, frame.sparkleDrift, alpha)
+        sparkle(Offset(214f, 37.3f), SparkleSmall, frame.sparkleLag, frame.sparkleDriftLag, alpha)
     }
     if (mood == Mood.WORRIED) frame.bead?.let { drawBead(it, alpha) }
 }
@@ -198,8 +198,11 @@ private inline fun DrawScope.eye(centre: Offset, open: Float, draw: DrawScope.()
     scale(1f, open, pivot = centre) { draw() }
 }
 
-private fun DrawScope.sparkle(centre: Offset, path: Path, phase: Float, alpha: Float) {
+private fun DrawScope.sparkle(centre: Offset, path: Path, phase: Float, drift: Offset, alpha: Float) {
     withTransform({
+        // The drift first, so the pulse still scales and turns about the star's
+        // own centre wherever the orbit has carried it.
+        translate(drift.x, drift.y)
         scale(0.72f + 0.40f * phase, pivot = centre)
         rotate(70f * phase, pivot = centre)
     }) {
