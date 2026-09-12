@@ -196,10 +196,13 @@ class ReminderNotifierTest {
      */
     @Test
     fun `a re-post is refused when notifications are off`() {
+        notifier.post(remind(2))
         shadowOf(context).denyPermissions(Manifest.permission.POST_NOTIFICATIONS)
 
         assertFalse(notifier.repost(remind(1)))
-        assertNull(posted())
+        // What is on screen, not merely that nothing new arrived: with nothing
+        // posted first, an empty shade would hold whether or not the guard ran.
+        assertEquals(2, posted()!!.actions.size)
     }
 
     @Test
