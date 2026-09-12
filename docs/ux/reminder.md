@@ -636,6 +636,18 @@ mutation-checked against the code before the fix.
   channel-set-to-None. Checking it needs the channel id, which belongs to `:app`,
   and coupling `:feature:settings` to it for one edge case was declined. The row
   would say the reminder will arrive, and it would not.
+- **Two taps in flight can leave the shade contradicting itself.** Each button
+  carries the outstanding list as it stood at post time, so tapping a second
+  before the first re-post lands makes both compute their remainder from the
+  same stale list, and the last `notify()` wins: a button can survive for a
+  habit just completed, and the body can over-count. Both *writes* land
+  correctly — it is a display defect, it self-heals on the next tap or the next
+  evening's post, and `FLAG_UPDATE_CURRENT` narrows the window because a re-post
+  rewrites the surviving buttons' extras. Serialising the receiver would **not**
+  close it, which is the trap: the second tap's intent was already filled in.
+  Closing it needs the notifier to remember what it last posted — process state
+  in a class that deliberately holds none, plus a second path for when the
+  process has died — so it is recorded rather than fixed.
 - **The wake can drift, and nothing measures how far.** Delivery is inside
   eligibility rather than delivery — architecture §7 calls it *deliberately
   inexact*, and there is no flex interval to quote because these are one-time
