@@ -41,20 +41,10 @@ object Streaks {
     fun dayStreak(completedDates: Set<LocalDate>, today: LocalDate): Int = dailySnapshot(completedDates, today).current
 
     /**
-     * Calendar weeks that met [Schedule.Weekly.timesPerWeek] distinct completed
-     * dates, counted up to the current week — **not necessarily consecutive**,
-     * since a missed week the run had a spare life for is forgiven rather than
-     * counted ([replay]). Dates after [today]
-     * are ignored — replay accepts future-dated completions (fast device
-     * clocks, imports) and they must not pre-fill a week. Weeks are keyed by
-     * their start date via [weekStart] arithmetic — never by week-of-year
-     * numbers, which misbucket the days around New Year.
-     *
-     * Takes the [Schedule.Weekly] rather than a bare count so the 1..7 bound
-     * that type enforces cannot be bypassed here. A raw target degrades
-     * silently instead of failing: 0 is indistinguishable from 1, because
-     * weeks with no completions are not keys in the grouping to begin with,
-     * and anything above 7 can never be met.
+     * The run ending at the current week, counted in weeks that met
+     * [Schedule.Weekly.timesPerWeek] — **not necessarily consecutive**, since a
+     * missed week the run had a spare life for is forgiven rather than counted
+     * ([replay]). Which weeks count at all is [hitWeeks]'.
      */
     fun weekStreak(completedDates: Set<LocalDate>, schedule: Schedule.Weekly, today: LocalDate, weekStart: DayOfWeek): Int =
         weeklySnapshot(completedDates, schedule, today, weekStart).current
@@ -69,8 +59,8 @@ object Streaks {
      * here. The tempting reading of "previous" is "the last non-zero value the
      * cached streak row ever held", which depends on when the app happened to
      * be opened: a user away for a week never observes the intermediate values,
-     * so a rebuild would disagree with the incremental path and architecture
-     * §4's incremental-≡-rebuild invariant would not hold. Replaying the run
+     * so a rebuild would disagree with the incremental path and
+     * architecture §4's incremental-≡-rebuild invariant would not hold. Replaying the run
      * forward from its first completion has no such history.
      *
      * [StreakSnapshot.brokenOn] also answers the mood spec's `recentlyBroken`
@@ -133,9 +123,18 @@ object Streaks {
      * The break only records a run that was live, so a long trailing gap
      * cannot re-date a break it did not cause. A later break does overwrite an
      * earlier one, which is right: the snapshot describes the most recent.
+     *
+     * **A dead run is walked over rather than through, and that bound is not an
+     * optimisation.** Stepping one unit at a time would make the cost the
+     * calendar span from the first completion, and nothing bounds that span: the
+     * retro window is a command rule that deliberately does not reach replay
+     * (architecture §4), and an imported log carries whatever `logical_date` it
+     * was written with. A single absurd date would otherwise be a hang on every
+     * projection write, on a log the user cannot open to repair.
      */
     private fun replay(hit: Set<LocalDate>, now: LocalDate, next: (LocalDate) -> LocalDate): StreakSnapshot {
-        var unit = hit.minOrNull() ?: return StreakSnapshot.NONE
+        val ordered = hit.sorted()
+        var unit = ordered.firstOrNull() ?: return StreakSnapshot.NONE
         var run = 0
         var spare = 0
         var clean = 0
@@ -175,7 +174,10 @@ object Streaks {
                     clean = 0
                 }
             }
-            unit = next(unit)
+
+            // Read after the `when`, so a completed unit has already set the
+            // run and only a dead one takes the jump.
+            unit = advance(ordered, unit, now, live = run > 0, next) ?: break
         }
 
         return when {
@@ -185,11 +187,50 @@ object Streaks {
     }
 
     /**
+     * The unit after [unit], or null when nothing left can change the answer.
+     *
+     * A live run is walked one unit at a time, because every unit in it counts
+     * — completed, or forgiven at the cost of a spare life. A dead one is
+     * jumped instead: [replay] writes `previous` and `brokenOn` only while a run
+     * is live, and a zero run carries a zero spare, so the empty calendar
+     * between a break and the next completion cannot change anything and must
+     * not be counted. That is the difference between a cost that follows the
+     * log and one that follows the calendar, which nothing bounds.
+     *
+     * A binary search rather than a scan, [ordered] being sorted: the jump
+     * happens once per break, and a scan would make the walk quadratic in a log
+     * that breaks often.
+     */
+    private fun advance(
+        ordered: List<LocalDate>,
+        unit: LocalDate,
+        now: LocalDate,
+        live: Boolean,
+        next: (LocalDate) -> LocalDate,
+    ): LocalDate? {
+        if (live) return next(unit)
+        val found = ordered.binarySearch(unit)
+        val after = if (found >= 0) found + 1 else -(found + 1)
+        return ordered.getOrNull(after)?.takeIf { !it.isAfter(now) }
+    }
+
+    /**
      * Week-start dates that met [Schedule.Weekly.timesPerWeek], up to [today].
      *
      * Internal rather than private because [BestRun] judges weeks by the same
      * rule, and "which weeks count" written twice is how the weekly best run on
      * Insights would come to disagree with the weekly streak on Today.
+     *
+     * Dates after [today] are ignored — replay accepts future-dated completions
+     * (fast device clocks, imports) and they must not pre-fill a week. Weeks are
+     * keyed by their start date via [weekStart] arithmetic — never by
+     * week-of-year numbers, which misbucket the days around New Year.
+     *
+     * Takes the [Schedule.Weekly] rather than a bare count so the 1..7 bound
+     * that type enforces cannot be bypassed here. A raw target degrades silently
+     * instead of failing: 0 is indistinguishable from 1, because weeks with no
+     * completions are not keys in the grouping to begin with, and anything above
+     * 7 can never be met.
      */
     internal fun hitWeeks(
         completedDates: Set<LocalDate>,
