@@ -4,16 +4,19 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -21,9 +24,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import com.gawi.core.data.settings.ThemeMode
@@ -102,6 +107,7 @@ private fun SettingsList(state: SettingsUiState.Settings, actions: SettingsActio
         modifier = modifier.verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(GawiSpacing.Gap),
     ) {
+        SectionHeader(stringResource(R.string.settings_your_day_header))
         SettingRow(
             label = stringResource(R.string.settings_day_cutoff_label),
             value = formatTime(state.dayCutoff, is24Hour),
@@ -119,6 +125,12 @@ private fun SettingsList(state: SettingsUiState.Settings, actions: SettingsActio
             value = formatTime(state.reminderTime, is24Hour),
             help = stringResource(R.string.settings_reminder_help),
             onClick = { openDialog = SettingsDialog.Reminder },
+        )
+        SwitchRow(
+            label = stringResource(R.string.settings_reminder_switch_label),
+            help = stringResource(R.string.settings_reminder_switch_help),
+            checked = state.reminderEnabled,
+            onCheckedChange = actions.onReminderEnabledChange,
         )
         if (!device.notificationsAllowed) ReminderBlocked(actions.onEnableNotifications)
         AppearanceSection(state.theme) { openDialog = SettingsDialog.Theme }
@@ -285,6 +297,45 @@ internal fun SettingRow(label: String, value: String?, help: String, activity: R
                 Modifier
             },
         )
+    }
+}
+
+/**
+ * A row whose value is its own control.
+ *
+ * **The only row here that is not pick-then-confirm** (docs/ux/settings.md §3),
+ * and it does not need to be: a switch has two positions, both legal, the
+ * gesture *is* the decision, and there is no dismissal to be ambiguous about.
+ * What it does need is to be reversible in one tap, which it is.
+ *
+ * No value line. [SettingRow]'s middle line means *this is what the setting is
+ * set to*, and here the switch says that — an "On" beside a control already
+ * showing on would be the row saying it twice (docs/ux/settings.md §2).
+ *
+ * The whole row toggles and carries the semantics, for [SettingRow]'s reason:
+ * one node with a switch role reads better than a label and a control that
+ * happen to sit together. The `Switch` is passed no callback so it adds no
+ * second node.
+ */
+@Composable
+private fun SwitchRow(label: String, help: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange)
+            .padding(horizontal = GawiSpacing.Row, vertical = GawiSpacing.Gap),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(GawiSpacing.Gap),
+    ) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(GawiSpacing.Line)) {
+            Text(text = label, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
+            Text(
+                text = help,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Switch(checked = checked, onCheckedChange = null)
     }
 }
 

@@ -58,7 +58,7 @@ class SettingsViewModelTest {
             )
 
             assertEquals(
-                SettingsUiState.Settings(LocalTime.of(3, 0), DayOfWeek.SUNDAY, LocalTime.of(22, 30), ThemeMode.SYSTEM, "1.2.3"),
+                SettingsUiState.Settings(LocalTime.of(3, 0), DayOfWeek.SUNDAY, LocalTime.of(22, 30), true, ThemeMode.SYSTEM, "1.2.3"),
                 awaitItem(),
             )
             cancelAndIgnoreRemainingEvents()

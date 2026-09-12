@@ -171,6 +171,36 @@ class ReminderCheckTest {
         assertEquals(remindOf(habit), check.evaluate())
     }
 
+    /**
+     * The switch (docs/ux/settings.md §1). Off means nothing is said, whatever
+     * is outstanding and whatever the clock says.
+     */
+    @Test
+    fun `nothing is said when the reminder is switched off`() = runTest {
+        val check = check(clock = evening(), settings = FakeSettingsSource(UserSettings(reminderEnabled = false)))
+        createHabit()
+
+        assertEquals(ReminderDecision.Silent, check.evaluate())
+    }
+
+    /**
+     * And being switched off does not use up the day's one reminder, for the
+     * reason every other silence here does not: the journal is stamped only
+     * when something is said, so turning it back on the same evening still
+     * reminds.
+     */
+    @Test
+    fun `a day spent switched off can still be reminded once it is on`() = runTest {
+        val settings = FakeSettingsSource(UserSettings(reminderEnabled = false))
+        val check = check(clock = evening(), settings = settings)
+        val habit = createHabit()
+        assertEquals(ReminderDecision.Silent, check.evaluate())
+
+        settings.update { it.copy(reminderEnabled = true) }
+
+        assertEquals(remindOf(habit), check.evaluate())
+    }
+
     /** PRD §6.1.5's *"silent when all done"*. */
     @Test
     fun `nothing is said when every habit is done`() = runTest {

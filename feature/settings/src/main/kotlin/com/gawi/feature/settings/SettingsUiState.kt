@@ -54,6 +54,11 @@ internal sealed interface SettingsUiState {
         val dayCutoff: LocalTime,
         val weekStart: DayOfWeek,
         val reminderTime: LocalTime,
+        /**
+         * Whether the notification is sent (docs/ux/settings.md §1). The time
+         * above is unaffected either way — it still drives the mascot.
+         */
+        val reminderEnabled: Boolean,
         val theme: ThemeMode,
         /**
          * The build's `versionName`, for the About section. Not a setting: it

@@ -7,6 +7,14 @@ naming:
   FunctionNaming:
     ignoreAnnotated: ["Composable"]
 
+complexity:
+  # A settings ViewModel is one handler per setting by construction, and the
+  # alternative — one onChange(field, value) — would hide which writes can
+  # refuse. Raised by one when the reminder switch arrived rather than merging
+  # two handlers that refuse differently.
+  TooManyFunctions:
+    thresholdInClasses: 12
+
 style:
   # Match ktlint's max_line_length in .editorconfig — one limit, two tools.
   MaxLineLength:

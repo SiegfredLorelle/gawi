@@ -357,6 +357,7 @@ class SettingsDataViewModelTest {
                     LocalTime.MIDNIGHT,
                     DayOfWeek.SUNDAY,
                     LocalTime.of(21, 0),
+                    true,
                     ThemeMode.SYSTEM,
                     "1.2.3",
                     exportRecency = ExportRecency.Never,

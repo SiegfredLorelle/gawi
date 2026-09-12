@@ -34,6 +34,13 @@ internal data class SettingsActions(
     val onWeekStartChange: (DayOfWeek) -> Unit,
     val onReminderTimeChange: (LocalTime) -> Unit,
     /**
+     * The one control here that is not pick-then-confirm (docs/ux/settings.md
+     * §3): a switch has two positions, both legal, and the gesture is the
+     * decision. There is no half-made state to hold and no dismissal to be
+     * ambiguous about.
+     */
+    val onReminderEnabledChange: (Boolean) -> Unit,
+    /**
      * The colour scheme to draw in, or to stop forcing.
      *
      * Unrefusable, like the week start and unlike the two times: every mode is

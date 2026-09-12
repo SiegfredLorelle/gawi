@@ -141,6 +141,17 @@ internal class SettingsViewModel @Inject constructor(
     }
 
     /**
+     * Whether the notification is sent at all.
+     *
+     * **Never a refusal**, unlike the two times: the collision they can create
+     * is between two *times*, and this changes neither. The stored time keeps
+     * its value and keeps driving the mascot (docs/ux/settings.md §1), so a
+     * switch cannot make a saved pair invalid and turning it back on cannot
+     * reveal one that was saved while it was off.
+     */
+    fun onReminderEnabledChange(enabled: Boolean) = write { it.copy(reminderEnabled = enabled) }
+
+    /**
      * The one write path, for every setting.
      *
      * A transform rather than a setter per field is the shape [SettingsSource]
