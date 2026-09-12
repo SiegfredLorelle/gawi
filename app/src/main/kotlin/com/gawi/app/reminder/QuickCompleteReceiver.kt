@@ -7,6 +7,7 @@ import android.util.Log
 import com.gawi.core.data.reminder.OutstandingHabit
 import com.gawi.core.data.reminder.ReminderDecision
 import com.gawi.core.data.repository.HabitRepository
+import com.gawi.core.domain.command.CommandResult
 import com.gawi.core.domain.model.HabitId
 import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.CoroutineScope
@@ -156,6 +157,15 @@ internal fun requestFrom(intent: Intent): QuickCompleteRequest? {
  * morning would need a second way to decide what is outstanding, beside
  * `Mascot.isOutstanding`, for a date nothing else asks about.
  *
+ * **A refused write leaves the shade exactly as it is**, and that is the one
+ * branch here that is not obvious. The carried date is days old once a
+ * notification has outlived a long enough gap, and architecture §5's three-day
+ * retroactive window is a *command* rule, so the domain refuses it. Dropping the
+ * button anyway would tell the user the habit was logged when nothing was
+ * written — the silent wrong answer this whole section exists to avoid. Leaving
+ * the notification alone says the truthful thing instead: the button is still
+ * there, and it still owes something.
+ *
  * A `HabitId` is constructed from the carried string, where the widget's tap
  * deliberately avoids doing so. It can afford to: it has a snapshot to match the
  * id against. This does not, the value came from this app's own `PendingIntent`,
@@ -168,7 +178,11 @@ internal suspend fun quickComplete(
     cancel: () -> Unit,
     request: QuickCompleteRequest,
 ) {
-    habits.addCompletion(HabitId(request.habitId), request.logicalDate)
+    val written = habits.addCompletion(HabitId(request.habitId), request.logicalDate)
+    if (written is CommandResult.Rejected) {
+        Log.w(TAG, "a quick-complete tap was refused: ${written.error}")
+        return
+    }
 
     val remaining = request.outstanding.filterNot { it.id.value == request.habitId }
     if (remaining.isEmpty()) {
