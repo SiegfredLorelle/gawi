@@ -62,6 +62,18 @@ class MomoRenderTest {
     }
 
     @Test
+    fun `content wears the open eye, and worried wears the same eye larger`() {
+        // momo.md §3: thriving keeps the arc, content and worried share a filled
+        // ellipse and only its size separates them. Counted rather than sampled,
+        // because what distinguishes the three is how much ink the eye covers.
+        val thriving = eyeInk(render(Mood.THRIVING))
+        val content = eyeInk(render(Mood.CONTENT))
+        val worried = eyeInk(render(Mood.WORRIED))
+        assertTrue("thriving's arc should cover less than content's filled eye: $thriving vs $content", thriving < content)
+        assertTrue("worried is the same eye, larger: $content vs $worried", content < worried)
+    }
+
+    @Test
     fun `the resting frame is deterministic`() {
         assertArrayEquals(render(Mood.CONTENT), render(Mood.CONTENT))
     }
@@ -165,6 +177,23 @@ class MomoRenderTest {
         val g = (argb shr 8) and 0xFF
         val b = argb and 0xFF
         return maxOf(r, g, b) - minOf(r, g, b)
+    }
+
+    /**
+     * Ink pixels across the band both eyes sit in. A band rather than one eye's
+     * box because each mood floats at its own offset, and ink is the only dark
+     * thing this high on the drawing — the gills and blush are pink and the
+     * mouth is lower.
+     */
+    private fun eyeInk(pixels: IntArray): Int {
+        var n = 0
+        for (y in 70 until 106) {
+            for (x in 80 until 180) {
+                val p = pixel(pixels, x, y)
+                if ((p ushr 24) > 0 && lightness(p) < 90f) n++
+            }
+        }
+        return n
     }
 
     private fun pinkIn(pixels: IntArray, left: Int, top: Int, right: Int, bottom: Int): Int {

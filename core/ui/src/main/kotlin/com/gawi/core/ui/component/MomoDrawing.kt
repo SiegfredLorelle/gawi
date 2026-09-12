@@ -145,9 +145,26 @@ private fun DrawScope.drawFace(mood: Mood, frame: MomoFrame, tint: (Color) -> Co
     val ink = tint(MomoPalette.Ink)
     val mouth = tint(MomoPalette.Mouth)
     when (mood) {
-        Mood.THRIVING, Mood.CONTENT -> {
+        // The arc is thriving's alone: a squint of delight, not the face content
+        // wears by default (docs/ux/momo.md §3).
+        Mood.THRIVING -> {
             eye(Offset(104f, 93f), frame.eyeOpen) { drawPath(HappyEyeLeft, ink, alpha, style = EyeStroke) }
             eye(Offset(156f, 93f), frame.eyeOpen) { drawPath(HappyEyeRight, ink, alpha, style = EyeStroke) }
+            drawPath(Smile, mouth, alpha)
+        }
+
+        // Content and worried are one eye at two sizes, and the mood carrying
+        // anxiety is the wider-eyed of the two. Nothing else separates them, so
+        // a change to one shape belongs in both.
+        Mood.CONTENT -> {
+            eye(Offset(104f, 96f), frame.eyeOpen) {
+                drawEllipse(Offset(104f, 96f), 8.5f, 10.5f, ink, alpha)
+                drawCircle(MomoPalette.Highlight, 3.0f, Offset(106.6f, 92.6f), alpha)
+            }
+            eye(Offset(156f, 96f), frame.eyeOpen) {
+                drawEllipse(Offset(156f, 96f), 8.5f, 10.5f, ink, alpha)
+                drawCircle(MomoPalette.Highlight, 3.0f, Offset(158.6f, 92.6f), alpha)
+            }
             drawPath(Smile, mouth, alpha)
         }
 
