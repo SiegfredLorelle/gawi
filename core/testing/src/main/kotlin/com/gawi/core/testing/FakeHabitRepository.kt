@@ -247,6 +247,10 @@ class FakeHabitRepository(
      * that a subject which writes and then reads back sees its own write, as it
      * would against the real repository. A fake whose write is invisible to its
      * own read cannot test a read-after-write at all.
+     *
+     * Only *accepted* commands move it. A rejection is a value here ([result]),
+     * not a throw, so an unguarded mutation would let a read report a write the
+     * command refused.
      */
     var completionsByHabit: Map<HabitId, Set<LocalDate>> = emptyMap()
 
@@ -298,6 +302,16 @@ class FakeHabitRepository(
     private fun failIfAsked() {
         commandFailure?.let { throw it }
     }
+
+    /**
+     * Whether the command about to return would be taken by the real repository.
+     *
+     * The attempt is recorded either way — [completions] exists to catch a write
+     * aimed at the wrong habit — but the state a read is served from only moves
+     * when the command is accepted. Otherwise [result] could reject a write that
+     * a ranged read then reported as having happened.
+     */
+    private fun accepted(): Boolean = result !is CommandResult.Rejected
 
     /** The id a create hands back, so a caller could navigate to it. */
     var mintedId: HabitId = habitId(MINTED_ID_TAIL)
@@ -360,7 +374,7 @@ class FakeHabitRepository(
         guard("addCompletion")
         failIfAsked()
         completions += Completion(habitId, logicalDate, note, undo = false)
-        completionsByHabit += habitId to (completionsByHabit[habitId].orEmpty() + logicalDate)
+        if (accepted()) completionsByHabit += habitId to (completionsByHabit[habitId].orEmpty() + logicalDate)
         return result
     }
 
@@ -368,7 +382,7 @@ class FakeHabitRepository(
         guard("undoCompletion")
         failIfAsked()
         completions += Completion(habitId, logicalDate, undo = true)
-        completionsByHabit += habitId to (completionsByHabit[habitId].orEmpty() - logicalDate)
+        if (accepted()) completionsByHabit += habitId to (completionsByHabit[habitId].orEmpty() - logicalDate)
         return result
     }
 
