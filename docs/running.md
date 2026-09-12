@@ -1304,6 +1304,15 @@ posted" for every app on the device including the ones that certainly did post.
       be moved, and raising the cutoff moves the logical day *backwards*, not
       forwards. It needs a `google_apis` AVD that allows root, or a phone
       carried past its own midnight.
+- [ ] **Two taps in quick succession settle on one answer.** With three buttons
+      up, press two of them back to back — `adb shell "input tap X1 Y1; input
+      tap X2 Y2"`, one invocation, no pause. Both habits are ticked in the app
+      and the shade shows **one** button with a matching count, never a button
+      for a habit just completed. Each button's intent was filled in when the
+      notification was posted, so the second one carries a list that predates
+      the first tap's write; the tap reading the day back is what settles it.
+      Passed on an emulator (API 37): *"3 of 5"* with three buttons became
+      *"1 of 5"* with one, and Today agreed.
 - [ ] **A refused write leaves the notification alone.** The other side of the
       carried date, and reachable in a minute: with a reminder posted, raise
       **Day starts at** past now, which moves the logical day back so the
