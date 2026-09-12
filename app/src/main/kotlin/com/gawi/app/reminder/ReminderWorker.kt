@@ -48,7 +48,7 @@ internal class ReminderWorker(context: Context, parameters: WorkerParameters) : 
 
     @Suppress("TooGenericExceptionCaught")
     override suspend fun doWork(): Result {
-        val entryPoint = EntryPointAccessors.fromApplication(applicationContext, WorkerEntryPoint::class.java)
+        val entryPoint = EntryPointAccessors.fromApplication(applicationContext, ReminderEntryPoint::class.java)
 
         try {
             when (val decision = entryPoint.reminderCheck().evaluate()) {

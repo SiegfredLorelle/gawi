@@ -4,7 +4,7 @@ import android.content.Context
 import android.os.Build
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.gawi.app.reminder.WorkerEntryPoint
+import com.gawi.app.reminder.ReminderEntryPoint
 import com.gawi.app.testsupport.WidgetHostBinding
 import com.gawi.core.data.repository.HabitRepository
 import com.gawi.core.domain.command.CommandResult
@@ -63,7 +63,7 @@ class StreakWidgetHostTest {
      * none.
      */
     private val habits: HabitRepository
-        get() = EntryPointAccessors.fromApplication(context, WorkerEntryPoint::class.java).habitRepository()
+        get() = EntryPointAccessors.fromApplication(context, ReminderEntryPoint::class.java).habitRepository()
 
     /**
      * Seed a habit **before** binding, so the widget's rows body is what renders.

@@ -13,4 +13,8 @@
     <!-- Deliberately the same phrasing as today_remaining, so the shade and the
          app agree about the count instead of describing it two ways. -->
     <string name="reminder_body" tools:ignore="PluralsCandidate">%1$d of %2$d left today</string>
+    <!-- Never drawn. A quick-complete button's visible label is the habit's name
+         alone; this is the text its TtsSpan speaks, so a screen reader says what
+         pressing it does rather than reading a name as an instruction. -->
+    <string name="reminder_action_complete">Complete %1$s</string>
 </resources>
