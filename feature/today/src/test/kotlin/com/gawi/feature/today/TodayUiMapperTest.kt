@@ -120,7 +120,7 @@ class TodayUiMapperTest {
         ).toUiState() as TodayUiState.Habits
 
         assertEquals(Mood.REGENERATING, state.mood)
-        assertEquals("walk", state.regeneratingHabit)
+        assertEquals("walk", state.subject?.name)
     }
 
     @Test
@@ -133,7 +133,7 @@ class TodayUiMapperTest {
         ).toUiState() as TodayUiState.Habits
 
         assertEquals(Mood.THRIVING, state.mood)
-        assertNull(state.regeneratingHabit)
+        assertNull(state.subject)
     }
 
     @Test
@@ -157,7 +157,7 @@ class TodayUiMapperTest {
         ).toUiState() as TodayUiState.Habits
 
         assertEquals(Mood.REGENERATING, state.mood)
-        assertNull(state.regeneratingHabit)
+        assertNull(state.subject)
     }
 
     @Test
@@ -180,7 +180,7 @@ class TodayUiMapperTest {
             ),
         ).toUiState() as TodayUiState.Habits
 
-        assertEquals("read", state.regeneratingHabit)
+        assertEquals("read", state.subject?.name)
     }
 
     @Test
@@ -194,6 +194,6 @@ class TodayUiMapperTest {
             ),
         ).toUiState() as TodayUiState.Habits
 
-        assertEquals("walk", state.regeneratingHabit)
+        assertEquals("walk", state.subject?.name)
     }
 }

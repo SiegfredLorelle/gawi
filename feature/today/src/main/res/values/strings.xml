@@ -46,6 +46,13 @@
     <string name="today_mood_worried">Momo is getting worried.</string>
     <string name="today_mood_regenerating">Momo is regrowing a gill. Pick the thread back up.</string>
     <string name="today_mood_regenerating_named">Momo is regrowing a gill. Pick %1$s back up.</string>
+    <string name="today_mood_worried_named">Momo is getting worried about %1$s.</string>
+    <!-- Spoken only: the gill count Momo draws, for the screen reader that cannot see it. -->
+    <string name="today_gills_none">No gills left.</string>
+    <plurals name="today_gills_left">
+        <item quantity="one">%1$d gill left.</item>
+        <item quantity="other">%1$d gills left.</item>
+    </plurals>
     <string name="today_mood_empty">Momo is waiting for a habit.</string>
     <!-- An x-of-y ratio rather than a count of a noun, so there is no singular
          form to write. All of this panel's copy is placeholder either way —

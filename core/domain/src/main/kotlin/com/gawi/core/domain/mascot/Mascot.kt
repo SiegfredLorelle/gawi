@@ -142,6 +142,34 @@ object Mascot {
         .map { it.id }
 
     /**
+     * The habit closest to losing a run it still has — momo.md §3's "the one
+     * about to break", and the habit Momo's gills follow when nothing is
+     * regenerating.
+     *
+     * Fewest spare lives among the habits still owed today. `minByOrNull`
+     * returns the first of equals, so habits level on spare keep the caller's
+     * own order — the same tie-break [recentlyBrokenHabits] settles on, for the
+     * same reason: which habit the panel names must not flicker.
+     *
+     * **A run that has already broken is not about to break.** A habit carrying
+     * a `brokenOn` reports zero spare until it is picked up again, so counting
+     * it here would pin the drawing to zero and name the same abandoned habit
+     * every evening for ever. Those belong to [recentlyBrokenHabits] while they
+     * are inside [REGENERATING_WINDOW_DAYS] and to nobody afterwards.
+     *
+     * **Zero spare from this function is not a break**, which is why the halo
+     * must stay keyed to the mood: a run too young to have banked its first
+     * gill also reports zero, and it is one miss from losing a real streak —
+     * worth worrying about rather than mourning.
+     */
+    fun weakestOutstandingHabit(inputs: MoodInputs): HabitId? = inputs.habits
+        .filterNot { it.archived }
+        .filter { it.streak.brokenOn == null }
+        .filter { isOutstanding(it, inputs.today, inputs.weekStart) }
+        .minByOrNull { it.streak.spare }
+        ?.id
+
+    /**
      * Whether [habit] is due today and not yet satisfied — today-view §4's `outstanding`.
      *
      * Nothing completed today is outstanding today, whatever its schedule. The

@@ -473,7 +473,11 @@ Small decisions that were easier to make once drawn:
   alternative that reached for more warmth ended up doing. The regenerating
   line is the model rather than the exception — it names the habit, offers the
   repair and blames nobody — and the other three are now held to it as
-  written.
+  written. **One line has been added since, and being held to that model is
+  what it is**: the worried line's named form, *"Momo is getting worried about
+  X."*, which the gills need so the count they carry has a habit attached
+  ([momo.md](momo.md) §3). It names and warns without counting, so the two-line
+  rule above is intact and the four originals are untouched.
 - **`regenerating` is visible**, with its own face and its own line
   ([momo.md](momo.md) §3), and the line names the habit. The unnamed line is
   kept for the state it belongs to. **A habit already ticked today is never

@@ -3,6 +3,7 @@ package com.gawi.feature.today
 import androidx.compose.ui.graphics.Color
 import com.gawi.core.domain.mascot.Mood
 import com.gawi.core.domain.model.HabitId
+import com.gawi.core.domain.streak.Streaks
 import com.gawi.core.ui.streak.StreakUi
 import java.time.LocalDate
 
@@ -45,21 +46,29 @@ internal sealed interface TodayUiState {
         val remaining: Int,
         /** The date a tap writes to: the one these rows were queried for. */
         val logicalDate: LocalDate,
-        /**
-         * The habit the regenerating line names, or null when there is no line
-         * to name one in.
-         *
-         * The name rather than the `HabitId` `Mascot.recentlyBrokenHabits`
-         * returns: resolving one to the other is a decision, and this file's
-         * contract is that the screen works nothing out for itself.
-         *
-         * **Null unless [mood] is `REGENERATING`.** `THRIVING` outranks it, so a
-         * finished day has a live break with nothing to say about it — and that
-         * is exactly the case a nullable field makes assertable.
-         */
-        val regeneratingHabit: String?,
+        /** The habit Momo is speaking about, or null when she has none to name. */
+        val subject: MascotSubject?,
     ) : TodayUiState
 }
+
+/**
+ * The habit Momo names and whose spare lives her right gills carry
+ * (docs/ux/momo.md §3).
+ *
+ * **One type rather than two fields, because it is one decision.** She only
+ * shows a count she can name, so a name without a count or a count without a
+ * name is a state the screen is not allowed to be in — and two nullable fields
+ * would let a mapper produce it.
+ *
+ * The name rather than the `HabitId` the `Mascot` selectors return: resolving
+ * one to the other is a decision, and `TodayUiMapper` is where this module's
+ * decisions are asserted without a device.
+ *
+ * **Null is reachable in every mood**, and is what draws her full: a finished
+ * day has nothing outstanding, and a regenerating one can fail to name a habit
+ * when the broken habit is already ticked (`Mascot.recentlyBrokenHabits`).
+ */
+internal data class MascotSubject(val name: String, val spare: Int)
 
 /**
  * What Momo's surfaces say about right now — the panel's copy, and the app-bar
@@ -77,9 +86,16 @@ internal data class MascotUi(
     /** Outstanding right now, by §4's rule — not simply "not ticked". */
     val remaining: Int,
     val total: Int,
-    /** [TodayUiState.Habits.regeneratingHabit]; always null when [total] is 0. */
-    val regeneratingHabit: String?,
-)
+    /** [TodayUiState.Habits.subject]; always null when [total] is 0. */
+    val subject: MascotSubject?,
+) {
+    /**
+     * The count her right gills carry: her subject's, or a full cluster when
+     * she has none to name (docs/ux/momo.md §3). Here rather than at the two
+     * call sites, so "drawn full" has one definition.
+     */
+    val spare: Int get() = subject?.spare ?: Streaks.MAX_SPARE
+}
 
 /**
  * One row. A model rather than eight parameters, so the row composable stays
@@ -114,4 +130,4 @@ internal data class WeekProgress(val done: Int, val target: Int)
  * chip in the app bar above it — and a count worked out twice is a count that
  * can disagree with itself mid-scroll.
  */
-internal fun TodayUiState.Habits.mascot(): MascotUi = MascotUi(mood, remaining, total = rows.size, regeneratingHabit = regeneratingHabit)
+internal fun TodayUiState.Habits.mascot(): MascotUi = MascotUi(mood, remaining, total = rows.size, subject = subject)

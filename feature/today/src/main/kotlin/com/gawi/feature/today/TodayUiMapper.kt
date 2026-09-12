@@ -40,35 +40,31 @@ internal fun TodaySnapshot.toUiState(): TodayUiState {
         mood = mood,
         remaining = live.count { Mascot.isOutstanding(it.toMoodState(), today, weekStart) },
         logicalDate = today,
-        regeneratingHabit = if (mood == Mood.REGENERATING) regeneratingHabitName(inputs, live) else null,
+        subject = subject(mood, inputs, live),
     )
 }
 
 /**
- * The name the regenerating line uses: the most recently broken habit's
- * (docs/ux/today-view.md §6), resolved here rather than in the composable
- * because which habit is a decision and this file is where decisions are
- * asserted without a device.
+ * The habit Momo names and carries the gills of (docs/ux/momo.md §3), or null
+ * when she has none and is drawn full.
  *
- * Gated on the mood by the caller, not here. `Mascot.recentlyBrokenHabits`
- * answers whether anything broke; whether that is worth saying is the
- * precedence table's answer, and it already gave it.
+ * **Two moods can name a habit and they name different ones.** Regenerating
+ * names the break that just happened; worried names the run closest to
+ * becoming the next one. Content and thriving name nobody — there is no risk
+ * to report, so the drawing reports none.
  *
- * **Null is reachable, and it is the whole reason the unnamed line still
- * exists.** `Mascot.mood` reads a broken streak as `REGENERATING` whether or not
- * the habit has been ticked today, but `Mascot.recentlyBrokenHabits` will not
- * name a habit already done — so a weekly habit ticked short of its target gives
- * a regenerating mood with nothing to name, and the panel falls back to
- * `today_mood_regenerating`.
- *
- * The other null path — an id naming no live row — stays unreachable, because
- * the rule drops archived habits with the same filter over the same list that
- * produced the rows. Returned rather than thrown either way: a lookup that
- * throws does it on a screen.
+ * The count comes from the habit that was named rather than from a second
+ * lookup, which is what makes [MascotSubject]'s invariant hold by construction.
  */
-private fun regeneratingHabitName(inputs: MoodInputs, live: List<TodayHabit>): String? {
-    val id = Mascot.recentlyBrokenHabits(inputs).firstOrNull() ?: return null
-    return live.firstOrNull { it.habit.id == id }?.habit?.name
+private fun subject(mood: Mood, inputs: MoodInputs, live: List<TodayHabit>): MascotSubject? {
+    val id = when (mood) {
+        Mood.REGENERATING -> Mascot.recentlyBrokenHabits(inputs).firstOrNull()
+        Mood.WORRIED -> Mascot.weakestOutstandingHabit(inputs)
+        Mood.CONTENT, Mood.THRIVING -> null
+    }
+    // A null id matches no row, which is the same answer as a row that has gone
+    // — and the archived filter above is what keeps the second unreachable.
+    return live.firstOrNull { it.habit.id == id }?.let { MascotSubject(it.habit.name, it.streak.spare) }
 }
 
 internal fun TodayHabit.toRowUi(): HabitRowUi = HabitRowUi(
