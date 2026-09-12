@@ -239,7 +239,15 @@ class FakeHabitRepository(
         }
     }
 
-    /** Completions across every habit, filtered to the window for the reason [completedDates] is. */
+    /**
+     * Completions across every habit, filtered to the window for the reason
+     * [completedDates] is.
+     *
+     * Seedable, and **kept in step by [addCompletion] and [undoCompletion]** so
+     * that a subject which writes and then reads back sees its own write, as it
+     * would against the real repository. A fake whose write is invisible to its
+     * own read cannot test a read-after-write at all.
+     */
     var completionsByHabit: Map<HabitId, Set<LocalDate>> = emptyMap()
 
     override fun observeCompletionDatesByHabit(from: LocalDate, to: LocalDate): Flow<Map<HabitId, Set<LocalDate>>> {
@@ -352,6 +360,7 @@ class FakeHabitRepository(
         guard("addCompletion")
         failIfAsked()
         completions += Completion(habitId, logicalDate, note, undo = false)
+        completionsByHabit += habitId to (completionsByHabit[habitId].orEmpty() + logicalDate)
         return result
     }
 
@@ -359,6 +368,7 @@ class FakeHabitRepository(
         guard("undoCompletion")
         failIfAsked()
         completions += Completion(habitId, logicalDate, undo = true)
+        completionsByHabit += habitId to (completionsByHabit[habitId].orEmpty() - logicalDate)
         return result
     }
 

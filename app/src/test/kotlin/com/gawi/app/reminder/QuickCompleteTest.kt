@@ -25,12 +25,15 @@ import java.time.LocalDate
  * **Every fake here forbids `observeToday`**, which is the strongest form the
  * carried-date rule can be stated in: a tap that resolved its own "today" would
  * have to read the repository to do it, and reading it fails the test rather
- * than producing a date that happens to match.
+ * than producing a date that happens to match. The read it *is* allowed —
+ * `observeCompletionDatesByHabit` — takes the date it is given and resolves
+ * none.
  */
 class QuickCompleteTest {
 
     private val read = OutstandingHabit(habitId(1), "read")
     private val swim = OutstandingHabit(habitId(2), "swim")
+    private val journal = OutstandingHabit(habitId(3), "journal")
 
     private var reposted: ReminderDecision.Remind? = null
     private var cancelled = false
@@ -85,6 +88,48 @@ class QuickCompleteTest {
 
         assertTrue(cancelled)
         assertNull(reposted)
+    }
+
+    /**
+     * The two-taps-in-flight case, and the reason ordering alone would not have
+     * fixed it: this button's list was filled in before the other tap wrote, so
+     * it still names a habit that is now done. The log is what settles it.
+     */
+    @Test
+    fun `a habit completed by someone else loses its button`() = runTest {
+        val habits = habits()
+        habits.completionsByHabit = mapOf(swim.id to setOf(FIXED_DATE))
+
+        tap(habits, read, listOf(read, swim, journal))
+
+        assertEquals(listOf(journal), reposted?.outstanding)
+    }
+
+    /** Every carried habit already done, so there is nothing left to say. */
+    @Test
+    fun `a day the log says is finished takes the notification down`() = runTest {
+        val habits = habits()
+        habits.completionsByHabit = mapOf(swim.id to setOf(FIXED_DATE))
+
+        tap(habits, read, listOf(read, swim))
+
+        assertTrue(cancelled)
+        assertNull(reposted)
+    }
+
+    /**
+     * The read asks about the day the button carried, not about today.
+     *
+     * The fixture date is deliberately not today's, so swapping the carried date
+     * for a resolved one reddens this rather than passing by coincidence.
+     */
+    @Test
+    fun `the log is asked about the carried date`() = runTest {
+        val habits = habits()
+
+        tap(habits, read, listOf(read, swim), logicalDate = FIXED_DATE.minusDays(1))
+
+        assertEquals(listOf(FIXED_DATE.minusDays(1)..FIXED_DATE.minusDays(1)), habits.ranges)
     }
 
     /**

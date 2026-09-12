@@ -78,6 +78,18 @@ class QuickCompleteRequestTest {
     }
 
     /**
+     * The tapped id is validated like the ones beside it.
+     *
+     * Unchecked, it reaches `HabitId`'s `init` as the first statement of
+     * `quickComplete` and throws there instead — inside a broadcast, and after
+     * this function has already promised a null.
+     */
+    @Test
+    fun `a malformed tapped id rejects the whole intent rather than throwing`() {
+        assertNull(requestFrom(intent(habit = "not-a-uuid")))
+    }
+
+    /**
      * A total below the habits carried would re-post *"1 of 0 left today"* — the
      * body and the buttons contradicting each other, which is the state the
      * re-post exists to prevent.
