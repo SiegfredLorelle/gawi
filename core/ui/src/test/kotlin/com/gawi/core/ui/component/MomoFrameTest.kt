@@ -76,6 +76,45 @@ class MomoFrameTest {
     }
 
     /**
+     * The sparkles drift as well as pulse: an orbit of ±5 px over 6.3 s, three
+     * times the pulse period so the two cycles never beat against each other
+     * (docs/ux/momo.md §3).
+     *
+     * The periods are asserted through the behaviour that makes the ratio worth
+     * having — the pair returns to where it started once per orbit and not
+     * once per pulse — rather than by reading the two constants back.
+     */
+    @Test
+    fun `the sparkles orbit three times slower than they pulse`() {
+        val start = MomoFrame.at(Mood.THRIVING, 0f)
+        val orbit = MomoFrame.at(Mood.THRIVING, 6.3f)
+        assertEquals(start.sparkleDrift.x, orbit.sparkleDrift.x, 1e-3f)
+        assertEquals(start.sparkleDrift.y, orbit.sparkleDrift.y, 1e-3f)
+
+        // A pulse later it is a third of the way round, which is what stops the
+        // two reading as one motion. A distance and not assertNotEquals: an
+        // orbit that had wrongly taken the pulse's own period would come back
+        // to within a rounding error of the start and satisfy that.
+        val pulse = MomoFrame.at(Mood.THRIVING, 2.1f)
+        val moved = kotlin.math.hypot(pulse.sparkleDrift.x - start.sparkleDrift.x, pulse.sparkleDrift.y - start.sparkleDrift.y)
+        assertTrue("a pulse in, the drift had moved $moved px", moved > 1f)
+
+        // Five px from the centre, wherever it is on the way round.
+        listOf(0f, 1.1f, 3.15f, 5.4f).forEach { t ->
+            val d = MomoFrame.at(Mood.THRIVING, t).sparkleDrift
+            assertEquals("radius at t=$t", 5f, kotlin.math.hypot(d.x, d.y), 1e-3f)
+        }
+    }
+
+    /** The second sparkle rides the same orbit, at the lag the pulse already uses. */
+    @Test
+    fun `the second sparkle drifts behind the first`() {
+        val frame = MomoFrame.at(Mood.THRIVING, 0f)
+        assertNotEquals(frame.sparkleDrift, frame.sparkleDriftLag)
+        assertEquals(frame.sparkleDriftLag, MomoFrame.at(Mood.THRIVING, 0.7f).sparkleDrift)
+    }
+
+    /**
      * A mood change is one animal: the body's fields run from one mood's frame
      * to the other's, meeting each end exactly, while the face is the
      * destination's from the start (docs/ux/momo.md §3).

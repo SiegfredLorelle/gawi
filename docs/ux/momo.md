@@ -124,11 +124,13 @@ fidelity page.
 **The sparkles pulse, and now they drift.** The pulse is the scale and rotation
 the canvas specified and the app has always drawn — 0.72 to 1.12 about each
 star's own centre, 70° with it, opacity 0.35 to 1, over 2.1 s, with the second
-star 0.7 s behind the first. The **orbit is new**: ±5 px over 6.3 s, three
+star 0.7 s behind the first. The **orbit was the addition**: ±5 px over 6.3 s, three
 times the pulse period so the two cycles never beat against each other. It
 belongs to the drawing of a sparkle rather than to `sparkleStar`, whose
 geometry §6's milestone ring also uses — a drift built into the star would
-travel to the ring, which is a different moment with its own motion. The
+travel to the ring, which is a different moment with its own motion. So the
+frame carries each sparkle's place on the orbit as an offset and the ring's
+star is untouched, which is the arrangement to keep. The
 fidelity page's board is the authoritative one; the four Momo motion boards
 that predate it still show the pulse alone.
 
