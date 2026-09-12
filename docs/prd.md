@@ -103,7 +103,7 @@ the app onto a phone.
 - **Notification quick-complete actions** (complete a habit directly from the reminder): MVP **stretch goal**, and **moved to Phase 1 on 2026-08-21**, which this bullet explicitly allowed. The reminder shipped as open-the-app only. The deciding reason was not complexity: §6.1's one-tap criterion was already met by the widget, so an action button is a second path to a solved problem, and it would carry OQ-2 — unanswered — along with it. Still committed. [docs/ux/reminder.md](ux/reminder.md) §4. **OQ-2 was answered on 2026-09-03 (§8) and the action is scheduled for 1.0.0 (§5, step 3).**
 
 **Motivation**
-- Daily habits: day-streak counter. Weekly habits: **week-streak** (consecutive weeks hitting n/n). (**Visible on both its surfaces as of 2026-08-21** — see §6.6.)
+- Daily habits: day-streak counter. Weekly habits: **week-streak** (weeks hitting n/n; not necessarily consecutive, since the bullet below spends a gill on a missed one). (**Visible on both its surfaces as of 2026-08-21** — see §6.6.)
 - Simple emotive indicator on Today view (happy/neutral/worried) as the mascot placeholder.
 - Missing a day/week resets the streak once the run has no spare life left to spend. Grace mechanics: **gills** (§8, OQ-3); the count is built, the drawing rides with §5's step 4.
 
@@ -407,7 +407,7 @@ privacy policy stop being polish and become requirements.
 
 - **Sync scope creep.** Mitigation: export/import at MVP; event-log model de-risks Phase 2 now.
 - **Building it but not using it.** **Unmitigated as of 2026-08-23.** The 30-day personal-use criterion was this risk's only mitigation and it was waived (§5), so the risk is now carried open rather than covered. Nothing in Phase 1 restores it — shipping more features is the opposite move — so the honest statement is that this risk is live and accepted. Written down because an unmitigated risk that still *lists* a mitigation is worse than one that admits it has none.
-- **Streak resets causing abandonment.** Mitigation: OQ-3's escape hatch — gills, whose count is built (§5, §8); a run now survives up to four missed days rather than one, though nothing draws the count until step 4, so a user cannot yet see what they have left. **Half of this mitigation is gone**: "observe own behavior in a trial" had no replacement and was not given one, so what remains is the escape hatch without the evidence that would have sized it.
+- **Streak resets causing abandonment.** Mitigation: OQ-3's escape hatch — gills, whose count is built (§5, §8); a run now survives three finished misses rather than none, though nothing draws the count until step 4, so a user cannot yet see what they have left. **Half of this mitigation is gone**: "observe own behavior in a trial" had no replacement and was not given one, so what remains is the escape hatch without the evidence that would have sized it.
 - **Mascot becomes an art project.** Mitigation: emotive indicator at MVP; static expressions before animation; Rive state machine keeps engineering simple.
 - **Notification quick-complete complexity.** Mitigation: explicitly allowed to slip to Phase 1; documented so it isn't lost.
 - **Emulator friction on Arch.** Mitigation: KVM setup notes above; physical device as primary target; macOS fallback.
