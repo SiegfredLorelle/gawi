@@ -57,11 +57,11 @@ class ReminderCheck @Inject internal constructor(
      * ([TodaySnapshot]). Reading the clock or the settings again here would be a
      * second, independently-resolved "today" that could disagree with the rows.
      *
-     * The count comes from [Mascot.isOutstanding] and is not recomputed. The
-     * daily case is obvious and the weekly one is not — a weekly habit is only
-     * outstanding once the week has too few days left to still finish it — and a
-     * notification that counted differently from the app-bar chip would be worse
-     * than one that did not exist.
+     * Which habits are outstanding comes from [Mascot.isOutstanding] and is not
+     * recomputed. The daily case is obvious and the weekly one is not — a weekly
+     * habit is only outstanding once the week has too few days left to still
+     * finish it — and a notification that counted differently from the app-bar
+     * chip would be worse than one that did not exist.
      *
      * Ordered so that **nothing is stamped unless something is said**:
      *
