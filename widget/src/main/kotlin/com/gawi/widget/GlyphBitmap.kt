@@ -13,15 +13,12 @@ import androidx.core.graphics.createBitmap
  * The completion mark beside a habit's name, rasterised as one white mask
  * (docs/ux/widget.md §8).
  *
- * **Why a drawn mark and not a `CheckBox`.** Glance's checkbox lands as a
- * control inside a wrapper `FrameLayout`, and the control is a second
- * accessibility stop of its own at 32dp — under the 48dp floor, and carrying no
- * words the row does not already say. Glance offers no way to take it out of the
- * tree or to grow it, so the exit is to stop emitting a control and draw the
- * state instead: one stop per row, the row's, and a decorative image inside it.
- * What that costs is the compound button's optimism — a `CheckBox` flips itself
- * on tap before the new `RemoteViews` arrives and an `Image` cannot, so the mark
- * turns over when the widget redraws rather than under the finger.
+ * **Why a drawn mark and not a `CheckBox`** is the row's question, and
+ * [TodayWidget]'s `HabitRows` answers it where an edit would undo it — that is
+ * where a control would come back. What belongs here is the **cost of the
+ * bitmap that answer buys**: a `CheckBox` flips itself on tap before the new
+ * `RemoteViews` arrives and an `Image` cannot, so the mark turns over when the
+ * widget redraws rather than under the finger.
  *
  * **Why a mask and not a VectorDrawable.** The same reason [BandBitmap] is one:
  * a white mask tinted by a `ColorProvider` keeps both schemes on the palette's

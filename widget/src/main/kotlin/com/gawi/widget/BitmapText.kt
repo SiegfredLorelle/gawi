@@ -47,7 +47,8 @@ import kotlin.math.ceil
  * change does not leave the whole widget stale together**. It was
  * measured on API 29 and 30 on 2026-08-28, the same to the decimal on each.
  * A resource-backed background is re-resolved by the host on its own while a
- * baked tint and checkbox glyph keep the last render's value, so a toggle
+ * baked tint keeps the last render's value — every string, the band's masks and
+ * the completion mark alike, which is one mechanism where it was two — so a toggle
  * leaves the widget illegible rather than stale until the next render repairs
  * it. Against that build on API 29, as WCAG ratios — the unit the tests use,
  * and the unit every figure here is in — the name falls to **1.31:1**

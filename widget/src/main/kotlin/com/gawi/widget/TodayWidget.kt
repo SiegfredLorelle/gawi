@@ -315,8 +315,10 @@ private fun HabitRows(rows: List<WidgetRow>) {
  *
  * Remembered against the two things that change the pixels, the state and the
  * density; the tint is the free half, the way [BandMask] and [OutfitText] treat
- * theirs. `null` only when there is no room at all, and then the slot stays
- * empty rather than the row losing its shape.
+ * theirs. The `null` a degenerate size would answer with is a total function's
+ * business rather than a state a row reaches — [GLYPH_SIZE] is a constant, so
+ * unlike [MomoBitmap], whose height comes from the host, this one is never
+ * asked for a size it cannot draw.
  */
 @Composable
 private fun CompletionGlyph(completed: Boolean) {
