@@ -344,12 +344,22 @@ were ticked against is gone; and the reminder's small icon has still not been
 seen drawn by the platform. Its geometry is the launcher's, rasterised and
 read at 24 dp, but a notification is where it has to hold.
 
-**Step 5 — verification, on the release build.** All of running.md §4's
-unticked boxes on the phone; the accessibility follow-ups the re-hearing
-recorded (an image glyph for the widget's 32 dp control, the Momo widget's
-clickable experiment, a spoken weekly ratio — the fourth, icon-picker labels,
-retired with the picker in step 4); the
-Accessibility Scanner sweep that document already calls pre-release.
+**Step 5a — the release build, and what an emulator can earn on it.** The three
+accessibility follow-ups the re-hearing recorded are built: an image glyph for
+the widget's 32 dp control, the Momo widget's clickable, and a spoken weekly
+ratio — the fourth, icon-picker labels, retired with the picker in step 4. Then
+`versionCode 3`, a signed and shrunk APK, and every running.md §4 box an AVD can
+honestly earn run against it. A tick there carries §4's emulator meaning and
+nothing more, and a box whose block names a phone as its target stays unticked
+and says so.
+
+**Step 5b — verification on the phone.** What 5a could not earn, on the same
+release APK: the widget and Momo-widget blocks on a real launcher, the
+accessibility block, the reminder, the launcher icon's three checks and the
+reminder's small icon that step 4 left owed, and the Accessibility Scanner
+sweep that document already calls pre-release. This is the step that closes
+1.0.0's definition above, which is unchanged: every device box ticked on the
+build that ships.
 
 **Step 6 — tag.** `v1.0.0`, a CHANGELOG entry, the APK and `mapping.txt` on the
 release; this document, the README and SECURITY.md stop saying pre-1.0.
