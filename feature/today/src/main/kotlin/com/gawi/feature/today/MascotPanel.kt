@@ -192,13 +192,15 @@ internal fun TodayChip(mascot: MascotUi, milestone: Milestone?, modifier: Modifi
     // read. chipMilestoneCopy says what the device found out about sharing one.
     val milestoneLabel = milestone?.let { pluralStringResource(chipMilestoneCopy(it), it.count, it.count) }
     val milestoneSpoken = milestone?.let { pluralStringResource(milestoneCopy(it), it.count, it.count) }
-    // The panel's own first line and its count, joined: the face has no
-    // description of its own and the label is cleared from the tree below, so
-    // this one string is the whole announcement. The milestone line takes the mood line's place
-    // here, not the count's — the drawn label gives up its count for the run
-    // because it has room for one string; the description has room for both and
-    // dropping the count from what is spoken is the very defect above.
-    val spoken = listOfNotNull(milestoneSpoken ?: moodLine(mascot), remainingLine(mascot)).joinToString(" ")
+    // The whole announcement, because the label is cleared from the tree below
+    // and the face carries no description of its own. The order is the tank's:
+    // the picture described, then the line that names the habit, then the count
+    // of the day (momo.md §3). The milestone line takes the mood line's place
+    // here, not either count's — the drawn label gives up its count for the run
+    // because it has room for one string; the description has room for all
+    // three, and dropping one from what is spoken is the very defect above.
+    val spoken = listOfNotNull(spokenGills(mascot.spare), milestoneSpoken ?: moodLine(mascot), remainingLine(mascot))
+        .joinToString(" ")
     Row(
         modifier = modifier
             // The tag first: it is semantics too, and clearAndSetSemantics wipes
