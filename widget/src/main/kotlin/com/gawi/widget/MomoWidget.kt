@@ -6,6 +6,7 @@ import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.glance.GlanceId
@@ -101,6 +102,9 @@ internal class MomoWidget : GlanceAppWidget() {
 internal fun MomoBody(content: WidgetContent) {
     val context = LocalContext.current
     val spoken = context.tileSentence(content)
+    // Asking the package manager is a binder call, so it is remembered rather
+    // than repeated every pass — the way the mark's bitmap and the ink are.
+    val openApp = remember(context) { openAppAction(context) }
     var modifier = GlanceModifier
         .fillMaxSize()
         .background(WidgetPalette.momoGround)
@@ -110,7 +114,7 @@ internal fun MomoBody(content: WidgetContent) {
     // not being a stop at all. The two go together — the click is what makes the
     // tile focusable, so it is also what would make a missing description heard.
     if (spoken != null) {
-        modifier = modifier.clickable(openAppAction(context)).semantics { contentDescription = spoken }
+        modifier = modifier.clickable(openApp).semantics { contentDescription = spoken }
     }
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
         val ink = rememberOutfitInk(
