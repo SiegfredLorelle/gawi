@@ -375,6 +375,21 @@ second copy anywhere by design. Two ways to destroy it, both easy:
   theoretical, one run wiped an emulator holding 345 events. Point `make itest` at
   a throwaway AVD, never at a device holding data you want. `ANDROID_SERIAL` is
   how you make sure.
+
+  **Turn the device's animations off first, or three of the eleven fail and look
+  like a regression.** `WriteJourneyTest`'s three cases start on Today, and
+  `Momo`'s KDoc says why: `rememberFrameClock` is a permanent awaiter on the
+  frame clock, so Compose is never idle while she is on screen and every
+  `waitForIdle` times out with `ComposeNotIdleException: possibly due to compose
+  being busy`. The message blames "infinite re-compositions in the tested code",
+  which is the wrong place to look. The suite does not set this itself and a
+  fresh AVD ships them on — reinstalling the app is enough to lose the setting:
+
+  ```bash
+  for k in window_animation_scale transition_animation_scale animator_duration_scale; do
+      adb shell settings put global $k 0
+  done
+  ```
 - **The debug keystore is per-machine** (`~/.android/debug.keystore`). PRD §7 names
   macOS as a fallback build environment, and a build from a second machine is
   signed with that machine's key — so it cannot install over the first one. The
