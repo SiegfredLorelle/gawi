@@ -1,6 +1,7 @@
 package com.gawi.widget
 
 import android.content.Context
+import android.content.Intent
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -11,8 +12,11 @@ import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.LocalContext
 import androidx.glance.LocalSize
+import androidx.glance.action.Action
+import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.SizeMode
+import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
 import androidx.glance.layout.Alignment
@@ -22,6 +26,8 @@ import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
+import androidx.glance.semantics.contentDescription
+import androidx.glance.semantics.semantics
 import com.gawi.core.domain.mascot.Mood
 
 /**
@@ -31,8 +37,10 @@ import com.gawi.core.domain.mascot.Mood
  * **Mood only, no rows, no number.** The canvas's argument for it: the tank as
  * a glanceable object answers "how am I doing" without a value that can rot, so
  * it is the cheapest of the four surfaces to keep honest. There is nothing here
- * to date and nothing to tap, so neither the streak widget's "as of" line nor
- * the Today widget's re-reading callback applies.
+ * to date, so neither the streak widget's "as of" line nor the Today widget's
+ * re-reading callback applies. The tile does take a tap, and it opens the app:
+ * see [MomoBody] for the reason, which is a reading one rather than a
+ * navigational one.
  *
  * **It reads what the Today widget reads.** [widgetContent] — the same flow,
  * the same three states, the same `Mascot.mood` over the same snapshot — and
@@ -69,13 +77,20 @@ internal class MomoWidget : GlanceAppWidget() {
  * The whole tree, off one [WidgetContent]. Separated from [MomoWidget] so a test
  * can compose it with a value rather than a repository, like `WidgetBody`.
  *
- * **One reading, and it is the face's.** The face carries the full mood sentence
- * (`widget_mood_*`, the Today panel's words); the one-word caption under it is
- * decorative, so TalkBack says "Momo is pottering about." once and never "Momo
- * is pottering about. pottering." With no habits the roles swap — the copy is
- * read and the face is decorative — which is the Today widget's rule for the
- * same state. Unavailable draws the failure copy and no face: nothing was read,
- * so there is no mood to guess.
+ * **One reading, and it is the tile's.** The root carries the sentence and
+ * everything inside it is decorative, so TalkBack says "Momo is pottering
+ * about." once and never "Momo is pottering about. pottering." With no habits
+ * the sentence is the no-habits copy, and Unavailable says the failure copy —
+ * nothing was read, so there is no mood to guess. Loading says nothing.
+ *
+ * **Why the root and not the face, and why the root is clickable.** A described
+ * view that nothing can focus is folded into its nearest *focusable* ancestor,
+ * and this body had none: the sentence sat on the face, the face was not a stop,
+ * and the launcher's own label for the frame won — the tile read as "Momo". A
+ * `clickable` root is focusable without an adapter, a service, or "in list" in
+ * every announcement, which is what the one-item `LazyColumn` would have cost
+ * (docs/ux/widget.md §7). The tap opens the app because a focusable tile that
+ * did nothing would be a worse lie than the silence it replaces.
  *
  * Every string is an [OutfitText] in [WidgetPalette.momoCaption], the one ink
  * measured against this ground; `MomoTextColourTest` holds it in both schemes.
@@ -84,11 +99,17 @@ internal class MomoWidget : GlanceAppWidget() {
  */
 @Composable
 internal fun MomoBody(content: WidgetContent) {
-    Box(
-        modifier = GlanceModifier.fillMaxSize().background(WidgetPalette.momoGround).padding(WIDGET_PADDING.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        val context = LocalContext.current
+    val context = LocalContext.current
+    val spoken = context.tileSentence(content)
+    var modifier = GlanceModifier
+        .fillMaxSize()
+        .background(WidgetPalette.momoGround)
+        .padding(WIDGET_PADDING.dp)
+        .clickable(openAppAction(context))
+    // Loading has nothing to say yet, and an empty description on a focusable
+    // tile is worse than none: it is a stop that announces a blank.
+    if (spoken != null) modifier = modifier.semantics { contentDescription = spoken }
+    Box(modifier = modifier, contentAlignment = Alignment.Center) {
         val ink = rememberOutfitInk(
             tint = WidgetPalette.momoCaption,
             textSizeSp = BitmapText.CAPTION_SIZE_SP,
@@ -97,38 +118,74 @@ internal fun MomoBody(content: WidgetContent) {
         when (content) {
             WidgetContent.Loading -> Unit
 
-            WidgetContent.Unavailable -> {
-                val copy = context.getString(R.string.widget_unavailable)
-                OutfitText(text = copy, maxWidth = contentWidth(), maxLines = MAX_COPY_LINES, ink = ink, contentDescription = copy)
-            }
+            WidgetContent.Unavailable ->
+                OutfitText(
+                    text = context.getString(R.string.widget_unavailable),
+                    maxWidth = contentWidth(),
+                    maxLines = MAX_COPY_LINES,
+                    ink = ink,
+                )
 
             is WidgetContent.Ready -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 val empty = content.state.rows.isEmpty()
                 val mood = content.state.mood
-                val sentence = context.getString(mood.description())
                 val word = context.getString(if (empty) R.string.widget_no_habits else mood.caption())
                 val lines = if (empty) EMPTY_COPY_LINES else 1
                 val face = momoFaceHeight(LocalSize.current, BitmapText.textScale(context, BitmapText.CAPTION_SIZE_SP), lines)
                 if (face != null) {
-                    MomoImage(mood, contentDescription = if (empty) null else sentence, heightDp = face)
+                    MomoImage(mood, contentDescription = null, heightDp = face)
                     Spacer(modifier = GlanceModifier.height(CAPTION_GAP.dp))
                 }
-                OutfitText(
-                    text = word,
-                    maxWidth = contentWidth(),
-                    maxLines = lines,
-                    ink = ink,
-                    contentDescription = if (empty) word else null,
-                )
+                OutfitText(text = word, maxWidth = contentWidth(), maxLines = lines, ink = ink)
             }
         }
     }
 }
 
 /**
+ * What the tile says, or `null` while there is nothing to say. The mood sentence
+ * is the Today panel's own words ([Mood.description]); with no habits it is the
+ * no-habits copy, because a mood computed over nothing would be a guess.
+ */
+private fun Context.tileSentence(content: WidgetContent): String? = when (content) {
+    WidgetContent.Loading -> null
+
+    WidgetContent.Unavailable -> getString(R.string.widget_unavailable)
+
+    is WidgetContent.Ready ->
+        if (content.state.rows.isEmpty()) {
+            getString(R.string.widget_no_habits)
+        } else {
+            getString(content.state.mood.description())
+        }
+}
+
+/**
+ * Opening the app from the tile.
+ *
+ * The launcher intent is asked of the package manager rather than named here:
+ * `:app` depends on `:widget`, not the reverse, so this module cannot see
+ * `MainActivity`. **The fallback is not defensive padding.** This module's own
+ * manifest declares three receivers and no activity, so under Robolectric the
+ * query resolves to nothing — without it a unit test would compose a tree the
+ * device never draws, and prove the wrong thing.
+ *
+ * No R8 keep rule is needed: `actionStartActivity` resolves to a `PendingIntent`
+ * at translation time in this process, with no lookup by name. The rule in
+ * `app/proguard-rules.pro` is for `ActionCallback`, which this is not.
+ */
+internal fun openAppAction(context: Context): Action {
+    val launch = context.packageManager.getLaunchIntentForPackage(context.packageName)
+        ?: Intent(Intent.ACTION_MAIN)
+            .addCategory(Intent.CATEGORY_LAUNCHER)
+            .setPackage(context.packageName)
+    return actionStartActivity(launch)
+}
+
+/**
  * The one word drawn under the face — the caption the design canvas chose over
  * the full sentence (which clips at 110dp) and over no caption (which leaves a
- * greyscale viewer no word). TalkBack does not read these: the face carries the
+ * greyscale viewer no word). TalkBack does not read these: the tile carries the
  * full [description] once, and the word is decorative.
  */
 @StringRes

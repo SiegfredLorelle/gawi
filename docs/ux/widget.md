@@ -434,7 +434,10 @@ Two by two, 110dp square, her ground the tank colour — `primaryContainer`, fla
 because a `RemoteViews` background is one colour and flat was decided anyway —
 and under the resting frame **one word**: *thriving*, *pottering*, *worried*,
 *regrowing*. Mood only: no rows, no number, so nothing here can rot and nothing
-here needs §6's "as of" line or §4's re-reading tap. The habitat's weeds and
+here needs §6's "as of" line or §4's re-reading tap. The tile does take a tap —
+it opens the app — but that is a *reading* fix and not a navigation feature; see
+the caption paragraph below for why a focusable root is what makes her sentence
+reachable at all. The habitat's weeds and
 bubbles stay Today's own (momo.md §4); the canvas did not draw them here and
 nothing about them crosses the widget edge.
 
@@ -445,12 +448,12 @@ on the second line at 94dp of usable width, and Momo has to shrink to 52dp to
 make the room; no caption leaves a greyscale viewer with only an expression to
 read. One word costs four new strings and a fifth mood vocabulary to keep in
 step with the sentences, and that was judged the cheaper cost. TalkBack does not
-read the word: the face carries the full sentence once, and the word is
+read the word: the tile carries the full sentence once, and the word is
 decorative — so the widget never says "Momo is pottering about. pottering." **On
-the Nothing launcher it says neither** (2026-09-02, docs/running.md §4): the
-widget is one stop, *"Momo"*, the launcher's label for the frame, and the next
-swipe leaves it. The face's description is there and unreachable, because the
-frame is described and nothing inside it is reached. What separates this body
+the Nothing launcher it said neither** (2026-09-02, docs/running.md §4): the
+widget was one stop, *"Momo"*, the launcher's label for the frame, and the next
+swipe left it. The face's description was there and unreachable, because the
+frame is described and nothing inside it was reached. What separates this body
 from the two that are reached is the container, not clickability: the Streaks
 rows carry no click action at all and are still stops of their own, the Today
 rows are stops too, and both live in a Glance `LazyColumn` that lands as a real
@@ -463,8 +466,14 @@ finding supplied the other: TalkBack folds a described unfocusable view into
 its nearest *focusable* ancestor, and a clickable `Column` is focusable with
 none of a list's machinery. "Not clickability" above was inferred from rows
 that are reached without a click, which shows a list suffices, not that a
-focusable view would fail. The clickable goes first on the phone, the list is
-the fallback; neither is made. With
+focusable view would fail. **The clickable is what is built.** The root `Box`
+takes `actionStartActivity` to the app and carries the sentence itself; the face
+and the word inside it are both decorative, so the tile is one stop with one
+reading. The tap opens the app because a focusable tile that did nothing would
+be a worse lie than the silence it replaces. The one-item `LazyColumn` stays the
+fallback if a phone shows the clickable is not enough, and its four counts
+against still stand. `MomoBodyTest` pins the one reading per state and the
+start-activity action; **the hearing is owed on a phone** (docs/running.md §4). With
 no habits the roles swap, the way the Today widget's do: the no-habits copy is
 drawn and read, and the face is decorative. A failed read draws the failure copy
 and no face, because nothing was read.

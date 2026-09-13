@@ -1075,22 +1075,23 @@ avdmanager create avd -n gawi-flip -d small_phone \
 
 then the three `hw.lcd.*` edits above in its `config.ini`.
 
-**Two experiments would settle the Momo body under TalkBack, the clickable
-first and the list as fallback.** A one-item `LazyColumn` was built and
-withdrawn on four counts. `MomoWidgetHostTest` waits for the mood sentence
-from a host view never attached to a window, and such a host never asks a
-collection's adapter for its items, so the instrumented test would time out
-with the whole body inside an item. On API 29–31 Glance serves a list through
-`RemoteViewsService`, so the face would arrive a beat after the ground where
-the `Column` paints in one pass — Today and Streaks keep their headers outside
-their lists for that reason and Momo would have had nothing outside. A
-`ListView` claims vertical drags that start on it, so a home-screen swipe over
-a static tile would go dead. And the folding rule the Today checkbox taught —
+**The clickable is what settles the Momo body; the one-item `LazyColumn` stays
+the fallback.** Its root takes `actionStartActivity` to the app and carries the
+mood sentence itself, because the folding rule the Today checkbox taught —
 TalkBack folds a described, unfocusable view into its nearest *focusable*
-ancestor — points at the cheaper experiment first: a clickable `Column`
-(`actionStartActivity` to the app) is focusable without an adapter, a service
-or "in list" in every announcement. The Streaks rows being reached *without* a
-click shows a list suffices, not that a focusable view would fail.
+ancestor — makes a focusable root the cheapest thing that can be reached: no
+adapter, no service, and no "in list" in every announcement. The Streaks rows
+being reached *without* a click shows a list suffices, not that a focusable view
+would fail. The list was built and withdrawn on four counts, every one of which
+still stands if a phone shows the clickable is not enough.
+`MomoWidgetHostTest` waits for the mood sentence from a host view never attached
+to a window, and such a host never asks a collection's adapter for its items, so
+the instrumented test would time out with the whole body inside an item. On
+API 29–31 Glance serves a list through `RemoteViewsService`, so the face would
+arrive a beat after the ground where the `Column` paints in one pass — Today and
+Streaks keep their headers outside their lists for that reason and Momo would
+have had nothing outside. A `ListView` claims vertical drags that start on it,
+so a home-screen swipe over a static tile would go dead.
 
 - [ ] **The Today widget grows a header at four by three.** Place *Today* and
       resize it to four cells wide and three tall: Momo on a teal pill at the
@@ -1183,20 +1184,18 @@ click shows a list suffices, not that a focusable view would fail.
       said the same three words. Deleting the fourteen events brought all
       fourteen habits back.
 - [ ] **TalkBack reads the sentence, not the word.** Focus the widget: *"Momo is
-      pottering about."* once, and never *"pottering"* as well. Fails on the
-      Nothing launcher, and not in the way the box feared: the widget is one
-      stop that says *"Momo"* — the launcher's own label for the frame — and the
-      next swipe leaves it for the neighbouring app icon. The sentence is never
-      spoken and neither is the word. The face `ImageView` carries the sentence
-      as its description, but the frame (`LauncherAppWidgetHostView`) has no
-      reachable child inside it, and a described container hides its unreachable
-      children. **What separates the bodies is the container, not
-      clickability**: the Streaks rows are stops of their own and carry no click
-      action at all, and both the Streaks and Today bodies are Glance
-      `LazyColumn`s that land as a real list in the `RemoteViews` tree, while
-      Momo's body is a plain `Box` and `Column`. Re-heard 2026-09-03, unchanged,
-      as expected — nothing in the body changed. The two experiments that would
-      settle it are the block's, above.
+      pottering about."* once, and never *"pottering"* as well. A tap on it
+      opens the app. It failed on the Nothing launcher for a reason the box had
+      not feared: the widget was one stop saying *"Momo"*, the launcher's own
+      label for the frame, because the face carried the sentence on a view
+      nothing could focus and a described container hides its unreachable
+      children. **A description is only read if something can focus the node
+      carrying it** — the half the Streaks rows could not show, since they are
+      reached without a click and so prove only that a list suffices. The body
+      is now a clickable root that describes itself, the cheaper of the two
+      experiments the block above names; the one-item `LazyColumn` stays the
+      fallback. Heard 2026-09-03 in its old shape, and owed again on a phone in
+      this one.
 - [x] **A write in the app moves all three widgets**, on the same commit. Seen
       2026-09-02, all three placed and dumped before and after each write:
       ticking one habit checked its box on the Today widget and moved its

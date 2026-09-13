@@ -1,8 +1,10 @@
 package com.gawi.widget
 
+import android.content.Intent
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.glance.appwidget.testing.unit.GlanceAppWidgetUnitTest
+import androidx.glance.appwidget.testing.unit.hasStartActivityClickAction
 import androidx.glance.appwidget.testing.unit.runGlanceAppWidgetUnitTest
 import androidx.glance.testing.unit.assertHasContentDescriptionEqualTo
 import com.gawi.core.domain.mascot.Mood
@@ -10,6 +12,7 @@ import com.gawi.core.domain.testing.habitId
 import com.gawi.core.testing.todayHabit
 import com.gawi.core.testing.todaySnapshot
 import com.gawi.widget.testsupport.anyText
+import com.gawi.widget.testsupport.describedNode
 import com.gawi.widget.testsupport.describedText
 import com.gawi.widget.testsupport.drawnOn
 import com.gawi.widget.testsupport.silentUntintedImage
@@ -43,14 +46,30 @@ class MomoBodyTest {
     private val oneOutstanding = WidgetContent.Ready(todaySnapshot(habits = listOf(todayHabit(id = habitId(1)))).toWidgetState())
 
     @Test
-    fun `a mood draws the face on her ground with one word, and the face is what is read`() = runGlanceAppWidgetUnitTest(RENDER_TIMEOUT) {
+    fun `a mood draws the face on her ground with one word, and the tile is what is read`() = runGlanceAppWidgetUnitTest(RENDER_TIMEOUT) {
         render(oneOutstanding)
 
         onAllNodes(drawnOn(WidgetPalette.momoGround)).assertCountEquals(1)
         onAllNodes(untintedImage()).assertCountEquals(1)
-        onNode(untintedImage()).assertHasContentDescriptionEqualTo(app.getString(R.string.widget_mood_content))
+        onAllNodes(silentUntintedImage()).assertCountEquals(1)
         onAllNodes(anyText()).assertCountEquals(1)
         onAllNodes(describedText()).assertCountEquals(0)
+        onAllNodes(describedNode()).assertCountEquals(1)
+        onNode(drawnOn(WidgetPalette.momoGround))
+            .assertHasContentDescriptionEqualTo(app.getString(R.string.widget_mood_content))
+    }
+
+    /**
+     * The tile is focusable, which is the whole reason its sentence is reachable
+     * at all, and a focusable tile that did nothing would be a lie — so the tap
+     * opens the app. Asserted as the behaviour a document names (docs/ux/widget.md
+     * §7) rather than by naming a component this module cannot see.
+     */
+    @Test
+    fun `the tile opens the app`() = runGlanceAppWidgetUnitTest(RENDER_TIMEOUT) {
+        render(oneOutstanding)
+
+        onNode(drawnOn(WidgetPalette.momoGround)).assert(hasStartActivityClickAction(launchIntent()))
     }
 
     /** With no habits the copy is read and the face is decorative — the Today widget's rule for the same state. */
@@ -61,7 +80,10 @@ class MomoBodyTest {
         onAllNodes(untintedImage()).assertCountEquals(1)
         onAllNodes(silentUntintedImage()).assertCountEquals(1)
         onAllNodes(anyText()).assertCountEquals(1)
-        onNode(describedText()).assertHasContentDescriptionEqualTo(app.getString(R.string.widget_no_habits))
+        onAllNodes(describedText()).assertCountEquals(0)
+        onAllNodes(describedNode()).assertCountEquals(1)
+        onNode(drawnOn(WidgetPalette.momoGround))
+            .assertHasContentDescriptionEqualTo(app.getString(R.string.widget_no_habits))
     }
 
     @Test
@@ -69,9 +91,12 @@ class MomoBodyTest {
         render(WidgetContent.Unavailable)
 
         onAllNodes(untintedImage()).assertCountEquals(0)
-        onNode(describedText()).assertHasContentDescriptionEqualTo(app.getString(R.string.widget_unavailable))
+        onAllNodes(describedNode()).assertCountEquals(1)
+        onNode(drawnOn(WidgetPalette.momoGround))
+            .assertHasContentDescriptionEqualTo(app.getString(R.string.widget_unavailable))
     }
 
+    /** Nothing has been read yet, so the tile is a stop that would announce a blank. It says nothing instead. */
     @Test
     fun `loading draws the ground and nothing on it`() = runGlanceAppWidgetUnitTest(RENDER_TIMEOUT) {
         render(WidgetContent.Loading)
@@ -79,6 +104,7 @@ class MomoBodyTest {
         onAllNodes(drawnOn(WidgetPalette.momoGround)).assertCountEquals(1)
         onAllNodes(untintedImage()).assertCountEquals(0)
         onAllNodes(anyText()).assertCountEquals(0)
+        onAllNodes(describedNode()).assertCountEquals(0)
     }
 
     /** Four moods, four words — a mapper that reused one would pass a weaker test. */
@@ -114,8 +140,18 @@ class MomoBodyTest {
         render(WidgetContent.Ready(todaySnapshot().toWidgetState()))
 
         onAllNodes(untintedImage()).assertCountEquals(0)
-        onNode(describedText()).assertHasContentDescriptionEqualTo(app.getString(R.string.widget_no_habits))
+        onNode(drawnOn(WidgetPalette.momoGround))
+            .assertHasContentDescriptionEqualTo(app.getString(R.string.widget_no_habits))
     }
+
+    /**
+     * What `openAppAction` falls back to here: this module's manifest declares
+     * three receivers and no activity, so the package manager resolves nothing
+     * under Robolectric and the fallback is what the tree actually carries.
+     */
+    private fun launchIntent() = Intent(Intent.ACTION_MAIN)
+        .addCategory(Intent.CATEGORY_LAUNCHER)
+        .setPackage(app.packageName)
 
     private fun GlanceAppWidgetUnitTest.render(content: WidgetContent) {
         setContext(app)

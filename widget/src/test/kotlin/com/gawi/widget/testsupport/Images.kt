@@ -28,6 +28,11 @@ fun silentUntintedImage() = GlanceNodeMatcher<MappedNode>("is an untinted image 
     (node.value.emittable as? EmittableImage)?.let { it.colorFilterParams == null && !it.isDescribed() } == true
 }
 
+/** Any node carrying a description, whatever it draws — the tile, the face or a string. */
+fun describedNode() = GlanceNodeMatcher<MappedNode>("carries a description") { node ->
+    node.value.emittable.isDescribed()
+}
+
 /** A tinted string carrying a description — the one that is read. */
 fun describedText() = GlanceNodeMatcher<MappedNode>("is a described text") { node ->
     node.value.emittable.let { it.tint() != null && it.isDescribed() }
