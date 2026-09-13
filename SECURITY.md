@@ -24,10 +24,12 @@ week rather than within hours.
 | `main` | Yes |
 | everything else | No |
 
-There is no installable release yet. The app is at `0.2.0` / `versionCode 2`,
-tagged `v0.2.0` — a tag without an artifact, which is why the table has no
-line for it: a tag marks a source state, not a supported build. Pre-1.0, and
-fixes land on `main` only.
+There is no installable release yet. `main` is at `1.0.0` / `versionCode 3`,
+and the last tag is `v0.2.0` — a tag without an artifact, which is why the
+table has no line for it: a tag marks a source state, not a supported build.
+The version is ahead of the tag because 1.0.0 is verified on the build that
+ships, so the number is set before the tag rather than with it. Pre-1.0 still,
+and fixes land on `main` only.
 
 ## What the threat model actually is
 
