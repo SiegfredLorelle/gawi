@@ -736,7 +736,7 @@ The template's Makefile contract maps to Gradle as:
 |---|---|
 | `make setup` | `./gradlew help` warm-up (wrapper fetches everything) + git hooks |
 | `make fmt` | Spotless (ktlint) apply |
-| `make lint` | `scripts/check-history.sh`, `scripts/check-citations.sh`, `scripts/check-tests.sh` and `scripts/check-docs.sh`, then Spotless check + detekt + Android Lint + `:app:assembleDebug` |
+| `make lint` | `scripts/check-history.sh`, `scripts/check-citations.sh`, `scripts/check-tests.sh`, `scripts/check-docs.sh` and `scripts/check-names.sh`, then Spotless check + detekt + Android Lint + `:app:assembleDebug` |
 | `make test` | `./gradlew test` (module-generic: JVM modules' `test` plus Android modules' unit tests; a new module can never be silently skipped) |
 | `make itest` | `./gradlew :app:connectedDebugAndroidTest` — needs a device; not called by CI (see below) |
 | `make run` | `./gradlew :app:installDebug` + `adb shell am start` (see below) |
@@ -797,10 +797,18 @@ Deviations and notes:
   the script caps a body at 26 prose lines and its dates at two, and it refuses
   `~~` outside an inline code span or a fenced block — a struck claim with its
   correction after it being history written in place, and the two code forms
-  being how a document names the marker it must not use. It runs last, being the only one that reads nothing but
+  being how a document names the marker it must not use. It reads nothing but
   documents — the citation check reads both since it took `docs/` on.
+  `scripts/check-names.sh` is the fifth and last, and holds the half of prd.md
+  §5's step-4 naming sweep detekt cannot: a file under any `src/main/res/`
+  whose basename is not lower_snake_case, and an `android:id` that is not
+  `@+id/lower_snake_case`. detekt reads Kotlin and never visits `res/`, where
+  an uppercase letter is a build error rather than untidiness. Both halves
+  report zero, which is the point of writing it once — it is the fence rather
+  than the clean-up, and the id half guards an empty set on purpose, this being
+  a Compose app whose only layouts are two widget previews.
 
-  All four refuse to pass on a scan that found nothing, by two nets: every
+  All five refuse to pass on a scan that found nothing, by two nets: every
   scan root has to still be a directory, which is what catches a renamed
   module, and the file count has to look like this repo, which catches a glob
   that stopped matching. The citation check carries **one floor per group** it
@@ -924,7 +932,7 @@ twenty-five files, which would be a sign the feature itself should split.
 | `build-logic/` | Convention plugins. Owns build configuration; module build files only apply `gawi.*` ids and declare dependencies — with one recorded exception: `:feature:settings` names `licenses/` as an assets source set in its own build file, because a convention plugin for one module's one directory would be the heavier way to say it (docs/ux/settings.md §9) |
 | `config/detekt/detekt.yml` | Overrides on top of detekt's bundled defaults |
 | `config/robolectric/robolectric.properties` | **The Robolectric SDK level, for every module.** Attached to each Android module's unit-test resources by `build-logic/src/main/kotlin/gawi/KotlinAndroid.kt` |
-| `scripts/` | Repo-local tooling. `check-history.sh`, `check-citations.sh`, `check-tests.sh` and `check-docs.sh` are checks and `make lint` runs them (§9); `convert-lucide.py` is a generator for :core:ui's icon drawables, run by hand and deliberately not wired into `make` — it needs the network and regenerates checked-in files, which is not what a lint target should do |
+| `scripts/` | Repo-local tooling. `check-history.sh`, `check-citations.sh`, `check-tests.sh`, `check-docs.sh` and `check-names.sh` are checks and `make lint` runs them (§9); `convert-lucide.py` is a generator for :core:ui's icon drawables, run by hand and deliberately not wired into `make` — it needs the network and regenerates checked-in files, which is not what a lint target should do |
 | `docs/` | `prd.md` what and why, this file how, `running.md` on a device, `ux/` per-screen decisions, `stacks/kotlin-android.md` the template wiring |
 | `licenses/` | Third-party licence texts for bundled assets. Outside `res/`, which takes font files and XML families only — and a resource filename cannot carry uppercase letters, so `OFL.txt` there is a build error rather than good citizenship. `:feature:settings` declares this directory as an assets source set, so the APK carries each file under its own name and the Licences screen reads it from there (docs/ux/settings.md §9) |
 

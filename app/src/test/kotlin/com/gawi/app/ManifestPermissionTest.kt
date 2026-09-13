@@ -163,7 +163,7 @@ class ManifestPermissionTest {
      * the argument is the `tools:node="remove"` line plus the three that stay.
      */
     @Test
-    fun `WorkManager is on the classpath, because Glance requires it`() {
+    fun `the classpath has WorkManager, because Glance requires it`() {
         val present = runCatching { Class.forName("androidx.work.CoroutineWorker") }.isSuccess
 
         assertTrue("Glance's SessionWorker extends CoroutineWorker; excluding androidx.work crashes at runtime", present)
