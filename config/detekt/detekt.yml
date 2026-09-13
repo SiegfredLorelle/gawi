@@ -28,12 +28,12 @@ naming:
     # expectation; the sentence form allows anything but a backtick.
     functionPattern: '[a-z][A-Za-z0-9_]*|`[a-z][^`]*`'
 
-  # Free: no findings today, so purely a guard against the next one.
+  # Free: both can report and neither does today, so purely a guard against the
+  # next one. The longest name in the repo is 37 characters against a ceiling of
+  # 64, and every lambda parameter already matches the shipped pattern.
   LambdaParameterNaming:
     active: true
   VariableMaxLength:
-    active: true
-  VariableMinLength:
     active: true
 
   FunctionMinLength:
@@ -44,7 +44,16 @@ naming:
     # frameAt. Two still catches a single letter, which nothing here wants.
     minimumFunctionNameLength: 2
 
-  # Three left off, each for its own reason rather than as a batch.
+  # Four left off, each for its own reason rather than as a batch.
+  VariableMinLength:
+    # detekt ships this at a minimum of one, which no name can violate, so
+    # inheriting the default would be a rule that can never report — the same
+    # thing rejected two entries below, arrived at from the other side. Two is
+    # the only threshold that would bite and it reds 61 names, most of them the
+    # parametric locals the drawing and animation code is written in: `t` for a
+    # tween, `x`, `y` and `r` for a bead. Those are the clearest names available
+    # for what they hold, which is the argument this rule exists to refuse.
+    active: false
   FunctionMaxLength:
     # Ships with no excludes at all, so it would hit test sources however
     # FunctionNaming is configured: 1,046 of the backtick names run past 30

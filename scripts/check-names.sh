@@ -89,12 +89,12 @@ while IFS= read -r hit; do
     file=${hit%%:*}
     rest=${hit#*:}
     line=${rest%%:*}
-    value=$(printf '%s' "$rest" | sed -E 's/^[0-9]+://; s/.*android:id="([^"]*)".*/\1/')
+    value=$(printf '%s' "$rest" | sed -E 's/^[0-9]+://; s/.*android:id=.([^"'"'"']*).*/\1/')
     if ! printf '%s' "$value" | grep -qE '^@\+?id/[a-z][a-z0-9_]*$'; then
         echo "check-names: $file:$line: android:id \"$value\" is not @+id/lower_snake_case"
         failures=$((failures + 1))
     fi
-done < <(grep -rnoE 'android:id="[^"]*"' --include='*.xml' app core feature widget 2>/dev/null | grep -v '/build/' || true)
+done < <(grep -rnoE 'android:id="[^"]*"|android:id='"'"'[^'"'"']*'"'"'' --include='*.xml' app core feature widget 2>/dev/null | grep -v '/build/' || true)
 
 if [ "$failures" -gt 0 ]; then
     echo "check-names: $failures resource name(s) a build or a review would trip over" >&2
