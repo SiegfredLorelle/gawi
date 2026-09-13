@@ -29,9 +29,9 @@ data class WriteStamp(val occurredAt: Instant, val eventId: EventId) : Comparabl
 data class HabitMetadata(val name: String, val icon: String, val color: String, val schedule: Schedule, val tag: String?) {
     companion object {
         /**
-         * What a create writes, and the only reason these two literals still
-         * exist. They are the first entries of the palette this replaced, kept
-         * so that what a new habit puts in the log does not move.
+         * What a create writes. The values are arbitrary and the literals are
+         * not: the log already carries them, so changing either would move what
+         * a new habit records for a field nothing reads.
          */
         const val DEFAULT_ICON = "📖"
         const val DEFAULT_COLOR = "#F22935"

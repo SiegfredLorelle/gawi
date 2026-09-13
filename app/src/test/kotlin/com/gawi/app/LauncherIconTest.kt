@@ -66,9 +66,9 @@ class LauncherIconTest {
     }
 
     /**
-     * The XML copy and the Kotlin value are the same colour. Which role that is
-     * moved when the face went (§7.1) and could move again; that they agree
-     * cannot, because an adaptive icon is XML and cannot read Kotlin.
+     * The XML copy and the Kotlin value are the same colour. Which role the
+     * ground names is free to change (§7.1); that the two agree is not, because
+     * an adaptive icon is XML and cannot read Kotlin.
      */
     @Test
     fun `the icon's ground is the scheme's, not a third value`() {
@@ -111,8 +111,8 @@ class LauncherIconTest {
     /**
      * The mark has no face, and nothing about it is drawn with a line
      * (docs/ux/visual-identity.md §7.1). It is three frond dots and one paler
-     * body circle: every path is a fill, and the stroked mouth that used to be
-     * here went with the face rather than being restyled.
+     * body circle, every one of them a fill. A stroke here would be a mouth
+     * restyled rather than a mouth removed.
      */
     @Test
     fun `the mark is filled shapes, with nothing stroked`() {
@@ -125,8 +125,8 @@ class LauncherIconTest {
      * because a drawable cannot read Kotlin. Compared as ints, not hex strings
      * — a string comparison is not a colour comparison.
      *
-     * **Two, not four.** `Ink` and `Mouth` were the face's, and listing them
-     * here would let the face back in one path at a time.
+     * **Two, not four.** `Ink` and `Mouth` are the face's colours, and listing
+     * them here would let the face back in one path at a time.
      */
     @Test
     fun `the mark is drawn in Momo's own colours`() {
@@ -143,13 +143,12 @@ class LauncherIconTest {
     }
 
     /**
-     * The mark reads on its ground, which is a claim this file did not use to
-     * make.
+     * The mark reads on its ground.
      *
-     * With a face, contrast was not the claim: momo.md §2 says an illustration
-     * carries its silhouette with the ink of the eyes and the deeper coral of
-     * the gills. Take the face away and the cluster has neither, so the ground
-     * inverted and the ratio became the reason it works
+     * Contrast is the whole of it here, because a faceless cluster has nothing
+     * else: momo.md §2 gives an illustration its silhouette through the ink of
+     * the eyes and the deeper coral of the gills, and this mark carries
+     * neither. So the ground is inverted and the ratio is the reason it works
      * (docs/ux/visual-identity.md §7.1). A non-text graphic takes 3:1.
      */
     @Test
@@ -167,12 +166,12 @@ class LauncherIconTest {
     }
 
     /**
-     * The reminder cuts nothing out any more.
+     * The reminder cuts nothing out.
      *
-     * `evenOdd` was there to hold two eyes open through one colour on an
-     * alpha-only icon. There is no face to hold open (docs/ux/reminder.md §4),
-     * and leaving the attribute on a cluster whose circles overlap would punch
-     * holes where the lobes cross.
+     * `evenOdd` holds a shape open through one colour on an alpha-only icon,
+     * which a face needs and a gill cluster does not (docs/ux/reminder.md §4).
+     * On a cluster whose circles overlap the attribute would punch holes where
+     * the lobes cross.
      */
     @Test
     fun `the reminder cuts nothing out of itself`() {
