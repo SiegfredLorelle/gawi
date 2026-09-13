@@ -23,13 +23,14 @@ import org.robolectric.RuntimeEnvironment
  * widget draws. This one measures the palette the widget draws *from*,
  * independent of any tree — so a colour is covered here even in a state no
  * render test composes, and the polarity check below has nothing to do with
- * drawing at all. The checkbox glyphs are covered only here: Glance exposes a
- * `CheckBoxColors`' providers through an `internal` accessor, so what the tree
- * drew them with is not readable without reflection, and the device box in
- * docs/running.md §4 is what confirms the drawn glyph.
+ * drawing at all. The completion mark's two colours are held to the floor here
+ * and matched to the rows that carry them in `WidgetRowTest` — readable there
+ * because the mark is a tinted `Image`, where a `CheckBox` exposed its colours
+ * only through an `internal` accessor; the device box in docs/running.md §4 is
+ * what confirms the drawn mark.
  *
  * Grown with the streak widget on 2026-08-29: `caption`, `streakWeeks` and the
- * two names that share a role with the checkbox glyphs. `streakWeeks` matters
+ * two names that share a role with the mark's two colours. `streakWeeks` matters
  * most — `tertiary` is the one role no surface in this module drew before, so
  * nothing had ever measured it against the widget's own ground.
  *

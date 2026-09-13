@@ -34,9 +34,9 @@ import com.gawi.core.ui.theme.gawiRole
  *  - A background from a *resource* provider becomes
  *    `setViewBackgroundColorResource`, which the **host** resolves in its own
  *    theme — so it follows a night-mode toggle on its own, immediately.
- *  - An image tint has no resource path below API 31 at all, and the checkbox
- *    glyph below 31 goes through `getColor(context)` the same way, so both are
- *    resolved in *our* process at translation and keep the last render's value.
+ *  - An image tint has no resource path below API 31 at all, so every tinted
+ *    bitmap — a rasterised string, a band mask, the completion mark — is
+ *    resolved in *our* process at translation and keeps the last render's value.
  *
  * One side following the host while the other two stay put is near-zero contrast
  * rather than a stale widget ([BitmapText] has the numbers). A day/night
@@ -65,10 +65,10 @@ internal object WidgetPalette {
     /** Every string the widget draws, as the tint on a bitmap. */
     val onSurface = provider(GawiRole.OnSurface)
 
-    /** A completed habit's checkbox glyph. */
+    /** A completed habit's mark. */
     val glyphChecked = provider(GawiRole.Primary)
 
-    /** An outstanding habit's checkbox glyph — semantic, per docs/ux/visual-identity.md §4.1. */
+    /** An outstanding habit's mark — semantic, per docs/ux/visual-identity.md §4.1. */
     val glyphUnchecked = provider(GawiRole.Outline)
 
     /** A secondary line: the streak widget's "as of" date, and its "was 12". */

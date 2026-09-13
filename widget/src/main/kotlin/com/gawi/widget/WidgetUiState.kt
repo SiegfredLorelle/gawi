@@ -83,7 +83,7 @@ internal sealed interface WidgetBodyContent {
      * line and the woven day band, above the same rows. The mood is not
      * nullable here — this body exists to draw it — and the band is the rows'
      * own `completed` flags, one segment each, so it can never disagree with
-     * the checkboxes beneath it.
+     * the marks beneath it.
      */
     data class Large(val rows: List<WidgetRow>, override val mood: Mood) : WidgetBodyContent
 
@@ -109,7 +109,7 @@ internal sealed interface WidgetBodyContent {
  * **Momo appears only when the host gave the widget room**: [size] is what
  * `SizeMode.Exact` reports, and a height under [MOMO_MIN_HEIGHT] keeps the
  * minimal one-cell widget docs/ux/widget.md §2 settled — a name and a
- * checkbox, nothing else. It is a rule about *room*, not about cells or
+ * mark, nothing else. It is a rule about *room*, not about cells or
  * orientation: a two-cell widget that clears 170dp in portrait and not in
  * landscape shows the face in one and not the other, because `Exact`
  * composes once per size the host reports. Accepted — the rows keep their

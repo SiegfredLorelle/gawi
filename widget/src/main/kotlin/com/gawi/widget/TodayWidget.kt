@@ -19,8 +19,6 @@ import androidx.glance.LocalContext
 import androidx.glance.LocalSize
 import androidx.glance.action.actionParametersOf
 import androidx.glance.action.clickable
-import androidx.glance.appwidget.CheckBox
-import androidx.glance.appwidget.CheckboxDefaults
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.action.actionRunCallback
@@ -122,11 +120,10 @@ internal fun repositoryFrom(context: Context): HabitRepository =
  * the glyph included.
  *
  * **There is no `GlanceTheme { }` here.** Nothing under it would read
- * `GlanceTheme.colors` once all three colours come from [WidgetPalette] — the
- * `CheckboxDefaults.colors(checked, unchecked)` overload does not consult the
- * theme, only the no-argument one does — so it would be a wrapper that did
- * nothing except suggest the widget still draws on Glance's default theme,
- * which is the one thing this arrangement is about not doing.
+ * `GlanceTheme.colors` once every colour comes from [WidgetPalette] — the mark
+ * is a tinted bitmap and consults no theme at all — so it would be a wrapper
+ * that did nothing except suggest the widget still draws on Glance's default
+ * theme, which is the one thing this arrangement is about not doing.
  */
 @Composable
 internal fun WidgetBody(content: WidgetContent) {
@@ -171,7 +168,7 @@ internal fun WidgetBody(content: WidgetContent) {
  * **The band is the rows' own flags, in the rows' own order.** One segment per
  * habit, `bandWoven` when today's cell is ticked and `bandOutstanding` when it is
  * not; nothing is counted, sorted or capped, so the band cannot say something
- * the checkboxes do not. Two tinted masks rather than one `Box` per habit —
+ * the rows' own marks do not. Two tinted masks rather than one `Box` per habit —
  * [BandBitmap] has why: Glance caps a container at ten children, and a box per
  * habit truncated the band at six.
  *
@@ -268,38 +265,26 @@ private fun BandMask(mask: Bitmap, tint: ColorProvider, width: Dp) {
 }
 
 /**
- * One row per habit: the glyph, then the name, as one 48dp clickable `Row` that
- * carries the spoken line — *"Read, done"* — with the toggle on the row and on
- * the glyph.
+ * One row per habit: the mark, then the name, as one 48dp clickable `Row` that
+ * carries the spoken line — *"Read, done"* — and is the row's only stop.
  *
- * The `CheckBox` carries no text of its own — the name is the [OutfitText]
- * beside it. The action stays on the checkbox as well as the row, and that is
- * not redundancy: on API 31+ a `CompoundButton` toggles *visually* on a tap with
- * or without an action behind it, so a glyph without its own callback would flip
- * on screen and write nothing.
- *
- * **The name and the state are the Row's description, and here is why they
- * cannot be the checkbox's.** Glance's `glance_check_box.xml` is a
- * `FrameLayout` around the real `CheckBox`; `applyModifiers` describes the
- * wrapper while the toggle goes to the control inside, and TalkBack folds a
- * described non-focusable wrapper into the nearest focusable ancestor, which is
- * this row. A name put on the `CheckBox` as its `contentDescription` therefore
- * survives on a view nothing stops at, and never reaches the glyph. So the row
- * says name and state itself (`widget_today_row_description`, the streak
- * widget's pattern, read on a Nothing A059 with TalkBack 17 as *"Water, 7
- * days"*), and the box keeps the bare name so a host that does attach it to the
- * control gets *"Read, checked"* rather than an unlabelled box — bare, not name
- * and state, or that host would say the state twice. The glyph's own stop says
- * only its state: Glance has no way to take a `CheckBox` out of the
- * accessibility tree, and an empty description would be an empty string on the
- * wrapper. Two stops per row, the first of them complete. docs/running.md §4
- * has the measurement, and [ROW_HEIGHT] the other half of what the Scanner
- * found.
+ * **One stop, because the mark is drawn rather than controlled.** A Glance
+ * `CheckBox` lands as a control inside a wrapper `FrameLayout`: `applyModifiers`
+ * describes the wrapper while the toggle goes to the control, TalkBack folds a
+ * described non-focusable wrapper into its nearest focusable ancestor, and the
+ * control is left as a second stop of its own at 32dp — under the floor, and
+ * saying only a state the row already says. Nothing in Glance takes it out of
+ * the tree or grows it, so [GlyphBitmap] draws the state and no control is
+ * emitted. The row says name and state itself
+ * (`widget_today_row_description`, the streak widget's pattern, read on a
+ * Nothing A059 with TalkBack 17 as *"Water, 7 days"*), and the image inside it
+ * is decorative. docs/running.md §4 has the measurement and [ROW_HEIGHT] the
+ * height it is owed against.
  */
 @Composable
 private fun HabitRows(rows: List<WidgetRow>) {
     val context = LocalContext.current
-    val nameWidth = contentWidth() - CHECKBOX_SLOT.dp
+    val nameWidth = contentWidth() - GLYPH_SLOT.dp
     val ink = rememberOutfitInk()
     val done = context.getString(R.string.widget_today_row_done)
     val notDone = context.getString(R.string.widget_today_row_not_done)
@@ -315,19 +300,37 @@ private fun HabitRows(rows: List<WidgetRow>) {
                     .semantics { contentDescription = spoken },
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                CheckBox(
-                    checked = row.completed,
-                    onCheckedChange = toggle,
-                    modifier = GlanceModifier.semantics { contentDescription = row.name },
-                    colors = CheckboxDefaults.colors(
-                        checkedColor = WidgetPalette.glyphChecked,
-                        uncheckedColor = WidgetPalette.glyphUnchecked,
-                    ),
-                )
+                Box(modifier = GlanceModifier.width(GLYPH_SLOT.dp), contentAlignment = Alignment.Center) {
+                    CompletionGlyph(row.completed)
+                }
                 OutfitText(text = row.name, maxWidth = nameWidth, ink = ink)
             }
         }
     }
+}
+
+/**
+ * The completion mark, tinted by the palette and described by nothing — the row
+ * above it carries the words.
+ *
+ * Remembered against the two things that change the pixels, the state and the
+ * density; the tint is the free half, the way [BandMask] and [OutfitText] treat
+ * theirs. `null` only when there is no room at all, and then the slot stays
+ * empty rather than the row losing its shape.
+ */
+@Composable
+private fun CompletionGlyph(completed: Boolean) {
+    val metrics = LocalContext.current.resources.displayMetrics
+    val mask = remember(completed, metrics.densityDpi) {
+        val sizePx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, GLYPH_SIZE.toFloat(), metrics).roundToInt()
+        GlyphBitmap.render(sizePx, metrics.densityDpi, completed)
+    } ?: return
+    Image(
+        provider = ImageProvider(mask),
+        contentDescription = null,
+        modifier = GlanceModifier.size(GLYPH_SIZE.dp),
+        colorFilter = ColorFilter.tint(if (completed) WidgetPalette.glyphChecked else WidgetPalette.glyphUnchecked),
+    )
 }
 
 /**
@@ -337,36 +340,6 @@ private fun HabitRows(rows: List<WidgetRow>) {
  */
 @Composable
 internal fun contentWidth() = LocalSize.current.width - (2 * WIDGET_PADDING).dp
-
-/*
- * The checkbox glyph is pinned, and this is why it has to be.
- *
- * Left unset, the glyph takes Glance's `res/color/glance_default_check_box.xml`:
- * `?android:attr/colorControlActivated` when checked and `colorControlNormal`
- * otherwise, theme attributes with no `-night` variant. On API 31 and up the
- * host very nearly does resolve that in the launcher's theme. **Below 31 it
- * does not**: `CheckBoxTranslator` branches at 31, and under it the glyph is
- * resolved in *our* process and baked into the `RemoteViews` as one colour. The
- * selector never reaches the host, so its missing `-night` variant is not the
- * cause. [WidgetPalette] has the path-by-path account and the measurements.
- *
- * A provider can be handed to a checkbox, with one restriction.
- * `CheckboxDefaults.colors(checkedColor = GlanceTheme.colors.primary, …)`
- * compiles and throws `IllegalArgumentException: Cannot provide resource-backed
- * ColorProviders to CheckBoxColors` from `CheckedUncheckedColorProvider.<init>`.
- * The guard rejects **resource-backed** providers only — every `GlanceTheme`
- * colour is one, which is why every attempt through the theme hits it — and a
- * day/night provider is not resource-backed. So the glyph can carry the
- * palette, in both schemes, without inventing flat literals.
- *
- * `CheckBoxColors` exposes its providers only through an `internal` accessor,
- * so what the tree drew the glyph with is not readable from a test without
- * reflection into Glance, and the module does not do that. The glyph's two
- * colours are held to the 4.5:1 floor at the palette instead
- * (`WidgetPaletteTest`), and docs/running.md §4 keeps the by-hand toggle on
- * API 29 or 30, which is the only place to see which translation path a real
- * host takes.
- */
 
 internal const val WIDGET_PADDING = 8
 
@@ -385,20 +358,22 @@ internal const val BAND_HEIGHT = 5
 internal const val BAND_GAP = 3
 
 /**
- * Room reserved for the checkbox glyph beside a name, in dp. Glance's glyph is
- * narrower; the difference is the margin the ellipsis needs to land inside the
- * row rather than under the edge of the widget.
+ * Room reserved for the completion mark beside a name, in dp. The mark itself is
+ * [GLYPH_SIZE]; the difference is the margin the ellipsis needs to land inside
+ * the row rather than under the edge of the widget.
  */
-private const val CHECKBOX_SLOT = 48
+private const val GLYPH_SLOT = 48
+
+/** The mark itself, in dp — Material's own glyph size, which is what the row drew before it was drawn here. */
+private const val GLYPH_SIZE = 18
 
 /**
- * Every habit row's height, in dp — the 48dp touch-target floor. Left to itself
- * a row is the checkbox glyph's 32dp (Glance's `glance_check_box.xml` sets no
- * minimum, and the pre-31 backport layout hard-codes 32), which Accessibility
- * Scanner measured at 75px on the Nothing A059 on 2026-09-02. The `Row` is the
- * target that grows: a height on the `CheckBox` modifier reaches only Glance's
- * wrapper `FrameLayout`, never the 32dp control inside it, so the control stays
- * under the floor and the row around it is what a finger and TalkBack land on.
+ * Every habit row's height, in dp — the 48dp touch-target floor. The `Row` is
+ * the target, and it has to be stated here because nothing inside it is one: the
+ * mark is a decorative image of [GLYPH_SIZE], and a row left to size itself
+ * would take that instead. It was the `CheckBox` control's 32dp before the mark
+ * was drawn rather than controlled, which Accessibility Scanner
+ * measured at 75px on the Nothing A059 on 2026-09-02.
  * The cost is rows: 94dp of usable height at the 110dp minimum fits one full row
  * and most of a second, and the 4×3 large body fits three. The list scrolls.
  * Chosen with that cost in view (docs/ux/widget.md §8).

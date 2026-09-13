@@ -404,11 +404,11 @@ body the sentence is drawn, so she is decorative and the band is decorative, and
 TalkBack reads the line once and then the rows (momo.md §5) — **or should**: on
 the Nothing launcher on 2026-09-02 it read neither the line nor the face and
 went straight to the rows, each of which was two stops, its name and then its
-checkbox (docs/running.md §4) — since fixed for the name: the row carries name
-and state (`widget_today_row_description`), because Glance describes a
-`CheckBox`'s wrapper and not the control (§8). The header has no focusable node
-of its own and the launcher's frame is described "Today", which hides an
-unfocusable child.
+checkbox (docs/running.md §4). Both halves of that are closed: the row carries
+name and state (`widget_today_row_description`) and is its only stop, since no
+control is emitted to be a second one (§8). The header is what is left — it has
+no focusable node of its own, and the launcher's frame is described "Today",
+which hides an unfocusable child.
 Whether the Pixel launcher does the same is not known. Her height on the
 pill is a second constant, `MomoBitmap.PILL_HEIGHT_DP`, for the reason the first
 one is a constant: the bitmap's cost must not follow a host's idea of "large".
@@ -562,22 +562,23 @@ docs/running.md §4 has the boxes.
   come apart, and a host that ignores the system direction would have to be
   built to. Worth stating because the pre-2026-08-30 failure was one-way and
   this one is not.
-- **Each Today row was two stops and 32dp tall, and the box had no name**
-  (docs/running.md §4, 2026-09-02). **Half closed the same day**: rows are 48dp
-  (`ROW_HEIGHT`) and described as *"Read, done"* on the row. The name had been
-  landing on Glance's checkbox wrapper — `glance_check_box.xml` is a
-  `FrameLayout` around the control, and `applyModifiers` describes the wrapper
-  — which TalkBack folds into the clickable row; the row's description is the
-  streak widget's pattern, which the same device read correctly. The cost is
-  visible rows: three at 4×3 where there were five, one full row at the 110dp
-  minimum, and the list scrolls; taken with that in view. Open: the glyph is
-  still a separate 32dp stop that said only its state on the launcher measured
-  — the source names it, and the name lands on the wrapper — because Glance
-  gives no way to remove the control from the tree or grow it, and Scanner
-  will keep listing it.
-  Closing that means an `Image` glyph on the clickable row (the Streaks shape)
-  in place of the `CheckBox`, at the cost of the compound-button wiring and
-  `isChecked`. The header's silence is a separate question (§7).
+- **Each Today row is one 48dp stop, and the mark beside the name is drawn**
+  (docs/running.md §4, 2026-09-02 found it two stops and 32dp tall). Rows are
+  48dp (`ROW_HEIGHT`) and described as *"Read, done"* on the row — the streak
+  widget's pattern, which the same device read correctly. The second stop was
+  Glance's checkbox: `glance_check_box.xml` is a `FrameLayout` around the
+  control, `applyModifiers` describes the wrapper, TalkBack folds the wrapper
+  into the clickable row, and the control is left over as a 32dp stop saying
+  only its state. Glance gives no way to take it out of the tree or grow it, so
+  no control is emitted: `GlyphBitmap` draws the state as a tinted mask and the
+  image is decorative. **The mark is drawn exactly as the `CheckBox` was**
+  (canvas page 32, marked A), so nothing a sighted user sees changes and the
+  whole of the change is the stop that went. **What it costs** is the compound
+  button's optimism — `isChecked` and the wiring that went with it — so the mark
+  turns over when the widget redraws rather than under the finger. The cost in
+  visible rows is unchanged: three at 4×3 where there were five, one full row at
+  the 110dp minimum, and the list scrolls; taken with that in view. The header's
+  silence is a separate question and stays open (§7).
 - **`glance-appwidget-testing` was declined, and then taken when its own
   condition came true.** PR review first suggested it for pinning what the
   widget draws, and it was not taken: `Message` resolves its copy through

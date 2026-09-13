@@ -1136,18 +1136,20 @@ so a home-screen swipe over a static tile would go dead.
       need no root on this phone): the two kinds of segment were clear on
       monochrome. Restored after.
 - [ ] **TalkBack reads the large body once.** The mood line, then each row with
-      its state. Not the face and then the line, and nothing for the band. Re-
-      heard 2026-09-03 on the Nothing launcher, a fresh 4×3 placement: the row
-      is now one named stop with its state, *"Read. Not done"*, and the name is
-      not read twice — so the checkbox keeps its own description and the "host
-      that attaches it to the control" justification stays untested here. Two
-      halves still owed, both recorded: **the header is not a stop at all**, so
-      the mood line is never spoken even though its `ImageView` carries it as a
-      description, and **the checkbox is a second, nameless stop at 32 dp**,
-      under the 48 dp floor. The rows themselves reached 48 dp (`ROW_HEIGHT`)
-      and took the streak widget's pattern, a description of name and state on
-      the row; `WidgetRowTest` pins what the tree asks for. Whether the Pixel
-      launcher behaves the same is unknown — no AVD image has TalkBack.
+      its state. Not the face and then the line, and nothing for the band. Heard
+      2026-09-03 on the Nothing launcher, a fresh 4×3 placement: the row is one
+      named stop with its state, *"Read. Not done"*, and the name is not read
+      twice. **The second stop is gone**: no control is emitted any more, so a
+      row is the only stop it has and the mark beside the name is a decorative
+      image (widget.md §8). **One half is still owed** — the header is not a
+      stop at all, so the mood line is never spoken even though its `ImageView`
+      carries it as a description. The rows reached 48 dp (`ROW_HEIGHT`) and
+      took the streak widget's pattern, a description of name and state on the
+      row; `WidgetRowTest` pins what the tree asks for, including that nothing
+      inside a row is described. Whether the Pixel launcher behaves the same is
+      unknown: TalkBack runs on an AVD, but its speech overlay is a preference
+      no unrooted shell can set and the Play-store image refuses `adb root`, so
+      an emulator shows what focuses and not what is said.
 - [x] **The Momo widget is offered, two by two, and says what it is.** Long-
       press → *Widgets* → **Gawi**: three entries. The *Momo* preview on API 31+
       is her ground and a word with **no face** — deliberate, and widget.md §7
@@ -2002,7 +2004,7 @@ which is the defect visual-identity §4.3 describes — and it needs no TalkBack
       strip still on screen. Re-run on 2026-08-24 when the app moved from Roboto
       to Outfit, whose metrics differ; the restyle block has what the second
       pass measured.
-- [x] **Accessibility Scanner**, as a pre-release sweep rather than routine.
+- [ ] **Accessibility Scanner**, as a pre-release sweep rather than routine.
       Install Google's Accessibility Scanner, run it over each screen, and read
       the report the way you would a Lighthouse audit: the touch-target and
       contrast items are already asserted, so what it earns its place for is
@@ -2016,8 +2018,10 @@ which is the defect visual-identity §4.3 describes — and it needs no TalkBack
       widgets returns six, none of them a row: the three 32 dp checkboxes are
       each a *Touch target*, the first also a duplicate description, and the two
       widget frames are *Unsupported item type*, the Scanner declining a
-      `LauncherAppWidgetHostView` rather than a finding. **The checkbox
-      control's own 32 dp is the recorded follow-up.** Two classes the first
+      `LauncherAppWidgetHostView` rather than a finding. **All four app-side
+      items are closed in the code** — no control is emitted and the mark is a
+      decorative image (widget.md §8) — so this sweep is owed again, on the
+      release build, to confirm them gone. Two classes the first
       scan raised are decided rather than open: the icon badge's *text contrast*
       went with the badge, which a habit no longer has
       ([visual-identity.md](ux/visual-identity.md) §7.3); and the repeated

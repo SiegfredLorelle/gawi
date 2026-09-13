@@ -109,13 +109,17 @@ class WidgetHostBinding private constructor(
 
     /**
      * What the widget says, whichever view says it. Since 2026-08-25 every string
-     * is an Outfit bitmap in an `ImageView`, the copy carrying its text as
-     * `contentDescription` and each row's name sitting on its checkbox's — and no
-     * `TextView` holds text any more, so a `TextView`-only walk would poll for
-     * 20s and fail on a widget Glance drew perfectly. The `TextView` branch reads
-     * the description as well as the text for the same reason: a `CheckBox` *is*
-     * a `TextView`, so it lands here with `text == ""`, and the first version of
-     * this walk dropped every habit row — caught in review before it ran.
+     * is an Outfit bitmap in an `ImageView` carrying its text as a
+     * `contentDescription`, and no `TextView` holds text any more, so a
+     * `TextView`-only walk would poll for 20s and fail on a widget Glance drew
+     * perfectly.
+     *
+     * **Every branch reads the description, containers included**, and the
+     * `ViewGroup` one is load-bearing rather than thorough: a Today row and the
+     * whole Momo tile both describe themselves and leave their children
+     * decorative, so a walk that read only leaves would find neither. The
+     * `TextView` branch reads both for the same reason it always did — a view
+     * that is one can arrive with `text == ""` and its words on the description.
      */
     private fun textIn(view: View): List<String> = when (view) {
         is TextView -> textOf(view) + listOfNotNull(view.text?.toString()?.takeIf { it.isNotBlank() })
