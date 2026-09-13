@@ -43,7 +43,7 @@ parked themselves on OQ-4 and nothing recorded that they had.**
 | Where | What it said | What it says now |
 |---|---|---|
 | `GawiTheme` KDoc | Stock Material 3, no `ColorScheme`, no typography, "because Momo's palette is PRD OQ-4 and undesigned" | The designed schemes, and why dynamic colour stays off. Type is the one stock thing left, and says what it waits on |
-| `HabitPalette` KDoc | "Not a design system" — mid-tone Material hues, same deferral | Designed, and to the rule in §6, with the two rules that failed |
+| `HabitPalette` KDoc | "Not a design system" — mid-tone Material hues, same deferral | Gone with the palette (§7.3). It was designed to §6's rule first, and the two rules that failed are recorded there |
 | `GawiSpacing` KDoc | "Not a design system and not trying to be one — Momo's visual language is PRD OQ-4" | Narrowed, not rewritten: §8 records that dimensions were genuinely not in this brief, so it still defers — but only about spacing |
 | `TodayWidget`'s glyph comment | Checkbox glyph left unpinned because pinning needs two literals and "this project does not have a palette yet". Ends: "Revisit with OQ-4." | **Pinned on 2026-08-28**, after the check in running.md §4 turned it from styling into a legibility bug. `CheckBoxColors` refuses only *resource-backed* providers, so a day/night pair works and no flat literals were needed. The colours it is given are asserted on the emitted tree; what the resolved glyph looks like is the palette's test and the device's |
 
@@ -526,16 +526,18 @@ point where the better choice changes.
 
 **Where this is actually visible**, stated honestly rather than overclaimed:
 
-- **The editor's selection tick.** `HabitEditorPickers` draws `✓` (U+2713, a
-  monochrome dingbat) tinted by `glyphColorOn`, so on orange it is currently a
-  1.94:1 checkmark. `selectableBorder` double-encodes the selection with a ring,
-  which is why this was survivable, not why it was fine.
-- **Any habit icon that is not a colour emoji** — a letter, a symbol from a
-  future import. `HabitIcon`'s KDoc anticipates exactly this: text "is right if
-  that turns out to be an emoji and is a visible placeholder if it does not".
-- **Probably not the twelve emoji `HabitPalette` offers.** Android renders those
-  through a colour emoji font, which ignores the text colour. Worth confirming on
-  device rather than asserting either way — and it does not change the fix.
+**Nowhere, now** — every surface below went with §7.3, and they are listed
+because each is a shape the next coloured fill will take:
+
+- **A selection tick on a swatch.** The editor drew `✓` (U+2713, a monochrome
+  dingbat) tinted by `glyphColorOn`, which on orange measured 1.94:1. A ring
+  double-encoded the selection, which is why it was survivable rather than why
+  it was fine — a second channel hides a contrast defect without fixing it.
+- **Any glyph that is not a colour emoji** — a letter, a symbol from an import.
+  Text is right if the content turns out to be an emoji and is a visible
+  placeholder if it does not, which is the shape that makes the ink matter.
+- **Not a colour emoji itself.** Android draws those through its own font, which
+  ignores the text colour, so no ink choice reaches them either way.
 
 **It landed before the hues, not with them.** A one-constant change with its own
 test, independent of whichever scheme won — and §6's retuned set *required* it:
@@ -722,10 +724,11 @@ are still drawn as text and still covered, and so is the editor's selection tick
 2026-08-24 and it was the wrong way to put it — §7.5 has the accurate version.
 What holds either way is that the `cmap` still has live dependents.
 
-**The habit-icon emoji are a separate matter, not a gap in that audit.**
-`HabitPalette`'s twelve are outside this `cmap` and always will be — Android
-draws colour emoji through its own font, which no text face substitutes for, and
-§4.2 already records that along with what it costs the tint. Sweeping every
+**Emoji are a separate matter, not a gap in that audit.** Any emoji is outside
+this `cmap` and always will be — Android draws colour emoji through its own
+font, which no text face substitutes for, and §4.2 records what that costs a
+tint. Nothing in the app draws one today; the rule is here for the next one that
+does. Sweeping every
 non-widget main source finds 36 distinct non-ASCII characters; what is left after
 the glyphs and the emoji sits in KDoc (`√`, `≡`, `≥`) and is never drawn.
 
@@ -845,12 +848,12 @@ carries them.
 **Decision: keep eight slots; retune all eight to one tonal rule.**
 
 Eight rather than fewer, because the count is load-bearing in two places —
-`COLOR_LABELS` and the test that pins the two lists parallel. (An earlier
-revision counted a third, the debug seeder's expectations. There is no debug
-seeder in this repo and there is no `debug` source set; the claim came from
-`HabitPalette`'s own KDoc, which said the same and has been corrected. A
-citation to code that does not exist is the defect `scripts/check-citations.sh`
-was written for, in the one direction it cannot check.) Retuned rather than left alone, because eight saturated stock
+`COLOR_LABELS` and the test that pins the two lists parallel. (A third was
+counted here once, the debug seeder's expectations. There is no debug seeder in
+this repo and no `debug` source set; the claim was copied from the palette's own
+KDoc, which said the same. A citation to code that does not exist is the defect
+`scripts/check-citations.sh` was written for, in the one direction it cannot
+check.) Retuned rather than left alone, because eight saturated stock
 Material hues sitting next to a designed scheme is the single most visible
 remaining tell.
 
@@ -903,30 +906,26 @@ The alternative — exempting yellow from the rule so it can stay bright — was
 rejected because a bright yellow fails the 3:1 badge floor against every light
 surface in §3, which is a worse defect than a renamed swatch.
 
-Values stay **uppercase and six digits**, as a convention that keeps what the
-palette owns canonical. It is no longer load-bearing, and the story of that is
-worth a line: it used to be justified by a real defect, because `ColorPicker`
-compared hexes as strings, so a stored lowercase palette colour was offered twice
-— once as a hue and once as §6.3's "colour you already have", with the wrong one
-selected. Review caught it. The picker now compares what two hexes *draw*, which
-also covers the eight-digit spelling of the same colour that a case-insensitive
-comparison would still have duplicated. The convention stays because canonical
-storage is worth having; the editor no longer depends on it.
+Values were **uppercase and six digits**, a convention keeping what the palette
+owned canonical. Nothing depends on it now, and one defect it answered is worth
+keeping: a picker comparing hexes as *strings* offered a stored lowercase colour
+twice — once as a hue and once as §6.3's "colour you already have", with the
+wrong one selected. **Compare what two hexes draw, not how they are spelled.**
+That also covers the eight-digit spelling of the same colour, which a
+case-insensitive string comparison still duplicates.
 
-**That rule binds the palette and nothing else.** `parseHabitColor` accepts six
-digits or eight, upper case or lower, deliberately, and an import replays
-whatever an export held; asking it to normalise would rewrite a stored colour on
-read, which is what §6.3 exists so we never have to do. (The convention used to
-be justified by what a debug seeder wrote; there is no seeder — see §6.1.)
+**A parser has the opposite job.** Six digits or eight, upper case or lower, all
+accepted: an import replays whatever an export held, and normalising on read
+rewrites a stored value, which is what §6.3 exists so we never have to do.
 
 ### 6.3 The orphaned hexes, and what to do about them
 
-A habit's colour is raw hex in an append-only event log. Retuning
-`HabitPalette.Colors` **migrates nothing** — and it should not, because rewriting
-history to change a colour is exactly what an event log is for not doing. So a
-habit created before the restyle keeps its old hex, and reopening its editor shows
-a form with nothing selected: the precise failure the uppercase-six-digit
-convention exists to avoid, arriving by a different door.
+A habit's colour is raw hex in an append-only event log, so retuning a palette
+**migrates nothing** — and should not, because rewriting history to change a
+colour is exactly what an event log is for not doing. A habit created before a
+restyle keeps its old hex, and a form offering only the new list opens with
+nothing selected: the precise failure the uppercase-six-digit convention exists
+to avoid, arriving by a different door.
 
 **Decided, built, and then removed with the picker it belonged to: when
 `form.color` was not in `HabitPalette.Colors`, it rendered as a leading
@@ -941,15 +940,12 @@ it and needs its own label string. Something naming it as the habit's current
 colour rather than naming a hue, since the hue is unknown by definition. That is
 `habits_color_current`, "Current colour".
 
-**As built, the wrinkle turned out to be the whole risk.** `ColorPicker` looked
-its labels up by list index, so prepending an entry with a synthetic index would
-have shifted every name one place along the palette — eight swatches each
-announcing the wrong colour, which §4.3 calls an accessibility defect and which
-nothing in the suite can detect. The fix was to stop indexing: each swatch now
-carries its own label. `HabitsUiMapperTest`'s length assertion cannot see this
-swatch at all, so `HabitEditorScreenTest` gained the two cases that can — one
-that an orphaned hex is offered and starts selected, one that nothing extra
-appears when the colour is still on the palette.
+**The wrinkle was the whole risk, and it generalises.** Labels looked up by
+list index mean prepending one entry shifts every name one place along — eight
+swatches each announcing the wrong colour, which §4.3 calls an accessibility
+defect and which no assertion on the *list's length* can detect. **A label
+belongs to its item, not to its position.** That is the rule to carry forward;
+the picker that broke it is gone.
 
 The alternative — offering nothing and letting the form open unselected — was
 rejected because saving from that state would silently change the habit's colour,
