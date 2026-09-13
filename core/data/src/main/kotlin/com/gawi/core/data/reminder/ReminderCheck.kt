@@ -54,8 +54,10 @@ class ReminderCheck @Inject internal constructor(
      * One read of [HabitRepository.observeToday], because that snapshot already
      * carries everything the decision needs — the rows, the logical date they
      * were queried for, and the week start the weekly rule buckets against
-     * ([TodaySnapshot]). Reading the clock or the settings again here would be a
-     * second, independently-resolved "today" that could disagree with the rows.
+     * ([TodaySnapshot]). Re-reading the clock, or any setting the snapshot's
+     * dates were resolved from, would be a second "today" that could disagree
+     * with the rows. The switch is read separately and is not that: it takes
+     * part in no date arithmetic, so there is nothing for it to disagree with.
      *
      * Which habits are outstanding comes from [Mascot.isOutstanding] and is not
      * recomputed. The daily case is obvious and the weekly one is not — a weekly
@@ -65,6 +67,8 @@ class ReminderCheck @Inject internal constructor(
      *
      * Ordered so that **nothing is stamped unless something is said**:
      *
+     * - The switch being off, or the wake falling outside the window, is
+     *   [ReminderDecision.Silent] before the journal is read at all.
      * - Nothing outstanding is [ReminderDecision.Silent] and leaves the journal
      *   untouched. PRD §6.1.5's *"silent when all done"*, and stamping here would
      *   suppress a real reminder later the same evening if a habit were added, or

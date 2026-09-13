@@ -564,10 +564,13 @@ why it stays: a name shown to a screen reader in place of a value has to remain
 true of what is drawn, and a positional list is the shape that quietly stops
 being. §6.2 is the one time it caught something.
 
-`HabitEditorPickers.kt` holds `COLOR_LABELS`, a **positional** list of string
-resources — Red, Pink, Purple, Blue, Teal, Green, Yellow, Orange. TalkBack reads
-those instead of the hex, so a swatch announced as "Purple" that renders blue is
-an accessibility defect and not a nitpick.
+`HabitEditorPickers.kt` held `COLOR_LABELS`, a **positional** list of string
+resources — Red, Pink, Purple, Blue, Teal, Green, Yellow, Orange. TalkBack read
+those instead of the hex, so a swatch announced as "Purple" that rendered blue
+was an accessibility defect and not a nitpick. Both the list and the swatches
+went with §7.3; the shape is recorded because a positional list paired to values
+by index is the one this section warns about, and the next one will not be
+called `COLOR_LABELS`.
 
 **Nothing in the test suite will catch that.** `HabitsUiMapperTest` asserts only
 that the two lists are the same *length* and that the labels are distinct — which
@@ -833,9 +836,11 @@ eight had exactly two consumers, the editor's picker and the habit badge, and
 that decision removes both. What follows is kept as the record of how the
 shipped hexes were derived and of the two rules that failed on the way, because
 a habit's stored `color` is still raw hex in an append-only log and a reader
-may still need to know what those values were and why. It is rewritten when the
-code goes, not before — §6.1 to §6.3 describe machinery that is still in the
-app today.
+may still need to know what those values were and why. **The code has now
+gone**, so §6.1 to §6.3 describe machinery the app no longer has: the eight
+hexes are the record of what a stored `color` may hold, not of anything drawn.
+The values themselves still matter, because the log keeps them and an export
+carries them.
 
 **Decision: keep eight slots; retune all eight to one tonal rule.**
 
@@ -923,11 +928,13 @@ habit created before the restyle keeps its old hex, and reopening its editor sho
 a form with nothing selected: the precise failure the uppercase-six-digit
 convention exists to avoid, arriving by a different door.
 
-**Decision, and now the behaviour: when `form.color` is not in
-`HabitPalette.Colors`, render it as a leading "current" swatch.** The machinery is already there —
-`parseHabitColor` survives arbitrary hex by design ("these are what the editor
-offers, not a guarantee about what is in the log") and `glyphColorOn` already
-picks its glyph. What the picker needs is one extra entry, not a new mechanism.
+**Decided, built, and then removed with the picker it belonged to: when
+`form.color` was not in `HabitPalette.Colors`, it rendered as a leading
+"current" swatch.** It is recorded because the *problem* outlived the swatch —
+a stored value that a later list no longer offers is a shape this app will meet
+again — and because §7.3's passthrough is the answer that replaced it: with no
+picker there is nothing to select, so an edit carries the stored hex back
+untouched and the question of offering it never arises.
 
 One wrinkle: `COLOR_LABELS` is positional, so the extra swatch cannot index into
 it and needs its own label string. Something naming it as the habit's current
