@@ -156,7 +156,11 @@ class LauncherIconTest {
     fun `the mark clears the non-text floor on its own ground`() {
         val ground = gawiLauncherBackground()
         paths(FOREGROUND).forEach { path ->
-            val argb = path.getAttribute("android:fillColor").removePrefix("#").toLong(16).toInt()
+            // A path with no fill parses as the empty string, and measuring that
+            // is a NumberFormatException rather than a failure naming the ratio.
+            val fill = path.getAttribute("android:fillColor")
+            assertTrue("a path with no fill has nothing to measure", fill.isNotEmpty())
+            val argb = fill.removePrefix("#").toLong(16).toInt()
             val ratio = contrastRatio(Color(argb), ground)
             assertTrue("a fill measured $ratio on the launcher ground", ratio >= WCAG_NON_TEXT_FLOOR)
         }
