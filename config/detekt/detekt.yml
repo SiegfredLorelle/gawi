@@ -3,9 +3,68 @@
 # tweaks land here as real code arrives, with a comment saying why.
 
 naming:
-  # Composables are PascalCase by Compose convention.
+  # The sweep prd.md §5's step 4 asks for: detekt's inactive naming rules turned
+  # on where they earn it, and the test-source exclusion lifted. Each decision
+  # below says which of the two it is, because "off" and "on with a wider
+  # pattern" are different claims about this codebase.
+
   FunctionNaming:
+    # Composables are PascalCase by Compose convention. Kept in step by hand
+    # with ktlint's ktlint_function_naming_ignore_when_annotated_with in the
+    # root build file — the exemption lives in two places.
     ignoreAnnotated: ["Composable"]
+    # The shipped excludes are lifted, so ~1,330 test functions are gated for
+    # the first time. The pattern widens to match: this repo writes test names
+    # as backtick sentences, which the default pattern rejects on the spaces
+    # alone, and renaming 1,120 of them would buy nothing and cost the
+    # readability the style exists for. What is left is the rule that actually
+    # holds for both styles — a function name starts with a lower-case letter —
+    # and main sources keep the stricter shape from ktlint's own
+    # `standard:function-naming`, which runs over them through Spotless.
+    excludes: []
+    # Two alternatives because the repo writes two shapes, and detekt matches
+    # the name *including* its backticks. The identifier form allows the
+    # underscore a few screen tests use to separate a state from its
+    # expectation; the sentence form allows anything but a backtick.
+    functionPattern: '[a-z][A-Za-z0-9_]*|`[a-z][^`]*`'
+
+  # Free: no findings today, so purely a guard against the next one.
+  LambdaParameterNaming:
+    active: true
+  VariableMaxLength:
+    active: true
+  VariableMinLength:
+    active: true
+
+  FunctionMinLength:
+    active: true
+    # Two, not the shipped three. The nine names under three characters are all
+    # companion factories — MomoFrame.at, MomoMotion.of, ScheduleWireV1.of —
+    # which is the JDK's own spelling (LocalTime.of) and reads better than
+    # frameAt. Two still catches a single letter, which nothing here wants.
+    minimumFunctionNameLength: 2
+
+  # Three left off, each for its own reason rather than as a batch.
+  FunctionMaxLength:
+    # Ships with no excludes at all, so it would hit test sources however
+    # FunctionNaming is configured: 1,046 of the backtick names run past 30
+    # characters, because a sentence is longer than an identifier. The style is
+    # deliberate and this rule is written for the other one.
+    active: false
+  NonBooleanPropertyPrefixedWithIs:
+    # Needs type resolution, which this build does not run (architecture §8).
+    # A rule that reports nothing is worse than an absent one: it reads as
+    # coverage. Turn it on the day the analysis grows a classpath.
+    active: false
+  BooleanPropertyNaming:
+    # Thirty-five properties do not match `^(is|has|are)`, and only four of
+    # those would be fixed by also admitting `can`. The rest are adjectives and
+    # participles — archived, completed, editing, weekly — which read better on
+    # a data class than isArchived does, and several sit on Room entities and
+    # domain types where a rename is a column mapping and a wire-adjacent edit
+    # rather than a rename. The repo has chosen a convention; this rule encodes
+    # the other one.
+    active: false
 
 complexity:
   # A settings ViewModel is one handler per setting by construction, and the

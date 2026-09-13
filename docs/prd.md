@@ -318,10 +318,16 @@ the fixed id rather than dismissing.
 
 **Step 4 — polish.** Everything step 2 marked, item by item, verified on the
 emulator against its artboard; and the naming sweep — Kotlin identifiers,
-test names, packages, resource files and ids. detekt's default naming rules
-already run in `make lint`; the sweep enables the ones detekt ships inactive,
-lifts the test-source exclusion, and adds a script for resource file and id
-names, which detekt does not see, so it is done once.
+test names, packages, resource files and ids. The sweep lifted
+`FunctionNaming`'s test-source exclusion, so every function in the repo is
+gated rather than only the third of them in `src/main`, and widened its pattern
+to the two shapes this repo writes; it turned on the inactive rules that earn
+it and left three off with the reason for each recorded in `detekt.yml`, since
+"off" and "on with a wider pattern" are different claims. `scripts/check-names.sh`
+is the fifth gate and holds what detekt cannot see, `res/` file names and
+`android:id` values. It found one test name starting with a capital and nothing
+else: the repo was already clean, so the sweep is the fence rather than the
+clean-up, and it is done once.
 
 **Step 5 — verification, on the release build.** All of running.md §4's
 unticked boxes on the phone; the accessibility follow-ups the re-hearing

@@ -68,8 +68,9 @@ fmt: ## Format the codebase
 # minutes, so a narrated comment, a stale `docs/` reference, a forbidden call in
 # a test or an overgrown checklist box fails fast instead of at the end. Scripts
 # and not Gradle tasks on purpose — see their headers, and architecture §9.
-# `check-docs.sh` is last of the four because it is the only one that reads
-# nothing but `docs/`, so a code change trips the other three first.
+# `check-docs.sh` is fourth because it is the only one that reads nothing but
+# `docs/`, so a code change trips the three before it first; `check-names.sh` is
+# last because it reads nothing but `res/`, which is the same argument again.
 #
 # `:app:assembleDebug` is the only step here that packages, and CI calls nothing
 # but `make`. Without it nothing in fmt/lint/test merges a manifest, merges
@@ -95,6 +96,7 @@ lint: ## Lint and type-check the codebase
 	./scripts/check-citations.sh
 	./scripts/check-tests.sh
 	./scripts/check-docs.sh
+	./scripts/check-names.sh
 	./gradlew spotlessCheck detekt lint :app:assembleDebug
 
 test: ## Run the test suite
