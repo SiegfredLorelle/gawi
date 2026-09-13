@@ -433,9 +433,13 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
 - [ ] Create a **weekly** habit and check the target stepper stops at 7 and at
       1. Above 7 throws out of `Schedule.Weekly`'s `require` rather than being
       rejected, so this is a crash if it is wrong.
-- [ ] Open a habit from the list, change **only** its name, save. Its icon,
-      colour, schedule and tag survive — an update is a whole-record write, so a
-      field the form forgot to submit would come back as a default.
+- [ ] Open a habit from the list, change **only** its name, save. Its schedule
+      and tag survive, and so do the icon and colour the form no longer shows —
+      an update is a whole-record write, and those two are passthrough
+      ([visual-identity.md](ux/visual-identity.md) §7.3), so a form that wrote
+      the defaults instead of carrying them would silently restyle every habit
+      on its first save. `HabitsUiMapperTest` pins the carrying; only an export
+      taken before and after shows the log agreeing.
 - [ ] Archive a habit: it leaves Today, and appears under **Archived** on the
       list with a *Bring back* action. Bring it back: it returns to Today.
 - [ ] The mascot's count follows archiving — an archived habit stops being
@@ -1192,10 +1196,15 @@ docs/ux/reminder.md. PRD §7 makes a **physical device** the primary target for
 this as well as for the widget — OEM battery policies are the whole risk and an
 emulator has none.
 
-- [ ] **The status-bar icon is Momo.** When a reminder posts, the small icon is
-      her silhouette — body, two fronds a side, eyes punched out — tinted by the
-      system, not a bell and not a blob. `LauncherIconTest` proves the vector
-      has fills; only the shade shows whether the eyes survive at 24 dp.
+- [ ] **The status-bar icon is Momo's mark.** When a reminder posts, the small
+      icon is the gill cluster — three lobes, no face — tinted by the system,
+      not a bell and not a blob. `LauncherIconTest` proves the vector has fills
+      and cuts nothing out of itself, and the shipped path data rasterised at
+      24 dp reads as three lobes; only the shade shows it drawn by the platform.
+      A trap for whoever runs it: a **full-colour** face in the notification
+      header is not this icon at all. A small icon is alpha-only, so anything in
+      colour there is SystemUI's cached app icon, which survives an AVD reboot
+      and will show a build's worth of stale.
 
 Every check below needs the reminder time moved to a couple of minutes ahead, in
 Settings. **Put it back to 21:00 afterwards**, for the reason §4's rollover check
@@ -1615,11 +1624,6 @@ background it does not own, and TalkBack cannot be driven from `adb` at all.
       is *too* recessive shows up. Look at today's cell especially: it is the
       one with a filled ground, and the ground is what made the first version of
       this fail (`visual-identity.md` §3).
-- [x] **The editor's colour swatches, and the tick on every one.** All eight
-      retuned hues take a black glyph by design. Look at the tick on each: the
-      old palette drew six of the eight below the contrast floor and the ring
-      around the selection hid it (§4.2), so a swatch that looks fine at a
-      glance is exactly the failure mode here.
 - [x] **Cold start in dark mode, watching for a flash.** Force-stop the app,
       then launch it. The window is painted from `values-night/themes.xml`
       before Compose runs, and its `windowBackground` is pointed at the scheme's
@@ -1661,10 +1665,6 @@ background it does not own, and TalkBack cannot be driven from `adb` at all.
 - [x] **The widget after switching**, on the home screen. It must stay in the
       launcher's theme and change nothing. That is correct behaviour and the row
       says so; the check is that the *row* said so, not that the widget moved.
-- [ ] **The habit hues against a real photo wallpaper**, on the Today list. Not
-      because anything composites against the wallpaper — nothing does — but
-      because the eight are tuned to one lightness and the failure to look for
-      is the set reading as muddy rather than as eight distinguishable colours.
 - [x] **The app draws in Outfit, at the right weight.** Two things. **The
       face**: Outfit is geometric, so its `o`, `a` and `0` are visibly circular
       against the system sans, and the status bar clock stays Roboto and gives a
@@ -1682,9 +1682,7 @@ background it does not own, and TalkBack cannot be driven from `adb` at all.
       and has its own check above. Two glyphs are present and were checked
       rather than assumed: `−` (U+2212) and `·` (U+00B7), which matter most for
       the weekly-target stepper, since it draws `−` beside an ASCII `+` at one
-      size. The habit-icon emoji are a different thing again and not worth
-      checking here — colour emoji always come from the system's emoji font
-      (§4.2).
+      size.
 - [x] **200 % font scale, a second time, because the face changed.** The pass in
       the accessibility block ran against Roboto, and Outfit has its own metrics
       — wider, different x-height — so every clipping and overflow judgement
@@ -1864,45 +1862,32 @@ followed by the count with the mood line dropping out.
 the three layers exist, draw and are wired; every launcher masks and scales them
 differently, which is what is left.
 
-- [x] **In the app drawer and on the home screen.** Momo's mark — face and two
-      fronds a side on teal — under whatever mask the launcher uses (circle,
-      squircle, rounded square). Nothing that carries meaning is clipped; a
-      sliver of the lower fronds may be, by design. Run 2026-08-30 on
-      `Small_Phone` (API 37), Pixel launcher, under three masks rather than one:
-      Wallpaper & style → Icons → **Shape** makes the mask a setting here rather
-      than something to hunt a launcher for, and Circle, Square and Arch — the
-      most aggressive of the five — all kept the face, both eyes, the mouth and
-      all four frond lobes inside the mask, with **nothing clipped at all**, not
-      even the sliver this item allows for. The ground sampled `#B4E9F0` off the
-      drawer icon, which is `Color.kt`'s light `primaryContainer` exactly.
-- [x] **Small.** Drop it in a folder and look at it at the drawer's smallest
-      size: the eyes and mouth still read as a face. That was the canvas's test
-      for two fronds over three. Run 2026-08-30 on `Small_Phone` (API 37) in a
-      two-item dock folder, where the preview draws the mark at about 42 × 42 px
-      — 21 dp at this device's 320 dpi, under half the 48 dp it gets in the
-      drawer — and it still reads: two eyes and a mouth separately legible, the
-      fronds still two lobes a side rather than a pink smudge. A note for
-      whoever re-runs it: `input draganddrop` makes the folder only over a
-      *short* hop between two dock icons; over a longer one the launcher
-      displaces the target or flips the page instead, and chained `input
-      motionevent` with a dwell does not merge at all.
-- [x] **Themed, API 33+.** The icon becomes the woven thread — three warps and a
-      weft — in the system tint, not a tinted face. Below API 33 the coloured
-      icon stays and there is nothing to check. **The setting is not called
-      *Themed icons*** on this level: it is Wallpaper & style → Home screen →
-      **Icons** → *Style* → **Minimal**, against *Default*, and it needs an
-      explicit **Apply**. Run 2026-08-30 on `Small_Phone` (API 37) and correct:
-      three warps crossed by one weft in the system tint on the themed ring,
-      with no trace of the face. What the run also settled, off review rather
-      than off the eye: `ic_launcher_monochrome.xml`'s first path carried a
-      fourth subpath, `M54,45 V63`, commented as a short weft but *vertical* at
-      x = 54, so it lay wholly inside the centre warp at the same 9-unit stroke
-      and painted nothing. The artboard says three warps and one weft, so the
-      subpath was dead and is deleted; nothing rendered changes, which is why
-      this tick stands without a re-run. `LauncherIconTest` cannot see it either
-      way — it checks that every path draws and is in Momo's colours, and a
-      subpath hidden inside another is more than a test can see. **The artboard
-      is what says how many warps there are.**
+- [ ] **In the app drawer and on the home screen.** One gill cluster — three
+      frond dots around a paler body circle, no face — on the darkest teal the
+      palette holds, under whatever mask the launcher uses (circle, squircle,
+      rounded square). Nothing that carries meaning is clipped. The mark reaches
+      31.1 of the 33 units a launcher guarantees, so it needs no corrective
+      scale and nothing should be clipped at all. Wallpaper & style → Icons →
+      **Shape** makes the mask a setting here rather than something to hunt a
+      launcher for; Circle, Square and Arch are the three worth trying, Arch
+      being the most aggressive of the five.
+- [ ] **Small.** Drop it in a folder and look at it at the drawer's smallest
+      size: **three lobes still read as three**, not as a pink smudge. That is
+      the claim §7.1 makes for this mark where the retired one claimed a
+      readable face, and it is the whole reason the face went — the full
+      character measured as mush at 40 px. A note for whoever runs it: `input
+      draganddrop` makes the folder only over a *short* hop between two dock
+      icons; over a longer one the launcher displaces the target or flips the
+      page instead, and chained `input motionevent` with a dwell does not merge
+      at all.
+- [ ] **Themed, API 33+.** The icon becomes the same cluster in the system
+      tint, not a second mark: flattened to one colour the three lobes are still
+      three lobes, which is the argument §7.1 makes for one geometry across all
+      three layers. The paler body circle merges into the cluster by design.
+      Below API 33 the coloured icon stays and there is nothing to check. **The
+      setting is not called *Themed icons*** on this level: it is Wallpaper &
+      style → Home screen → **Icons** → *Style* → **Minimal**, against
+      *Default*, and it needs an explicit **Apply**.
 
 ### Accessibility — *device only, and the layer no test reaches*
 
@@ -1974,30 +1959,6 @@ which is the defect visual-identity §4.3 describes — and it needs no TalkBack
       from the tree the day before — 31 cell nodes for August, no letter nodes
       anywhere — and days after today are not nodes at all. Open on the
       **tedium** of the full month, which is a judgement no pass has made.
-- [x] **The colour picker's swatch names.** Every swatch announces a name rather
-      than a hex, and after the retune one of those names moved: the seventh is
-      "Gold", not "Yellow", because the hue at that slot is `#9C851F` and
-      calling it yellow would be a false description ([visual-
-      identity.md](ux/visual-identity.md) §6.2). No *unit* test can check this —
-      `HabitsUiMapperTest` pins only that the labels and the hues are the same
-      length, and a name is not a checkable property of a hex (§4.3). Check it
-      by the dump-and-sample pairing above rather than by ear. Run on an
-      emulator 2026-08-23: all nine, the eight hues plus "Current colour",
-      matched the colour drawn at their own bounds. Ticked on that basis. *Focus
-      order* belongs to the TalkBack box above and is still owed, because this
-      check cannot see it, and one gap the pairing cannot close either: the
-      **selected** swatch clears its subtree with `selectable` kept ahead
-      (`theSelectedSwatch_doesNotAlsoReadItsTick`), and while an unselected
-      swatch was quoted back on 2026-09-03 the selected one never was, so that
-      clearing rests on its pin.
-- [x] **"Current colour", on a habit older than the restyle.** A habit created
-      before the retune keeps its hex, and the editor offers it as a leading
-      ninth swatch (§6.3) — the one swatch whose name describes a role rather
-      than a hue. Check it announces as selected, and that tapping a real hue
-      moves the selection off it **without taking it off screen**, which is the
-      case where the row reflowed under the finger. Run on an emulator on
-      2026-08-23 against a habit holding the pre-retune red: nine swatches
-      before and after the tap, no bounds moved.
 - [ ] **The retro strip, specifically.** The densest thing here: five cells —
       four writable and one drawn shut — each carrying a day, a done state, a
       note marker and up to two gestures. Every one of those is in the spoken
@@ -2042,13 +2003,13 @@ which is the defect visual-identity §4.3 describes — and it needs no TalkBack
       widget frames are *Unsupported item type*, the Scanner declining a
       `LauncherAppWidgetHostView` rather than a finding. **The checkbox
       control's own 32 dp is the recorded follow-up.** Two classes the first
-      scan raised are decided rather than open: the emoji icon badge's *text
-      contrast* (`#F5F5F5` on `#427FF6` = 3.44:1 against a wanted 4.5) is noise
-      while every icon is a colour emoji, because the declared colour never
-      paints one — real the day a plain character is allowed, and a decision for
-      visual-identity rather than a bug; and the repeated Insights row texts are
-      the unmerged-row shape that box records. Today, detail, the editor and
-      Insights are inferred clear from the same badge change, not re-scanned.
+      scan raised are decided rather than open: the icon badge's *text contrast*
+      went with the badge, which a habit no longer has
+      ([visual-identity.md](ux/visual-identity.md) §7.3); and the repeated
+      Insights row texts are the unmerged-row shape that box records. Today,
+      detail, the editor and Insights are inferred clear from the same badge
+      change, not re-scanned — and the editor has two fewer controls to scan
+      than when that was written.
 
 **Still owed, and an emulator discharges none of it.** Five open items, each
 with its blocker: the day-cutoff **picker** under TalkBack, undriven; the
