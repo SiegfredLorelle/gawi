@@ -10,7 +10,14 @@
     body circle is the same fill here: flattened, the cluster is three lobes,
     which is what holds at this size.
 
-    The same geometry as the launcher, scaled 24/108.
+    **Not a plain 24/108 scale of the launcher, and that is the whole of what
+    this file adds.** A launcher masks away all but the central 72 of the 108
+    grid, so the mark is drawn with margins that are invisible there; a small
+    icon has no mask, and a faithful rescale would leave it filling about half
+    the canvas beside system icons that fill it. So the mark's bounding box is
+    centred on the canvas and scaled to 20 of 24 — the platform's own 2 dp
+    inset a side. Same geometry, different framing, and the framing is the
+    reason to state it.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
@@ -19,5 +26,5 @@
     android:viewportHeight="24">
   <path
       android:fillColor="#FFFFFFFF"
-      android:pathData="M6,14.4 a3,3 0 1,1 6,0 a3,3 0 1,1 -6,0 Z M8.25,9.6 a3.75,3.75 0 1,1 7.5,0 a3.75,3.75 0 1,1 -7.5,0 Z M12.9,12.3 a3,3 0 1,1 6,0 a3,3 0 1,1 -6,0 Z M10.65,13.8 a2.25,2.25 0 1,1 4.5,0 a2.25,2.25 0 1,1 -4.5,0 Z" />
+      android:pathData="M2,16.302 a4.651,4.651 0 1,1 9.302,0 a4.651,4.651 0 1,1 -9.302,0 Z M5.488,8.86 a5.814,5.814 0 1,1 11.628,0 a5.814,5.814 0 1,1 -11.628,0 Z M12.698,13.047 a4.651,4.651 0 1,1 9.302,0 a4.651,4.651 0 1,1 -9.302,0 Z M9.21,15.372 a3.488,3.488 0 1,1 6.976,0 a3.488,3.488 0 1,1 -6.976,0 Z" />
 </vector>

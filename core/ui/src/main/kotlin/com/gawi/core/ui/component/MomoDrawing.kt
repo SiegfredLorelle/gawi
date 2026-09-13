@@ -96,6 +96,13 @@ private fun DrawScope.drawGills(frame: MomoFrame, spare: Int, regrowing: Float, 
     val spent = SpendOrder.take(Streaks.MAX_SPARE - spare.coerceIn(0, Streaks.MAX_SPARE))
     translate(top = frame.gillDrop) {
         Gills.forEachIndexed { index, gill ->
+            // How short this gill is drawn, 0 full to 1 spent. The count says
+            // it, and the mood says it too: §3's table draws **all three** right
+            // gills short while regenerating, because zero spare and
+            // regenerating are one moment seen twice. Taking the larger is what
+            // makes a surface with no habit to name — the widget's still frame —
+            // draw that face rather than a full cluster with one gill regrowing.
+            val shortness = if (index in SpendOrder) maxOf(if (index in spent) 1f else 0f, regrowing) else 0f
             val isRegrowing = index == REGROWING_GILL && regrowing > 0f
             if (isRegrowing) {
                 // The halo sits behind the short gill, breathing with it.
@@ -124,8 +131,15 @@ private fun DrawScope.drawGills(frame: MomoFrame, spare: Int, regrowing: Float, 
                     }
 
                     // A spent gill is the regrowing one's drawing held still:
-                    // one recipe, so the two can never disagree.
-                    index in spent -> ShortGills[index].draw(this, tint, alpha = 1f)
+                    // one recipe, so the two can never disagree. Only the top
+                    // right gill animates its regrowth; the other two are short
+                    // and still.
+                    shortness >= 1f -> ShortGills[index].draw(this, tint, alpha = 1f)
+
+                    shortness > 0f -> {
+                        gill.draw(this, tint, alpha = 1f - shortness)
+                        ShortGills[index].draw(this, tint, alpha = shortness)
+                    }
 
                     else -> gill.draw(this, tint, alpha = 1f)
                 }

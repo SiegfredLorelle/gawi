@@ -30,7 +30,7 @@ That last one is the only
 field here that turns a feature off rather than configuring one, and it is
 deliberately *not* a second threshold: it silences the notification and leaves
 `reminderTime` doing its other job, which is telling the mascot when to start
-looking worried. `ReminderCheck` reads it before it reads anything else and
+looking worried. `ReminderCheck` reads it beside the window check and
 before the journal is touched, so a day spent switched off has not used up its
 one reminder and turning it back on that evening still reminds. The PRD's fourth, **timezone behaviour, is deliberately
 absent** — from the data type as much as from this screen.

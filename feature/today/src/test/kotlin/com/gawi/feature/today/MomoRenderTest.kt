@@ -163,6 +163,29 @@ class MomoRenderTest {
         )
     }
 
+    /**
+     * The regenerating face is three short right gills wherever it is drawn,
+     * count or no count (docs/ux/momo.md §3's table).
+     *
+     * A surface with no habit to name gets the default full count — the
+     * widget's still frame is exactly that — and keying only the top gill to
+     * the mood would have it draw a full cluster with one gill regrowing while
+     * the tank beside it drew the face the table describes.
+     */
+    @Test
+    fun `regenerating draws three short gills even with nobody to count`() {
+        fun outerBeads(p: IntArray) = pinkIn(p, left = 196, top = 44, right = 216, bottom = 66)
+        fun middleBeads(p: IntArray) = pinkIn(p, left = 206, top = 86, right = 226, bottom = 108)
+        val full = middleBeads(render(Mood.CONTENT, spare = Streaks.MAX_SPARE))
+        val regenerating = render(Mood.REGENERATING, spare = Streaks.MAX_SPARE)
+
+        assertTrue("the top right gill should be short", outerBeads(regenerating) < 40)
+        assertTrue(
+            "the middle right gill measured ${middleBeads(regenerating)} against a full $full",
+            middleBeads(regenerating) < full / 2,
+        )
+    }
+
     private fun renderBetween(from: Mood, to: Mood, t: Float, seconds: Float = 0f, spare: Int = Streaks.MAX_SPARE): IntArray {
         val bitmap = ImageBitmap(WIDTH, HEIGHT)
         CanvasDrawScope().draw(Density(1f), LayoutDirection.Ltr, Canvas(bitmap), Size(WIDTH.toFloat(), HEIGHT.toFloat())) {

@@ -22,16 +22,16 @@
 
     <string name="settings_reminder_label">End-of-day reminder</string>
     <string name="settings_reminder_help">When Momo starts looking worried about anything still outstanding, and when the end-of-day reminder arrives if anything is.</string>
-    <!-- Says what is not happening rather than naming a permission: below API 33
-         there is nothing to grant and the user simply switched notifications off,
-         so "allow the permission" would be wrong on some versions and jargon on
-         all of them. docs/ux/reminder.md §3. -->
     <!-- The one row in this group that changes nothing about counting, so its
-         help line carries the load §2 exists for: it has to say the time above
+         help line carries the load docs/ux/settings.md §2 exists for: it has to say the time above
          still drives the mascot, or the switch reads as turning off more than
          it does. No value line — the switch itself is the value. -->
     <string name="settings_reminder_switch_label">Send the reminder</string>
     <string name="settings_reminder_switch_help">Turns the notification off without changing the time above — Momo still starts looking worried at it.</string>
+    <!-- Says what is not happening rather than naming a permission: below API 33
+         there is nothing to grant and the user simply switched notifications off,
+         so "allow the permission" would be wrong on some versions and jargon on
+         all of them. docs/ux/reminder.md §3. -->
     <string name="settings_reminder_blocked">Notifications are off, so this reminder will not arrive.</string>
     <string name="settings_reminder_enable">Turn notifications on</string>
     <!-- The one refusable settings write. reminderOn resolves a reminder equal to
