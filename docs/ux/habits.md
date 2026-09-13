@@ -71,19 +71,18 @@ bullet below describes pickers that are still in the app today.
   matching `Commands.createHabit`, which tests `isBlank()` on whatever it is
   handed; trimming here would let a name of only spaces pass the form and be
   rejected by the domain.
-- **Icon and colour** — picked from a fixed palette in `:core:ui`
-  (`HabitPalette`), never typed. Two reasons: nobody wants to type `#7E57C2`
-  into a phone, and picking from a list is what makes every stored colour valid
-  *by construction*. That is what leaves a blank name as the only reachable
-  validation error. `parseHabitColor` still exists and is still needed — the
-  palette is what the editor offers, not a guarantee about what is in the log,
-  which may hold anything an import or the old debug seeder wrote.
-  Icons are **emoji**, because `HabitMetadata.icon` is a `String` that has to
-  survive an export and an import, and a drawable resource id would not. They
-  are decorative wherever a name sits beside them — `HabitIcon` clears its
-  semantics, since 2026-09-02, after a device read the emoji's Unicode name as
-  its own stop. **Retired entirely by visual-identity §7.3**: a habit keeps no
-  icon, so there is nothing left to silence and no picker left to name.
+- **Icon and colour** — **the form does not have them**
+  ([visual-identity.md](visual-identity.md) §7.3): a habit's name is its
+  identity, so there is no picker, no badge and nothing decorative to silence.
+  A blank name is therefore the only reachable validation error, which the
+  pickers used to guarantee a different way — every stored colour was valid by
+  construction because it came off a fixed list.
+  The two fields stay on `HabitMetadata` as **passthrough** and the form
+  carries them: an edit writes back what was stored, a create writes the
+  defaults. That is not tidiness left undone but the rule §6.3 set — a form
+  that no longer shows a field must not write one either, and clearing them
+  would be writing one. Nothing reads them, so nothing parses them; the palette
+  and `parseHabitColor` went with the picker.
 - **Schedule** — daily, or weekly with a target. **The target is capped at
   1..7, and the cap is load-bearing.** `Schedule.Weekly` validates with
   `require`, so an out-of-range target **throws** rather than returning a

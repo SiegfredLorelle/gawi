@@ -673,9 +673,10 @@ because this one is a difference in the question rather than in the arithmetic.
 A window cannot say whether a gap inside it was forgiven without reading the
 lives earned outside it, which is the history the window exists to exclude. So
 Today answers what the user kept alive and Insights answers what they turned up
-for, and the second is the honest one for a retrospective. Revisit the wording
-on the screen when step 4 draws the gills and the two numbers are visible
-together for the first time.
+for, and the second is the honest one for a retrospective. The gills are drawn now, so the two numbers are visible
+together for the first time and the wording stands as written — the gap is
+between two questions, and a screen that explained it would be answering a
+third.
 
 ### 9.4 The trend measures turning up
 
