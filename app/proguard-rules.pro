@@ -25,7 +25,7 @@
 # getDeclaredConstructor(), which R8 cannot see: it keeps the class, because a
 # class literal names it, and drops the no-arg constructor, because nothing
 # calls one. What that costs is the whole point of testing this on a device —
-# the widget's checkbox silently stops doing anything, with no crash and no
+# a tap on a widget row silently stops doing anything, with no crash and no
 # message, and only logcat carries
 # "NoSuchMethodException: com.gawi.widget.ToggleHabitAction.<init> []".
 # The tap it restores is docs/ux/widget.md §4's.
