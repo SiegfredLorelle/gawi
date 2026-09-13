@@ -573,7 +573,14 @@ docs/running.md §4 has the boxes.
   no control is emitted: `GlyphBitmap` draws the state as a tinted mask and the
   image is decorative. **The mark is drawn exactly as the `CheckBox` was**
   (canvas page 32, marked A), so nothing a sighted user sees changes and the
-  whole of the change is the stop that went. **What it costs** is the compound
+  whole of the change is the stop that went. That is two measurements rather
+  than an intention, and both broke once in the writing: the mark is **18dp**,
+  which needs `GlyphBitmap` to fill its bitmap, since the `Image` is sized to
+  the bitmap and a margin baked into it shrinks the mark inside its own box;
+  and it is centred in a **32dp** box, the width the control occupied, so a
+  name still begins at 32dp rather than at `GLYPH_SLOT`'s 48. The done and
+  outstanding marks share one outer silhouette, the outline's, or the filled
+  one comes out a stroke-width smaller than the empty one. **What it costs** is the compound
   button's optimism — `isChecked` and the wiring that went with it — so the mark
   turns over when the widget redraws rather than under the finger. The cost in
   visible rows is unchanged: three at 4×3 where there were five, one full row at
