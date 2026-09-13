@@ -346,7 +346,11 @@ test can measure it.
   is the widget's lesson from both sides — the one `TodayWidget.kt`'s
   `HabitRows` KDoc records, first when review caught a row describing its image
   and its checkbox separately, and again when a device showed where a checkbox's
-  description actually lands.
+  description actually lands. The Momo widget is the third instance and the one
+  that names the rule's other half: a description is only read if something can
+  *focus* the node carrying it, so her tile is clickable and describes itself
+  rather than leaving the sentence on a face nothing stops at
+  (widget.md §7).
 - **Animations off means still.** `rememberAnimationsEnabled` reads the
   system *Animator duration scale* once per composition, and everything that
   loops — Momo, the tank life, a celebration — answers to that one reading, so
