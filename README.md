@@ -8,7 +8,8 @@ your data never leaves the device. For what and why, read
 
 ## Status
 
-Pre-1.0. Version `0.2.0` (`versionCode 2`), tagged `v0.2.0` —
+Pre-1.0. Version `1.0.0` (`versionCode 3`) on `main`; the last tag is
+`v0.2.0` —
 a tag and release notes with **no artifact attached**. `make release` builds a
 signed, shrunk APK, so an installable build is one command away; the first one
 actually published is 1.0.0. Not on any store. Build it from source with the
