@@ -105,10 +105,13 @@ internal fun MomoBody(content: WidgetContent) {
         .fillMaxSize()
         .background(WidgetPalette.momoGround)
         .padding(WIDGET_PADDING.dp)
-        .clickable(openAppAction(context))
-    // Loading has nothing to say yet, and an empty description on a focusable
-    // tile is worse than none: it is a stop that announces a blank.
-    if (spoken != null) modifier = modifier.semantics { contentDescription = spoken }
+    // Loading has nothing to say yet, so it gets neither half: a focusable tile
+    // with no description is a stop that announces a blank, which is worse than
+    // not being a stop at all. The two go together — the click is what makes the
+    // tile focusable, so it is also what would make a missing description heard.
+    if (spoken != null) {
+        modifier = modifier.clickable(openAppAction(context)).semantics { contentDescription = spoken }
+    }
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
         val ink = rememberOutfitInk(
             tint = WidgetPalette.momoCaption,
