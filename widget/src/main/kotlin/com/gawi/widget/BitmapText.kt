@@ -268,9 +268,9 @@ internal fun rememberOutfitInk(
  * zero when the host has no info for the id yet, and a widget that draws
  * nothing in that window is worse than one that ellipsises hard.
  *
- * [contentDescription] is `null` by default — decorative — because the row's
- * name belongs on the checkbox, where TalkBack pairs it with the checked state;
- * the copy states pass their text. Blank text emits nothing at all.
+ * [contentDescription] is `null` by default — decorative — because a row says
+ * its own name and state, and nothing inside it is a stop; the copy states pass
+ * their text. Blank text emits nothing at all.
  */
 @Composable
 internal fun OutfitText(

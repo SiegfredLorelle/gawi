@@ -36,10 +36,9 @@ import kotlin.time.Duration.Companion.seconds
  *
  * **Contrast rather than "names a colour", because the weaker property is
  * hollow.** The first version asserted `style?.color != null`, and a mutation
- * check exposed it: Glance fills in a default `TextStyle`, so the plain-`Text`
- * branch passed with the fix removed and only the `CheckBox` branch failed. The
- * colour was never absent, it was *wrong*, and only a test that knows what the
- * text sits on can tell those apart.
+ * check exposed it: Glance fills in a default `TextStyle`, so one branch passed
+ * with the fix removed. The colour was never absent, it was *wrong*, and only a
+ * test that knows what the text sits on can tell those apart.
  *
  * **Both themes, because either one alone is a trapdoor.** Night-only was the
  * first version, and it would have let a dark-mode-only literal through —
@@ -51,10 +50,11 @@ import kotlin.time.Duration.Companion.seconds
  * **Since 2026-08-25 the text is pixels, and the colour is a tint.** Every string
  * is an [OutfitText] — an `EmittableImage` carrying `ColorFilter.tint(onSurface)`
  * — so the matcher reads the tint's `ColorProvider` where it read the style's
- * before. It deliberately does **not** match `EmittableWithText` any more: the
- * `CheckBox` beside each name is still one, with `text == ""`, and a matcher that
- * counted it would report two texts per row and measure a colour nothing draws.
- * The count guards below are what make an empty tree fail, so they count images.
+ * before, and it deliberately does **not** match `EmittableWithText` any more.
+ * The mark beside each name is a tinted image too, and is excluded by name in
+ * `TextColour.kt`: it is a fill rather than a string, so counting it would
+ * report two texts per row and hold a fill to a text floor. The count guards
+ * below are what make an empty tree fail, so they count images.
  *
  * **The ground is the one that was actually drawn, since 2026-08-28.** Until
  * then the probe resolved it from a second, default `GlanceTheme { }`, and this
@@ -128,7 +128,7 @@ abstract class WidgetTextColourContract {
         onAllNodes(illegibleText(probe.context, probe.background)).assertCountEquals(0)
     }
 
-    /** The rows, which are `CheckBox`es and not `Text`s — the case that hides. */
+    /** The rows, whose names are rasterised images rather than `Text`s — the case that hides. */
     @Test
     fun `habit rows are legible on the widget background`() = runGlanceAppWidgetUnitTest(RENDER_TIMEOUT) {
         val snapshot = todaySnapshot(

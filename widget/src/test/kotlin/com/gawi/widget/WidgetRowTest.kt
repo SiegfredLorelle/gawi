@@ -6,24 +6,21 @@ import androidx.compose.ui.unit.dp
 import androidx.glance.EmittableImage
 import androidx.glance.action.ActionModifier
 import androidx.glance.action.actionParametersOf
-import androidx.glance.appwidget.CheckBoxColors
-import androidx.glance.appwidget.CheckboxDefaults
-import androidx.glance.appwidget.EmittableCheckBox
 import androidx.glance.appwidget.testing.unit.hasRunCallbackClickAction
-import androidx.glance.appwidget.testing.unit.isChecked
 import androidx.glance.appwidget.testing.unit.runGlanceAppWidgetUnitTest
 import androidx.glance.findModifier
 import androidx.glance.layout.EmittableRow
 import androidx.glance.layout.HeightModifier
 import androidx.glance.testing.GlanceNodeMatcher
 import androidx.glance.testing.unit.MappedNode
-import androidx.glance.testing.unit.hasContentDescription
 import androidx.glance.testing.unit.hasContentDescriptionEqualTo
 import androidx.glance.unit.Dimension
 import com.gawi.core.domain.testing.habitId
 import com.gawi.core.testing.todayHabit
 import com.gawi.core.testing.todaySnapshot
+import com.gawi.widget.testsupport.describedNode
 import com.gawi.widget.testsupport.isDescribed
+import com.gawi.widget.testsupport.tintedWith
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -31,21 +28,20 @@ import org.robolectric.RuntimeEnvironment
 import kotlin.time.Duration.Companion.seconds
 
 /**
- * The shape of a habit row now that its name is a bitmap: a 48dp clickable row
- * described as the name and its state, a text-less checkbox keeping the bare
- * name, one decorative image, and the toggle reachable from row and glyph.
+ * The shape of a habit row: a 48dp clickable row described as the name and its
+ * state, and inside it a decorative mark and a decorative name, neither of them
+ * a stop of its own.
  *
- * `WidgetTextColourTest` asserts the image's colour; this asserts everything
- * else the switch from `CheckBox(text = …)` could have lost — the name TalkBack
- * reads, the tap on the name, and the checked state — because each of those
- * survived the change only by being re-wired, and a re-wiring is exactly what a
- * decision-only test cannot see. The row is what is described because the row
- * is the stop TalkBack lands on: Glance describes a `CheckBox`'s wrapper and not
- * the control, and a device heard the name at the row and nothing at the box
- * (`TodayWidget.kt`, `HabitRows`). What the JVM sees is the emittable tree —
- * that every row *asks* for its description and its height; what a launcher
- * lays out, and what the 32dp control inside still measures, is the device's
- * half (docs/running.md §4).
+ * **One stop per row is the property under test**, and it is the thing the
+ * Accessibility Scanner and a device both measured the other way
+ * (docs/running.md §4). A `CheckBox` here would be a second stop at 32dp that no
+ * height can grow, so the mark is drawn instead; asserting that *nothing inside
+ * the row is described* is what would catch a control coming back. The rest —
+ * the name TalkBack reads, the tap, the completion — survived the move from
+ * `CheckBox(text = …)` only by being re-wired, and a re-wiring is what a
+ * decision-only test cannot see. What the JVM sees is the emittable tree: that
+ * every row *asks* for its description and its height. What a launcher lays out
+ * is the device's half.
  */
 @RunWith(RobolectricTestRunner::class)
 class WidgetRowTest {
@@ -57,11 +53,12 @@ class WidgetRowTest {
         ),
     )
 
+    /** Two rows, and four images: a mark and a name each, every one of them silent. */
     @Test
-    fun `every row is a text-less checkbox and one Outfit image`() = render {
-        onAllNodes(checkBox()).assertCountEquals(2)
-        onAllNodes(checkBoxWithText()).assertCountEquals(0)
-        onAllNodes(image()).assertCountEquals(2)
+    fun `every row is a decorative mark beside a decorative name`() = render {
+        onAllNodes(row()).assertCountEquals(2)
+        onAllNodes(image()).assertCountEquals(4)
+        onAllNodes(describedImage()).assertCountEquals(0)
     }
 
     /** On the row, in words, because the row is the stop TalkBack lands on. */
@@ -73,13 +70,14 @@ class WidgetRowTest {
         onAllNodes(describedRow("walk, not done")).assertCountEquals(1)
     }
 
-    /** Kept on the box as the bare name, so a host that attaches it to the control has a label; the image stays decorative. */
+    /**
+     * Nothing but the two rows is described, which is the finding stated as a
+     * test: the second stop the Scanner found was the checkbox control, and a
+     * third described node here is that defect coming back under another name.
+     */
     @Test
-    fun `the checkbox keeps the bare name and the image carries nothing`() = render {
-        onAllNodes(describedCheckBox("read")).assertCountEquals(1)
-        onAllNodes(describedCheckBox("walk")).assertCountEquals(1)
-        onAllNodes(hasContentDescriptionEqualTo("read")).assertCountEquals(1)
-        onAllNodes(describedImage()).assertCountEquals(0)
+    fun `the rows are the only things described`() = render {
+        onAllNodes(describedNode()).assertCountEquals(2)
     }
 
     /** The 48dp floor, asked for on every row. Whether a launcher draws it so is the device's to say. */
@@ -90,56 +88,35 @@ class WidgetRowTest {
     }
 
     /**
-     * The row's action names the habit, and the glyph carries one of its own.
-     *
-     * *Which* action the glyph carries is not asserted here: Glance wraps
-     * `onCheckedChange` in an `internal` `CompoundButtonAction`, and unwrapping
-     * it needs reflection into the library. That the glyph is wired at all is
-     * public, and it is the half that regresses silently — dropping
-     * `onCheckedChange` leaves a glyph that draws and does nothing. The device
-     * box in docs/running.md §4 confirms the tap writes the same thing as a tap
-     * on the name.
+     * The row's action names the habit, and it is the only one: with the control
+     * gone there is no second target inside the row to wire, and no
+     * `CompoundButton` that would flip on screen without writing anything.
      */
     @Test
-    fun `the toggle is on the row with the habit's id, and the glyph is wired too`() = render {
+    fun `the toggle is on the row with the habit's id, and nowhere else`() = render {
         for (n in 1..2) {
             val parameters = actionParametersOf(HABIT_ID to habitId(n).value)
             onAllNodes(hasRunCallbackClickAction<ToggleHabitAction>(parameters)).assertCountEquals(1)
         }
-        onAllNodes(checkBoxWithAnAction()).assertCountEquals(2)
+        onAllNodes(imageWithAnAction()).assertCountEquals(0)
     }
 
     /**
-     * The glyph is drawn in the widget's own palette rather than the host's
-     * default, which is the 2.91:1 defect docs/running.md §4 records against
-     * API 29 and 30.
+     * The mark is drawn in the widget's own palette rather than a host default,
+     * and it says which state it is in by which of the two it carries.
      *
-     * The expected value is built inside the composition, because
-     * `CheckboxDefaults.colors` is `@Composable`; `CheckBoxColorsImpl` overrides
-     * equality, so the comparison is a real one. Deleting the `colors` argument
-     * in `TodayWidget` leaves the theme default here and turns this red.
-     * `WidgetPaletteTest` holds the two colours themselves to the contrast
-     * floor; this is what says the widget hands them over.
+     * Readable without reflection: the mark is an `Image` and carries its tint in
+     * the tree, where a Glance `CheckBox` exposes its colours only through an
+     * `internal` accessor and can be asserted against only by rebuilding them
+     * inside the composition. Matched by **identity**, because `glyphChecked`
+     * and `bandWoven` are both built from `Primary` and so are *equal*.
+     * `WidgetPaletteTest` holds the two colours to the contrast floor; this says
+     * the widget hands them to the right rows.
      */
     @Test
-    fun `the checkbox glyphs carry the widget palette`() = runGlanceAppWidgetUnitTest(RENDER_TIMEOUT) {
-        setContext(RuntimeEnvironment.getApplication())
-        setAppWidgetSize(DpSize(250.dp, 110.dp))
-        var expected: CheckBoxColors? = null
-        provideComposable {
-            expected = CheckboxDefaults.colors(
-                checkedColor = WidgetPalette.glyphChecked,
-                uncheckedColor = WidgetPalette.glyphUnchecked,
-            )
-            WidgetBody(WidgetContent.Ready(snapshot.toWidgetState()))
-        }
-        awaitIdle()
-        onAllNodes(checkBoxColoured(checkNotNull(expected))).assertCountEquals(2)
-    }
-
-    @Test
-    fun `the glyph shows the completion`() = render {
-        onAllNodes(isChecked()).assertCountEquals(1)
+    fun `the mark shows the completion in the widget palette`() = render {
+        onAllNodes(tintedWith(WidgetPalette.glyphChecked)).assertCountEquals(1)
+        onAllNodes(tintedWith(WidgetPalette.glyphUnchecked)).assertCountEquals(1)
     }
 
     private fun render(block: androidx.glance.appwidget.testing.unit.GlanceAppWidgetUnitTest.() -> Unit) =
@@ -155,28 +132,17 @@ class WidgetRowTest {
 /** Aligned with WidgetTextColourTest, and for the same reason: Robolectric's first case is slow under load. */
 private val RENDER_TIMEOUT = 60.seconds
 
-private fun checkBox() = GlanceNodeMatcher<MappedNode>("is a checkbox") { it.value.emittable is EmittableCheckBox }
-
-/** A checkbox carrying an action of its own, whatever Glance wrapped it in. */
-private fun checkBoxWithAnAction() = GlanceNodeMatcher<MappedNode>("is a checkbox with an action") {
-    val checkBox = it.value.emittable as? EmittableCheckBox ?: return@GlanceNodeMatcher false
-    checkBox.modifier.findModifier<ActionModifier>() != null
-}
-
-/** A checkbox whose colours are [expected], compared through `CheckBoxColorsImpl`'s own equality. */
-private fun checkBoxColoured(expected: CheckBoxColors) = GlanceNodeMatcher<MappedNode>("is a checkbox coloured $expected") {
-    (it.value.emittable as? EmittableCheckBox)?.colors == expected
-}
-
-private fun checkBoxWithText() = GlanceNodeMatcher<MappedNode>("is a checkbox carrying text") {
-    (it.value.emittable as? EmittableCheckBox)?.text?.isNotEmpty() == true
-}
-
-private fun describedCheckBox(name: String) = GlanceNodeMatcher<MappedNode>("is a checkbox described as $name") {
-    it.value.emittable is EmittableCheckBox && hasContentDescription(name).matches(it)
-}
-
 private fun image() = GlanceNodeMatcher<MappedNode>("is an image") { it.value.emittable is EmittableImage }
+
+/**
+ * An image carrying a click action of its own — the second target the mark must
+ * not become. Asked of the image rather than counted off
+ * `hasRunCallbackClickAction`, whose no-argument form matches only actions with
+ * *empty* parameters and so matches none of these.
+ */
+private fun imageWithAnAction() = GlanceNodeMatcher<MappedNode>("is an image with an action") {
+    it.value.emittable is EmittableImage && it.value.emittable.modifier.findModifier<ActionModifier>() != null
+}
 
 private fun describedImage() = GlanceNodeMatcher<MappedNode>("is a described image") {
     it.value.emittable is EmittableImage && it.value.emittable.isDescribed()

@@ -15,8 +15,8 @@
     <string name="widget_mood_worried">Momo is getting worried.</string>
     <string name="widget_mood_regenerating">Momo is regrowing a gill. Pick the thread back up.</string>
     <!-- One Today row, as TalkBack reads it: the name, then whether today is
-         done. On the row, not the checkbox, because Glance describes the box's
-         wrapper and TalkBack stops only at the row and the control
+         done. On the row, because the row is the only stop it has — the mark
+         beside the name is a drawn image and no control of its own
          (TodayWidget.kt, HabitRows). "done" / "not done" is what the retro
          strip and the history grid already say (habits_strip_not_done,
          insights_day_not_done). -->

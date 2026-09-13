@@ -127,7 +127,7 @@ internal fun StreakBody(content: StreakContent) {
  * One row per habit: the name, and its streak at the right-hand edge.
  *
  * Both halves sit in fixed-width [Box]es rather than leaning on a weight, the
- * same way [TodayWidget] reserves `CHECKBOX_SLOT`. A rasterised string is an
+ * same way [TodayWidget] reserves its glyph slot. A rasterised string is an
  * `Image` whose width is its own ink, so without a slot a short name would pull
  * the numeral in beside it and the column would not line up.
  *

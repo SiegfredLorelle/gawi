@@ -23,8 +23,8 @@ internal val HABIT_ID = ActionParameters.Key<String>("habitId")
  * `internal` is a Kotlin visibility statement only; Glance resolves this class
  * by name from the `PendingIntent` and builds it with `getDeclaredConstructor()`,
  * which R8 cannot see. `app/proguard-rules.pro` keeps the no-arg constructor for
- * that reason, and what the missing rule costs is a checkbox that does nothing
- * at all on a tap: no crash, no message, only logcat.
+ * that reason, and what the missing rule costs is a row that does nothing at
+ * all on a tap: no crash, no message, only logcat.
  */
 internal class ToggleHabitAction : ActionCallback {
 

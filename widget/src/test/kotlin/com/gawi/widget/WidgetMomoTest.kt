@@ -5,7 +5,6 @@ import android.graphics.Color
 import android.view.View
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import androidx.glance.appwidget.EmittableCheckBox
 import androidx.glance.appwidget.testing.unit.GlanceAppWidgetUnitTest
 import androidx.glance.appwidget.testing.unit.runGlanceAppWidgetUnitTest
 import androidx.glance.testing.GlanceNodeAssertion
@@ -75,9 +74,10 @@ class WidgetMomoTest {
         onNode(
             untintedImage(),
         ).assertHasContentDescriptionEqualTo(RuntimeEnvironment.getApplication().getString(R.string.widget_mood_content))
-        // The rows are still there beneath her — the tall layout is otherwise
-        // rendered by no other test, which all compose at one cell.
-        onAllNodes(checkBox()).assertCountEquals(2)
+        // The rows are still there beneath her, one outstanding mark each — the
+        // tall layout is otherwise rendered by no other test, which all compose
+        // at one cell.
+        onAllNodes(tintedWith(WidgetPalette.glyphUnchecked)).assertCountEquals(2)
     }
 
     /** The empty state's face is decorative: the copy already reads once. */
@@ -91,8 +91,8 @@ class WidgetMomoTest {
 
     /**
      * The large body (docs/ux/widget.md §7): Momo on her ground, silent, beside
-     * the mood line, which is the one thing here that is read — the rows'
-     * checkboxes still announce themselves beneath.
+     * the mood line, which is the one thing here that is read — the rows are
+     * still drawn beneath, each with its own outstanding mark.
      */
     @Test
     fun `two cells tall and wide, Momo sits on her ground beside the mood line and the mood line is what is read`() =
@@ -107,7 +107,7 @@ class WidgetMomoTest {
             onNode(
                 describedText(),
             ).assertHasContentDescriptionEqualTo(RuntimeEnvironment.getApplication().getString(R.string.widget_mood_content))
-            onAllNodes(checkBox()).assertCountEquals(2)
+            onAllNodes(tintedWith(WidgetPalette.glyphUnchecked)).assertCountEquals(2)
         }
 
     /**
@@ -233,8 +233,6 @@ private fun GlanceAppWidgetUnitTest.render(content: WidgetContent, size: DpSize)
     provideComposable { WidgetBody(content) }
     awaitIdle()
 }
-
-private fun checkBox() = GlanceNodeMatcher<MappedNode>("is a checkbox") { it.value.emittable is EmittableCheckBox }
 
 /** The bitmap a matched image node carries. */
 private fun GlanceNodeAssertion<MappedNode, *>.mask(): Bitmap {
