@@ -412,7 +412,11 @@ is live work.
 
 **How to read a tick.** A tick earned on an emulator means "seen and correct",
 not "verified on the target device" — colour, contrast and layout render the
-same there and nothing else does. Each box says where it ran. Two device passes
+same there and nothing else does. Each box says where it ran. **Since
+2026-09-14 a tick also says which build**: PRD step 5a runs these against the
+signed, shrunk release APK rather than a debug install, because R8 rewrites
+what ships and what breaks there breaks nowhere else. A box needing `run-as`
+is the exception and says so, since a release build refuses it (§6). Two device passes
 stand behind the ticks that name them: the **Nothing A059 on 2026-09-02** —
 Android 16 (API 36), 1080×2392 at 375 dpi, font scale 0.85, the Nothing
 launcher, TalkBack 17.0.1, Accessibility Scanner 2.5.1, over Wi-Fi adb, against
@@ -440,7 +444,10 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
 
 **On an emulator**
 
-- [ ] The app launches and `adb logcat -d -s AndroidRuntime:E` is empty.
+- [x] The app launches and `adb logcat -d -s AndroidRuntime:E` is empty. Run
+      2026-09-14 on `Small_Phone` against the **signed release APK**, which is
+      where this stops being a formality: R8's failures are silent, so an empty
+      log is what says no serializer and no reflected class was stripped.
 - [ ] From the empty state, tap **Add a habit**, name it, save. It appears on
       Today with no restart — one observation covering Hilt building the data
       layer, the command path, the log being folded, the projection write and
@@ -508,7 +515,7 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       recomputed on read.
 - [ ] A cancelled tap still commits: tap, immediately press Back, relaunch, and
       the completion is there.
-- [ ] **Export writes a file you can read back.** Settings → scroll to **Data**
+- [x] **Export writes a file you can read back.** Settings → scroll to **Data**
       → **Export a copy**. Keep the offered name, save it into Downloads,
       confirm the snackbar, then:
 
@@ -519,7 +526,12 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       It prints JSON with your habits in it. Note the contrast with the database
       check above: SAF wrote outside app-private storage, so this needs no `run-
       as`. Nothing in the app points at that file, so delete it when you are
-      done.
+      done. Run 2026-09-14 on `Small_Phone` against the release APK: the
+      snackbar read *"Exported. That file is the only copy — keep it somewhere
+      other than this phone."*, and the file held 83 events over ten habits with
+      `HabitCreated`, `CompletionAdded` and `CompletionTombstoned` all
+      round-tripping — which is what says kotlinx-serialization survived
+      shrinking.
 - [ ] **The offered name is today's date, not yesterday's.** Set the day cutoff
       to 03:00, wait until after midnight — or simply check the name is today's
       while the cutoff is at 03:00 and the clock reads before it — and the save
