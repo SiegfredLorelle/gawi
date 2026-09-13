@@ -38,6 +38,7 @@ import androidx.compose.ui.text.style.TextAlign
 import com.gawi.core.ui.component.GawiIconButton
 import com.gawi.core.ui.component.GawiIcons
 import com.gawi.core.ui.component.Notice
+import com.gawi.core.ui.progress.spokenWeekProgress
 import com.gawi.core.ui.streak.StreakUi
 import com.gawi.core.ui.streak.spokenStreak
 import com.gawi.core.ui.theme.GawiSpacing
@@ -376,10 +377,15 @@ private fun TodayLine(state: HabitDetailUiState.Detail) {
             style = MaterialTheme.typography.bodyLarge,
         )
         state.weekProgress?.let { progress ->
+            val spoken = spokenWeekProgress(progress.done, progress.target)
             Text(
                 text = stringResource(R.string.habits_detail_week_progress, progress.done, progress.target),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                // Same words the Today row speaks, from :core:ui: a reader says
+                // the drawn ratio as its slash. Clearing rather than adding, so
+                // the line is not read twice.
+                modifier = Modifier.clearAndSetSemantics { contentDescription = spoken },
             )
         }
     }

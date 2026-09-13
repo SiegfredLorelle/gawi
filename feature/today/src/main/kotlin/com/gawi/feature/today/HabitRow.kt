@@ -19,8 +19,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
+import com.gawi.core.ui.progress.spokenWeekProgress
 import com.gawi.core.ui.theme.GawiSpacing
 
 /**
@@ -70,10 +73,15 @@ private fun RowScope.HabitTitles(row: HabitRowUi, modifier: Modifier = Modifier)
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(GawiSpacing.Line)) {
         Text(text = row.name, style = MaterialTheme.typography.bodyLarge)
         row.weekProgress?.let { progress ->
+            val spoken = spokenWeekProgress(progress.done, progress.target)
             Text(
                 text = stringResource(R.string.today_week_progress, progress.done, progress.target),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                // The drawn ratio is read as its slash, so the row speaks the
+                // relation instead. Clearing rather than adding, because a leaf
+                // carrying both a text and a description is read twice.
+                modifier = Modifier.clearAndSetSemantics { contentDescription = spoken },
             )
         }
     }

@@ -133,9 +133,13 @@ class HabitDetailScreenTest {
     }
 
     /**
-     * Only a weekly habit draws "2/3 this week" — the Today row's rule, kept in
-     * step, since a detail screen that disagreed with the row that led to it
-     * would be its own bug.
+     * Only a weekly habit carries "2 of 3 this week" — the Today row's rule,
+     * kept in step, since a detail screen that disagreed with the row that led
+     * to it would be its own bug.
+     *
+     * Asked of the spoken form rather than the drawn one because the line
+     * clears its own semantics: the drawn ratio is read as its slash, so it
+     * leaves both trees and the description is what is left to find.
      *
      * Two tests rather than one with two renders: the compose rule's activity
      * takes `setContent` once, and a second call throws rather than redrawing.
@@ -144,14 +148,16 @@ class HabitDetailScreenTest {
     fun weekProgress_isDrawnForAWeeklyHabit() {
         render(detail(weekProgress = HabitWeekProgress(done = 2, target = 3)))
 
-        compose.onNodeWithText(resources.getString(R.string.habits_detail_week_progress, 2, 3)).assertIsDisplayed()
+        compose.onNodeWithContentDescription(resources.getString(UiR.string.ui_week_progress_spoken, 2, 3))
+            .assertIsDisplayed()
     }
 
     @Test
     fun weekProgress_isAbsentForADailyHabit() {
         render(detail(weekProgress = null))
 
-        compose.onNodeWithText(resources.getString(R.string.habits_detail_week_progress, 2, 3)).assertDoesNotExist()
+        compose.onNodeWithContentDescription(resources.getString(UiR.string.ui_week_progress_spoken, 2, 3))
+            .assertDoesNotExist()
     }
 
     /**

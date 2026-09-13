@@ -198,7 +198,10 @@ the panel is one node speaking `:core:ui`'s `spokenStreak` — *"streak of 12
 days"*, *"Streak broken, was 4 weeks"* — because *"3w"* reads as "3 w" on
 TalkBack 17 and the broken form was three stops. Found by review when the Today
 badge took the same fix; the device pass never opened this panel, so it is owed
-a hearing (docs/running.md §4).
+a hearing (docs/running.md §4). The week line is shared the same way, for the
+same reason: it draws `2/3 this week` and speaks `:core:ui`'s
+`spokenWeekProgress` — *"2 of 3 this week"* — since a reader says the slash
+(today-view.md §5).
 
 ### The retro strip is five cells, and one of them is shut
 
