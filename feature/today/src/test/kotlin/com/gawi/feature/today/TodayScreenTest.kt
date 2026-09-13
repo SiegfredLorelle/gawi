@@ -164,6 +164,24 @@ class TodayScreenTest {
             .assert(hasContentDescription(quantity(UiR.plurals.ui_streak_days_spoken, 1)))
     }
 
+    /**
+     * A weekly row speaks the ratio as a relation, and the drawn form is not in
+     * its text. The slash is what a reader says otherwise, so the negative half
+     * is the half that matters: it proves the ratio *left* the row's text
+     * rather than being read alongside the words.
+     */
+    @Test
+    fun weekProgress_speaksTheRatioInWords() {
+        val weekly = WALK.copy(weekProgress = WeekProgress(done = 1, target = 3))
+        compose.setContent {
+            GawiTheme { TodayScreen(HABITS.copy(rows = listOf(weekly)), NO_ACTIONS, SnackbarHostState()) }
+        }
+
+        compose.onNodeWithText(WALK.name)
+            .assert(hasContentDescription(resources.getString(UiR.string.ui_week_progress_spoken, 1, 3)))
+            .assert(hasText(resources.getString(R.string.today_week_progress, 1, 3)).not())
+    }
+
     /** A break is announced as one, with what was lost in its unit — never "0" and then "was 12". */
     @Test
     fun brokenStreak_speaksWhatWasLost() {

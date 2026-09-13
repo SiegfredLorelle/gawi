@@ -7,7 +7,7 @@
   What belongs here is copy that more than one feature draws (AGENTS.md's
   :core:ui rule). Copy specific to one screen stays with that screen.
 -->
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Short weekday labels, from resources rather than
          DayOfWeek.getDisplayName: that reads the JVM's locale rather than the
@@ -73,5 +73,15 @@
         <item quantity="one">Streak broken, was %1$d week</item>
         <item quantity="other">Streak broken, was %1$d weeks</item>
     </plurals>
+
+    <!-- "1 of 3 this week", spoken, in place of the "1/3" both surfaces draw
+         (SpokenWeekProgress.kt). A reader says the drawn form as written, and
+         TalkBack 17 read it as "1/3 this week" on a Today row
+         (docs/running.md §4). Two screens draw that ratio — a Today row and
+         habit detail — so the words live here, beside the streak's.
+         Not a plural, for the reason each drawn copy gives: the numbers are a
+         ratio and "week" is not what they count, so there is no singular form
+         to write. Positional, so a translation may reorder the two numbers. -->
+    <string name="ui_week_progress_spoken" tools:ignore="PluralsCandidate">%1$d of %2$d this week</string>
 
 </resources>

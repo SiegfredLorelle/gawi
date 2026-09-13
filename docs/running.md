@@ -1934,11 +1934,12 @@ which is the defect visual-identity §4.3 describes — and it needs no TalkBack
       nothing unnamed or silent. Two things the overlay showed that no test
       predicted: an unchecked row carries **no state word when landed on**,
       because this TalkBack says *checked* for a Compose checkbox and nothing
-      for the other state, and the weekly ratio is spoken **as drawn**, *"1/3
-      this week"*, because `today_week_progress` has no spoken twin. A *"1 of 3
-      this week"* string is the follow-up; the icon picker's was retired with
-      the picker (visual-identity §7.3). Open for the day-cutoff **picker**
-      itself, the one part of the three flows no pass has driven.
+      for the other state, and the weekly ratio was read **as drawn**, *"1/3
+      this week"*, `today_week_progress` having had no spoken twin. It has one
+      now — `:core:ui`'s `spokenWeekProgress`, *"1 of 3 this week"* — and this
+      box is where it is heard; the icon picker's was retired with the picker
+      (visual-identity §7.3). Open for the day-cutoff **picker** itself, the
+      one part of the three flows no pass has driven.
 - [x] **A TalkBack pass over the Insights screen.** Two pickers and a list, and
       the thing to listen for is whether a bar row makes sense read aloud: the
       label, the total, and nothing announcing the bar itself. The bars carry no

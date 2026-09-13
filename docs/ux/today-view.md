@@ -265,7 +265,12 @@ Small decisions that were easier to make once drawn:
   child node after the name, so the name should still lead. **The icon half of
   this is gone**: a habit keeps none (visual-identity.md §7.3), and a row with
   no icon has nothing decorative to silence. What survives is the streak's own
-  phrasing, which is the half that was never about the icon.
+  phrasing, which is the half that was never about the icon. **A weekly row's
+  ratio is the same defect once more**: `1/3 this week` is read as its slash,
+  so the row speaks *"1 of 3 this week"* from `:core:ui`'s
+  `spokenWeekProgress`, shared with habit detail for the reason the streak's
+  words are. `weekProgress_speaksTheRatioInWords` pins it, and hearing it is
+  owed on a device with the rest.
 - **A row that owes nothing today is dimmed, and that is not the same as
   ticked.** Twelve empty checkboxes under a panel reading *"8 of 15 left
   today"* is the screen contradicting itself: four of them were weekly habits
