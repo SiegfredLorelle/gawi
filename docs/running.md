@@ -2046,9 +2046,9 @@ which is the defect visual-identity §4.3 describes — and it needs no TalkBack
 with its blocker: the day-cutoff **picker** under TalkBack, undriven; the
 **tedium** of a full month on the history grid, a judgement rather than a
 sentence; a **noted** strip cell, whose *has a note* word no quoted cell
-carried; the Today widget's body, whose header is still not a stop and whose
-checkbox is still a nameless 32 dp second stop; and the Momo widget's body,
-still one stop saying *"Momo"*, waiting on the two experiments its box names.
+carried; the Today widget's body, whose header is still not a stop, so the mood
+line its `ImageView` carries is never spoken; and the Momo widget's body, whose
+clickable root is built and owed a hearing on a real launcher.
 The widget's three device checks in its own block are owed against the widget
 as it now stands, palette included (visual-identity.md §7.4).
 
