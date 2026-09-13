@@ -6,7 +6,6 @@ import com.gawi.core.ui.theme.GawiRole
 import com.gawi.core.ui.theme.contrastRatio
 import com.gawi.core.ui.theme.gawiRole
 import com.gawi.core.ui.theme.gawiTankFarStop
-import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -14,17 +13,19 @@ import org.junit.Test
  * The weeds against the water they are drawn on, at both ends of the gradient
  * (docs/ux/momo.md §4).
  *
- * The dark tank used to end on `primaryFixedDim`, which Material specifies as
- * theme-invariant: both schemes declare it as the same light teal, a few units
- * from the dark weed's own `primary`, and the right-hand pair vanished into the
- * corner it was drawn on.
+ * **A `*Fixed` role cannot carry a per-scheme value.** Material specifies the
+ * whole family as theme-invariant, so both schemes declare `primaryFixedDim` as
+ * the same light teal — a few units from the dark weed's own `primary`, which
+ * puts the dark pair at 1.00:1 in the corner it is drawn on. That is why the
+ * dark tank names its own far stop rather than sharing one, and it is what this
+ * test reddens on if the two are ever collapsed back together.
  *
  * **The bar is the light tank, not a WCAG floor.** A weed is a non-text graphic
- * and would take 3:1, but the light tank has never cleared that and nobody has
+ * and would take 3:1, but the light tank does not clear that and nobody has
  * called it a defect — so what is asserted is that the dark tank is no worse
- * than the light one at either end, which is what "reads at both ends" meant. A
+ * than the light one at either end, which is what "reads at both ends" means. A
  * fixed number here would either fail a drawing that is already accepted or
- * pass the one that measured 1.00:1.
+ * pass one measuring 1.00:1.
  */
 class TankContrastTest {
 
@@ -39,13 +40,6 @@ class TankContrastTest {
                 ratio >= lightFloor,
             )
         }
-    }
-
-    @Test
-    fun `the two schemes no longer share one far stop`() {
-        // The defect itself, as a property: a `*Fixed` role is theme-invariant,
-        // so both tanks used to end on the same light teal.
-        assertNotEquals(gawiTankFarStop(darkTheme = false), gawiTankFarStop(darkTheme = true))
     }
 
     private fun stops(darkTheme: Boolean) = listOf(gawiRole(GawiRole.PrimaryContainer, darkTheme), gawiTankFarStop(darkTheme))
