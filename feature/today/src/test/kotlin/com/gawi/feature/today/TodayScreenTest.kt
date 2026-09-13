@@ -488,6 +488,33 @@ class TodayScreenTest {
     }
 
     /**
+     * The same rule as the tank's, on the surface that replaces it: a gill count
+     * that exists only in pixels is information sighted users alone get
+     * (docs/ux/momo.md §3). The chip draws the shortened cluster, so it has to
+     * say so — and `clearAndSetSemantics` means the face cannot carry its own
+     * description here the way it does in the panel.
+     *
+     * The order is the tank's too: the picture described, then the line that
+     * names the habit, then the count of the day. Asserting the whole string
+     * rather than the count alone is what holds that, and it is also what makes
+     * `chip_speaksTheCountItShows` the negative case — its state is a full
+     * cluster, so an exact match there fails the moment a gill phrase is
+     * prepended to a Momo with nothing to report.
+     */
+    @Test
+    fun `the chip speaks the gill count it draws`() {
+        compose.setContent {
+            GawiTheme { TodayScreen(LONG_AT_RISK, NO_ACTIONS, SnackbarHostState()) }
+        }
+        scrollPastTheTank()
+
+        val spoken = resources.getQuantityString(R.plurals.today_gills_left, 1, 1) +
+            " " + resources.getString(R.string.today_mood_worried_named, WALK.name) +
+            " " + resources.getString(R.string.today_remaining, LONG.remaining, LONG.rows.size)
+        compose.onNodeWithContentDescription(spoken).assertIsDisplayed()
+    }
+
+    /**
      * The label is drawn and not read. TalkBack 17 read the chip as its
      * description and then its label — "3 of 14 left today. 3 left"
      * (docs/running.md §4, 2026-09-02) — because the Row merged a described
@@ -1024,6 +1051,12 @@ class TodayScreenTest {
             logicalDate = LOGICAL_DATE,
             subject = null,
         )
+
+        /**
+         * [LONG] with a habit about to break, so the chip has a gill count to
+         * speak. Long enough to scroll for the same reason [LONG] is.
+         */
+        val LONG_AT_RISK = LONG.copy(subject = MascotSubject(WALK.name, spare = 1))
 
         /**
          * [LONG] with its first row carrying [streak], so a rung can be crossed
