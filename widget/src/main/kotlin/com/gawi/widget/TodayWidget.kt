@@ -300,7 +300,7 @@ private fun HabitRows(rows: List<WidgetRow>) {
                     .semantics { contentDescription = spoken },
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Box(modifier = GlanceModifier.width(GLYPH_SLOT.dp), contentAlignment = Alignment.Center) {
+                Box(modifier = GlanceModifier.width(GLYPH_BOX.dp), contentAlignment = Alignment.Center) {
                     CompletionGlyph(row.completed)
                 }
                 OutfitText(text = row.name, maxWidth = nameWidth, ink = ink)
@@ -358,22 +358,32 @@ internal const val BAND_HEIGHT = 5
 internal const val BAND_GAP = 3
 
 /**
- * Room reserved for the completion mark beside a name, in dp. The mark itself is
- * [GLYPH_SIZE]; the difference is the margin the ellipsis needs to land inside
- * the row rather than under the edge of the widget.
+ * Room reserved for the mark in the *name's* width arithmetic, in dp. Wider than
+ * [GLYPH_BOX] on purpose: the difference is the margin the ellipsis needs to
+ * land inside the row rather than under the edge of the widget.
  */
 private const val GLYPH_SLOT = 48
 
-/** The mark itself, in dp — Material's own glyph size, which is what the row drew before it was drawn here. */
+/**
+ * The box the mark is centred in, in dp — the width Glance's control occupied,
+ * so the name begins where it always did. Laying the mark out in [GLYPH_SLOT]
+ * instead would centre it 16dp in and push every name right by the same, which
+ * is a visible change to a row that is otherwise drawn exactly as before.
+ */
+private const val GLYPH_BOX = 32
+
+/**
+ * The mark itself, in dp — Material's own glyph size, which is what the row drew
+ * when a `CheckBox` drew it. [GlyphBitmap] renders a mark that fills its bitmap,
+ * so this is the drawn size and not a board with a margin around it.
+ */
 private const val GLYPH_SIZE = 18
 
 /**
  * Every habit row's height, in dp — the 48dp touch-target floor. The `Row` is
  * the target, and it has to be stated here because nothing inside it is one: the
  * mark is a decorative image of [GLYPH_SIZE], and a row left to size itself
- * would take that instead. It was the `CheckBox` control's 32dp before the mark
- * was drawn rather than controlled, which Accessibility Scanner
- * measured at 75px on the Nothing A059 on 2026-09-02.
+ * would take that instead.
  * The cost is rows: 94dp of usable height at the 110dp minimum fits one full row
  * and most of a second, and the 4×3 large body fits three. The list scrolls.
  * Chosen with that cost in view (docs/ux/widget.md §8).

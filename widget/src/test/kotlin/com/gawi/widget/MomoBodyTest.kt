@@ -105,6 +105,8 @@ class MomoBodyTest {
         onAllNodes(untintedImage()).assertCountEquals(0)
         onAllNodes(anyText()).assertCountEquals(0)
         onAllNodes(describedNode()).assertCountEquals(0)
+        // And not a stop either: focusable with nothing to say is a blank stop.
+        onNode(drawnOn(WidgetPalette.momoGround)).assert(hasStartActivityClickAction(launchIntent()).not())
     }
 
     /** Four moods, four words — a mapper that reused one would pass a weaker test. */
