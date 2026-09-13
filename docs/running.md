@@ -2174,3 +2174,55 @@ work. It cannot install over a debug build, because the keys differ, so it wants
 an uninstall first and that destroys the event log. And `run-as` refuses on it
 outright — *"package not debuggable"* — so the adb route into `/data/data` is
 gone and the JSON export is the only way to read back what the app holds.
+
+**Putting it on a device that already has the debug build.** The paragraph above
+says what the release build takes away; this is the order that works around it.
+Export first — the uninstall is what destroys the log, and the JSON is the only
+way back.
+
+```console
+$ export ANDROID_SERIAL=emulator-5554      # adb devices -l
+                                           # in the app: Settings -> Data -> Export a copy
+$ adb pull /sdcard/Download/gawi-export-$(date +%F).json /tmp/
+$ adb uninstall com.gawi.app
+$ set -a; . ./.env; set +a
+$ printf '%s\n' "$GAWI_KEYSTORE_PASSWORD" | keytool -list \
+    -keystore "$GAWI_KEYSTORE_PATH" -alias "$GAWI_KEY_ALIAS"
+$ make release
+$ adb install app/build/outputs/apk/release/app-release.apk
+$ adb shell run-as com.gawi.app true       # expect: package not debuggable
+$ adb pull "$(adb shell pm path com.gawi.app | cut -d: -f2 | tr -d '\r')" /tmp/installed.apk
+$ apksigner verify --print-certs /tmp/installed.apk
+$ for k in window_animation_scale transition_animation_scale animator_duration_scale; do
+      adb shell settings get global $k
+  done
+$ adb push /tmp/gawi-export-$(date +%F).json /sdcard/Download/
+$ adb shell am start -n com.gawi.app/.MainActivity
+                                           # Settings -> Data -> Import a file
+                                           # Settings -> the reminder row -> allow notifications
+```
+
+**`run-as` failing is the install check, not a nuisance.** *"package not
+debuggable"* is the two-second proof that what is on the device is the release
+APK and not a debug build that happened to survive. `adb install` succeeding
+proves only that *something* installed. The `pm path` → `pull` → `apksigner`
+pair is the stronger form of the same question: `make release` proves the DN of
+the file on disk, and only this proves it of the bytes the device is running.
+
+**Read the animation scales back rather than setting them.** A reinstall loses
+them (§4's `make itest` bullet), so after this the three may be anything; which
+value they should hold depends on the box being run, and §4's Momo block turns
+the animator scale off on purpose and back on afterwards.
+
+**Do not `pm grant` the notification permission.** `POST_NOTIFICATIONS` is
+requested from the settings reminder row rather than at first launch, so
+visiting that row once is itself a check that the request path survived R8 —
+granting it from the shell skips the only observation a fresh install buys.
+Keep `adb shell pm grant com.gawi.app android.permission.POST_NOTIFICATIONS` for
+repairing a permanent denial afterwards.
+
+**`make itest` cannot run against this, and that sets the order.** `Makefile`'s
+`itest` is `connectedDebugAndroidTest`: it installs the *debug* APK, which the
+release key refuses with `INSTALL_FAILED_UPDATE_INCOMPATIBLE`. So the
+instrumented run and anything else needing `run-as` come first, on debug, and
+its uninstall is this recipe's third line for free.
