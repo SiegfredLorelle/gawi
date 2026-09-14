@@ -469,7 +469,7 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
 - [ ] Tap a row: it ticks, and its streak appears. Tap again: it unticks. A
       daily streak reads as a count, a weekly one in weeks.
 - [ ] Force-stop and relaunch: completions and streaks are rebuilt from the log.
-- [ ] The database exists — `adb shell run-as com.gawi.app ls -l databases`. To
+- [x] The database exists — `adb shell run-as com.gawi.app ls -l databases`. To
       inspect it, **pull the `-wal` too**, or you read a pre-checkpoint snapshot
       and will think writes were lost:
 
@@ -481,6 +481,17 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
 
       A *missing* `-wal` is fine and means SQLite has checkpointed into the main
       file, so let that copy fail rather than chasing it.
+
+      Run 2026-09-15 on `Small_Phone` against the **debug** build, which is the
+      exception this box's own command names: a release APK refuses `run-as`
+      (§6). The listing held `gawi.db` at 4 KB beside a 201 KB `gawi.db-wal`,
+      and the warning above understates the failure — the main file pulled
+      alone answers *no such table: events*, so reading it without the `-wal`
+      is an error rather than a low count. Pulled with it: 164 events over
+      twelve habits, all five types this log uses, `integrity_check` ok. One
+      trap the recipe cannot show — **querying the pulled pair checkpoints the
+      `-wal` into the main file and deletes it**, so a main-file-only copy
+      taken afterwards is no longer one and reads correct.
 - [ ] Settings persist. Open **Settings** from Today's app bar — the gear, not
       the list glyph beside it — and change the day cutoff.
       `files/datastore/settings.preferences_pb` appears after the **first
@@ -688,7 +699,7 @@ does with the file.
       # expect: habit,logical_date,note   then the oldest logged day
       ```
 
-- [ ] **The row count matches the projection.** Pull the database **with its
+- [x] **The row count matches the projection.** Pull the database **with its
       `-wal`**, or the count lies in either direction (a pre-checkpoint snapshot
       under-reports; a stale main file over-reports):
 
@@ -709,6 +720,15 @@ does with the file.
       print(f"{len(rows) - 1} data rows (header excluded)")
       EOF
       ```
+
+      Run 2026-09-15 on `Small_Phone` against the **debug** build, for the
+      `run-as` reason the database box above gives. The projection held 148
+      completions and the parser counted 148 data rows under a
+      `habit,logical_date,note` header — 149 `CompletionAdded` less the one
+      `CompletionTombstoned`, so the undone day is missing from both sides
+      rather than from neither. `wc -l` happened to agree at 149 here, and
+      only because no note in this log carries a line break: it is the count
+      that cannot be trusted, not the one that disagrees.
 
 - [ ] **A formula in a habit name stays text in a spreadsheet.** The security
       check, and the reason the file is not written naively. Create three habits
