@@ -698,11 +698,20 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       *show all files* step, and it is selected by tapping its **name** — the
       preview thumbnail beside it carries the file name in its own description,
       so tapping that opens a preview instead.
-- [ ] **Both rows go quiet while the work runs.** With a log big enough to take
+- [x] **Both rows go quiet while the work runs.** With a log big enough to take
       a moment, the tapped row's explanation is replaced by *Writing the file…*
       and neither row answers a tap until it finishes. On a small log this is
       over before you can see it — expected, and `SettingsScreenTest` covers it
       instead.
+
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**, on a
+      log of about 60,000 events. One dump landed inside the write and caught
+      *Writing the file…* in place of the row's explanation with all three Data
+      rows reporting `enabled=false` together. **Build the log by importing
+      several files rather than one.** The import cap is 32 MB, and merging
+      30,000 events into a log that already held 30,000 took about five minutes
+      of CPU on this AVD — worth knowing before you wait on it, and the reason
+      the row says *Reading the file…* for that whole time.
 - [x] **A file far too large to be an export is refused, not fatal.** The picker
       shows essentially everything by design, so this is the likeliest wrong
       tap:
@@ -737,7 +746,7 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       last bytes are a closing `}` after the final payload rather than a cut
       token, and the declared `event_count` of 166 equalled the number of events
       the file actually carries.
-- [ ] **Leaving the screen the instant you tap Save can leave an empty file, and
+- [x] **Leaving the screen the instant you tap Save can leave an empty file, and
       that is a known gap.** Tap **Export a copy**, save, and press Back out of
       Settings immediately. Two outcomes are both correct: no file at all (Back
       beat the picker, so nothing was ever created), or a **zero-byte** file
@@ -747,7 +756,14 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       that makes the gap bounded. See `docs/ux/settings.md` §8; closing it needs
       an application-scoped coroutine, which is a decision rather than a patch.
       Delete the file afterwards so the next check starts clean.
-- [ ] **Process death mid-export is not survived, and the file is refused rather
+
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**, on the
+      same 60,000-event log — small logs finish before Back can land. Tapping
+      save and Back in one `adb shell` invocation left a **zero-byte** file,
+      the second of the two outcomes this box allows and not a partial one, and
+      importing it drew *"That is not a Gawi export, or it is damaged. Nothing
+      was changed."*
+- [x] **Process death mid-export is not survived, and the file is refused rather
       than half-restored.** Repeat the check above but run `adb shell am force-
       stop com.gawi.app` instead of pressing Back. The file is empty or
       truncated — expected; `NonCancellable` survives cancellation, not a killed
@@ -755,6 +771,11 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       bounds the residual gap, because truncated JSON does not parse and
       `event_count` would not match, so a half-written backup can never be
       silently restored as a partial one.
+
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**:
+      force-stopping instead of pressing Back also left a zero-byte file, which
+      `json.load` refuses outright, and importing it drew the same *not a Gawi
+      export, or it is damaged* line.
 - [x] **The count snackbar is readable before it goes.** Import an export
       holding habits this install does not have and read the whole line without
       hurrying; it uses the default short duration, and if that is too fast that
@@ -770,25 +791,41 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       **Give the file its own id range.** Two seeds minted from the same
       deterministic sequence deduped against each other and reported *"17 added,
       159 already here"*, so the habits this box needs never arrived at all.
-- [ ] **The whole recovery claim, end to end.** Export, then `adb shell pm clear
+- [x] **The whole recovery claim, end to end.** Export, then `adb shell pm clear
       com.gawi.app`, relaunch to the empty state, and import the file. Every
       habit, completion and streak comes back. This is the promise architecture
       §6 makes on behalf of `allowBackup="false"`, and the only check that tests
       it as a user would need it.
 
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**. Every
+      row's name, streak description, weekly ratio and the header count were
+      captured before the export, then `pm clear`, relaunch to the empty state,
+      and import. The two captures are **identical by `diff`** — the promise
+      architecture §6 makes on behalf of `allowBackup="false"` holds end to
+      end.
+
 **The 30-day nudge** (PRD §5). Run these in order from a cleared install — they
 build on each other, and the third is the one with no JVM test behind it.
 
-- [ ] **A fresh install is not nudged about losing nothing.** After `adb shell
+- [x] **A fresh install is not nudged about losing nothing.** After `adb shell
       pm clear com.gawi.app`, open Settings → **Data**. The export row has *no*
       value line and the ordinary help underneath it. The stamp is absent here
       exactly as it is on a log full of events, and only the log tells the two
       apart.
-- [ ] **A log with something in it and no backup says so.** Create one habit,
+
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**: after
+      `pm clear` the export row ran straight from its title into the ordinary
+      help line, with no value line of any kind between them.
+- [x] **A log with something in it and no backup says so.** Create one habit,
       then reopen Settings. The export row reads **Never exported** and the help
       line has become the nudge — the same split in the other direction, and
       "never" is overdue immediately rather than in thirty days.
-- [ ] **An import moves the row without leaving the screen.** From a cleared
+
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**: one
+      habit created on an otherwise empty log turned the row into **Never
+      exported** over the nudge, *"There is no other copy of your history on
+      this phone or anywhere else…"*, rather than the ordinary help.
+- [x] **An import moves the row without leaving the screen.** From a cleared
       install again — `adb shell pm clear com.gawi.app` — open Settings while
       the log is empty, confirm the row is silent, then **without navigating
       away** tap **Import a file** and pick an export saved earlier. The row
@@ -800,6 +837,12 @@ build on each other, and the third is the one with no JVM test behind it.
       row is already saying something — which is why the obvious ordering hides
       this. Creating a habit on Today and returning to Settings within five
       seconds checks the same mechanism from the other side.
+
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**, and
+      the five seconds were watched. From a cleared install the row was silent;
+      importing an export **without leaving Settings** put **Never exported**
+      and the nudge up by the first poll after the snackbar, not on a later
+      visit.
 - [x] **A finished export records itself, and only a finished one.** Export a
       copy, keep the offered name, and return to Settings: the row reads **Last
       exported today** and the ordinary help is back. **This is the only check
@@ -833,7 +876,7 @@ build on each other, and the third is the one with no JVM test behind it.
 
       Run 2026-09-15 on `Small_Phone` against the **signed release APK**: still
       **Last exported today** after a force-stop and relaunch.
-- [ ] **A month later, the nudge comes back.** Settings → **Date & time**, turn
+- [x] **A month later, the nudge comes back.** Settings → **Date & time**, turn
       off automatic time and move the date forward 31 days — the device UI, not
       `adb shell date`, which needs root and is refused on a Play image. Reopen
       Gawi's settings: **Last exported 31 days ago**, with the nudge underneath.
@@ -844,6 +887,14 @@ build on each other, and the third is the one with no JVM test behind it.
       journal deliberately reads as no stamp at all — so the row goes back to
       **Never exported** once the date is restored, which is correct behaviour
       and looks like a bug if you were not expecting it.
+
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**. With a
+      stamp reading *Last exported today*, the device date was moved from
+      15 September to 16 October through the Settings app — automatic time off,
+      the calendar picker's *Next month*, then day 16 — and Gawi's row read
+      **Last exported 31 days ago** over the nudge. Automatic time was switched
+      back on afterwards and the clock returned on its own; nothing was exported
+      while the date was forward.
 - [x] **A settings edit does not reset the clock.** With a stamp in place,
       change the week start and come back. The value line has not moved: the
       export stamp shares a preferences file with the three settings and
@@ -973,17 +1024,33 @@ does with the file.
       reading **Last exported today** over its ordinary help line, a CSV export
       left both lines exactly as they were.
 
-- [ ] **All three Data rows go dead together.** Start a CSV export of a large
+- [x] **All three Data rows go dead together.** Start a CSV export of a large
       log and, while it runs, confirm **Export a copy** and **Import a file**
       are both unavailable and that only the CSV row says it is working. Hard to
       catch by hand on a small log; the JVM tests own this and this is a sanity
       check.
 
-- [ ] **An empty log still writes a usable file.** After `adb shell pm clear
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**. The
+      CSV write is far quicker than the JSON one even on 60,000 events — about a
+      quarter of a second — so it was caught on a 30 fps recording rather than
+      in a dump: **Export completions** read *Writing the spreadsheet…*, its own
+      string and not the JSON row's, while **Import a file** kept its ordinary
+      explanation. For the other half, a tap on **Export a copy** fired in the
+      same `adb shell` invocation as save opened no dialog, and **the control is
+      what makes that mean anything** — the identical tap on the identical
+      coordinates opens the dialog when the row is idle.
+
+- [x] **An empty log still writes a usable file.** After `adb shell pm clear
       com.gawi.app`, export completions before creating anything. The snackbar
       says the file holds only its column headings, and the file is the header
       line and nothing else. Re-run the recovery check above afterwards, since
       this clears the app.
+
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**: the
+      snackbar read *"Nothing has been logged yet, so that file holds only its
+      column headings."* and the file is exactly `ef bb bf` then
+      `habit,logical_date,note` and a CRLF — 12 bytes after the mark, with no
+      data row.
 
 Clean up with `adb shell 'rm -f /sdcard/Download/*.csv'` — **quote the glob**,
 or zsh expands it on the host first and the command looks like it ran while the
