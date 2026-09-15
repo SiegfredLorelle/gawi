@@ -448,27 +448,84 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       2026-09-14 on `Small_Phone` against the **signed release APK**, which is
       where this stops being a formality: R8's failures are silent, so an empty
       log is what says no serializer and no reflected class was stripped.
-- [ ] From the empty state, tap **Add a habit**, name it, save. It appears on
+- [x] From the empty state, tap **Add a habit**, name it, save. It appears on
       Today with no restart — one observation covering Hilt building the data
       layer, the command path, the log being folded, the projection write and
       the Room `Flow`.
-- [ ] Create a **weekly** habit and check the target stepper stops at 7 and at
+
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**. The
+      empty state read *"Momo is waiting for a habit."* over *"No habits yet"*;
+      saving lands on the new habit's **detail** screen rather than popping, so
+      the row is seen by going back. It was there with no restart, the mood line
+      had become *"Momo is pottering about."* and the count *"1 of 1 left
+      today"*. `AndroidRuntime:E` empty.
+- [x] Create a **weekly** habit and check the target stepper stops at 7 and at
       1. Above 7 throws out of `Schedule.Weekly`'s `require` rather than being
       rejected, so this is a crash if it is wrong.
-- [ ] Open a habit from the list, change **only** its name, save. Its schedule
+
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**. From
+      the default *3× a week*, **One more** reached *7× a week* and four
+      further presses left it there; **One fewer** reached *1× a week* and
+      three further presses left it there. Both buttons report `enabled=false` at
+      their limit, so the stepper disables rather than clamping, and no
+      `AndroidRuntime:E` appeared — `Schedule.Weekly`'s `require` was never
+      reached, which is what this box is afraid of. Read the button's enabled
+      flag rather than the label: a dump taken straight after a tap still shows
+      the previous value.
+- [x] Open a habit from the list, change **only** its name, save. Its schedule
       and tag survive, and so do the icon and colour the form no longer shows —
       an update is a whole-record write, and those two are passthrough
       ([visual-identity.md](ux/visual-identity.md) §7.3), so a form that wrote
       the defaults instead of carrying them would silently restyle every habit
       on its first save. `HabitsUiMapperTest` pins the carrying; only an export
       taken before and after shows the log agreeing.
-- [ ] Archive a habit: it leaves Today, and appears under **Archived** on the
+
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**.
+      Renamed a seeded `guitar` to `ukulele`; one export afterwards carries both
+      of that habit's events, `HabitCreated` and then `HabitUpdated` half an hour
+      later, and the update kept the icon, the colour `#76B041`, the tag
+      `learning` and the daily schedule, changing only the name. **Use a habit
+      that did not get the defaults.** A first attempt renamed one made in the
+      form, whose icon and colour already *are* the defaults being compared, so
+      carrying and re-defaulting would have written identical bytes and the run
+      proved only the schedule and the tag.
+- [x] Archive a habit: it leaves Today, and appears under **Archived** on the
       list with a *Bring back* action. Bring it back: it returns to Today.
-- [ ] The mascot's count follows archiving — an archived habit stops being
+
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**.
+      `stretch` left Today at once and appeared under **Archived** with *Bring
+      back*, beside a habit the seed had archived through a `HabitArchived`
+      event — so the section is fed by the log and not only by the gesture.
+      Bringing it back returned it to both lists. The archive control of the
+      **last visible row** sits under the Add-habit FAB, which is drawn over it:
+      two taps at the row's own centre opened the new-habit editor instead, so
+      scroll the row clear before tapping it.
+- [x] The mascot's count follows archiving — an archived habit stops being
       outstanding.
-- [ ] Tap a row: it ticks, and its streak appears. Tap again: it unticks. A
+
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**: *"9 of
+      11 left today"* → archive → *"8 of 10 left today"* → bring it
+      back → *"9 of 11 left today"*. The archived habit leaves **both** halves
+      of the count, so it stops being outstanding and stops being counted at
+      all.
+- [x] Tap a row: it ticks, and its streak appears. Tap again: it unticks. A
       daily streak reads as a count, a weekly one in weeks.
-- [ ] Force-stop and relaunch: completions and streaks are rebuilt from the log.
+
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**.
+      Tapping `floss` turned *"Streak broken, was 1 day"* into *"streak of 1
+      day"*, and tapping it again turned it back. The unit half reads off the row
+      descriptions rather than off a tap: daily in days — *"streak of 6
+      days"*, *"streak of 20 days"*, *"Streak broken, was 11 days"* — and
+      weekly in weeks, *"streak of 4 weeks"* and *"Streak broken, was 1 week"*,
+      so the broken form keeps the unit too. The drawn badge is cleared from the
+      tree, which makes the description the only evidence: read it untruncated,
+      or *"4 weeks"* arrives as *"4 week"*.
+- [x] Force-stop and relaunch: completions and streaks are rebuilt from the log.
+
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**. Every
+      row's name, streak description and weekly ratio plus the header count were
+      captured, the app force-stopped and relaunched, and captured again: the two
+      are identical by `diff`, including a completion made seconds earlier.
 - [x] The database exists — `adb shell run-as com.gawi.app ls -l databases`. To
       inspect it, **pull the `-wal` too**, or you read a pre-checkpoint snapshot
       and will think writes were lost:
@@ -492,13 +549,20 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       trap the recipe cannot show — **querying the pulled pair checkpoints the
       `-wal` into the main file and deletes it**, so a main-file-only copy
       taken afterwards is no longer one and reads correct.
-- [ ] Settings persist. Open **Settings** from Today's app bar — the gear, not
+- [x] Settings persist. Open **Settings** from Today's app bar — the gear, not
       the list glyph beside it — and change the day cutoff.
       `files/datastore/settings.preferences_pb` appears after the **first
       write**, not the first read, so it will not exist until you do. Then
       force-stop, relaunch and reopen the screen: it reads the stored value
       back, not the default. **Put the cutoff back to midnight before moving
       on** — the next two checks both start from it, and neither restores it.
+
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**: the
+      cutoff went to 3:00 AM, survived a force-stop and relaunch, and the
+      reopened screen read 3:00 AM back rather than the default. Put back to
+      midnight afterwards. The `settings.preferences_pb` half needs `run-as`, and
+      a release build refuses it (§6), so that part alone is owed to a debug
+      install.
 - [ ] **Day rollover, against a real clock.** Start from a cutoff at or before
       the current time — midnight does, which is why the check above restores it
       — and tick a habit, so there is a completion on today's logical date.
@@ -524,8 +588,13 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       new week without leaving the screen. Unlike the cutoff, this is not
       prospective-only: nothing about a week is stored on an event, so it is
       recomputed on read.
-- [ ] A cancelled tap still commits: tap, immediately press Back, relaunch, and
+- [x] A cancelled tap still commits: tap, immediately press Back, relaunch, and
       the completion is there.
+
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**. The tap
+      and the Back went in one `adb shell` invocation, so nothing paused between
+      them; after relaunching, the row read *"streak of 1 day"* where it had read
+      *"Streak broken, was 1 day"*.
 - [x] **Export writes a file you can read back.** Settings → scroll to **Data**
       → **Export a copy**. Keep the offered name, save it into Downloads,
       confirm the snackbar, then:
