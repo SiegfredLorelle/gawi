@@ -650,29 +650,52 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       dialog still offers `gawi-export-<today>.json`, so the file name uses the
       wall clock rather than the logical date. **Put the cutoff back to midnight
       afterwards**; the rollover checks above start from it.
-- [ ] **Cancelling the picker does nothing and says nothing.** Tap **Export a
+- [x] **Cancelling the picker does nothing and says nothing.** Tap **Export a
       copy**, then press Back out of the save dialog. No snackbar, no file, and
       the row is still tappable — the null-`Uri` path is a no-op rather than an
       error, which is the rule every Cancel on this screen follows.
-- [ ] **Importing what you just exported changes nothing.** **Import a file** →
+
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**. Back
+      out of the save dialog and `/sdcard/Download` gained nothing, the row
+      still read *Never exported*, no snackbar appeared in any sample, and the
+      row's clickable wrapper was still there to tap.
+- [x] **Importing what you just exported changes nothing.** **Import a file** →
       pick the export from above. The snackbar says nothing was new, and Today
       is unchanged — same rows, same ticks, same streaks. That is the dedupe by
       event id, and an import being a merge and not a replace. It restores
       nothing because it changes nothing, which is the point.
-- [ ] **A file that is not an export is refused without changing anything.**
+
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**. The
+      snackbar read *"Nothing new in that file. Everything in it was already
+      here."* and a full sweep of Today — every name, streak description,
+      weekly ratio and the header count — was identical by `diff` either side.
+      The snackbar is transient, so catch it by diffing the text of a burst of
+      dumps against the settled screen rather than by trying to time one dump.
+- [x] **A file that is not an export is refused without changing anything.**
       Import → pick a photo or any text file. The snackbar says it is not a Gawi
       export, and Today is unchanged: a refusal is a message rather than a crash
       or a half-written log.
-- [ ] **The export is visible in the import picker** without needing a "show all
+
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**: a
+      plain `.txt` drew *"That is not a Gawi export, or it is damaged. Nothing
+      was changed."*, `pidof` returned the same process, and Today was unchanged
+      by `diff`.
+- [x] **The export is visible in the import picker** without needing a "show all
       files" step. The one thing the type filter can get wrong that no test can
       see — a filter that hides someone's own backup from them is worse than one
       that shows a few extra files.
+
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**. The
+      export was listed in Downloads beside the other `.json` files with no
+      *show all files* step, and it is selected by tapping its **name** — the
+      preview thumbnail beside it carries the file name in its own description,
+      so tapping that opens a preview instead.
 - [ ] **Both rows go quiet while the work runs.** With a log big enough to take
       a moment, the tapped row's explanation is replaced by *Writing the file…*
       and neither row answers a tap until it finishes. On a small log this is
       over before you can see it — expected, and `SettingsScreenTest` covers it
       instead.
-- [ ] **A file far too large to be an export is refused, not fatal.** The picker
+- [x] **A file far too large to be an export is refused, not fatal.** The picker
       shows essentially everything by design, so this is the likeliest wrong
       tap:
 
@@ -686,7 +709,12 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       an `Error` and so slips past the guard around every other failure here —
       process death on the recovery screen with nothing said. Delete the file
       afterwards.
-- [ ] **An export you do not interrupt ends in a closing brace.** Export into
+
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**. The
+      40 MB file drew the same *"not a Gawi export, or it is damaged"* line,
+      `pidof` returned the same process before and after, and Today was
+      unchanged by `diff`. The ceiling holds.
+- [x] **An export you do not interrupt ends in a closing brace.** Export into
       Downloads, then:
 
       ```sh
@@ -696,6 +724,11 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       It ends `}` rather than mid-token, and the `event_count` near the top
       matches what the log holds — the check that encoding first and opening the
       document last did not break the ordinary path.
+
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**: the
+      last bytes are a closing `}` after the final payload rather than a cut
+      token, and the declared `event_count` of 166 equalled the number of events
+      the file actually carries.
 - [ ] **Leaving the screen the instant you tap Save can leave an empty file, and
       that is a known gap.** Tap **Export a copy**, save, and press Back out of
       Settings immediately. Two outcomes are both correct: no file at all (Back
@@ -714,11 +747,21 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       bounds the residual gap, because truncated JSON does not parse and
       `event_count` would not match, so a half-written backup can never be
       silently restored as a partial one.
-- [ ] **The count snackbar is readable before it goes.** Import an export
+- [x] **The count snackbar is readable before it goes.** Import an export
       holding habits this install does not have and read the whole line without
       hurrying; it uses the default short duration, and if that is too fast that
       is a real finding. The habits it adds cannot be deleted afterwards, only
       archived, so do this on a scratch install or be ready to archive them.
+
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**, and it
+      is **not** too fast. *"Imported that file: 18 added, 0 already here."*
+      stayed up **4.0 seconds**, measured off a screen recording sampled ten
+      times a second — frames 15 to 54, with the tap landing on frame 15. That
+      is Compose's `SnackbarDuration.Short`, 4000 ms rather than the View
+      system's 1500 ms, which is why the short duration is comfortable here.
+      **Give the file its own id range.** Two seeds minted from the same
+      deterministic sequence deduped against each other and reported *"17 added,
+      159 already here"*, so the habits this box needs never arrived at all.
 - [ ] **The whole recovery claim, end to end.** Export, then `adb shell pm clear
       com.gawi.app`, relaunch to the empty state, and import the file. Every
       habit, completion and streak comes back. This is the promise architecture
@@ -749,23 +792,39 @@ build on each other, and the third is the one with no JVM test behind it.
       row is already saying something — which is why the obvious ordering hides
       this. Creating a habit on Today and returning to Settings within five
       seconds checks the same mechanism from the other side.
-- [ ] **A finished export records itself, and only a finished one.** Export a
+- [x] **A finished export records itself, and only a finished one.** Export a
       copy, keep the offered name, and return to Settings: the row reads **Last
       exported today** and the ordinary help is back. **This is the only check
       of the ordering** — the stamp is written after the output stream closes,
       so that it means "a file landed" rather than "a write was attempted", and
       substituting a `ContentResolver` to test that needs a Robolectric shadow
       this project does not use (docs/ux/settings.md §8).
-- [ ] **A cancelled export does not count as a backup.** Tap **Export a copy**
+
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**: the
+      row went from *Never exported* to **Last exported today**, and the help
+      line under it went back to the ordinary *"Writes every habit and
+      everything you have logged…"* from the no-copy-anywhere nudge.
+- [x] **A cancelled export does not count as a backup.** Tap **Export a copy**
       and press Back out of the save dialog. The row still reads whatever it
       read before: the stamp follows the write and not the tap.
-- [ ] **An import does not count as a backup either.** Import the file from
+
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**, from
+      *Never exported*: backing out of the save dialog left it reading *Never
+      exported*.
+- [x] **An import does not count as a backup either.** Import the file from
       above. The row still says today and the value does not move. Deliberate:
       an imported file proves a copy was readable, not that it is recent, so
       importing a backup from March must not silence the nudge for a month.
-- [ ] **The stamp survives a restart.** `adb shell am force-stop com.gawi.app`,
+
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**: after
+      importing the file just exported, the row still read **Last exported
+      today** and the value line had not moved.
+- [x] **The stamp survives a restart.** `adb shell am force-stop com.gawi.app`,
       relaunch, reopen Settings: still **Last exported today**, so it is in the
       preferences file rather than in memory.
+
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**: still
+      **Last exported today** after a force-stop and relaunch.
 - [ ] **A month later, the nudge comes back.** Settings → **Date & time**, turn
       off automatic time and move the date forward 31 days — the device UI, not
       `adb shell date`, which needs root and is refused on a Play image. Reopen
@@ -777,10 +836,14 @@ build on each other, and the third is the one with no JVM test behind it.
       journal deliberately reads as no stamp at all — so the row goes back to
       **Never exported** once the date is restored, which is correct behaviour
       and looks like a bug if you were not expecting it.
-- [ ] **A settings edit does not reset the clock.** With a stamp in place,
+- [x] **A settings edit does not reset the clock.** With a stamp in place,
       change the week start and come back. The value line has not moved: the
       export stamp shares a preferences file with the three settings and
       survives a write that assigns all three of their keys.
+
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**: the
+      week start went Monday → Wednesday → Monday and the export stamp read
+      **Last exported today** throughout.
 
 **The CSV of completions** (PRD §5, docs/ux/settings.md §6). Its correctness is
 mostly covered on the JVM — `CompletionCsvTest` pins every byte of the format
