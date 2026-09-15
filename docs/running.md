@@ -644,12 +644,20 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       `HabitCreated`, `CompletionAdded` and `CompletionTombstoned` all
       round-tripping — which is what says kotlinx-serialization survived
       shrinking.
-- [ ] **The offered name is today's date, not yesterday's.** Set the day cutoff
+- [x] **The offered name is today's date, not yesterday's.** Set the day cutoff
       to 03:00, wait until after midnight — or simply check the name is today's
       while the cutoff is at 03:00 and the clock reads before it — and the save
       dialog still offers `gawi-export-<today>.json`, so the file name uses the
       wall clock rather than the logical date. **Put the cutoff back to midnight
       afterwards**; the rollover checks above start from it.
+
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**. The
+      cutoff does not have to be 03:00 and you need not wait for midnight — any
+      cutoff **ahead of the clock** puts the logical day behind the wall date,
+      which is the only condition this box needs. At 22:29 with the cutoff at
+      11:30 PM the logical day really had moved back (the count fell from *9 of
+      11* to *7 of 11* and the two habits completed the day before read ticked),
+      and the save dialog still offered `gawi-export-2026-09-15.json`.
 - [x] **Cancelling the picker does nothing and says nothing.** Tap **Export a
       copy**, then press Back out of the save dialog. No snackbar, no file, and
       the row is still tappable — the null-`Uri` path is a no-op rather than an
@@ -851,7 +859,7 @@ and `CompletionExportDaoTest` pins the query — so what is left here is the two
 things no test in this repo can reach: the picker, and what a real spreadsheet
 does with the file.
 
-- [ ] **The CSV is written, and Excel will read it as UTF-8.** Settings →
+- [x] **The CSV is written, and Excel will read it as UTF-8.** Settings →
       **Data** → **Export completions**. Keep the offered name — it should be
       `gawi-completions-<today>.csv` and not the JSON stem. Then:
 
@@ -862,6 +870,12 @@ does with the file.
       adb shell 'head -2 /sdcard/Download/gawi-completions-*.csv'
       # expect: habit,logical_date,note   then the oldest logged day
       ```
+
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**: the
+      offered name was `gawi-completions-2026-09-15.csv`, the first three bytes
+      were `ef bb bf`, the header row read `habit,logical_date,note` and the
+      first data row was the oldest logged day. A note carrying a line break
+      round-tripped intact through a parser reading `utf-8-sig`.
 
 - [x] **The row count matches the projection.** Pull the database **with its
       `-wal`**, or the count lies in either direction (a pre-checkpoint snapshot
@@ -894,7 +908,7 @@ does with the file.
       only because no note in this log carries a line break: it is the count
       that cannot be trusted, not the one that disagrees.
 
-- [ ] **A formula in a habit name stays text in a spreadsheet.** The security
+- [x] **A formula in a habit name stays text in a spreadsheet.** The security
       check, and the reason the file is not written naively. Create three habits
       named `=1+1`, `Read, daily` and `say "yes"`, complete each one today,
       export, then open the file in LibreOffice on the host (`localc /tmp/gawi-
@@ -911,18 +925,40 @@ does with the file.
       one and confirm the cell really does compute, or this whole check can pass
       because the reader never evaluates anything.
 
-- [ ] **Know what a `;`-locale Excel does with it.** Not a defect and not
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**, with
+      the control established first. In the raw file the four names read
+      `"'=1+1"`, `"' =1+1"` — the guard goes ahead of the leading space rather
+      than after it — `"Read, daily"`, and `say "yes"` with its quotes doubled.
+      Imported into LibreOffice with formula evaluation **on** and written back
+      out, all four stayed text and computed nothing, the comma and quote names
+      staying one cell each. **The control is what makes that mean anything**:
+      the same reader on the same settings, given a hand-made row holding a bare
+      `=1+1`, returned `2`. A headless round-trip through `.ods` and back shows
+      all of this without opening a GUI.
+
+- [x] **Know what a `;`-locale Excel does with it.** Not a defect and not
       fixable in the bytes without breaking every other reader, so it is a check
       that you have seen it rather than one that can fail: on a German, French,
       Spanish or Dutch install, Excel splits CSV on `;` and puts every record of
       this file in column A. The fix for a user is the import dialog. See
       `CompletionCsv`'s KDoc for why no `sep=,` line is written.
 
-- [ ] **Cancelling the picker does nothing and says nothing.** Tap **Export
+      Seen 2026-09-15 by importing the same file twice on the host, once with
+      `,` as the separator and once with `;`. Comma: 155 records, every one of
+      them three columns. Semicolon: every record one column, exactly as the
+      paragraph above says — and one record more, because the note carrying a
+      line break stops being held together, which is the second thing that
+      locale costs.
+
+- [x] **Cancelling the picker does nothing and says nothing.** Tap **Export
       completions** and press Back out of the save dialog. No snackbar, no
       change, and `/sdcard/Download` gains nothing.
 
-- [ ] **A CSV export does not touch the nudge.** The load-bearing negative, and
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**: after
+      backing out of the save dialog, `/sdcard/Download` held exactly what it
+      had held before and no snackbar appeared.
+
+- [x] **A CSV export does not touch the nudge.** The load-bearing negative, and
       the one worth running even when nothing else is. Note what the export row
       says, write a CSV, and return: the value line and the help line are both
       unchanged. A CSV holds no events, so treating one as a backup would
@@ -930,6 +966,12 @@ does with the file.
       anything. `CompletionCsvArchiveTest` reads a real journal either side of a
       real export and `SettingsDataViewModelTest` asserts what the row says;
       this confirms it through the real graph.
+
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**, and
+      run from a **real stamp** rather than from *Never exported*, where the
+      value cannot move backwards and a pass would prove nothing. With the row
+      reading **Last exported today** over its ordinary help line, a CSV export
+      left both lines exactly as they were.
 
 - [ ] **All three Data rows go dead together.** Start a CSV export of a large
       log and, while it runs, confirm **Export a copy** and **Import a file**
