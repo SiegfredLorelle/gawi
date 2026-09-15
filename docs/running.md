@@ -563,7 +563,7 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       midnight afterwards. The `settings.preferences_pb` half needs `run-as`, and
       a release build refuses it (§6), so that part alone is owed to a debug
       install.
-- [ ] **Day rollover, against a real clock.** Start from a cutoff at or before
+- [x] **Day rollover, against a real clock.** Start from a cutoff at or before
       the current time — midnight does, which is why the check above restores it
       — and tick a habit, so there is a completion on today's logical date.
       *Then* set the cutoff a couple of minutes ahead and go back to Today:
@@ -573,21 +573,53 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       ahead of now, the row is unticked before you change anything. This is
       still the cheapest way to force a boundary — `adb shell date` needs `adb
       root` and is refused on the Play images this project uses.
-- [ ] **The mascot follows the clock, not just the data.** With something
-      outstanding, set *Day is nearly over at* to a time just past now. The
+
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**. From a
+      midnight cutoff, ticking a habit at 21:46 and then moving the cutoff to
+      9:50 PM turned *"8 of 11 left today"* into *"7 of 11"*: that row lost its
+      tick, and two habits completed the day before gained theirs — so the whole
+      logical day had moved rather than one row. Nothing was touched after that,
+      only `screencap` and `uiautomator dump`, neither of which injects input,
+      and at 21:51 the row was ticked again with the count back at *"8 of 11"*.
+      The count leaves weekly habits out of *left today*, which is what makes
+      both readings add up.
+- [x] **The mascot follows the clock, not just the data.** With something
+      outstanding, set **End-of-day reminder** to a time just past now. The
       panel changes with no habit touched and no interaction — and the habit
       rows do not reload underneath it, which is the point of the repository
-      subscribing to the settings twice with different dedupes. Half seen
-      2026-09-03 on the Nothing A059: the panel turned over on its own at the
-      boundary, but whether the rows reloaded under it was not watched, and no
-      test pins that half — `TodayMoodTest` asserts the rows are *equal* across
-      the crossing, which an identical re-query satisfies too. Open for someone
-      watching the screen at the boundary.
-- [ ] **Week start re-buckets what is already on screen.** With a weekly habit
+      subscribing to the settings twice with different dedupes.
+      `TodayMoodTest` asserts the rows are *equal* across the crossing, which an
+      identical re-query satisfies too, so only a screen can answer the second
+      half.
+
+      Half seen 2026-09-03 on the Nothing A059; closed 2026-09-15 on
+      `Small_Phone` against the **signed release APK**. Momo needs to be
+      **content** going in, which a log carrying a break cannot give you — a
+      broken streak makes her regenerating, a different mood that this boundary
+      does not move (momo.md §3). With eight unbroken habits owed and the
+      reminder moved to 10:00 PM she read *"Momo is pottering about."*; nothing
+      was touched after that, only `screencap` and `uiautomator dump`, and on
+      the boundary the line became *"Momo is getting worried about read."* A
+      70-second recording sampled four times a second puts that on the first
+      frame after 10:00 PM, with **the mood band changing by 6,524 pixels while
+      the row band never moves by more than three**, which is codec noise. The
+      two stills either side differ by 27,125 pixels above the count line and
+      by **zero** below it.
+- [x] **Week start re-buckets what is already on screen.** With a weekly habit
       showing a ratio, change the week start. The ratio re-counts against the
       new week without leaving the screen. Unlike the cutoff, this is not
       prospective-only: nothing about a week is stored on an event, so it is
       recomputed on read.
+
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**. A
+      weekly habit with a completion on Sunday 13 September read *"0 of 3 this
+      week"* under a Monday week start and *"1 of 3 this week"* under a Sunday
+      one, its *"streak of 4 weeks"* unchanged; a second weekly with nothing
+      that week stayed at *"0 of 3"*, which is what says the ratio moved rather
+      than the screen. **Seed the completion on the day the two week starts
+      disagree about**, or every ratio reads the same under both and this passes
+      without touching the question. The dialog needs **Set**: Back cancels it
+      and leaves the old value with no word either way.
 - [x] A cancelled tap still commits: tap, immediately press Back, relaunch, and
       the completion is there.
 
