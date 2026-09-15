@@ -1049,8 +1049,8 @@ does with the file.
       Run 2026-09-15 on `Small_Phone` against the **signed release APK**: the
       snackbar read *"Nothing has been logged yet, so that file holds only its
       column headings."* and the file is exactly `ef bb bf` then
-      `habit,logical_date,note` and a CRLF — 12 bytes after the mark, with no
-      data row.
+      `habit,logical_date,note` and a CRLF — 25 bytes after the mark and 28 in
+      the file, with no data row.
 
 Clean up with `adb shell 'rm -f /sdcard/Download/*.csv'` — **quote the glob**,
 or zsh expands it on the host first and the command looks like it ran while the
