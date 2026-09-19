@@ -160,11 +160,36 @@ def baseline_habits(break_inside_window: bool) -> list[Habit]:
     ]
 
 
+def focus_habits() -> list[Habit]:
+    """Two habits whose tags lead in different, *complete* periods.
+
+    The focus sentence is only claimed for a period that is over, against the
+    one before it, and only when both had a tagged completion (`Focus.kt`). So
+    the shifted and held cases each need two consecutive finished months with
+    the right leaders, which `baseline` cannot give: it leaves July empty on
+    purpose, for the history grid's "a month you do not have history in", and
+    an empty previous period produces no sentence at all.
+
+    June is health and July and August are career, so June to July shifts and
+    July to August holds. The current month is never either: it is partial, so
+    it reads "so far" and names its leader.
+    """
+    return [
+        Habit("Run", _span(110, 81), tag="health"),
+        Habit("Study", _span(80, 19), tag="career"),
+    ]
+
+
 SCENARIOS: dict[str, Scenario] = {
     "baseline": Scenario(
         purpose="habit detail, the history grid, Insights, and the content tank",
         id_base=0x100000,
         habits=baseline_habits(break_inside_window=False),
+    ),
+    "focus": Scenario(
+        purpose="the Insights focus sentence: a shift, then a hold",
+        id_base=0x300000,
+        habits=focus_habits(),
     ),
     "regenerating": Scenario(
         purpose="the regenerating tank: one run broken inside the mood window",
