@@ -187,14 +187,22 @@ def wait_for(args: argparse.Namespace) -> Node:
             raise SystemExit(f"avd-ui: {len(found)} matches after {args.timeout}s")
 
 
-def watch(seconds: float) -> None:
+def watch(seconds: float, after: str | None) -> None:
     """What appears and vanishes, against the screen as it settles.
 
     A snackbar outlives a single dump by less than the dump costs, so racing
     one is a coin toss. Diffing a burst against the settled screen is not: the
     line either turns up in the burst or it never existed.
+
+    `after` runs once the baseline has been taken, and the ordering is the
+    whole point: an action performed before the baseline has its own result
+    dumped as part of the settled screen, and the watch then reports that
+    nothing appeared -- a false negative in the one direction these boxes
+    read as a pass.
     """
     settled = {(n.cls, n.text, n.desc) for n in dump()}
+    if after:
+        subprocess.run(after, shell=True, check=True)
     seen: dict[tuple[str, str, str], int] = {}
     passes = 0
     deadline = time.monotonic() + seconds
@@ -255,6 +263,7 @@ def main() -> int:
 
     p_watch = sub.add_parser("watch", help="diff a burst of dumps against the settled screen")
     p_watch.add_argument("--seconds", type=float, default=5.0)
+    p_watch.add_argument("--after", help="shell command to run once the baseline is taken")
 
     p_frames = sub.add_parser("frames", help="record and split into frames")
     p_frames.add_argument("prefix")
@@ -288,7 +297,7 @@ def main() -> int:
             handle.write(adb("exec-out", "screencap", "-p", binary=True))
         print(args.path)
     elif args.command == "watch":
-        watch(args.seconds)
+        watch(args.seconds, args.after)
     elif args.command == "frames":
         frames(args.prefix, args.seconds, args.fps)
     return 0
