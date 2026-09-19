@@ -2823,6 +2823,23 @@ is later proved to have come from this key.
 a shrunk build names `a.b.c` and nothing more, and it is per-build — the copy
 that can read an APK is the one written beside it.
 
+**It is also the only place a merged widget class shows**, and the argument is
+the DN's again: the build succeeds either way. R8's horizontal merger folds
+classes shaped alike into one output class, and Glance resolves a widget's ids
+by its `GlanceAppWidget` class, so three folded into one is one body drawn into
+all three widgets — silently, with nothing thrown and nothing logged
+(docs/ux/widget.md §8). Read the class-level lines after a release build:
+
+```console
+$ grep -E '^com\.gawi\.widget\.(Today|Streak|Momo)Widget -> ' \
+    app/build/outputs/mapping/release/mapping.txt
+```
+
+Three lines is right; fewer means R8 merged what is missing. The ` -> ` is load-
+bearing, keeping `TodayWidget` from matching `TodayWidgetReceiver`, and the
+original names sit on the left whatever a keep rule lets R8 do to the output
+ones.
+
 **Two things the release build takes away**, both of which shape §4's device
 work. It cannot install over a debug build, because the keys differ, so it wants
 an uninstall first and that destroys the event log. And `run-as` refuses on it
