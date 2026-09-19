@@ -21,15 +21,17 @@ row, so a seeded device fails two WriteJourneyTest cases.
 Two invariants this enforces rather than leaving to the caller, both bought
 with a lost run:
 
-- **Every instant is clamped behind the clock.** Habit identity is
-  last-write-wins on `occurred_at`; an event dated ahead of now beats a real
+- **Every instant is clamped behind the clock** (`_instant`). Habit identity
+  is last-write-wins on `occurred_at`; an event dated ahead of now beats a real
   edit made afterwards, and the app then looks broken while the log is right.
-- **Each scenario owns a disjoint id range.** Ids are minted by the repo's own
-  `uuid(n)` fixture scheme, so two scenarios built from overlapping ranges
-  would dedupe into each other on import rather than sit side by side.
+- **Each scenario owns a disjoint id range** (`_check_id_ranges`, at import).
+  Ids are minted by the repo's own `uuid(n)` fixture scheme, so two scenarios
+  built from overlapping ranges would dedupe into each other on import rather
+  than sit side by side.
 
-The envelope is checked against ExportReader's ladder before it is written: one
-bad event refuses the whole file, and the refusal arrives on the device with no
+Every envelope is checked before it is written, against the parts of
+ExportReader's ladder a generated file can get wrong -- one bad event refuses
+the whole file, and that refusal arrives on the device as a sentence with no
 way back to the line that caused it.
 """
 
@@ -56,14 +58,14 @@ CANONICAL_UUID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f
 # ZoneOffset runs to +-18:00 and ExportReader refuses anything outside it.
 MAX_OFFSET_MINUTES = 18 * 60
 
-# A spare life per this many clean days, at most this many held (Streaks).
-# Both are needed to seed a *break*: a run with a spare in hand does not break
-# on a miss, it spends the spare, and the habit is then never named as broken.
-CLEAN_PER_SPARE = 7
-MAX_SPARE = 3
+# The most days a calendar month can hold, for bounding a scenario's size
+# before a run date is known.
+LONGEST_MONTH = 31
 
-# Mascot.REGENERATING_WINDOW_DAYS. A break older than this stops being a mood.
-REGENERATING_WINDOW_DAYS = 3
+# Habit ids are minted this far above a scenario's base, so the events below
+# them can run from the base upward without ever colliding. It is a budget, and
+# [_check_id_ranges] is what keeps it one rather than a hope.
+HABIT_ID_OFFSET = 0x1000
 
 # HabitMetadata's defaults, so a seeded habit is indistinguishable from one the
 # form made. The rename box turns on exactly this: on a habit carrying the
@@ -86,9 +88,15 @@ class Habit:
     """One habit and the days it was completed, in scenario-local terms."""
 
     name: str
-    # Days before the run date, so a scenario is written once and stays true
-    # whenever it is generated.
+    # Days before the run date. Stable against the run date, but **not against
+    # the calendar**: a span of day offsets slides across month boundaries, so
+    # a scenario that turns on which month a completion lands in wants
+    # [done_months_back] instead.
     done_days_ago: list[int] = field(default_factory=list)
+    # Whole calendar months before the run date's month -- 1 is last month.
+    # Resolved against the run date in [build], which is what keeps a
+    # month-boundary scenario saying the same thing on any day it is generated.
+    done_months_back: list[int] = field(default_factory=list)
     weekly: int | None = None
     tag: str | None = None
     created_days_ago: int = 200
@@ -104,38 +112,54 @@ class Scenario:
     habits: list[Habit]
 
 
-def _every(start: int, stop: int, step: int = 1) -> list[int]:
-    """Days-ago from `start` down to `stop` inclusive, newest first."""
-    return list(range(start, stop - 1, -step))
-
-
 def _span(oldest_days_ago: int, newest_days_ago: int, step: int = 1) -> list[int]:
-    return _every(oldest_days_ago, newest_days_ago, step)
+    """Days-ago from the oldest down to the newest inclusive, newest last."""
+    return list(range(oldest_days_ago, newest_days_ago - 1, -step))
+
+
+def _month_days_ago(run_on: date, months_back: int) -> list[int]:
+    """Every day of a whole calendar month, as offsets from `run_on`.
+
+    The month is `months_back` before the run date's own, so 1 is last month.
+    A day offset cannot say this: the same offset is mid-month on one run date
+    and mid-next-month on another, which is the whole failure this replaces.
+    """
+    year, month = run_on.year, run_on.month - months_back
+    while month < 1:
+        month += 12
+        year -= 1
+    first = date(year, month, 1)
+    last = date(year + (month == 12), month % 12 + 1, 1) - timedelta(days=1)
+    return [(run_on - day).days for day in (first + timedelta(days=n) for n in range((last - first).days + 1))]
 
 
 def baseline_habits(break_inside_window: bool) -> list[Habit]:
     """The ten habits every screen block in this pass is read against.
 
-    Ten rather than a handful because the app-bar chip cannot appear below
-    nine on this AVD: its trigger is `firstVisibleItemIndex > 0`, so the panel
-    has to leave the viewport entirely, and at 720x1280 / 320 dpi that is
-    1056 px of viewport against a 628 px panel and 128 px rows.
+    Ten rather than a handful so the list is long enough to scroll and varied
+    enough to carry every condition those blocks need at once. **Not sized for
+    the app-bar chip**, which wants eleven here: the threshold is the panel's
+    height against the rows above it, and a row grows a second line when it
+    carries a weekly ratio or a `was 3`, so it is not a habit count at all.
+    The chip's box in docs/running.md §4 says what it needs.
 
     `break_inside_window` moves Stretch's last completion from five days back
     to two. That is the whole difference between the content tank and the
     regenerating one, and the arithmetic has an off-by-one in it worth keeping:
     Streaks dates a break `next(unit)` where `unit` is the *missed* day, so a
-    run whose last hit is `d` is dated broken on **`d + 2`**, not `d + 1`. With
-    the window at REGENERATING_WINDOW_DAYS a last hit four days back is still a
-    face; five is the first that is only history.
+    run whose last hit is `d` is dated broken on **`d + 2`**, not `d + 1`.
+    Against Mascot's three-day window that makes a last hit four days back
+    still a face, and five the first that is only history.
     """
     stretch_last = 2 if break_inside_window else 5
     return [
         # A long clean run, unticked today. Carries the detail strip's
-        # completed cells (the note boxes long-press one) and the only habit
-        # with history in this month and the previous one but none in the one
-        # before -- which is what "step back into a month you do not have"
-        # needs, and why July is left empty across the whole log.
+        # completed cells (the note boxes long-press one), and together with
+        # Sleep log it is what "step back into a month you do not have history
+        # in" reads: both are empty three months back while the months either
+        # side of them are not. That emptiness is per habit and the grid is a
+        # per-habit screen -- Yoga spans the same month, so the *log* is not
+        # empty there and the Insights totals are not affected.
         Habit("Read", _span(12, 1), tag="career", notes={3: "chapter four"}),
         # The open past cells. Its run ended before the mood window, so the
         # tank stays content while three of the strip's cells are tappable.
@@ -161,22 +185,30 @@ def baseline_habits(break_inside_window: bool) -> list[Habit]:
 
 
 def focus_habits() -> list[Habit]:
-    """Two habits whose tags lead in different, *complete* periods.
+    """Two habits whose tags lead in different, *complete* calendar months.
 
     The focus sentence is only claimed for a period that is over, against the
-    one before it, and only when both had a tagged completion (`Focus.kt`). So
-    the shifted and held cases each need two consecutive finished months with
-    the right leaders, which `baseline` cannot give: it leaves July empty on
-    purpose, for the history grid's "a month you do not have history in", and
-    an empty previous period produces no sentence at all.
+    one before it, and only when both had a tagged completion (`Focus.kt`).
+    So the shift and the hold each need two consecutive finished months with
+    the right leaders.
 
-    June is health and July and August are career, so June to July shifts and
-    July to August holds. The current month is never either: it is partial, so
-    it reads "so far" and names its leader.
+    `baseline` does in fact carry both, three and two months back, but only
+    incidentally -- it gets there off Yoga's completions happening to land in
+    the right months, with tag margins that no one chose. This log chooses
+    them: one tag per month, nothing else competing, so a wrong sentence can
+    only mean the rule changed.
+
+    **Months, not day offsets.** This is the one scenario whose whole subject
+    is a calendar boundary, and a span of day offsets slides across one: the
+    same numbers that name a whole month on one run date straddle two on
+    another, and the box then reads a real sentence that is not the one it is
+    checking. The third month back is health, the second and first are career,
+    so third-to-second shifts and second-to-first holds. The run date's own
+    month is never either -- it is partial, so it reads "so far".
     """
     return [
-        Habit("Run", _span(110, 81), tag="health"),
-        Habit("Study", _span(80, 19), tag="career"),
+        Habit("Run", done_months_back=[3], tag="health"),
+        Habit("Study", done_months_back=[2, 1], tag="career"),
     ]
 
 
@@ -204,6 +236,34 @@ SCENARIOS: dict[str, Scenario] = {
 # Settings, with one habit left open.
 
 
+def _check_id_ranges() -> None:
+    """The disjoint-id invariant, checked rather than asserted in prose.
+
+    Two things can collide and neither shows up on the device as itself. Two
+    scenarios whose ranges overlap dedupe into each other on import, because a
+    merge is by event id. And a scenario with more events than [HABIT_ID_OFFSET]
+    mints an event id equal to one of its own habit ids -- which the per-file
+    duplicate check cannot see, habit ids living inside payloads and never
+    entering it.
+    """
+    spans: list[tuple[int, int, str]] = []
+    for name, scenario in SCENARIOS.items():
+        # The worst case a run date can produce: every named month at 31 days.
+        events = len(scenario.habits) + sum(
+            len(h.done_days_ago) + LONGEST_MONTH * len(h.done_months_back) for h in scenario.habits
+        )
+        if events >= HABIT_ID_OFFSET:
+            raise SystemExit(f"gen-seed: scenario {name!r} can emit {events} events, over the {HABIT_ID_OFFSET} budget")
+        spans.append((scenario.id_base, scenario.id_base + HABIT_ID_OFFSET + len(scenario.habits), name))
+    spans.sort()
+    for (_, end, earlier), (start, _, later) in zip(spans, spans[1:]):
+        if start < end:
+            raise SystemExit(f"gen-seed: scenarios {earlier!r} and {later!r} overlap, so they would dedupe on import")
+
+
+_check_id_ranges()
+
+
 def build(scenario: Scenario, run_on: date, now: datetime, app_version: str) -> dict:
     """Turn a scenario into the envelope the importer reads.
 
@@ -215,8 +275,13 @@ def build(scenario: Scenario, run_on: date, now: datetime, app_version: str) -> 
     dated: list[tuple[datetime, str, dict]] = []
 
     for index, habit in enumerate(scenario.habits):
-        habit_id = uuid(scenario.id_base + 0x1000 + index)
-        created = _instant(run_on - timedelta(days=habit.created_days_ago), now)
+        habit_id = uuid(scenario.id_base + HABIT_ID_OFFSET + index)
+        done = sorted(set(habit.done_days_ago) | {d for m in habit.done_months_back for d in _month_days_ago(run_on, m)})
+        # Created before anything it logged. A habit whose first completion
+        # predates its own creation is a log the projector will not fold the
+        # way the scenario means.
+        oldest = max([habit.created_days_ago, *done], default=habit.created_days_ago)
+        created = _instant(run_on - timedelta(days=oldest), now)
         schedule = {"kind": "daily"} if habit.weekly is None else {"kind": "weekly", "times_per_week": habit.weekly}
         payload = {
             "habit_id": habit_id,
@@ -232,7 +297,7 @@ def build(scenario: Scenario, run_on: date, now: datetime, app_version: str) -> 
             payload["tag"] = habit.tag
         dated.append((created, "HabitCreated", payload))
 
-        for days_ago in habit.done_days_ago:
+        for days_ago in done:
             on = run_on - timedelta(days=days_ago)
             completion = {"habit_id": habit_id, "logical_date": on.isoformat()}
             note = habit.notes.get(days_ago)
@@ -278,15 +343,16 @@ def _instant(on: date, now: datetime) -> datetime:
 
 
 def check(envelope: dict) -> list[str]:
-    """ExportReader's ladder, run here where a failure names a line.
+    """What ExportReader would refuse, refused here where it names a line.
 
-    One bad event refuses the whole file, and the refusal arrives on the device
-    as a sentence in a snackbar with no way back to what caused it.
+    One bad event refuses the whole file, and that refusal reaches the device
+    as a sentence in a snackbar with no way back to what caused it. Covers the
+    envelope's per-event ladder -- id shape, duplicates, `occurred_at`, the
+    offset range, the type and its payload keys, and the schedule. The format
+    marker and version are not checked: [build] writes them from the constants
+    at the top of this file, so there is nothing there to get wrong.
     """
     problems: list[str] = []
-    if envelope["event_count"] != len(envelope["events"]):
-        problems.append(f"event_count {envelope['event_count']} but {len(envelope['events'])} events")
-
     seen: set[str] = set()
     required = {
         "HabitCreated": {"habit_id", "name", "icon", "color", "schedule"},
@@ -299,16 +365,44 @@ def check(envelope: dict) -> list[str]:
         if event["id"] in seen:
             problems.append(f"{where}: duplicate id -- a merge would dedupe it away")
         seen.add(event["id"])
+        try:
+            datetime.strptime(event["occurred_at"], "%Y-%m-%dT%H:%M:%S.%fZ")
+        except ValueError as cause:
+            problems.append(f"{where}: occurred_at is not an ISO-8601 instant ({cause})")
         if abs(event["tz_offset_min"]) > MAX_OFFSET_MINUTES:
             problems.append(f"{where}: tz_offset_min outside +-{MAX_OFFSET_MINUTES}")
-        missing = required.get(event["type"], set()) - set(event["payload"])
+        if event["type"] not in required:
+            problems.append(f"{where}: {event['type']!r} is not a type this writes")
+            continue
+        missing = required[event["type"]] - set(event["payload"])
         if missing:
             problems.append(f"{where}: payload is missing {sorted(missing)}")
+        problems += _schedule_problems(where, event)
 
     ids = [event["id"] for event in envelope["events"]]
     if ids != sorted(ids):
         problems.append("ids are not ascending, so id order no longer equals log order")
     return problems
+
+
+def _schedule_problems(where: str, event: dict) -> list[str]:
+    """The one malformation that reaches the device without naming itself.
+
+    `ScheduleWireV1.toDomain` throws `IllegalArgumentException` on an unknown
+    kind or a weekly with no `times_per_week`, and `ExportReader.proveReadable`
+    catches only `EventCodecException` -- so the file is refused by the generic
+    handler upstream rather than by the ladder that names the event and its
+    position. Caught here, it names both.
+    """
+    schedule = event["payload"].get("schedule")
+    if event["type"] != "HabitCreated" or not isinstance(schedule, dict):
+        return [] if event["type"] != "HabitCreated" else [f"{where}: schedule is not an object"]
+    kind = schedule.get("kind")
+    if kind not in ("daily", "weekly"):
+        return [f"{where}: schedule kind {kind!r} is neither daily nor weekly"]
+    if kind == "weekly" and not isinstance(schedule.get("times_per_week"), int):
+        return [f"{where}: a weekly schedule carries no times_per_week"]
+    return []
 
 
 def main() -> int:
