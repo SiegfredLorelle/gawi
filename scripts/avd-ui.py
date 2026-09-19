@@ -235,6 +235,73 @@ def frames(out_prefix: str, seconds: float, fps: int) -> None:
     print(f"{out_prefix}.mp4 and {out_prefix}-NNN.png at {fps} fps")
 
 
+
+def settime(spec: str) -> None:
+    """Drive an already-open Material time picker to `spec`, e.g. `12:00AM`.
+
+    The **clock face**, never the keyboard mode beside it. Keyboard mode cannot
+    be driven by `adb shell input`: its two fields hand focus back and forth,
+    `KEYCODE_DEL` on the minute field bounces focus to the hour without
+    deleting, and a field already holding two digits silently drops further
+    input -- so a time that looks set is often the old one. The dial's ticks
+    each carry a description (`3 o'clock`, `45 minutes`), which is a selector,
+    and tapping the hour advances the dial to minutes on its own.
+
+    The caller opens the dialog. This leaves it **committed**, because the
+    dialog commits on *Set* and Back discards the selection silently
+    (docs/running.md §4).
+    """
+    matched = re.fullmatch(r"(\d{1,2}):(\d{2})\s*([AaPp][Mm])", spec.strip())
+    if matched is None:
+        raise SystemExit(f"avd-ui: cannot read a time from {spec!r}; want e.g. 12:00AM")
+    hour, minute, meridiem = int(matched[1]), int(matched[2]), matched[3].upper()
+    if minute % 5:
+        raise SystemExit(f"avd-ui: the dial only carries five-minute ticks, not {minute}")
+
+    if any(n.cls.endswith("EditText") for n in dump()):
+        # Keyboard mode is showing. Its toggle is the only described switch.
+        _tap_described("Switch to text input mode for the time input", fallback_y=None)
+
+    _tap_dial(f"{hour} o'clock")
+    _tap_dial(f"{minute} minutes")
+    for node in dump():
+        if node.text == meridiem:
+            adb("shell", "input", "tap", *map(str, node.centre))
+            break
+    else:
+        raise SystemExit(f"avd-ui: no {meridiem} control on this dialog")
+    time.sleep(1)
+    for node in dump():
+        if node.text == "Set":
+            adb("shell", "input", "tap", *map(str, node.centre))
+            print(f"set {spec} and committed on Set")
+            return
+    raise SystemExit("avd-ui: no Set button -- nothing was committed")
+
+
+def _tap_dial(description: str) -> None:
+    """Tap the dial tick carrying `description`, never the field above it.
+
+    The selected hour and minute are announced twice: once by the field at the
+    top of the dialog and once by the tick on the dial. They are told apart by
+    the field carrying text and the tick carrying only a description.
+    """
+    ticks = [n for n in dump() if n.desc == description and not n.text]
+    if len(ticks) != 1:
+        raise SystemExit(f"avd-ui: {len(ticks)} dial ticks for {description!r}")
+    adb("shell", "input", "tap", *map(str, ticks[0].centre))
+    time.sleep(1)
+
+
+def _tap_described(description: str, fallback_y: int | None) -> None:
+    for node in dump():
+        if node.desc == description:
+            adb("shell", "input", "tap", *map(str, node.centre))
+            time.sleep(1)
+            return
+    raise SystemExit(f"avd-ui: nothing described {description!r}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -264,6 +331,9 @@ def main() -> int:
     p_watch = sub.add_parser("watch", help="diff a burst of dumps against the settled screen")
     p_watch.add_argument("--seconds", type=float, default=5.0)
     p_watch.add_argument("--after", help="shell command to run once the baseline is taken")
+
+    p_time = sub.add_parser("settime", help="drive an open time picker via its clock face")
+    p_time.add_argument("spec", help="e.g. 12:00AM")
 
     p_frames = sub.add_parser("frames", help="record and split into frames")
     p_frames.add_argument("prefix")
@@ -296,6 +366,8 @@ def main() -> int:
         with open(args.path, "wb") as handle:
             handle.write(adb("exec-out", "screencap", "-p", binary=True))
         print(args.path)
+    elif args.command == "settime":
+        settime(args.spec)
     elif args.command == "watch":
         watch(args.seconds, args.after)
     elif args.command == "frames":
