@@ -1025,6 +1025,12 @@ widget is drawn against a background it does not own; a launcher's **cell
 geometry**, which is what decides whether a size gate is reachable at all; and
 **TalkBack**, which `adb` cannot drive. Those boxes say so and wait for a phone.
 
+**What the 2026-09-19 and 2026-09-20 ticks below were run against.**
+`Small_Phone` on API 37 with the Pixel launcher, the **signed release APK**,
+its installed bytes hashed against the build on disk rather than read off a
+version number, on the log `scripts/avd-seed.sh baseline` writes, with the
+Today and Streaks widgets placed. The older ticks name their own passes.
+
 - [x] **It is offered at all.** Long-press the home screen → *Widgets* →
       **Gawi** → *Today*. If it is missing, the provider did not register:
       `adb shell dumpsys appwidget` lists every provider the installed build
@@ -1034,9 +1040,8 @@ geometry**, which is what decides whether a size gate is reachable at all; and
       if that test passes and this step fails, suspect the launcher; if it
       fails too, the problem is below the launcher.
 
-      Run 2026-09-19 on `Small_Phone` (API 37, Pixel launcher) against the
-      **signed release APK**: *Browse* lists **Gawi, 3 widgets**, and
-      `dumpsys appwidget` names all three receivers.
+      Run 2026-09-19: *Browse* lists **Gawi, 3 widgets**, and `dumpsys
+      appwidget` names all three receivers.
 - [ ] **Momo appears only when there is room.** Place the widget at its smallest
       (one row tall): name and checkbox, no face. Resize it to two rows: Momo's
       resting frame appears above the rows, in today's mood, and the rows still
@@ -1045,24 +1050,21 @@ geometry**, which is what decides whether a size gate is reachable at all; and
       launcher's two-row cell clears **170 dp**, which is the constant this
       check is really measuring.
 
-      **Not earned 2026-09-20 on `Small_Phone`**, and the constant is why. The
-      Pixel launcher here floors a placement at two rows and its rows are
-      65 dp, so the smallest reachable Today widget is 242 × 133 dp: name and
-      mark, no face, which is this box's first clause arriving at the wrong
-      size. The gate itself does fire — at 242 × 203 dp the Today body draws
-      Momo's resting frame above the rows, and above *No habits yet* when
-      every habit is archived — but only in the *other* host, the merge defect
-      below having put it there, and this launcher refused every attempt to
-      grow the Today widget itself past two rows.
+      **Not earned 2026-09-20**, and the constant is why. The Pixel launcher
+      here floors a placement at two rows and its rows are 65 dp, so the
+      smallest reachable Today widget is 242 × 133 dp: name and mark, no face,
+      which is this box's first clause arriving at the wrong size. The gate
+      itself does fire — at 242 × 203 dp the Today body draws Momo's resting
+      frame above the rows, and above *No habits yet* when every habit is
+      archived — but only in the *other* host, the merge defect below having
+      put it there, and this launcher refused every attempt to grow the Today
+      widget itself past two rows.
 - [x] **It draws today's habits** — each active habit's name with a checkbox,
       ticked to match the Today screen. **No streak**, deliberately (PRD OQ-5).
 
-      Run 2026-09-19 on `Small_Phone` against the **signed release APK**: the
-      widget's own subtree, read off its host-view bounds so it is provably the
-      widget and not the app, carries *Read*, *Stretch* and *Meditate*, each
-      with a mark and none with a numeral. Their marks agreed with Today row
-      for row, and the header count moved with them, nine outstanding before
-      the widget's own tap and eight after.
+      Run 2026-09-19: the widget's own subtree, anchored on its host-view
+      bounds, carries each active habit with a mark and none with a numeral,
+      and the marks agree with Today row for row.
 - [ ] **You can read it, in the theme the device is actually in.** Toggle the
       system dark-mode setting and look at the widget in both, checking the
       **checkbox glyph** and not just the label. This is where a shipped defect
@@ -1085,18 +1087,14 @@ geometry**, which is what decides whether a size gate is reachable at all; and
       twice while waiting, or the second tap undoes the first. Open the app:
       Today agrees, and the mascot has reacted if that was the last one.
 
-      Run 2026-09-19 on `Small_Phone` against the **signed release APK**, both
-      taps recorded at 4 fps: each burst shows the row's pressed highlight with
-      the mark unchanged, then the mark turned over one frame later for the name
-      and two frames later for the glyph. Neither is instant, which is what
-      `GlyphBitmap`'s own KDoc says to expect.
+      Run 2026-09-19: both taps draw the row's pressed highlight with the mark
+      unchanged, and the mark turns over a frame or two later. Neither is
+      instant, which is what `GlyphBitmap`'s own KDoc says to expect.
 - [x] **A tap again undoes.** Tap the ticked row: it unticks, and Today agrees.
       This is the half that separates the widget from a complete-only one.
 
-      Run 2026-09-19 on `Small_Phone` against the **signed release APK**: the
-      row a name tap had ticked was unticked by a glyph tap on the same row, and
-      the app then read *8 of 10 left today* with that habit not done — eight
-      rather than seven being the proof the undo landed.
+      Run 2026-09-19: a ticked row unticked, and Today agreed on the same
+      habit and on its own count.
 - [x] **A write in the app moves the widget.** The only check that exercises
       `ProjectionListener`, and nothing else can: complete a habit *in the app*,
       then go to the home screen **without tapping the widget**. It shows the
@@ -1104,20 +1102,16 @@ geometry**, which is what decides whether a size gate is reachable at all; and
       — `ProjectionListenerTest` proves the call happens, not that Glance acted
       on it.
 
-      Run 2026-09-20 on `Small_Phone` against the **signed release APK**: a
-      habit completed in the app, then `KEYCODE_HOME` and a dump of this
-      widget's own subtree with nothing touched, showed its mark turned over.
-      The push reaches Glance. What it reaches *beyond* this widget is the
-      box below.
+      Run 2026-09-20: a habit completed in the app, then the home screen with
+      nothing touched, and this widget's mark had turned over. The push reaches
+      Glance. What it reaches *beyond* this widget is the box below.
 - [x] **An empty install says so.** With no active habits the widget reads *"No
       habits yet"*, not a blank box. (Archive every habit rather than using `pm
       clear`, which destroys the log.)
 
-      Run 2026-09-20 on `Small_Phone` against the **signed release APK**: all
-      ten archived through the habit list, never `pm clear`, and the widget
-      drew *No habits yet* rather than an empty ground. All ten were brought
-      back afterwards and the log came through it — the completion made
-      earlier that day was still there.
+      Run 2026-09-20: with every habit archived through the habit list — never
+      `pm clear` — the widget drew *No habits yet* rather than an empty ground,
+      and bringing them back restored the log intact.
 - [ ] **Resizing keeps it usable.** Drag the handles: rows reflow and the list
       scrolls rather than clipping.
 
@@ -1136,15 +1130,15 @@ geometry**, which is what decides whether a size gate is reachable at all; and
       `ProjectionRefreshTest` reads the receivers out of the merged manifest,
       which is as far as a JVM test reaches.
 
-      **Failed 2026-09-20 on `Small_Phone`**, and not in the way above: the
-      write reaches both, but the widget bound to `StreakWidgetReceiver` then
-      draws the *Today* body — habit rows, no numerals, no *as of* line — and
-      both host views report the same `views_bitmap_memory`. R8 merges the
-      three `GlanceAppWidget` subclasses into one class, so `updateAll` cannot
-      tell them apart; the shipped dex holds no `Lcom/gawi/widget/StreakWidget;`
-      at all. Release only, so no JVM test can see it. A provider-initiated
-      update draws the right body again, and the next write undoes that.
-      widget.md §8 holds it; this box is owed a re-run against the fix.
+      **Failed 2026-09-20**, and not in the way above: the write reaches both,
+      but the widget bound to `StreakWidgetReceiver` then draws the *Today*
+      body — habit rows, no numerals, no *as of* line — and both host views
+      report the same `views_bitmap_memory`. R8 merges the three
+      `GlanceAppWidget` subclasses into one class, so `updateAll` cannot tell
+      them apart; the shipped dex holds no `Lcom/gawi/widget/StreakWidget;` at
+      all. Release only, so no JVM test can see it. A provider-initiated update
+      draws the right body again, and the next write undoes that. widget.md §8
+      holds it; this box is owed a re-run against the fix.
 
 **The streak widget** (docs/ux/widget.md §6). Its own provider, so its own
 picker entry, and the first one here carrying API 31 attributes.
@@ -1168,12 +1162,10 @@ or process**.
       **system face, not Outfit**, also correct: a picker inflates real XML and
       there is no bitmap escape there.
 
-      Run 2026-09-19 on `Small_Phone` against the **signed release APK**:
-      *Streaks* carries `3 × 2` and *Every habit's current run, dated*, and
-      *Momo* `2 × 2` and its own line, while *Today* — which has no
-      `res/xml-v31` — carries the size alone and no description. That pairing
-      inside one group is the contrast, and the preview drew *Reading 12* and
-      *Drink water 5* over *as of today* in the system face.
+      Run 2026-09-19: *Streaks* carries `3 × 2` and a description line, *Momo*
+      `2 × 2` and its own, while *Today* — which has no `res/xml-v31` — carries
+      the size alone and no description. That pairing inside one group is the
+      contrast, and the preview draws real rows in the system face.
 - [x] **A fresh placement lands three cells by two** on API 31+, which is what
       `res/xml-v31` declares in `targetCellWidth/Height`. On 29 and 30 the
       launcher sizes it off `minWidth` instead, so a narrower first placement
@@ -1182,20 +1174,18 @@ or process**.
       are indistinguishable, so this measures the span and not which attribute
       produced it.
 
-      Run 2026-09-19 on `Small_Phone` against the **signed release APK**: the
-      first placement measured **242 × 133 dp** from its host-view bounds at
-      density 320 — three cells by two rows. *Today*, which declares no
-      `targetCellWidth`, lands on the same span here, `minWidth` 180 dp and
-      `minHeight` 110 dp rounding to it.
+      Run 2026-09-19: the first placement measured **242 × 133 dp** from its
+      host-view bounds at density 320 — three cells by two rows. *Today*, which
+      declares no `targetCellWidth`, lands on the same span here, `minWidth`
+      180 dp and `minHeight` 110 dp rounding to it.
 - [x] **It dates its number.** The bottom line reads *as of* and then a weekday,
       a day and a month — no year, no clock time. docs/ux/visual-identity.md
       §7.1 makes this non-negotiable, so it is the one element on this widget
       that must never be missing or clipped.
 
-      Run 2026-09-19 on `Small_Phone` against the **signed release APK**: *as of
-      Sat, Sep 19* — weekday, day, month, no year, no clock time — read in the
-      dump and seen drawn in full in the screenshot. Both halves are needed: a
-      dump returns the whole string whatever the pixels did with it.
+      Run 2026-09-19: *as of Sat, Sep 19* — weekday, day, month, no year, no
+      clock time — in the dump and drawn in full on screen. Both halves are
+      needed: a dump returns the whole string whatever the pixels did with it.
 - [ ] **Three rows and the date at the smallest size.** Place it one row tall
       with four or more active habits: three habit rows, the date pinned beneath
       them, and the rows scroll. Four rows and no date is the failure — 94 dp
@@ -1214,11 +1204,11 @@ or process**.
       2026-08-29: the gate flipped on resize at roughly 240×127 dp, compact to
       full, at density 320.
 
-      Re-run 2026-09-20 on `Small_Phone` against the **signed release APK**:
-      at 242 × 133 dp the drawn text is `12`, `6` and `12w`; dragging the
-      bottom handle to 242 × 203 dp turns them into *13 days*, *7 days* and
-      *12 weeks* under a *Streaks* header. Read the drawn text, never the
-      description, which carries the full wording at either size.
+      Re-run 2026-09-20: at 242 × 133 dp the drawn text is `12`, `6` and `12w`;
+      at 242 × 203 dp it is *13 days*, *7 days* and *12 weeks* under a *Streaks*
+      header — already past the width, so the height alone crossed the gate.
+      Read the drawn text, never the description, which carries the full
+      wording at either size.
 - [ ] **Days and weeks never look like the same number.** With one daily and one
       weekly habit both on a run, check all three signals at the larger size —
       the unit word and two visibly different inks — and that at the smallest
@@ -1234,12 +1224,10 @@ or process**.
       no completions ever shows an em dash. If both show `0`, the two states
       have been collapsed and the widget is telling a new user they have failed.
 
-      Run 2026-09-20 on `Small_Phone` against the **signed release APK**: with
-      five habits left active, *Walk* and *Tidy* drew a muted *was 1*,
-      *Journal* *was 21*, *Sleep log* a live *49 days*, and *Draw*, which has
-      no completion in the log at all, drew **—**. The two states are not
-      collapsed, and the descriptions separate them too: *was 1 day* against
-      *no streak yet*.
+      Run 2026-09-20: a broken run drew a muted *was 1*, a live one *49 days*,
+      and a habit with no completion in the log at all drew **—**. The two
+      states are not collapsed, and the descriptions separate them too: *was 1
+      day* against *no streak yet*.
 - [ ] **It survives a rollover untouched.** Set the day cutoff a couple of
       minutes ahead, wait past it without touching anything, and a streak that
       depended on yesterday updates itself. Same mechanism as the Today widget's
@@ -1266,12 +1254,11 @@ or process**.
       edge. The name and the streak have fixed slots, so what fails here is the
       slot width rather than the layout.
 
-      Run 2026-09-20 on `Small_Phone` against the **signed release APK**, a
-      habit renamed to 37 characters through the form: at `font_scale` 2.0 the
-      rows grow, the name draws as *Read a cha…* and ellipsises inside its own
-      row, the numeral *14* stays whole against the right edge, and the *as of*
-      line is still drawn. Read the drawn text — the description keeps the
-      whole name. The change needs a render; a force-stop and relaunch is one.
+      Run 2026-09-20 against a habit renamed to 37 characters: at `font_scale`
+      2.0 the rows grow, the name ellipsises inside its own row, the numeral
+      stays whole against the right edge, and the *as of* line is still drawn.
+      Read the drawn text — the description keeps the whole name. The change
+      needs a render; a force-stop and relaunch is one.
 
 **The widget's text is Outfit, as bitmaps.** A font resource cannot reach a
 widget (measured 2026-08-24, docs/ux/visual-identity.md §2), so each name is
@@ -1284,12 +1271,11 @@ a launcher, where the bitmaps are drawn and tinted.
       the theme on API 31+: force-stop after `cmd uimode night yes` or the
       running widget will not re-theme.
 
-      Run 2026-09-20 on `Small_Phone` against the **signed release APK**, both
-      schemes, judged against the launcher's own *Play Store* label in the same
-      frame: the widget's `a` is a single-storey circle and stem where the
-      launcher's is double-storey, and its `t` ends without a tail. One thing
-      to expect from the force-stop — it kills the Glance session, so both
-      widgets sit on the loading layout until something starts a new one.
+      Run 2026-09-20, both schemes, against a launcher label in the same frame:
+      the widget's `a` is a single-storey circle and stem where the launcher's
+      is double-storey, and its `t` ends without a tail. One thing to expect
+      from the force-stop — it kills the Glance session, so both widgets sit on
+      the loading layout until something starts a new one.
 - [x] **API 29 or 30 emulator: every colour is resolved in our process.** Toggle
       dark mode with the widget placed. The text, the checkbox glyph and the
       background must go stale *together* until the next render, because all
