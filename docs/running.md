@@ -1121,14 +1121,15 @@ geometry**, which is what decides whether a size gate is reachable at all; and
       drew *No habits yet* rather than an empty ground. All ten were brought
       back afterwards and the log came through it — the completion made
       earlier that day was still there.
-- [x] **Resizing keeps it usable.** Drag the handles: rows reflow and the list
+- [ ] **Resizing keeps it usable.** Drag the handles: rows reflow and the list
       scrolls rather than clipping.
 
-      Run 2026-09-20 on `Small_Phone` against the **signed release APK**:
-      dragged between 242 × 133 dp and 242 × 203 dp, the rows reflow — 48 dp
-      Today rows against 20 dp streak rows — and the list scrolls, a swipe
-      inside it reaching the tenth habit with the *as of* line staying pinned
-      below. Nothing clipped; a part-drawn last row is the list scrolling.
+      **Not earned 2026-09-20.** This launcher would not grow the Today widget
+      past its two-row placement, for the reason the Momo box above gives, so
+      the only host that resized was the one bound to `StreakWidgetReceiver` —
+      which the merge defect below means was not drawing its own body either.
+      A reflow and a scrolling list were both seen there; neither is evidence
+      about this widget.
 - [ ] **A write in the app moves *both* widgets.** With the Today widget and the
       streak widget both placed, complete a habit in the app and go to the home
       screen without touching either. Both change. Listed separately from the
@@ -2464,7 +2465,15 @@ body holds the weed tips and little else.
 the three layers exist, draw and are wired; every launcher masks and scales them
 differently, which is what is left.
 
-- [x] **In the app drawer and on the home screen.** One gill cluster — three
+**Wallpaper & style does not apply on `Small_Phone`**, which costs two of these
+three boxes their subject. Neither a **Shape** nor *Style → Minimal* takes on
+that image: **Apply** enables on a selection and the tap lands, and neither
+Gawi's icon nor the system's own changes, with
+`theme_customization_overlay_packages` still `null` afterwards. So the mask
+variants and the themed layer are both out of reach there, and the boxes below
+record only what that costs them.
+
+- [ ] **In the app drawer and on the home screen.** One gill cluster — three
       frond dots around a paler body circle, no face — on the darkest teal the
       palette holds, under whatever mask the launcher uses (circle, squircle,
       rounded square). Nothing that carries meaning is clipped. The mark reaches
@@ -2474,14 +2483,11 @@ differently, which is what is left.
       launcher for; Circle, Square and Arch are the three worth trying, Arch
       being the most aggressive of the five.
 
-      Run 2026-09-20 on `Small_Phone` against the **signed release APK**: in
-      the app drawer, one cluster — three frond-pink lobes around the paler
-      body circle, no face — on the dark teal ground, with nothing clipped at
-      the mask's edge. Only the launcher's own circle was exercised: **Shape**
-      does not take on this image. **Apply** enables on a selection and the tap
-      lands, and neither Gawi's icon nor the system's own changes, with
-      `theme_customization_overlay_packages` still `null` afterwards. The other
-      four masks are owed a launcher that applies them.
+      **Not earned 2026-09-20**, with half of it read. In the app drawer: one
+      cluster — three frond-pink lobes around the paler body circle, no face —
+      on the dark teal ground, nothing clipped at the mask's edge. What is
+      missing is the home screen, where Gawi does not sit here, and four of the
+      five masks, for the reason the preamble gives.
 - [ ] **Small.** Drop it in a folder and look at it at the drawer's smallest
       size: **three lobes still read as three**, not as a pink smudge. That is
       the claim §7.1 makes for this mark where the retired one claimed a
@@ -2504,11 +2510,8 @@ differently, which is what is left.
       style → Home screen → **Icons** → *Style* → **Minimal**, against
       *Default*, and it needs an explicit **Apply**.
 
-      **Not earned 2026-09-20 on `Small_Phone`.** *Style → Minimal* does not
-      take on this image, the same way **Shape** does not: **Apply** enables
-      and the tap lands, and neither Gawi's icon nor the system's own changes.
-      Nothing themed was ever drawn, so there was nothing to judge. Owed to a
-      launcher that applies it.
+      **Not earned 2026-09-20.** Nothing themed was ever drawn, for the reason
+      the preamble gives, so there was nothing to judge.
 
 ### Accessibility — *device only, and the layer no test reaches*
 
