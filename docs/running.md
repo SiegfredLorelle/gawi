@@ -431,6 +431,23 @@ TalkBack announces for every focusable node; what can be read is TalkBack's
 the key. Anything not focusable — the panel, the chip, headings, grid cells,
 trend columns, widget bodies — has to be swiped by hand and reported by ear.
 
+**Driving the rest of it from `adb`.** `screencap` and `uiautomator dump`
+inject no input, so they are what a box watched across a boundary is watched
+with; anything that taps changes the thing being measured. A dump lags a tap by
+a recomposition, so read a control's `enabled` flag rather than the label
+beside it. Read a description untruncated or *4 weeks* arrives as *4 week* —
+and where a drawn badge is cleared from the tree, the description is the only
+evidence there is. A snackbar cannot be caught by racing a dump against it:
+diff the text of a burst of dumps against the settled screen, and take its
+duration off a recording. When nothing may pause between two actions, put both
+in one `adb shell` invocation. **A negative result proves nothing on its own**
+— a tap that opens no dialog has to be paired with the same tap on an idle row,
+or a guard that neutralises a formula with a reader shown to evaluate one.
+Two things that swallow a tap: the Add-habit FAB is drawn over the last visible
+row's archive control, and a file row's preview thumbnail carries the file name
+in its own description, so matching on description opens a preview instead of
+choosing the file.
+
 **What a device is for, and `make test` is not.** No test here opens a file
 picker, so the export, import and CSV boxes are the only check that a file is
 written and read at all. `AppNavigationTest` launches the real `MainActivity`
@@ -448,84 +465,61 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       2026-09-14 on `Small_Phone` against the **signed release APK**, which is
       where this stops being a formality: R8's failures are silent, so an empty
       log is what says no serializer and no reflected class was stripped.
-- [x] From the empty state, tap **Add a habit**, name it, save. It appears on
-      Today with no restart — one observation covering Hilt building the data
+- [x] From the empty state, tap **Add a habit**, name it, save — which opens the
+      habit's own detail screen, so go back to see the row. It is on Today
+      with no restart — one observation covering Hilt building the data
       layer, the command path, the log being folded, the projection write and
       the Room `Flow`.
 
-      Run 2026-09-15 on `Small_Phone` against the **signed release APK**. The
-      empty state read *"Momo is waiting for a habit."* over *"No habits yet"*;
-      saving lands on the new habit's **detail** screen rather than popping, so
-      the row is seen by going back. It was there with no restart, the mood line
-      had become *"Momo is pottering about."* and the count *"1 of 1 left
-      today"*. `AndroidRuntime:E` empty.
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**: the
+      row was on Today with no restart, and `AndroidRuntime:E` was empty.
 - [x] Create a **weekly** habit and check the target stepper stops at 7 and at
       1. Above 7 throws out of `Schedule.Weekly`'s `require` rather than being
       rejected, so this is a crash if it is wrong.
 
-      Run 2026-09-15 on `Small_Phone` against the **signed release APK**. From
-      the default *3× a week*, **One more** reached *7× a week* and four
-      further presses left it there; **One fewer** reached *1× a week* and
-      three further presses left it there. Both buttons report `enabled=false` at
-      their limit, so the stepper disables rather than clamping, and no
-      `AndroidRuntime:E` appeared — `Schedule.Weekly`'s `require` was never
-      reached, which is what this box is afraid of. Read the button's enabled
-      flag rather than the label: a dump taken straight after a tap still shows
-      the previous value.
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**: the
+      stepper stopped at 7 and at 1, both buttons reporting `enabled=false` at
+      their limit rather than clamping, and no `AndroidRuntime:E` appeared, so
+      the `require` was never reached.
 - [x] Open a habit from the list, change **only** its name, save. Its schedule
       and tag survive, and so do the icon and colour the form no longer shows —
       an update is a whole-record write, and those two are passthrough
       ([visual-identity.md](ux/visual-identity.md) §7.3), so a form that wrote
       the defaults instead of carrying them would silently restyle every habit
       on its first save. `HabitsUiMapperTest` pins the carrying; only an export
-      taken before and after shows the log agreeing.
+      taken before and after shows the log agreeing. **Use a habit that did not
+      get the form's defaults** — on one that did, the icon and colour being
+      compared *are* those defaults, so carrying and re-defaulting write
+      identical bytes and the check proves only the schedule and the tag.
 
-      Run 2026-09-15 on `Small_Phone` against the **signed release APK**.
-      Renamed a seeded `guitar` to `ukulele`; one export afterwards carries both
-      of that habit's events, `HabitCreated` and then `HabitUpdated` half an hour
-      later, and the update kept the icon, the colour `#76B041`, the tag
-      `learning` and the daily schedule, changing only the name. **Use a habit
-      that did not get the defaults.** A first attempt renamed one made in the
-      form, whose icon and colour already *are* the defaults being compared, so
-      carrying and re-defaulting would have written identical bytes and the run
-      proved only the schedule and the tag.
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**: one
+      export either side of a rename shows the update carrying the icon, the
+      colour, the tag and the schedule, with only the name changed.
 - [x] Archive a habit: it leaves Today, and appears under **Archived** on the
       list with a *Bring back* action. Bring it back: it returns to Today.
 
-      Run 2026-09-15 on `Small_Phone` against the **signed release APK**.
-      `stretch` left Today at once and appeared under **Archived** with *Bring
-      back*, beside a habit the seed had archived through a `HabitArchived`
-      event — so the section is fed by the log and not only by the gesture.
-      Bringing it back returned it to both lists. The archive control of the
-      **last visible row** sits under the Add-habit FAB, which is drawn over it:
-      two taps at the row's own centre opened the new-habit editor instead, so
-      scroll the row clear before tapping it.
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**: it
+      left Today at once and appeared under **Archived** with *Bring back*,
+      beside one the seed had archived through an event rather than a gesture,
+      and bringing it back returned it to both lists.
 - [x] The mascot's count follows archiving — an archived habit stops being
       outstanding.
 
-      Run 2026-09-15 on `Small_Phone` against the **signed release APK**: *"9 of
-      11 left today"* → archive → *"8 of 10 left today"* → bring it
-      back → *"9 of 11 left today"*. The archived habit leaves **both** halves
-      of the count, so it stops being outstanding and stops being counted at
-      all.
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**: the
+      count went from 9 of 11 to 8 of 10 on archiving and back again, so the
+      habit leaves both halves of it.
 - [x] Tap a row: it ticks, and its streak appears. Tap again: it unticks. A
       daily streak reads as a count, a weekly one in weeks.
 
-      Run 2026-09-15 on `Small_Phone` against the **signed release APK**.
-      Tapping `floss` turned *"Streak broken, was 1 day"* into *"streak of 1
-      day"*, and tapping it again turned it back. The unit half reads off the row
-      descriptions rather than off a tap: daily in days — *"streak of 6
-      days"*, *"streak of 20 days"*, *"Streak broken, was 11 days"* — and
-      weekly in weeks, *"streak of 4 weeks"* and *"Streak broken, was 1 week"*,
-      so the broken form keeps the unit too. The drawn badge is cleared from the
-      tree, which makes the description the only evidence: read it untruncated,
-      or *"4 weeks"* arrives as *"4 week"*.
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**: a tap
+      ticked the row and its streak appeared, a second unticked it, and the row
+      descriptions carry days for a daily habit and weeks for a weekly one,
+      broken forms included.
 - [x] Force-stop and relaunch: completions and streaks are rebuilt from the log.
 
-      Run 2026-09-15 on `Small_Phone` against the **signed release APK**. Every
-      row's name, streak description and weekly ratio plus the header count were
-      captured, the app force-stopped and relaunched, and captured again: the two
-      are identical by `diff`, including a completion made seconds earlier.
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**: every
+      row's name, streak and ratio and the header count were identical by
+      `diff` across a force-stop, including a completion made seconds earlier.
 - [x] The database exists — `adb shell run-as com.gawi.app ls -l databases`. To
       inspect it, **pull the `-wal` too**, or you read a pre-checkpoint snapshot
       and will think writes were lost:
@@ -539,16 +533,13 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       A *missing* `-wal` is fine and means SQLite has checkpointed into the main
       file, so let that copy fail rather than chasing it.
 
-      Run 2026-09-15 on `Small_Phone` against the **debug** build, which is the
-      exception this box's own command names: a release APK refuses `run-as`
-      (§6). The listing held `gawi.db` at 4 KB beside a 201 KB `gawi.db-wal`,
-      and the warning above understates the failure — the main file pulled
-      alone answers *no such table: events*, so reading it without the `-wal`
-      is an error rather than a low count. Pulled with it: 164 events over
-      twelve habits, all five types this log uses, `integrity_check` ok. One
-      trap the recipe cannot show — **querying the pulled pair checkpoints the
-      `-wal` into the main file and deletes it**, so a main-file-only copy
-      taken afterwards is no longer one and reads correct.
+      Run 2026-09-15 on `Small_Phone` against the **debug** build, the exception
+      this box's own command names (§6). The main file pulled alone has no
+      `events` table at all, so reading it without the `-wal` is an error
+      rather than a low count; pulled with it, 164 events and
+      `integrity_check` ok. **Querying the pulled pair checkpoints the `-wal`
+      into the main file and deletes it**, so a main-file-only copy taken
+      afterwards is no longer one.
 - [x] Settings persist. Open **Settings** from Today's app bar — the gear, not
       the list glyph beside it — and change the day cutoff.
       `files/datastore/settings.preferences_pb` appears after the **first
@@ -558,10 +549,9 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       on** — the next two checks both start from it, and neither restores it.
 
       Run 2026-09-15 on `Small_Phone` against the **signed release APK**: the
-      cutoff went to 3:00 AM, survived a force-stop and relaunch, and the
-      reopened screen read 3:00 AM back rather than the default. Put back to
-      midnight afterwards. The `settings.preferences_pb` half needs `run-as`, and
-      a release build refuses it (§6), so that part alone is owed to a debug
+      cutoff went to 3:00 AM and the reopened screen read it back after a
+      force-stop, not the default. The `settings.preferences_pb` half needs
+      `run-as`, which a release build refuses (§6), and is owed to a debug
       install.
 - [x] **Day rollover, against a real clock.** Start from a cutoff at or before
       the current time — midnight does, which is why the check above restores it
@@ -574,15 +564,10 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       still the cheapest way to force a boundary — `adb shell date` needs `adb
       root` and is refused on the Play images this project uses.
 
-      Run 2026-09-15 on `Small_Phone` against the **signed release APK**. From a
-      midnight cutoff, ticking a habit at 21:46 and then moving the cutoff to
-      9:50 PM turned *"8 of 11 left today"* into *"7 of 11"*: that row lost its
-      tick, and two habits completed the day before gained theirs — so the whole
-      logical day had moved rather than one row. Nothing was touched after that,
-      only `screencap` and `uiautomator dump`, neither of which injects input,
-      and at 21:51 the row was ticked again with the count back at *"8 of 11"*.
-      The count leaves weekly habits out of *left today*, which is what makes
-      both readings add up.
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**: with
+      the cutoff moved ahead of the clock the ticked row read unticked and two
+      habits completed the day before read ticked, so the whole logical day had
+      moved; left untouched, it flipped back on its own at the boundary.
 - [x] **The mascot follows the clock, not just the data.** With something
       outstanding, set **End-of-day reminder** to a time just past now. The
       panel changes with no habit touched and no interaction — and the habit
@@ -590,43 +575,31 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       subscribing to the settings twice with different dedupes.
       `TodayMoodTest` asserts the rows are *equal* across the crossing, which an
       identical re-query satisfies too, so only a screen can answer the second
-      half.
+      half. **Momo has to be content going in**: a log carrying a break makes
+      her regenerating instead, a different mood that this boundary does not
+      move ([momo.md](ux/momo.md) §3).
 
       Half seen 2026-09-03 on the Nothing A059; closed 2026-09-15 on
-      `Small_Phone` against the **signed release APK**. Momo needs to be
-      **content** going in, which a log carrying a break cannot give you — a
-      broken streak makes her regenerating, a different mood that this boundary
-      does not move (momo.md §3). With eight unbroken habits owed and the
-      reminder moved to 10:00 PM she read *"Momo is pottering about."*; nothing
-      was touched after that, only `screencap` and `uiautomator dump`, and on
-      the boundary the line became *"Momo is getting worried about read."* A
-      70-second recording sampled four times a second puts that on the first
-      frame after 10:00 PM, with **the mood band changing by 6,524 pixels while
-      the row band never moves by more than three**, which is codec noise. The
-      two stills either side differ by 27,125 pixels above the count line and
-      by **zero** below it.
+      `Small_Phone` against the **signed release APK**: the mood line turned
+      over on the boundary with nothing touched, and the rows beneath it did
+      not move.
 - [x] **Week start re-buckets what is already on screen.** With a weekly habit
       showing a ratio, change the week start. The ratio re-counts against the
       new week without leaving the screen. Unlike the cutoff, this is not
       prospective-only: nothing about a week is stored on an event, so it is
-      recomputed on read.
+      recomputed on read. **Seed the completion on the day the two week starts
+      disagree about**, or every ratio reads the same under both and this
+      passes without touching the question. The dialog needs **Set** — Back
+      cancels it and leaves the old value with no word either way.
 
-      Run 2026-09-15 on `Small_Phone` against the **signed release APK**. A
-      weekly habit with a completion on Sunday 13 September read *"0 of 3 this
-      week"* under a Monday week start and *"1 of 3 this week"* under a Sunday
-      one, its *"streak of 4 weeks"* unchanged; a second weekly with nothing
-      that week stayed at *"0 of 3"*, which is what says the ratio moved rather
-      than the screen. **Seed the completion on the day the two week starts
-      disagree about**, or every ratio reads the same under both and this passes
-      without touching the question. The dialog needs **Set**: Back cancels it
-      and leaves the old value with no word either way.
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**: the
+      ratio re-counted on return while a second weekly with nothing that week
+      stayed where it was.
 - [x] A cancelled tap still commits: tap, immediately press Back, relaunch, and
       the completion is there.
 
-      Run 2026-09-15 on `Small_Phone` against the **signed release APK**. The tap
-      and the Back went in one `adb shell` invocation, so nothing paused between
-      them; after relaunching, the row read *"streak of 1 day"* where it had read
-      *"Streak broken, was 1 day"*.
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**: the
+      completion outlived the activity and was there after relaunching.
 - [x] **Export writes a file you can read back.** Settings → scroll to **Data**
       → **Export a copy**. Keep the offered name, save it into Downloads,
       confirm the snackbar, then:
@@ -649,69 +622,58 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       while the cutoff is at 03:00 and the clock reads before it — and the save
       dialog still offers `gawi-export-<today>.json`, so the file name uses the
       wall clock rather than the logical date. **Put the cutoff back to midnight
-      afterwards**; the rollover checks above start from it.
+      afterwards**; the rollover checks above start from it. It need not be 03:00 and you need
+      not wait for midnight: **any cutoff ahead of the clock** puts the
+      logical day behind the wall date, which is the only condition this
+      box needs.
 
-      Run 2026-09-15 on `Small_Phone` against the **signed release APK**. The
-      cutoff does not have to be 03:00 and you need not wait for midnight — any
-      cutoff **ahead of the clock** puts the logical day behind the wall date,
-      which is the only condition this box needs. At 22:29 with the cutoff at
-      11:30 PM the logical day really had moved back (the count fell from *9 of
-      11* to *7 of 11* and the two habits completed the day before read ticked),
-      and the save dialog still offered `gawi-export-2026-09-15.json`.
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**: the
+      save dialog offered today's wall date while the logical day sat on
+      yesterday.
 - [x] **Cancelling the picker does nothing and says nothing.** Tap **Export a
       copy**, then press Back out of the save dialog. No snackbar, no file, and
       the row is still tappable — the null-`Uri` path is a no-op rather than an
       error, which is the rule every Cancel on this screen follows.
 
-      Run 2026-09-15 on `Small_Phone` against the **signed release APK**. Back
-      out of the save dialog and `/sdcard/Download` gained nothing, the row
-      still read *Never exported*, no snackbar appeared in any sample, and the
-      row's clickable wrapper was still there to tap.
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**:
+      `/sdcard/Download` gained nothing, the row's value line did not move, no
+      snackbar appeared, and the row was still tappable.
 - [x] **Importing what you just exported changes nothing.** **Import a file** →
       pick the export from above. The snackbar says nothing was new, and Today
       is unchanged — same rows, same ticks, same streaks. That is the dedupe by
       event id, and an import being a merge and not a replace. It restores
       nothing because it changes nothing, which is the point.
 
-      Run 2026-09-15 on `Small_Phone` against the **signed release APK**. The
-      snackbar read *"Nothing new in that file. Everything in it was already
-      here."* and a full sweep of Today — every name, streak description,
-      weekly ratio and the header count — was identical by `diff` either side.
-      The snackbar is transient, so catch it by diffing the text of a burst of
-      dumps against the settled screen rather than by trying to time one dump.
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**: the
+      snackbar said nothing was new, and a full sweep of Today was identical by
+      `diff` either side.
 - [x] **A file that is not an export is refused without changing anything.**
       Import → pick a photo or any text file. The snackbar says it is not a Gawi
       export, and Today is unchanged: a refusal is a message rather than a crash
       or a half-written log.
 
       Run 2026-09-15 on `Small_Phone` against the **signed release APK**: a
-      plain `.txt` drew *"That is not a Gawi export, or it is damaged. Nothing
-      was changed."*, `pidof` returned the same process, and Today was unchanged
-      by `diff`.
+      plain `.txt` was refused as not an export, `pidof` returned the same
+      process, and Today was unchanged by `diff`.
 - [x] **The export is visible in the import picker** without needing a "show all
       files" step. The one thing the type filter can get wrong that no test can
       see — a filter that hides someone's own backup from them is worse than one
       that shows a few extra files.
 
-      Run 2026-09-15 on `Small_Phone` against the **signed release APK**. The
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**: the
       export was listed in Downloads beside the other `.json` files with no
-      *show all files* step, and it is selected by tapping its **name** — the
-      preview thumbnail beside it carries the file name in its own description,
-      so tapping that opens a preview instead.
+      *show all files* step.
 - [x] **Both rows go quiet while the work runs.** With a log big enough to take
       a moment, the tapped row's explanation is replaced by *Writing the file…*
       and neither row answers a tap until it finishes. On a small log this is
       over before you can see it — expected, and `SettingsScreenTest` covers it
-      instead.
+      instead. **Build the log from several imports**: one file cannot exceed the
+      32 MB import cap, and merging 30,000 events into a log already holding
+      30,000 is minutes of work, which is what makes the state visible.
 
-      Run 2026-09-15 on `Small_Phone` against the **signed release APK**, on a
-      log of about 60,000 events. One dump landed inside the write and caught
-      *Writing the file…* in place of the row's explanation with all three Data
-      rows reporting `enabled=false` together. **Build the log by importing
-      several files rather than one.** The import cap is 32 MB, and merging
-      30,000 events into a log that already held 30,000 took about five minutes
-      of CPU on this AVD — worth knowing before you wait on it, and the reason
-      the row says *Reading the file…* for that whole time.
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**: one
+      dump landed inside the write and caught *Writing the file…* in place of
+      the row's explanation, with all three Data rows disabled together.
 - [x] **A file far too large to be an export is refused, not fatal.** The picker
       shows essentially everything by design, so this is the likeliest wrong
       tap:
@@ -727,10 +689,9 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       process death on the recovery screen with nothing said. Delete the file
       afterwards.
 
-      Run 2026-09-15 on `Small_Phone` against the **signed release APK**. The
-      40 MB file drew the same *"not a Gawi export, or it is damaged"* line,
-      `pidof` returned the same process before and after, and Today was
-      unchanged by `diff`. The ceiling holds.
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**: the
+      40 MB file was refused as not an export, `pidof` returned the same
+      process, and Today was unchanged by `diff`.
 - [x] **An export you do not interrupt ends in a closing brace.** Export into
       Downloads, then:
 
@@ -743,9 +704,8 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       document last did not break the ordinary path.
 
       Run 2026-09-15 on `Small_Phone` against the **signed release APK**: the
-      last bytes are a closing `}` after the final payload rather than a cut
-      token, and the declared `event_count` of 166 equalled the number of events
-      the file actually carries.
+      last bytes are a closing brace after the final payload rather than a cut
+      token, and the declared `event_count` matched the events carried.
 - [x] **Leaving the screen the instant you tap Save can leave an empty file, and
       that is a known gap.** Tap **Export a copy**, save, and press Back out of
       Settings immediately. Two outcomes are both correct: no file at all (Back
@@ -757,12 +717,10 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       an application-scoped coroutine, which is a decision rather than a patch.
       Delete the file afterwards so the next check starts clean.
 
-      Run 2026-09-15 on `Small_Phone` against the **signed release APK**, on the
-      same 60,000-event log — small logs finish before Back can land. Tapping
-      save and Back in one `adb shell` invocation left a **zero-byte** file,
-      the second of the two outcomes this box allows and not a partial one, and
-      importing it drew *"That is not a Gawi export, or it is damaged. Nothing
-      was changed."*
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**, on a
+      log large enough that a small one does not finish first: it left a
+      **zero-byte** file, the second of the two outcomes this box allows and
+      not a partial one, and importing it was refused as damaged.
 - [x] **Process death mid-export is not survived, and the file is refused rather
       than half-restored.** Repeat the check above but run `adb shell am force-
       stop com.gawi.app` instead of pressing Back. The file is empty or
@@ -773,36 +731,30 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       silently restored as a partial one.
 
       Run 2026-09-15 on `Small_Phone` against the **signed release APK**:
-      force-stopping instead of pressing Back also left a zero-byte file, which
-      `json.load` refuses outright, and importing it drew the same *not a Gawi
-      export, or it is damaged* line.
+      force-stopping also left a zero-byte file, which does not parse, and
+      importing it was refused as damaged.
 - [x] **The count snackbar is readable before it goes.** Import an export
       holding habits this install does not have and read the whole line without
       hurrying; it uses the default short duration, and if that is too fast that
       is a real finding. The habits it adds cannot be deleted afterwards, only
-      archived, so do this on a scratch install or be ready to archive them.
+      archived, so do this on a scratch install or be ready to archive them. **Give the file its own id range**: two seeds
+      minted from the same deterministic sequence dedupe against each other
+      by event id and add almost nothing, so the habits this box needs never
+      arrive.
 
-      Run 2026-09-15 on `Small_Phone` against the **signed release APK**, and it
-      is **not** too fast. *"Imported that file: 18 added, 0 already here."*
-      stayed up **4.0 seconds**, measured off a screen recording sampled ten
-      times a second — frames 15 to 54, with the tap landing on frame 15. That
-      is Compose's `SnackbarDuration.Short`, 4000 ms rather than the View
-      system's 1500 ms, which is why the short duration is comfortable here.
-      **Give the file its own id range.** Two seeds minted from the same
-      deterministic sequence deduped against each other and reported *"17 added,
-      159 already here"*, so the habits this box needs never arrived at all.
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**, and
+      it is **not** too fast: the line stayed up **4.0 seconds**, which is
+      Compose's `SnackbarDuration.Short` at 4000 ms rather than the View
+      system's 1500 ms.
 - [x] **The whole recovery claim, end to end.** Export, then `adb shell pm clear
       com.gawi.app`, relaunch to the empty state, and import the file. Every
       habit, completion and streak comes back. This is the promise architecture
       §6 makes on behalf of `allowBackup="false"`, and the only check that tests
       it as a user would need it.
 
-      Run 2026-09-15 on `Small_Phone` against the **signed release APK**. Every
-      row's name, streak description, weekly ratio and the header count were
-      captured before the export, then `pm clear`, relaunch to the empty state,
-      and import. The two captures are **identical by `diff`** — the promise
-      architecture §6 makes on behalf of `allowBackup="false"` holds end to
-      end.
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**: every
+      row's name, streak and ratio and the header count were identical by
+      `diff` across the export, `pm clear` and import.
 
 **The 30-day nudge** (PRD §5). Run these in order from a cleared install — they
 build on each other, and the third is the one with no JVM test behind it.
@@ -814,17 +766,16 @@ build on each other, and the third is the one with no JVM test behind it.
       apart.
 
       Run 2026-09-15 on `Small_Phone` against the **signed release APK**: after
-      `pm clear` the export row ran straight from its title into the ordinary
-      help line, with no value line of any kind between them.
+      `pm clear` the row ran straight from its title into the ordinary help
+      line, with no value line between them.
 - [x] **A log with something in it and no backup says so.** Create one habit,
       then reopen Settings. The export row reads **Never exported** and the help
       line has become the nudge — the same split in the other direction, and
       "never" is overdue immediately rather than in thirty days.
 
       Run 2026-09-15 on `Small_Phone` against the **signed release APK**: one
-      habit created on an otherwise empty log turned the row into **Never
-      exported** over the nudge, *"There is no other copy of your history on
-      this phone or anywhere else…"*, rather than the ordinary help.
+      habit on an otherwise empty log turned the row to **Never exported** over
+      the nudge rather than the ordinary help.
 - [x] **An import moves the row without leaving the screen.** From a cleared
       install again — `adb shell pm clear com.gawi.app` — open Settings while
       the log is empty, confirm the row is silent, then **without navigating
@@ -839,10 +790,9 @@ build on each other, and the third is the one with no JVM test behind it.
       seconds checks the same mechanism from the other side.
 
       Run 2026-09-15 on `Small_Phone` against the **signed release APK**, and
-      the five seconds were watched. From a cleared install the row was silent;
-      importing an export **without leaving Settings** put **Never exported**
-      and the nudge up by the first poll after the snackbar, not on a later
-      visit.
+      the five seconds were watched: from a cleared install the row was silent,
+      and importing without leaving Settings put **Never exported** and the
+      nudge up on the first poll after the snackbar.
 - [x] **A finished export records itself, and only a finished one.** Export a
       copy, keep the offered name, and return to Settings: the row reads **Last
       exported today** and the ordinary help is back. **This is the only check
@@ -853,23 +803,20 @@ build on each other, and the third is the one with no JVM test behind it.
 
       Run 2026-09-15 on `Small_Phone` against the **signed release APK**: the
       row went from *Never exported* to **Last exported today**, and the help
-      line under it went back to the ordinary *"Writes every habit and
-      everything you have logged…"* from the no-copy-anywhere nudge.
+      line under it went back to the ordinary one from the no-copy nudge.
 - [x] **A cancelled export does not count as a backup.** Tap **Export a copy**
       and press Back out of the save dialog. The row still reads whatever it
       read before: the stamp follows the write and not the tap.
 
-      Run 2026-09-15 on `Small_Phone` against the **signed release APK**, from
-      *Never exported*: backing out of the save dialog left it reading *Never
-      exported*.
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**:
+      backing out of the save dialog left the row reading what it read before.
 - [x] **An import does not count as a backup either.** Import the file from
       above. The row still says today and the value does not move. Deliberate:
       an imported file proves a copy was readable, not that it is recent, so
       importing a backup from March must not silence the nudge for a month.
 
       Run 2026-09-15 on `Small_Phone` against the **signed release APK**: after
-      importing the file just exported, the row still read **Last exported
-      today** and the value line had not moved.
+      importing the file just exported, the value line had not moved.
 - [x] **The stamp survives a restart.** `adb shell am force-stop com.gawi.app`,
       relaunch, reopen Settings: still **Last exported today**, so it is in the
       preferences file rather than in memory.
@@ -888,21 +835,19 @@ build on each other, and the third is the one with no JVM test behind it.
       **Never exported** once the date is restored, which is correct behaviour
       and looks like a bug if you were not expecting it.
 
-      Run 2026-09-15 on `Small_Phone` against the **signed release APK**. With a
-      stamp reading *Last exported today*, the device date was moved from
-      15 September to 16 October through the Settings app — automatic time off,
-      the calendar picker's *Next month*, then day 16 — and Gawi's row read
-      **Last exported 31 days ago** over the nudge. Automatic time was switched
-      back on afterwards and the clock returned on its own; nothing was exported
-      while the date was forward.
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**: with
+      a stamp reading *Last exported today*, moving the device date on 31 days
+      through the Settings app turned the row to **Last exported 31 days ago**
+      over the nudge. Automatic time was restored afterwards and nothing was
+      exported while the date was forward.
 - [x] **A settings edit does not reset the clock.** With a stamp in place,
       change the week start and come back. The value line has not moved: the
       export stamp shares a preferences file with the three settings and
       survives a write that assigns all three of their keys.
 
       Run 2026-09-15 on `Small_Phone` against the **signed release APK**: the
-      week start went Monday → Wednesday → Monday and the export stamp read
-      **Last exported today** throughout.
+      week start was changed and changed back, and the export stamp did not
+      move.
 
 **The CSV of completions** (PRD §5, docs/ux/settings.md §6). Its correctness is
 mostly covered on the JVM — `CompletionCsvTest` pins every byte of the format
@@ -923,10 +868,9 @@ does with the file.
       ```
 
       Run 2026-09-15 on `Small_Phone` against the **signed release APK**: the
-      offered name was `gawi-completions-2026-09-15.csv`, the first three bytes
-      were `ef bb bf`, the header row read `habit,logical_date,note` and the
-      first data row was the oldest logged day. A note carrying a line break
-      round-tripped intact through a parser reading `utf-8-sig`.
+      offered name carried today's date, the first three bytes were the byte
+      order mark, the header row was right, and the first data row was the
+      oldest logged day.
 
 - [x] **The row count matches the projection.** Pull the database **with its
       `-wal`**, or the count lies in either direction (a pre-checkpoint snapshot
@@ -951,13 +895,9 @@ does with the file.
       ```
 
       Run 2026-09-15 on `Small_Phone` against the **debug** build, for the
-      `run-as` reason the database box above gives. The projection held 148
-      completions and the parser counted 148 data rows under a
-      `habit,logical_date,note` header — 149 `CompletionAdded` less the one
-      `CompletionTombstoned`, so the undone day is missing from both sides
-      rather than from neither. `wc -l` happened to agree at 149 here, and
-      only because no note in this log carries a line break: it is the count
-      that cannot be trusted, not the one that disagrees.
+      `run-as` reason the database box above gives: the projection and the
+      parsed CSV agreed exactly, the difference from `CompletionAdded` being
+      the one tombstoned day.
 
 - [x] **A formula in a habit name stays text in a spreadsheet.** The security
       check, and the reason the file is not written naively. Create three habits
@@ -977,15 +917,9 @@ does with the file.
       because the reader never evaluates anything.
 
       Run 2026-09-15 on `Small_Phone` against the **signed release APK**, with
-      the control established first. In the raw file the four names read
-      `"'=1+1"`, `"' =1+1"` — the guard goes ahead of the leading space rather
-      than after it — `"Read, daily"`, and `say "yes"` with its quotes doubled.
-      Imported into LibreOffice with formula evaluation **on** and written back
-      out, all four stayed text and computed nothing, the comma and quote names
-      staying one cell each. **The control is what makes that mean anything**:
-      the same reader on the same settings, given a hand-made row holding a bare
-      `=1+1`, returned `2`. A headless round-trip through `.ods` and back shows
-      all of this without opening a GUI.
+      the control taken first: the guard lands ahead of a leading space, all
+      four names came back as text computing nothing, and the same reader on
+      the same settings turned a hand-made bare `=1+1` into `2`.
 
 - [x] **Know what a `;`-locale Excel does with it.** Not a defect and not
       fixable in the bytes without breaking every other reader, so it is a check
@@ -994,20 +928,19 @@ does with the file.
       this file in column A. The fix for a user is the import dialog. See
       `CompletionCsv`'s KDoc for why no `sep=,` line is written.
 
-      Seen 2026-09-15 by importing the same file twice on the host, once with
-      `,` as the separator and once with `;`. Comma: 155 records, every one of
-      them three columns. Semicolon: every record one column, exactly as the
-      paragraph above says — and one record more, because the note carrying a
-      line break stops being held together, which is the second thing that
-      locale costs.
+      Seen 2026-09-15 on the host, importing one CSV twice into LibreOffice,
+      once with `,` as the separator and once with `;`. Under `;` every record
+      lands in one column, and a record whose note carries a line break is
+      split as well: the field starts at column 0, so its quoting is never
+      honoured and the embedded newline ends the record.
 
 - [x] **Cancelling the picker does nothing and says nothing.** Tap **Export
       completions** and press Back out of the save dialog. No snackbar, no
       change, and `/sdcard/Download` gains nothing.
 
-      Run 2026-09-15 on `Small_Phone` against the **signed release APK**: after
-      backing out of the save dialog, `/sdcard/Download` held exactly what it
-      had held before and no snackbar appeared.
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**:
+      `/sdcard/Download` held exactly what it had held before, and no snackbar
+      appeared.
 
 - [x] **A CSV export does not touch the nudge.** The load-bearing negative, and
       the one worth running even when nothing else is. Note what the export row
@@ -1016,13 +949,12 @@ does with the file.
       silence the warning for a month over a file that could not restore
       anything. `CompletionCsvArchiveTest` reads a real journal either side of a
       real export and `SettingsDataViewModelTest` asserts what the row says;
-      this confirms it through the real graph.
+      this confirms it through the real graph. **Start from a real stamp**, not
+      from *Never exported*, where the value cannot move backwards and a
+      pass proves nothing.
 
-      Run 2026-09-15 on `Small_Phone` against the **signed release APK**, and
-      run from a **real stamp** rather than from *Never exported*, where the
-      value cannot move backwards and a pass would prove nothing. With the row
-      reading **Last exported today** over its ordinary help line, a CSV export
-      left both lines exactly as they were.
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**: a CSV
+      export left both the value line and the help line as they were.
 
 - [x] **All three Data rows go dead together.** Start a CSV export of a large
       log and, while it runs, confirm **Export a copy** and **Import a file**
@@ -1030,15 +962,9 @@ does with the file.
       catch by hand on a small log; the JVM tests own this and this is a sanity
       check.
 
-      Run 2026-09-15 on `Small_Phone` against the **signed release APK**. The
-      CSV write is far quicker than the JSON one even on 60,000 events — about a
-      quarter of a second — so it was caught on a 30 fps recording rather than
-      in a dump: **Export completions** read *Writing the spreadsheet…*, its own
-      string and not the JSON row's, while **Import a file** kept its ordinary
-      explanation. For the other half, a tap on **Export a copy** fired in the
-      same `adb shell` invocation as save opened no dialog, and **the control is
-      what makes that mean anything** — the identical tap on the identical
-      coordinates opens the dialog when the row is idle.
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**: only
+      the CSV row said it was working, and a tap at **Export a copy** during
+      the write opened no dialog where the same tap opens one on an idle row.
 
 - [x] **An empty log still writes a usable file.** After `adb shell pm clear
       com.gawi.app`, export completions before creating anything. The snackbar
@@ -1047,10 +973,8 @@ does with the file.
       this clears the app.
 
       Run 2026-09-15 on `Small_Phone` against the **signed release APK**: the
-      snackbar read *"Nothing has been logged yet, so that file holds only its
-      column headings."* and the file is exactly `ef bb bf` then
-      `habit,logical_date,note` and a CRLF — 25 bytes after the mark and 28 in
-      the file, with no data row.
+      file is the byte order mark, the header and a CRLF — 25 bytes after the
+      mark and 28 in the file, with no data row.
 
 Clean up with `adb shell 'rm -f /sdcard/Download/*.csv'` — **quote the glob**,
 or zsh expands it on the host first and the command looks like it ran while the
