@@ -2523,15 +2523,34 @@ rendered; what only a device can show is how the section reads.
 
 The same mechanism as the reminder (docs/ux/reminder.md §2).
 
+**The wake is readable directly.** The rollover is unique
+`OneTimeWorkRequest` work, so `dumpsys jobscheduler` names
+`#RolloverWorker#` and prints its *Minimum latency*. That is the arming
+itself rather than something downstream of it, and it costs a command
+instead of a launcher and a wait.
+
 - [ ] **The widget follows the rollover without being tapped.** With the widget
       on the home screen and a habit ticked, set the **day cutoff** a couple of
       minutes ahead and wait past it without touching anything. The tick clears
       by itself.
-- [ ] **A cutoff edit re-arms it.** Change the cutoff again; the wake moves with
+
+      *Launcher only.* A widget lives in a launcher's process, so this runs with
+      **The widget** block rather than here; the half of the mechanism that is
+      not the widget is the box below.
+- [x] **A cutoff edit re-arms it.** Change the cutoff again; the wake moves with
       it. A settings edit writes nothing to the log, so nothing pushes it — the
-      scheduler's `SettingsSource` collector is the only thing that can, and
-      this is the only way to see it working.
-- [ ] **Put the cutoff back to midnight afterwards.** Same reason as above.
+      scheduler's `SettingsSource` collector is the only thing that can. Read
+      the wake off the scheduler either side of the edit.
+
+      Run 2026-09-19: `#RolloverWorker#` stood at a minimum latency of 4h38m
+      with the cutoff at midnight and the clock at 19:25. Moving the cutoff to
+      11:00 PM took it to 3h33m, and moving it back took it to 4h33m, each
+      re-read within a minute of the edit and nothing written to the log in
+      between.
+- [x] **Put the cutoff back to midnight afterwards.** Same reason as above.
+
+      Run 2026-09-19: put back, and the wake followed it back — which is the
+      second half of the observation above.
 
 ---
 
