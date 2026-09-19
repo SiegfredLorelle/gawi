@@ -1602,56 +1602,121 @@ back, which is most of this list.
 
 Open a habit from the **Habits** list — the row's name, not the Archive button.
 
-- [ ] **The streak matches the Today row's.** Tick a habit on Today, open it,
+**What the ticks below were run against.** `Small_Phone`, the **signed
+release APK**, its installed bytes hashed against the build on disk rather
+than read off a version number, on the log `scripts/avd-seed.sh baseline`
+writes. No one habit carries every condition this list needs and the seed
+does not try: *Read* has an unbroken run and completed cells to long-press,
+*Meditate* stands at six days and unticked, *Stretch* has the three open past
+cells, and *Yoga* is the weekly one.
+
+**Prove a long-press is a long-press before reading any absence here.** The
+same gesture on a *completed* cell opens the note sheet, and without that
+control a press too short to register looks exactly like a screen that
+ignores the gesture — an absence that passes two of these boxes for the
+wrong reason.
+
+- [x] **The streak matches the Today row's.** Tick a habit on Today, open it,
       and the number agrees. A daily habit reads as a count and a weekly one in
       weeks with a `w`. Two screens drawing one habit's streak differently is
       the failure docs/ux/today-view.md §5 exists to prevent, and the shared
       `StreakUi` is what should make it impossible — this is the check that the
       sharing actually reaches both.
-- [ ] **An unfinished daily habit still shows its live streak.** Open a habit
+
+      Run 2026-09-19: ticking *Read* on Today moved both screens to
+      `streak of 13 days`, and *Yoga* drew **12w** above "week streak"
+      against the row's `streak of 12 weeks`.
+- [x] **An unfinished daily habit still shows its live streak.** Open a habit
       with a run going, before ticking it today. It must not read `0`.
-- [ ] **The oldest cell is drawn shut, and does nothing.** The leftmost of the
+
+      Run 2026-09-19: *Meditate*, headed "Not done yet today", read
+      `streak of 6 days`.
+- [x] **The oldest cell is drawn shut, and does nothing.** The leftmost of the
       five cells is struck through and dimmed. Tap it: nothing happens — no
       snackbar, no prompt, no tick. **The absence of a snackbar is the check**;
       a refusal message would mean the cell is being tapped and refused, which
       is exactly what §5 says not to do.
-- [ ] **A past day asks first, and cancelling changes nothing.** Tap one of the
+
+      Run 2026-09-19: tapping the struck-through *Day 15* added nothing to a
+      five-second burst of dumps, where the same burst caught the prompt in
+      all three passes on the cell beside it.
+- [x] **A past day asks first, and cancelling changes nothing.** Tap one of the
       three open past cells. The honesty prompt appears. Cancel, and the cell is
       unchanged. Force-stop and reopen: still unchanged. Cancelling has to leave
       the log untouched rather than defer a write, and only a restart proves the
       event was never appended.
-- [ ] **Confirming writes to that day, not to today.** Tap a past cell, confirm,
+
+      Run 2026-09-19: the prompt appeared on *Stretch*'s Day 16, Cancel left
+      it `not done`, and a force-stop and reopen left it there.
+- [x] **Confirming writes to that day, not to today.** Tap a past cell, confirm,
       and the tick lands on *that* cell. Then go back to Today: the habit is
       **not** ticked there. This is the one worth running slowly — the 3-day
       window *accepts* a date one day off rather than refusing it, so a wrong
       date here looks like success and is only visible by checking which day
       moved.
-- [ ] **Un-ticking a past day prompts too.** Tap a completed past cell: the same
+
+      Run 2026-09-19: confirming on *Stretch*'s Day 17 moved Day 17 and
+      nothing else — 16, 18 and 19 unchanged, the header still "Not done yet
+      today", and Today still "8 of 10 left today".
+- [x] **Un-ticking a past day prompts too.** Tap a completed past cell: the same
       prompt. Confirm, and it clears.
-- [ ] **Today's cell writes with no prompt.** Tap the rightmost cell: it ticks
+
+      Run 2026-09-19: the completed Day 17 raised the same prompt, and
+      confirming cleared it.
+- [x] **Today's cell writes with no prompt.** Tap the rightmost cell: it ticks
       immediately. PRD §6.4 wants same-day logging and undo frictionless, so a
       prompt here is a bug.
-- [ ] **A note survives a restart.** Long-press a completed cell, type a note,
+
+      Run 2026-09-19: the rightmost cell ticked on the tap, the burst catching
+      only the result and no prompt — against the same burst catching one on
+      every past cell minutes earlier.
+- [x] **A note survives a restart.** Long-press a completed cell, type a note,
       Save. Force-stop and reopen the habit, then long-press that cell again:
       the note is in the field. Force-stop matters — an in-memory projection
       would hold the note without it ever reaching the log.
-- [ ] **Clear removes it, and that also survives.** Long-press the same cell,
+
+      Run 2026-09-19: a note typed over the seeded one read back from the
+      field after a force-stop.
+- [x] **Clear removes it, and that also survives.** Long-press the same cell,
       **Clear note**, force-stop, reopen: the field is empty. An empty note is a
       real write, so a clear that was skipped as a no-op would let the old note
       come back on the next read.
-- [ ] **Long-press offers nothing on a day with no tick.** Long-press an empty
+
+      Run 2026-09-19: after **Clear note** and a force-stop the sheet reopened
+      on an empty field, with **Clear note** itself no longer offered.
+- [x] **Long-press offers nothing on a day with no tick.** Long-press an empty
       open cell, and on the shut cell. Neither opens the sheet.
-- [ ] **Creating a habit opens it.** Add a habit and save: you land on its
+
+      Run 2026-09-19: neither did, the gesture proved by the sheet opening on a
+      completed cell. **An empty open cell is not inert**, which this box does
+      not say: the long-press falls through to the tap and raises the honesty
+      prompt, so read the absence as the sheet's, not the screen's.
+- [x] **Creating a habit opens it.** Add a habit and save: you land on its
       detail screen, not back on the list. Press Back **once** — you reach the
       habit list, not the create form you just filled in.
-- [ ] **The strip follows the day rollover.** With detail open, set the **day
+
+      Run 2026-09-19: saving *Sketching* landed on its own detail screen, and
+      one Back reached the list with it in place.
+- [x] **The strip follows the day rollover.** With detail open, set the **day
       cutoff** a couple of minutes ahead and wait past it. The strip shifts by
       one day and today's cell moves with it, with nothing tapped. **Put the
       cutoff back to midnight afterwards.**
-- [ ] **An archived habit still opens.** Archive a habit, then open it from the
+
+      Run 2026-09-19: the strip read Days 14 to 18 while the clock stood before
+      a 6:16 PM cutoff and Days 15 to 19 at 6:17, today's cell moving with it
+      and nothing tapped between the two reads. **Setting the cutoff ahead
+      moves the strip at once**, before any boundary is crossed, because the
+      logical day has not started yet — so the shift to watch for is the
+      second one. Put back to midnight.
+- [x] **An archived habit still opens.** Archive a habit, then open it from the
       Archived section: it shows, and says it is archived. Unarchiving has to
       stay reachable, so a detail screen that refused to show one would be a
       trap.
+
+      Run 2026-09-19: *Yoga* archived, opened from **Archived**, and said
+      *Archived* under its schedule. It draws no streak badge and no tappable
+      cells there, which is the screen refusing to log to an archived habit
+      rather than refusing to show it.
 
 ---
 
