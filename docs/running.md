@@ -1047,6 +1047,16 @@ geometry**, which is what decides whether a size gate is reachable at all; and
       "No habits yet". `WidgetMomoTest` proves the tree; it cannot see whether a
       launcher's two-row cell clears **170 dp**, which is the constant this
       check is really measuring.
+
+      **Not earned 2026-09-20 on `Small_Phone`**, and the constant is why. The
+      Pixel launcher here floors a placement at two rows and its rows are
+      65 dp, so the smallest reachable Today widget is 242 × 133 dp: name and
+      mark, no face, which is this box's first clause arriving at the wrong
+      size. The gate itself does fire — at 242 × 203 dp the Today body draws
+      Momo's resting frame above the rows, and above *No habits yet* when
+      every habit is archived — but only in the *other* host, the merge defect
+      below having put it there, and this launcher refused every attempt to
+      grow the Today widget itself past two rows.
 - [x] **It draws today's habits** — each active habit's name with a checkbox,
       ticked to match the Today screen. **No streak**, deliberately (PRD OQ-5).
 
@@ -1102,11 +1112,23 @@ geometry**, which is what decides whether a size gate is reachable at all; and
       widget's own subtree with nothing touched, showed its mark turned over.
       The push reaches Glance. What it reaches *beyond* this widget is the
       box below.
-- [ ] **An empty install says so.** With no active habits the widget reads *"No
+- [x] **An empty install says so.** With no active habits the widget reads *"No
       habits yet"*, not a blank box. (Archive every habit rather than using `pm
       clear`, which destroys the log.)
-- [ ] **Resizing keeps it usable.** Drag the handles: rows reflow and the list
+
+      Run 2026-09-20 on `Small_Phone` against the **signed release APK**: all
+      ten archived through the habit list, never `pm clear`, and the widget
+      drew *No habits yet* rather than an empty ground. All ten were brought
+      back afterwards and the log came through it — the completion made
+      earlier that day was still there.
+- [x] **Resizing keeps it usable.** Drag the handles: rows reflow and the list
       scrolls rather than clipping.
+
+      Run 2026-09-20 on `Small_Phone` against the **signed release APK**:
+      dragged between 242 × 133 dp and 242 × 203 dp, the rows reflow — 48 dp
+      Today rows against 20 dp streak rows — and the list scrolls, a swipe
+      inside it reaching the tenth habit with the *as of* line staying pinned
+      below. Nothing clipped; a part-drawn last row is the list scrolling.
 - [ ] **A write in the app moves *both* widgets.** With the Today widget and the
       streak widget both placed, complete a habit in the app and go to the home
       screen without touching either. Both change. Listed separately from the
@@ -1204,10 +1226,17 @@ or process**.
       the device: colour correction is applied on the display path, after the
       frame a capture reads, so `screencap` returns the uncorrected colours and
       proves nothing here.
-- [ ] **A break and a fresh habit read differently.** A habit whose streak has
+- [x] **A break and a fresh habit read differently.** A habit whose streak has
       broken shows a muted `0` (and *was 12* at the larger size); a habit with
       no completions ever shows an em dash. If both show `0`, the two states
       have been collapsed and the widget is telling a new user they have failed.
+
+      Run 2026-09-20 on `Small_Phone` against the **signed release APK**: with
+      five habits left active, *Walk* and *Tidy* drew a muted *was 1*,
+      *Journal* *was 21*, *Sleep log* a live *49 days*, and *Draw*, which has
+      no completion in the log at all, drew **—**. The two states are not
+      collapsed, and the descriptions separate them too: *was 1 day* against
+      *no streak yet*.
 - [ ] **It survives a rollover untouched.** Set the day cutoff a couple of
       minutes ahead, wait past it without touching anything, and a streak that
       depended on yesterday updates itself. Same mechanism as the Today widget's
