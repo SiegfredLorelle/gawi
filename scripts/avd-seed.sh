@@ -8,8 +8,13 @@
 # `adb` with no `-s` and no `ANDROID_SERIAL` takes whatever single device is
 # attached, and §3 documents a physical-device path -- so without the guard a
 # phone on wireless debugging loses its whole habit log to a command about
-# seeding. Point `ANDROID_SERIAL` at an emulator, or set `GAWI_SEED_FORCE=1`
-# if you mean it.
+# seeding. Point `ANDROID_SERIAL` at an emulator, or pass `--force`.
+#
+# **A flag rather than an environment variable**, because the override of a
+# destructive default has to be chosen every time. A variable can be exported
+# once -- `.env.example` documents sourcing a whole file of them -- and then
+# the guard is off in that shell for the rest of the day, which is the state
+# it exists to prevent.
 #
 # Through the app's own importer, not through sqlite, and that is forced rather
 # than chosen: §4 runs against the signed release APK, which is not debuggable,
@@ -33,15 +38,23 @@ app=com.gawi.app
 scenario="${1:-}"
 shift || true
 if [ -z "$scenario" ]; then
-    echo "usage: $0 <scenario> [--today YYYY-MM-DD]" >&2
+    echo "usage: $0 <scenario> [--force] [--today YYYY-MM-DD]" >&2
     echo "clears $app's data, so it refuses a non-emulator target." >&2
     "$here/gen-seed.py" --list >&2
     exit 2
 fi
 
-if [ "${GAWI_SEED_FORCE:-}" != "1" ] && [ "$(adb shell getprop ro.kernel.qemu | tr -d '\r')" != "1" ]; then
+# Everything but --force goes on to gen-seed.py untouched, so --today and
+# anything it grows later keep working without being listed here.
+force=0
+passthrough=()
+for arg in "$@"; do
+    if [ "$arg" = "--force" ]; then force=1; else passthrough+=("$arg"); fi
+done
+
+if [ "$force" -eq 0 ] && [ "$(adb shell getprop ro.kernel.qemu | tr -d '\r')" != "1" ]; then
     echo "$0: the target is not an emulator, and this clears $app's data." >&2
-    echo "Point ANDROID_SERIAL at an emulator, or set GAWI_SEED_FORCE=1." >&2
+    echo "Point ANDROID_SERIAL at an emulator, or pass --force." >&2
     exit 2
 fi
 
@@ -51,7 +64,7 @@ work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 
 file="seed-$scenario.json"
-"$here/gen-seed.py" "$scenario" --out "$work/$file" "$@"
+"$here/gen-seed.py" "$scenario" --out "$work/$file" "${passthrough[@]}"
 
 adb shell pm clear "$app" >/dev/null
 adb push "$work/$file" "/sdcard/Download/$file" >/dev/null
@@ -60,7 +73,22 @@ echo "pushed $file, app data cleared"
 # Read the screen rather than assume it. The swipe is the one thing here that
 # cannot be aimed by selector, and a guessed one lands somewhere harmless on
 # another device and surfaces later as an unrelated timeout.
-size="$(adb shell wm size | sed 's/.*: *//' | tr -d '\r')"
+#
+# **Take the override when there is one.** `wm size` prints a second record
+# while a display override is in force, and reading both as one string pairs
+# the physical width with the override height -- a size no screen has, which
+# passes every check here and puts the swipe somewhere that is not the list.
+# §4 earns one of its ticks at `wm size 720x820`, so an override left set is a
+# state this script meets rather than a hypothetical one.
+sizes="$(adb shell wm size | tr -d '\r')"
+size="$(printf '%s\n' "$sizes" | sed -n 's/^Override size: *//p' | tail -1)"
+[ -n "$size" ] || size="$(printf '%s\n' "$sizes" | sed -n 's/^Physical size: *//p' | tail -1)"
+case "$size" in
+    # Refused rather than fed to the arithmetic below, where an empty value is
+    # a syntax error that names nothing.
+    [0-9]*x[0-9]*) ;;
+    *) echo "$0: no screen size in: $sizes" >&2; exit 2 ;;
+esac
 width="${size%%x*}"
 height="${size##*x}"
 mid_x=$((width / 2))
