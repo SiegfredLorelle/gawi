@@ -338,7 +338,9 @@ to write, so nothing here takes that on. Adding a tap later means adding an
   session — indistinguishable from a widget nobody placed. It now refreshes
   every declared provider, and `ProjectionRefreshTest` reads the receivers out of
   the merged manifest so a third provider cannot be forgotten in one place while
-  being added in two others.
+  being added in two others. Naming every provider is necessary and turns out
+  not to be sufficient: in a release build R8 merges the three widget classes
+  and the push then cannot tell the named providers apart (§8).
 - **`previewLayout` needs a layout, and this module ships none** — its
   `initialLayout` is Glance's own. A Glance tree has no RemoteViews until a
   session composes one, so the preview is a hand-built approximation, in the
@@ -498,16 +500,18 @@ colours join the same hand-copied list `WidgetPreviewColorsTest` pins
 (`StreakPreviewColorsTest` until this day).
 
 **Every place a provider has to be named was named**: the manifest,
-`refreshedWidgets()` (a provider missing there freezes for the life of a session,
-§6), `ProjectionRefreshTest`, `WidgetHostBinding`, and a `res/xml-v31` variant
-that repeats every base attribute. `MomoWidgetHostTest` binds it to a real host
-and reads the 2×2 back off `AppWidgetProviderInfo`; `WidgetHostTest` now also
-tells the Today provider it is 250×200dp and waits for a mood — which proves the
-size was taken and the height gate passed, and no more: the mood sentence is
-the large body's drawn line *and* the face-above body's description, so a host
-test cannot tell the two tall bodies apart. The width gate is a JVM matter
-(`WidgetBodyTest`, `HeaderCopyTest`) and the header a launcher one —
-docs/running.md §4 has the boxes.
+`refreshedWidgets()` (a provider missing there freezes for the life of a
+session, §6), `ProjectionRefreshTest`, `WidgetHostBinding`, and a `res/xml-v31`
+variant that repeats every base attribute. That list was complete for naming
+and short by one for *identity* — a release build also needs a keep rule, or R8
+merges the classes those names resolve to (§8). `MomoWidgetHostTest` binds it
+to a real host and reads the 2×2 back off `AppWidgetProviderInfo`;
+`WidgetHostTest` now also tells the Today provider it is 250×200dp and waits
+for a mood — which proves the size was taken and the height gate passed, and no
+more: the mood sentence is the large body's drawn line *and* the face-above
+body's description, so a host test cannot tell the two tall bodies apart. The
+width gate is a JVM matter (`WidgetBodyTest`, `HeaderCopyTest`) and the header
+a launcher one — docs/running.md §4 has the boxes.
 
 ## 8. Open, and what closed
 

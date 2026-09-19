@@ -471,7 +471,9 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
 - [x] The app launches and `adb logcat -d -s AndroidRuntime:E` is empty. Run
       2026-09-14 on `Small_Phone` against the **signed release APK**, which is
       where this stops being a formality: R8's failures are silent, so an empty
-      log is what says no serializer and no reflected class was stripped.
+      log is the first thing that says no serializer and no reflected class was
+      stripped. Necessary and not sufficient — a merged class logs nothing
+      either, and that one took a launcher to see (widget.md §8).
 - [x] From the empty state, tap **Add a habit**, name it, save — which opens the
       habit's own detail screen, so go back to see the row. It is on Today
       with no restart — one observation covering Hilt building the data
@@ -1415,6 +1417,14 @@ launcher shows. An emulator does not tick a box here, for the streak block's
 reason: a widget lives in a launcher's process, and an OEM launcher's is not
 the emulator's.
 
+**The ticks here are a debug build, and predate the rule that a tick names
+one.** They were earned on the Nothing A059 on 2026-09-02, before §4 began
+naming the build and before the signed release APK existed. That matters more
+than it did: R8 merges the three `GlanceAppWidget` subclasses in a release
+build and a debug build merges nothing, so anything below about one write
+reaching more than one widget is a reading this build cannot be assumed to
+repeat (widget.md §8). Each is owed a re-run against the fix.
+
 **The arithmetic for whoever has a third launcher**, and the reason neither
 phone here can show the middle body: the face-above-rows form wants a width of
 at least 180 dp (the provider's floor) and under 220 dp (the header's gate),
@@ -1556,13 +1566,16 @@ so a home-screen swipe over a static tile would go dead.
       experiments the block above names; the one-item `LazyColumn` stays the
       fallback. Heard 2026-09-03 in its old shape, and owed again on a phone in
       this one.
-- [x] **A write in the app moves all three widgets**, on the same commit. Seen
-      2026-09-02, all three placed and dumped before and after each write:
+- [ ] **A write in the app moves all three widgets**, on the same commit. Seen
+      on a **debug** build 2026-09-02, all three placed and dumped before and
+      after each write:
       ticking one habit checked its box on the Today widget and moved its
       Streaks row 0 → 1 while Momo, still regenerating over another, kept her
       sentence — as she should; ticking that other one then moved its row and
       changed Momo's description too. One write, three widgets, all changed by
-      the next dump about five seconds later.
+      the next dump about five seconds later. **Unticked against the release
+      build**: that is the reading the merge defect takes away, and it is the
+      one this box exists for.
 
 ### The reminder
 
