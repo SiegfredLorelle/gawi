@@ -745,5 +745,6 @@ a launcher one — docs/running.md §4 has the boxes.
   right and the class identity underneath it is not. The fix is a keep rule in
   `app/proguard-rules.pro` preserving these subclasses' identity, and it wants
   proving by rebuilding and re-reading `mapping.txt` rather than by reasoning —
-  that same rebuild being the only gate that can catch it coming back
-  (docs/running.md §4).
+  that same rebuild being the only gate that can catch it coming back.
+  docs/running.md §6 holds the read, beside the release build that produces it;
+  §4's own re-run is the launcher half, which is a different check.
