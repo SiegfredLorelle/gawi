@@ -2105,7 +2105,22 @@ said only the mood: a node with a `contentDescription` has its `text` ignored
 passed. A milestone run has a second description to read, the milestone line
 followed by the count with the mood line dropping out.
 
-- [ ] **All four moods on the tank, in both themes.** Content is the default
+**What the ticks below were run against**, and the trap that nearly cost the
+block: `Small_Phone` ships with **all three animation scales at zero**, so
+the first motion run recorded a still screen and read as four boxes failing.
+Check `settings get global animator_duration_scale` before trusting anything
+here. Motion is read off `screenrecord` rather than `screencap`, and the
+cheapest reading is the clip itself: four seconds of a still tank encodes to
+**one frame and 33 kB**, the same four seconds moving to forty frames and
+2 MB.
+
+**Tempo is measured on the weed strip, not the whole tank.** Momo's own float
+is the larger part of the tank's frame-to-frame change and it does not follow
+the weeds — measured over the whole tank, worried comes out *busier* than
+content and the ordering this block asks about inverts. The strip below her
+body holds the weed tips and little else.
+
+- [x] **All four moods on the tank, in both themes.** Content is the default
       with habits added and nothing done late in the day; tick everything for
       thriving; let the reminder hour pass with one habit open for worried;
       break a streak (a habit completed yesterday, skipped the day before) and
@@ -2113,29 +2128,59 @@ followed by the count with the mood line dropping out.
       drains and one right-hand gill is short and pulsing. If any two are hard
       to tell apart with the app held at arm's length, that is a finding for
       momo.md §3, not for the tests.
-- [ ] **The tank keeps the mood's tempo.** Behind Momo, four weeds sway and four
+
+      Run 2026-09-19, all four and both themes, from `scripts/avd-seed.sh`:
+      content and thriving and worried off `baseline`, worried by moving the
+      reminder behind the clock, regenerating off its own log. No two are
+      close — worried swaps the smile for a wavy mouth, thriving closes the
+      eyes to arcs and adds two drifting stars, and regenerating drains the
+      tank to grey with the right gill cluster visibly short.
+- [x] **The tank keeps the mood's tempo.** Behind Momo, four weeds sway and four
       bubbles rise: briskly while thriving, at the canvas's own pace while
       content, slower while worried. Regenerating drains the water, leans the
       weeds outward and greys them, and no bubble rises. If the weeds and
       bubbles ever look out of step with each other, that is a finding for
       momo.md §4 — they share one tempo by design.
-- [ ] **A mood change is one Momo.** Tick a habit so the mood changes and watch
+
+      Run 2026-09-19. Mean per-pixel change per frame across the weed strip,
+      same clip length and frame rate throughout: thriving 0.61, content 0.37,
+      worried 0.32, regenerating 0.11. The order the doc asks for, and
+      regenerating is all but still — its water drained, its weeds leaned out
+      and greyed, and no bubble rising.
+- [x] **A mood change is one Momo.** Tick a habit so the mood changes and watch
       the change: the body should glide from one float to the other with the
       face crossfading on it, never two bodies at different heights. The water
       should drain or refill on the same beat when regenerating is one end of
       the change.
-- [ ] **Finishing the day plays once.** With one habit left, tick it: Momo hops,
+
+      Run 2026-09-19, both halves. Ticking out of thriving caught the two
+      faces mid-crossfade **on one body at one height**, the stars fading with
+      the old face. Ticking out of regenerating refilled the water, returned
+      her colour and opened her eyes across two frames together — one beat,
+      and the body never moved to meet it.
+- [x] **Finishing the day plays once.** With one habit left, tick it: Momo hops,
       bubbles rush up from under the tail and the water brightens for a beat,
       then the thriving loop continues. Untick and re-tick: it plays again,
       because the mood left thriving and came back. Now background the app and
       return, and rotate the phone: nothing plays — a finished day is not re-
       celebrated (momo.md §6). TalkBack says nothing extra either: the line
       changing to "All done. Momo is thriving." is the whole announcement.
-- [ ] **The pastel body on the light tank.** momo.md §2 calls this the softest
+
+      Run 2026-09-19: the last tick played the hop, the bubble rush and the
+      brightening, and un-ticking and re-ticking played it again. Backgrounding
+      and returning, and then rotating, played **nothing** — read against the
+      same recording method that had just caught the celebration, and against
+      the resting thriving tank, **which carries two drifting stars of its
+      own**. Those stars are the idle loop, not a replay, and they are what
+      this box would otherwise be misread by.
+- [x] **The pastel body on the light tank.** momo.md §2 calls this the softest
       edge on purpose. Look at whether the silhouette reads from the gills and
       eyes alone; if the body vanishes into the water, the fix is the tank's
       gradient, not Momo's colour.
-- [ ] **A milestone plays bigger.** With a habit at six days, tick it: Momo hops
+
+      Run 2026-09-19: it does not vanish. The silhouette reads from the body
+      itself on the light tank, not from the gills and eyes alone.
+- [x] **A milestone plays bigger.** With a habit at six days, tick it: Momo hops
       twice, a wider burst rises, a ring of gold sparkles opens out around her
       and the water brightens harder; the line under the tank reads "7 days in a
       row. Momo is dazzled." for two seconds and the row's streak badge swells
@@ -2144,13 +2189,25 @@ followed by the count with the mood line dropping out.
       plays, and the thriving line follows the milestone line. Background the
       app and return, and rotate: nothing plays (momo.md §6). A weekly habit
       reaching its fourth week does the same with "4 weeks" and a gold pill.
+
+      Run 2026-09-19 on the daily rung: "7 days in a row. Momo is dazzled."
+      held for one dump in four — about the two seconds it claims — with the
+      row's `7` on a teal pill, and the recording shows the double hop, the
+      wider burst and a ring of gold sparkles opening around her. Un-ticking
+      and re-ticking played it again. **The weekly rung is not run**: the
+      ladders are 7/30/100 and 4/12/52, so a weekly habit has to sit one week
+      below its rung and the seeded one is at thirteen.
 - [ ] **TalkBack on a milestone.** With TalkBack on and focus on the row, tick
       the six-day habit: after "checked", the panel's live region reads the
       milestone line once, and the mood line once more when it returns two
       seconds later; the badge announces nothing extra. Tick and untick any
       other row: each is followed by one sentence — the mood line and the
       remaining count — and nothing else.
-- [ ] **Animator duration scale off** (Developer options → *Animator duration
+
+      *Device only, and the layer no test reaches* — this one belongs with the
+      **Accessibility** block below and runs when that does, not with the rest
+      of this one.
+- [x] **Animator duration scale off** (Developer options → *Animator duration
       scale* → *Animation off*), then reopen Today. Momo must be still, at the
       resting frame, the weeds upright and the bubbles frozen, and the mood
       change on a tick must cut rather than glide; ticking the last habit must
@@ -2161,9 +2218,22 @@ followed by the count with the mood line dropping out.
       it is not observed.) Nothing on the JVM can see this: the tests set the
       same switch to get a still frame, so they prove the still frame, not the
       switch.
-- [ ] **200 % font scale.** The tank stays 250 dp; the copy under it grows and
+
+      Run 2026-09-19. Four seconds of the tank encoded to **a single frame**,
+      which is the compositor saying nothing changed at all. The same
+      worried-to-thriving tick that ran to 42 frames and 4.6 MB with the switch
+      on ran to 6 frames and 67 kB with it off — a cut, and no celebration.
+      Crossing the seven-day rung still swapped the line and still put the `7`
+      on its pill while nothing moved. Turning it back on resumed the float.
+- [x] **200 % font scale.** The tank stays 250 dp; the copy under it grows and
       wraps and pushes the list down rather than clipping. The character must
       not shrink.
+
+      Run 2026-09-19: the tank measured `[32,176][688,676]` — 500 px, 250 dp —
+      at both 100 % and 200 %, so the character does not shrink. The panel
+      around it grew 628 px to 696 px on the short mood line and to 780 px on
+      the one that names a habit, which is the copy wrapping: a clipped line
+      would not have grown it.
 - [x] **TalkBack, once.** Swipe onto the panel: it is one node and should
       announce the mood's line once — "Momo is pottering about." followed by the
       remaining count — and never "image" or "unlabelled". If the tank and the
@@ -2194,7 +2264,7 @@ followed by the count with the mood line dropping out.
       dp, since that is the axis a full bar runs out of room on. **Read the box
       below before trusting this tick**: it was seen at `wm size 720x820`, not
       at the AVD's own 720x1280, for the reason that box gives.
-- [ ] **The chip on a full-height screen with a realistic habit count.** The
+- [x] **The chip on a full-height screen with a realistic habit count.** The
       trigger is `firstVisibleItemIndex > 0` — the panel has to leave the
       viewport *entirely* — and a short list cannot scroll that far. Whether
       that is right, or whether the trigger should fire on "mostly gone"
@@ -2207,6 +2277,15 @@ followed by the count with the mood line dropping out.
       viewport 2060 px (879 dp), panel 722 px (308 dp), row 150 px (64 dp) — it
       needs **fourteen**, and appeared with fourteen and forty pixels to spare,
       reading *"10 left"*.
+
+      Run 2026-09-19 on this AVD: **ten habits did not raise it and eleven
+      did**, the bar then reading *"Momo is getting worried. 1 of 11 left
+      today"* as one node. So nine is not the number and the arithmetic above
+      needs its row height re-read: a row measures 96 px here, not 128, and a
+      row grows a second line when it carries a weekly ratio or a `was 3`. **The
+      count is therefore not a constant** — it depends on how many rows carry
+      that second line, which is one more reason §1's question is a design
+      call.
 - [x] **The chip at 200 % font scale.** The face, "4 left" and all three action
       icons on one bar, nothing truncated. This is the case the chip replaces
       the title *for*, so it is the one that would have justified undoing that
