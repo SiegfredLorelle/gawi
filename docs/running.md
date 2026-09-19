@@ -1258,21 +1258,35 @@ or process**.
       role to watch is `tertiary` — the week-streak ink, and the only role in
       this module that no other surface draws, so nothing measured it against a
       real launcher before this widget existed.
-- [ ] **200 % font scale.** Rows grow, a long habit name ellipsises inside its
+- [x] **200 % font scale.** Rows grow, a long habit name ellipsises inside its
       row rather than under the numeral, and the numeral is never pushed off the
       edge. The name and the streak have fixed slots, so what fails here is the
       slot width rather than the layout.
+
+      Run 2026-09-20 on `Small_Phone` against the **signed release APK**, a
+      habit renamed to 37 characters through the form: at `font_scale` 2.0 the
+      rows grow, the name draws as *Read a cha…* and ellipsises inside its own
+      row, the numeral *14* stays whole against the right edge, and the *as of*
+      line is still drawn. Read the drawn text — the description keeps the
+      whole name. The change needs a render; a force-stop and relaunch is one.
 
 **The widget's text is Outfit, as bitmaps.** A font resource cannot reach a
 widget (measured 2026-08-24, docs/ux/visual-identity.md §2), so each name is
 rasterised in our process and tinted by the host — which is why these six run on
 a launcher, where the bitmaps are drawn and tinted.
 
-- [ ] **It is Outfit.** Against the launcher's own clock and labels, the names'
+- [x] **It is Outfit.** Against the launcher's own clock and labels, the names'
       `a` and `o` are geometric and the `t` has no tail — the same test the
       typography block below uses for the app. Both themes, and the text follows
       the theme on API 31+: force-stop after `cmd uimode night yes` or the
       running widget will not re-theme.
+
+      Run 2026-09-20 on `Small_Phone` against the **signed release APK**, both
+      schemes, judged against the launcher's own *Play Store* label in the same
+      frame: the widget's `a` is a single-storey circle and stem where the
+      launcher's is double-storey, and its `t` ends without a tail. One thing
+      to expect from the force-stop — it kills the Glance session, so both
+      widgets sit on the loading layout until something starts a new one.
 - [x] **API 29 or 30 emulator: every colour is resolved in our process.** Toggle
       dark mode with the widget placed. The text, the checkbox glyph and the
       background must go stale *together* until the next render, because all
@@ -2450,7 +2464,7 @@ body holds the weed tips and little else.
 the three layers exist, draw and are wired; every launcher masks and scales them
 differently, which is what is left.
 
-- [ ] **In the app drawer and on the home screen.** One gill cluster — three
+- [x] **In the app drawer and on the home screen.** One gill cluster — three
       frond dots around a paler body circle, no face — on the darkest teal the
       palette holds, under whatever mask the launcher uses (circle, squircle,
       rounded square). Nothing that carries meaning is clipped. The mark reaches
@@ -2459,6 +2473,15 @@ differently, which is what is left.
       **Shape** makes the mask a setting here rather than something to hunt a
       launcher for; Circle, Square and Arch are the three worth trying, Arch
       being the most aggressive of the five.
+
+      Run 2026-09-20 on `Small_Phone` against the **signed release APK**: in
+      the app drawer, one cluster — three frond-pink lobes around the paler
+      body circle, no face — on the dark teal ground, with nothing clipped at
+      the mask's edge. Only the launcher's own circle was exercised: **Shape**
+      does not take on this image. **Apply** enables on a selection and the tap
+      lands, and neither Gawi's icon nor the system's own changes, with
+      `theme_customization_overlay_packages` still `null` afterwards. The other
+      four masks are owed a launcher that applies them.
 - [ ] **Small.** Drop it in a folder and look at it at the drawer's smallest
       size: **three lobes still read as three**, not as a pink smudge. That is
       the claim §7.1 makes for this mark where the retired one claimed a
@@ -2468,6 +2491,10 @@ differently, which is what is left.
       icons; over a longer one the launcher displaces the target or flips the
       page instead, and chained `input motionevent` with a dwell does not merge
       at all.
+
+      **Not earned 2026-09-20.** Gawi sits in the drawer and not the dock here,
+      so the short hop this note requires was not available from the shell, and
+      the drawer's own rendering is not the smaller size the box is about.
 - [ ] **Themed, API 33+.** The icon becomes the same cluster in the system
       tint, not a second mark: flattened to one colour the three lobes are still
       three lobes, which is the argument §7.1 makes for one geometry across all
@@ -2476,6 +2503,12 @@ differently, which is what is left.
       setting is not called *Themed icons*** on this level: it is Wallpaper &
       style → Home screen → **Icons** → *Style* → **Minimal**, against
       *Default*, and it needs an explicit **Apply**.
+
+      **Not earned 2026-09-20 on `Small_Phone`.** *Style → Minimal* does not
+      take on this image, the same way **Shape** does not: **Apply** enables
+      and the tap lands, and neither Gawi's icon nor the system's own changes.
+      Nothing themed was ever drawn, so there was nothing to judge. Owed to a
+      launcher that applies it.
 
 ### Accessibility — *device only, and the layer no test reaches*
 
