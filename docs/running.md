@@ -443,10 +443,11 @@ duration off a recording. When nothing may pause between two actions, put both
 in one `adb shell` invocation. **A negative result proves nothing on its own**
 — a tap that opens no dialog has to be paired with the same tap on an idle row,
 or a guard that neutralises a formula with a reader shown to evaluate one.
-Two things that swallow a tap: the Add-habit FAB is drawn over the last visible
-row's archive control, and a file row's preview thumbnail carries the file name
-in its own description, so matching on description opens a preview instead of
-choosing the file.
+Three things swallow an action: the Add-habit FAB is drawn over the last
+visible row's archive control; a file row's preview thumbnail carries the file
+name in its own description, so matching on description opens a preview instead
+of choosing the file; and a settings dialog commits on **Set**, so Back
+discards the selection and leaves the old value with no word either way.
 
 **What a device is for, and `make test` is not.** No test here opens a file
 picker, so the export, import and CSV boxes are the only check that a file is
@@ -590,8 +591,7 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       prospective-only: nothing about a week is stored on an event, so it is
       recomputed on read. **Seed the completion on the day the two week starts
       disagree about**, or every ratio reads the same under both and this
-      passes without touching the question. The dialog needs **Set** — Back
-      cancels it and leaves the old value with no word either way.
+      passes without touching the question.
 
       Run 2026-09-15 on `Small_Phone` against the **signed release APK**: the
       ratio re-counted on return while a second weekly with nothing that week
