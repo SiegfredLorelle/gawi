@@ -2835,10 +2835,16 @@ $ grep -E '^com\.gawi\.widget\.(Today|Streak|Momo)Widget -> ' \
     app/build/outputs/mapping/release/mapping.txt
 ```
 
-Three lines is right; fewer means R8 merged what is missing. The ` -> ` is load-
-bearing, keeping `TodayWidget` from matching `TodayWidgetReceiver`, and the
-original names sit on the left whatever a keep rule lets R8 do to the output
-ones.
+**Three lines, with three different names on the right**, is what a kept trio
+looks like. A fold does not show up as a repeat: R8 drops the class-level line
+of whatever it merges away, so the swallowed widget goes *missing* from this
+grep and survives only as member lines under the one that absorbed it — which
+is why a merged build prints one line here rather than three. Count the names
+on the right and not the lines, and both shapes are covered: a line that is
+absent, and a merge that announced itself by pointing two originals at one
+output. The ` -> ` is load-bearing too, keeping `TodayWidget` from matching
+`TodayWidgetReceiver`. Renaming is not what is being looked for — a keep rule
+that allows obfuscation still leaves the original names on the left.
 
 **Two things the release build takes away**, both of which shape §4's device
 work. It cannot install over a debug build, because the keys differ, so it wants
