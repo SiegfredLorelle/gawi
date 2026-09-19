@@ -1413,17 +1413,27 @@ and does not lag: `…he-rIL,en-rUS-ldrtl…` against `…en-rUS-ldltr…`.
 Both of docs/ux/widget.md §7's surfaces. `MomoWidgetHostTest` and
 `WidgetHostTest`'s large-body case bind them to a real host, so "the provider
 binds and Glance composes it" is a machine's job; what follows is what only a
-launcher shows. An emulator does not tick a box here, for the streak block's
-reason: a widget lives in a launcher's process, and an OEM launcher's is not
-the emulator's.
+launcher shows.
+
+**What an emulator earns here, and what it cannot**, on the streak block's
+reasoning: a widget lives in a launcher's process, and an OEM launcher's is not
+the emulator's. What crosses that gap unchanged reaches either host as the same
+`RemoteViews` — the band's segment count and its mirroring among it — so a box
+about those names the emulator it ran on and that is enough, which is what the
+already-ticked band box below has always been. Three kinds of claim it cannot
+settle: a launcher's **cell geometry**, which is what decides whether the
+four-by-three header gate is reachable at all; a launcher's **colour
+translation**, because a widget is drawn against a background it does not own;
+and **TalkBack**, which `adb` cannot drive. Those boxes say so and wait for a
+phone.
 
 **The ticks here are a debug build, and predate the rule that a tick names
-one.** They were earned on the Nothing A059 on 2026-09-02, before §4 began
-naming the build and before the signed release APK existed. That matters more
-than it did: R8 merges the three `GlanceAppWidget` subclasses in a release
-build and a debug build merges nothing, so anything below about one write
-reaching more than one widget is a reading this build cannot be assumed to
-repeat (widget.md §8). Each is owed a re-run against the fix.
+one.** Every one was earned before §4 began naming the build and before the
+signed release APK existed; each box carries its own device and day. That
+matters more than it did: R8 merges the three `GlanceAppWidget` subclasses in a
+release build and a debug build merges nothing, so a reading below about one
+write reaching more than one widget is one this build cannot be assumed to
+repeat (widget.md §8). Those are unticked and owed a re-run against the fix.
 
 **The arithmetic for whoever has a third launcher**, and the reason neither
 phone here can show the middle body: the face-above-rows form wants a width of
@@ -1533,7 +1543,7 @@ so a home-screen swipe over a static tile would go dead.
       the placed 2×2 widget: to the byte in both schemes, over the same 103,983
       pixels each way. `cmd uimode night no` needs no root on this phone, unlike
       the AVD; night mode was put back afterwards.
-- [x] **The word follows the mood.** Complete everything → *thriving*; leave one
+- [ ] **The word follows the mood.** Complete everything → *thriving*; leave one
       → *pottering* or *worried* as the day goes; break a streak → *regrowing*,
       with the dimmer face. Same face as the Today screen at that moment. Seen
       2026-09-02 for *regrowing*, *pottering* and *thriving*, each arriving with
@@ -1546,13 +1556,24 @@ so a home-screen swipe over a static tile would go dead.
       caught up. So the word follows the mood and the mood follows the clock,
       but a widget learns of the clock only on the next write or period — the
       documented trade, now a seen one.
-- [x] **With no habits she is still there**, under *No habits yet*. Archive
+
+      **Unticked against the release build**: the clock trade above stands, the
+      merge reaching neither the period nor the write that ends it. What it
+      takes away is *both* — two widgets agreeing is what a merged class
+      produces for the wrong reason, so the word is owed a reading on each of
+      them separately.
+- [ ] **With no habits she is still there**, under *No habits yet*. Archive
       every habit rather than `pm clear` to see it. Seen 2026-09-02 by appending
       fourteen `HabitArchived` events to the log (the run-as recipe in §5) and
       rebuilding the projection: she kept her ground and her smiling face with
       *No habits yet* in the word's place, and the Today and Streaks widgets
       said the same three words. Deleting the fourteen events brought all
       fourteen habits back.
+
+      **Unticked against the release build**: Momo keeping her ground is hers
+      alone and survives, but "the Today and Streaks widgets said the same three
+      words" is the agreement a merged class manufactures. The three are owed a
+      reading apart.
 - [ ] **TalkBack reads the sentence, not the word.** Focus the widget: *"Momo is
       pottering about."* once, and never *"pottering"* as well. A tap on it
       opens the app. It failed on the Nothing launcher for a reason the box had
