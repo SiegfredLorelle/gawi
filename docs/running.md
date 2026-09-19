@@ -1014,7 +1014,18 @@ The widget's logic is JVM-tested (`:widget`) and the write journey is covered by
 **pinning a widget requires the user**, so no test can place one. Decisions and
 reasoning are in [docs/ux/widget.md](ux/widget.md).
 
-- [ ] **It is offered at all.** Long-press the home screen → *Widgets* →
+**What an emulator earns here, and what it cannot**, because most of this block
+is not the thing a launcher's process decides. Behaviour, geometry and
+typography reach the host as the same `RemoteViews` an OEM launcher would
+inflate, so a box about those names the emulator it ran on and that is enough —
+which is what the already-ticked RTL, display-size and font-scale boxes below
+have always been. Three kinds of claim it cannot settle, and the restyle block
+gives the reason for the first: a launcher's **colour translation**, because a
+widget is drawn against a background it does not own; a launcher's **cell
+geometry**, which is what decides whether a size gate is reachable at all; and
+**TalkBack**, which `adb` cannot drive. Those boxes say so and wait for a phone.
+
+- [x] **It is offered at all.** Long-press the home screen → *Widgets* →
       **Gawi** → *Today*. If it is missing, the provider did not merge: read
       `app/build/intermediates/packaged_manifests/debug/.../AndroidManifest.xml`
       for `com.gawi.widget.TodayWidgetReceiver` (needs `--rerun-tasks`; a stale
