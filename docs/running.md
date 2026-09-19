@@ -548,11 +548,12 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       back, not the default. **Put the cutoff back to midnight before moving
       on** — the next two checks both start from it, and neither restores it.
 
-      Run 2026-09-15 on `Small_Phone` against the **signed release APK**: the
-      cutoff went to 3:00 AM and the reopened screen read it back after a
-      force-stop, not the default. The `settings.preferences_pb` half needs
-      `run-as`, which a release build refuses (§6), and is owed to a debug
-      install.
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK** for the
+      value, and 2026-09-19 on the **debug** build for the file, which needs
+      `run-as` (§6): `settings.preferences_pb` was absent on a fresh install
+      and still absent after the screen had only been read, appeared on the
+      first write, and the cutoff read back after a force-stop rather than the
+      default.
 - [x] **Day rollover, against a real clock.** Start from a cutoff at or before
       the current time — midnight does, which is why the check above restores it
       — and tick a habit, so there is a completion on today's logical date.
@@ -737,10 +738,10 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       holding habits this install does not have and read the whole line without
       hurrying; it uses the default short duration, and if that is too fast that
       is a real finding. The habits it adds cannot be deleted afterwards, only
-      archived, so do this on a scratch install or be ready to archive them. **Give the file its own id range**: two seeds
-      minted from the same deterministic sequence dedupe against each other
-      by event id and add almost nothing, so the habits this box needs never
-      arrive.
+      archived, so do this on a scratch install or be ready to archive them.
+      **Give the file its own id range**: two seeds minted from the same
+      deterministic sequence dedupe against each other by event id and add
+      almost nothing, so the habits this box needs never arrive.
 
       Run 2026-09-15 on `Small_Phone` against the **signed release APK**, and
       it is **not** too fast: the line stayed up **4.0 seconds**, which is
@@ -750,11 +751,14 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
       com.gawi.app`, relaunch to the empty state, and import the file. Every
       habit, completion and streak comes back. This is the promise architecture
       §6 makes on behalf of `allowBackup="false"`, and the only check that tests
-      it as a user would need it.
+      it as a user would need it. **Compare the exported events, not the rendered
+      rows** — names, streaks and ratios are derived, and two different logs
+      can render the same ones.
 
-      Run 2026-09-15 on `Small_Phone` against the **signed release APK**: every
-      row's name, streak and ratio and the header count were identical by
-      `diff` across the export, `pm clear` and import.
+      Run 2026-09-19 on `Small_Phone` against the **signed release APK**:
+      exports taken either side of the clear hold **identical event sets** —
+      every id, instant, offset, type, schema version and payload, 148 events
+      over twelve habits.
 
 **The 30-day nudge** (PRD §5). Run these in order from a cleared install — they
 build on each other, and the third is the one with no JVM test behind it.
@@ -962,9 +966,11 @@ does with the file.
       catch by hand on a small log; the JVM tests own this and this is a sanity
       check.
 
-      Run 2026-09-15 on `Small_Phone` against the **signed release APK**: only
-      the CSV row said it was working, and a tap at **Export a copy** during
-      the write opened no dialog where the same tap opens one on an idle row.
+      Run 2026-09-15 on `Small_Phone` against the **signed release APK**, the
+      tap halves re-run 2026-09-19: only the CSV row said it was working, and
+      a tap at **Export a copy** and one at **Import a file**, each fired in
+      the same invocation as save, opened nothing — where the same tap on the
+      same coordinates opens the dialog on an idle row.
 
 - [x] **An empty log still writes a usable file.** After `adb shell pm clear
       com.gawi.app`, export completions before creating anything. The snackbar
