@@ -449,6 +449,12 @@ name in its own description, so matching on description opens a preview instead
 of choosing the file; and a settings dialog commits on **Set**, so Back
 discards the selection and leaves the old value with no word either way.
 
+**Seeding clears the app's data.** `scripts/avd-seed.sh` wipes the log before
+it imports, because an import is a merge and a second one would union with the
+first. It refuses anything but an emulator for that reason — `adb` with no
+`-s` takes whatever single device is attached, and §3's physical-device path
+puts a real habit log in range.
+
 **What a device is for, and `make test` is not.** No test here opens a file
 picker, so the export, import and CSV boxes are the only check that a file is
 written and read at all. `AppNavigationTest` launches the real `MainActivity`
@@ -1778,13 +1784,14 @@ reaches.
       burst on the month stepper beside them added thirty-three nodes.
 - [x] **The columns line up with the week start.** Change **Week starts on** in
       Settings from Monday to Sunday and come back. The header letters rotate
-      and the whole grid shifts by a column. It must not need reopening.
+      and the whole grid shifts by a column. **What this can show is that the
+      next composition is already right** — Settings is reachable only from
+      Today, which pops the grid, so no hand can watch a live screen update
+      and the check is that nothing needs restarting for it to take.
 
       Run 2026-09-19: the header went M T W T F S S to S M T W T F S, and
       *Tuesday 1* moved one column, 169 px to 264 px, with *Monday 7* behind
-      it. **"Must not need reopening" cannot be read strictly here**: Settings
-      is reachable only from Today, which pops the grid, so what this can show
-      is that the next composition is already right and no restart is wanted.
+      it.
 - [x] **Stepping back reads real months.** Step back past a month you have
       history in, then back again into one you do not: the second draws an empty
       month rather than repeating the first's cells. Then step forward to the
@@ -1805,23 +1812,22 @@ reaches.
       between the reads. The month-end half is **not run and cannot be today**
       — it needs a cutoff crossing the 1st, so it wants either a month end or
       the device clock moved. Put back to midnight.
-- [x] **200 % font scale.** Six rows of cells at 200 % overflow the screen: the
-      column scrolls, and no cell clips its own number. Two-digit days are where
-      this shows first.
+- [x] **200 % font scale.** Six rows of cells at 200 %: no cell clips its own
+      number, and two-digit days are where that shows first. **The cells hold
+      their size and only the numeral grows**, which is what keeps them whole —
+      so what overflows and scrolls is the page, the rate card below the grid
+      going off-screen, rather than the column of cells.
 
       Run 2026-09-19: August on *Sleep log*, six rows, every two-digit day
-      whole inside its cell. **The cells do not scale with the font** — the
-      row pitch is 88 px at both 100 % and 200 %, and only the numeral grows,
-      which is why nothing clips. So it is the page that overflows and
-      scrolls, not the grid: the rate card below it is what goes off-screen.
+      whole inside its cell, the row pitch 88 px at both 100 % and 200 %.
 - [x] **A habit with no history at all.** Create a habit, open its history
-      immediately. A month of not-done cells, no crash, and nothing that reads
-      as an error — the habit is new, not failing.
+      immediately. Not-done cells up to today and none past it — "nothing after
+      today is drawn" holds here too — no crash, and nothing that reads as an
+      error. The habit is new, not failing.
 
-      Run 2026-09-19: *Sketching*, made and opened straight away, drew
-      nineteen not-done cells and no done ones, with no error copy and an
-      empty `AndroidRuntime:E`. Nineteen rather than a whole month, because
-      the box above holds here too.
+      Run 2026-09-19: *Sketching*, made and opened straight away, drew nineteen
+      not-done cells and no done ones, with no error copy and an empty
+      `AndroidRuntime:E`.
 
 ---
 
@@ -2266,26 +2272,23 @@ body holds the weed tips and little else.
       at the AVD's own 720x1280, for the reason that box gives.
 - [x] **The chip on a full-height screen with a realistic habit count.** The
       trigger is `firstVisibleItemIndex > 0` — the panel has to leave the
-      viewport *entirely* — and a short list cannot scroll that far. Whether
+      viewport *entirely* — and a short list cannot scroll that far, so with
+      four the panel scrolls to a sliver and the title never changes. Whether
       that is right, or whether the trigger should fire on "mostly gone"
-      instead, is open in today-view §1. The count is the screen's, not the
-      design's, which is one more reason that question is a design call. On this
-      AVD at 720×1280 / 320 dpi the viewport is 1056 px, the panel 628 px and a
-      row 128 px, so the chip needs **nine** habits before it can appear at all;
-      with four, the panel scrolls to a sliver and the title never changes.
-      Measured again 2026-09-02 on the Nothing A059 at 1080×2392 / 375 dpi —
-      viewport 2060 px (879 dp), panel 722 px (308 dp), row 150 px (64 dp) — it
-      needs **fourteen**, and appeared with fourteen and forty pixels to spare,
-      reading *"10 left"*.
+      instead, is open in today-view §1. **There is no habit count that answers
+      this**: the threshold is the panel's height against the rows above it,
+      and a row grows a second line when it carries a weekly ratio or a
+      `was 3`, so the same number of habits raises the chip on one screen and
+      not another. Measure it where you are, and read the figure as the
+      screen's rather than the design's — one more reason §1's question is a
+      design call.
 
-      Run 2026-09-19 on this AVD: **ten habits did not raise it and eleven
-      did**, the bar then reading *"Momo is getting worried. 1 of 11 left
-      today"* as one node. So nine is not the number and the arithmetic above
-      needs its row height re-read: a row measures 96 px here, not 128, and a
-      row grows a second line when it carries a weekly ratio or a `was 3`. **The
-      count is therefore not a constant** — it depends on how many rows carry
-      that second line, which is one more reason §1's question is a design
-      call.
+      Run 2026-09-19 on this AVD, 720×1280 / 320 dpi, a 628 px panel over 96 px
+      rows: ten habits did not raise it, eleven did, the bar reading *"Momo is
+      getting worried. 1 of 11 left today"* as one node. Measured 2026-09-02 on
+      the Nothing A059, 1080×2392 / 375 dpi, a 722 px panel over 150 px rows: it
+      needed fourteen, and appeared with forty pixels to spare, reading
+      *"10 left"*.
 - [x] **The chip at 200 % font scale.** The face, "4 left" and all three action
       icons on one bar, nothing truncated. This is the case the chip replaces
       the title *for*, so it is the one that would have justified undoing that
