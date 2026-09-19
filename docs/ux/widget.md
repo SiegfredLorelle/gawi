@@ -718,3 +718,28 @@ docs/running.md §4 has the boxes.
     nothing regressed** — the host is handed a day/night pair for each colour, so
     the whole widget still follows a toggle within about two seconds with no
     render at all, measured on API 37 on 2026-08-28.
+
+- **R8 merges the three `GlanceAppWidget` subclasses into one class, so a push
+  draws one body into every widget.** Release only, and silent. `mapping.txt`
+  puts `TodayWidget.<init>`, `StreakWidget.<init>`, both `getSizeMode`s and
+  `TodayWidget.provideGlance` inside a single output class, and the shipped dex
+  holds none of `Lcom/gawi/widget/TodayWidget;`, `…StreakWidget;` or
+  `…MomoWidget;` — only the merged one — against a control of all three
+  `*Receiver` descriptors, which are present. `GlanceAppWidgetManager` resolves
+  ids by the `GlanceAppWidget` **class**, so once the three are one class
+  `updateAll` cannot tell them apart and one composition reaches every Gawi
+  widget id. What that looks like on a launcher: the Streaks and Momo widgets
+  draw the *Today* body after every write and every rollover, and a
+  provider-initiated render — the 30-minute update, a resize, a fresh session —
+  puts the right body back until the next write undoes it. Nothing throws, so
+  `GlanceProjectionListener` logs nothing and the failure has no tell but the
+  picture.
+- **Why nothing in the suite reaches it.** Both the JVM tests and `make itest`
+  run unminified, so neither can see a merge only R8 performs. §5's manifest
+  reasoning and `ProjectionRefreshTest`'s coupling are about a provider being
+  **named**, which stays true here and is why they stay green: the list is
+  right and the class identity underneath it is not. The fix is a keep rule in
+  `app/proguard-rules.pro` preserving these subclasses' identity, and it wants
+  proving by rebuilding and re-reading `mapping.txt` rather than by reasoning —
+  that same rebuild being the only gate that can catch it coming back
+  (docs/running.md §4).

@@ -1146,7 +1146,7 @@ geometry**, which is what decides whether a size gate is reachable at all; and
       tell them apart; the shipped dex holds no `Lcom/gawi/widget/StreakWidget;`
       at all. Release only, so no JVM test can see it. A provider-initiated
       update draws the right body again, and the next write undoes that.
-      `TODO.md` holds it; this box is owed a re-run against the fix.
+      widget.md §8 holds it; this box is owed a re-run against the fix.
 
 **The streak widget** (docs/ux/widget.md §6). Its own provider, so its own
 picker entry, and the first one here carrying API 31 attributes.
