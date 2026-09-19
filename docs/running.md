@@ -1854,12 +1854,16 @@ glyph existing in the device's font, and an upgrade not losing anything.
       percentage here means the creation date is not reaching the clip, which is
       the whole point of projecting it. Run on an emulator 2026-08-24: a habit
       made that day read a dash in its row and across all five months.
-- [ ] **Each period chip changes the window.** With history in more than one
+- [x] **Each period chip changes the window.** With history in more than one
       month, Month and Quarter must differ. With everything inside one month
       they will agree, and that is correct rather than broken — worth knowing
-      before it looks like a bug. Not yet run against data spanning two months;
-      `InsightsViewModelTest` pins the query window moving, which is not the
-      same claim.
+      before it looks like a bug.
+
+      Run 2026-09-19 on `scripts/avd-seed.sh baseline`, which spans April to
+      September: Month read 19 active days and 59 completions, Quarter 66 and
+      158, Year 157 and 300. The focus sentence moves with them — career for
+      the month and the quarter, health for the year, the previous quarter's
+      weight outvoting this one's over a whole year.
 - [x] **Every icon draws, in both themes.** Fifteen controls, all vectors. The
       failure to look for is not tofu, which a vector cannot draw, but its
       opposite: a `<path>` missing `strokeColor` inflates without complaint and
@@ -1912,10 +1916,17 @@ glyph existing in the device's font, and an upgrade not losing anything.
       never will. Look at a habit with two or more months of history. Run on an
       emulator 2026-08-24: the dot's centre and its label's centre both landed
       on the same pixel column.
-- [ ] **200 % font scale on both new surfaces.** The chips wrap rather than
+- [x] **200 % font scale on both new surfaces.** The chips wrap rather than
       clip, the bar rows stay readable, and the rate card's five month labels do
-      not collide. Not yet run — 200 % was checked on the month grid, which is a
-      different layout from either of these.
+      not collide.
+
+      Run 2026-09-19: nothing clips and nothing collides, but **at 200 % this
+      build breaks a label mid-word rather than wrapping it whole** — the Year
+      chip reads *Ye/ar*, and the rate card's last two labels *Augus/t* and
+      *Septe/mber*. The percentages above them stay clear of each other and the
+      bar rows keep their value on one line. A finding for
+      [insights.md](ux/insights.md) rather than for a test: no assertion can
+      see where a line broke.
 - [x] **An empty period says so, and says *which* empty.** Copy, not an empty
       list, and the pickers stay reachable so there is a way out of it. **Three
       different notices**, and which one appears is the check: no habits at all,
@@ -1940,13 +1951,21 @@ back, and its owed looks are the ones no JVM test can take.
       the tagged habit, ▶ live; Year reset to 2026 with ▶ greyed. A second pass
       added that ◀ is already greyed on Q2, since Q2 starts before that habit's
       creation and nothing earlier can hold one, and a further tap did not move.
-- [ ] **The focus sentence flips when the top tag does.** With `health` leading
+- [x] **The focus sentence flips when the top tag does.** With `health` leading
       last quarter and `career` this one: "Focus shifted from health to career."
       Re-tag the leading habit so both quarters agree: "Still mostly career."
-      Remove every tag: no sentence at all, not "Untagged". Half run 2026-08-29:
-      the shifted sentence appeared on Q3 exactly as written, and Q2 — whose Q1
-      held nothing — drew no sentence. The "still mostly" and untagged flips
-      were not exercised on a device; the mapper test pins them.
+      Remove every tag: no sentence at all, not "Untagged".
+
+      Run 2026-08-29 and again 2026-09-19, the second time on
+      `scripts/avd-seed.sh focus`, which is built for this box: health through
+      June, career through July and August. July read "Focus shifted from
+      health to career.", August "Still mostly career.", and June nothing at
+      all, its own predecessor being empty. Clearing both tags left July with
+      no sentence while the Tags view still drew an **Untagged** bar. **A
+      finished period is the whole condition**: the sentence is claimed only
+      against the period before, so the current one always reads "so far" and
+      a period whose predecessor is empty reads nothing — which is why
+      `baseline` cannot answer this box and a second log exists.
 - [x] **200 % font scale on Year.** The eight-to-twelve trend columns are the
       densest row in the app: the counts stay on one line each, the initials
       under them do not collide, and the stepper label between its two arrows
