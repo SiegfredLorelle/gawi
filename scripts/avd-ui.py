@@ -178,13 +178,28 @@ def one(nodes: list[Node], args: argparse.Namespace) -> Node:
 
 
 def wait_for(args: argparse.Namespace) -> Node:
+    """Block until exactly one node matches.
+
+    **More than one match ends the wait immediately.** A second match is a
+    selector that is too loose, not a state the screen is about to leave, so
+    waiting the timeout out would report a screen that is right there and
+    settled as "it never appeared". `one()` refuses the same way, and for the
+    same reason.
+    """
     deadline = time.monotonic() + args.timeout
     while True:
         found = select(dump(), args)
         if len(found) == 1:
             return found[0]
+        if len(found) > 1:
+            for node in found:
+                print(f"  {node}", file=sys.stderr)
+            raise SystemExit(f"avd-ui: {len(found)} nodes matched -- narrow it, do not wait")
         if time.monotonic() >= deadline:
-            raise SystemExit(f"avd-ui: {len(found)} matches after {args.timeout}s")
+            raise SystemExit(f"avd-ui: nothing matched after {args.timeout}s")
+        # A pass is three adb round trips. Without this they queue against the
+        # device they are waiting on.
+        time.sleep(0.3)
 
 
 def watch(seconds: float, after: str | None) -> None:
@@ -226,13 +241,17 @@ def frames(out_prefix: str, seconds: float, fps: int) -> None:
     A `screencap` round trip is most of a two-second window, so a line that
     holds that long is read off frames or not at all.
     """
-    adb("shell", "screenrecord", "--time-limit", str(int(seconds) or 1), "/sdcard/avd-ui.mp4")
+    # screenrecord takes whole seconds, so this is the length that actually
+    # ran -- and §4 quotes clip length and size as evidence, so it is the one
+    # to report rather than the length asked for.
+    limit = max(1, round(seconds))
+    adb("shell", "screenrecord", "--time-limit", str(limit), "/sdcard/avd-ui.mp4")
     adb("pull", "/sdcard/avd-ui.mp4", f"{out_prefix}.mp4")
     subprocess.run(
         ["ffmpeg", "-y", "-loglevel", "error", "-i", f"{out_prefix}.mp4", "-vf", f"fps={fps}", f"{out_prefix}-%03d.png"],
         check=True,
     )
-    print(f"{out_prefix}.mp4 and {out_prefix}-NNN.png at {fps} fps")
+    print(f"{out_prefix}.mp4 and {out_prefix}-NNN.png: {limit}s at {fps} fps")
 
 
 
@@ -259,8 +278,13 @@ def settime(spec: str) -> None:
         raise SystemExit(f"avd-ui: the dial only carries five-minute ticks, not {minute}")
 
     if any(n.cls.endswith("EditText") for n in dump()):
-        # Keyboard mode is showing. Its toggle is the only described switch.
-        _tap_described("Switch to text input mode for the time input", fallback_y=None)
+        # Keyboard mode is showing, and its toggle is matched on the suffix the
+        # two descriptions share. Material3 1.4.0 picks them
+        # `if (displayMode == Picker) toggle_touch else toggle_keyboard`, so the
+        # description names the mode you are already in and is inverted against
+        # the icon beside it. Depending on that polarity either way is depending
+        # on a bug; the suffix holds whichever way it is fixed.
+        _tap_described_containing("mode for the time input")
 
     _tap_dial(f"{hour} o'clock")
     _tap_dial(f"{minute} minutes")
@@ -293,13 +317,17 @@ def _tap_dial(description: str) -> None:
     time.sleep(1)
 
 
-def _tap_described(description: str, fallback_y: int | None) -> None:
-    for node in dump():
-        if node.desc == description:
-            adb("shell", "input", "tap", *map(str, node.centre))
-            time.sleep(1)
-            return
-    raise SystemExit(f"avd-ui: nothing described {description!r}")
+def _tap_described_containing(fragment: str) -> None:
+    """Tap the one node whose description contains `fragment`.
+
+    Refuses two, like everything else here: a fragment loose enough to match
+    twice is a fragment that can tap the wrong control.
+    """
+    found = [n for n in dump() if fragment in n.desc]
+    if len(found) != 1:
+        raise SystemExit(f"avd-ui: {len(found)} nodes described like {fragment!r}")
+    adb("shell", "input", "tap", *map(str, found[0].centre))
+    time.sleep(1)
 
 
 def main() -> int:
