@@ -1090,12 +1090,18 @@ geometry**, which is what decides whether a size gate is reachable at all; and
       row a name tap had ticked was unticked by a glyph tap on the same row, and
       the app then read *8 of 10 left today* with that habit not done — eight
       rather than seven being the proof the undo landed.
-- [ ] **A write in the app moves the widget.** The only check that exercises
+- [x] **A write in the app moves the widget.** The only check that exercises
       `ProjectionListener`, and nothing else can: complete a habit *in the app*,
       then go to the home screen **without tapping the widget**. It shows the
       tick. If it does not, the push is broken even though every JVM test passes
       — `ProjectionListenerTest` proves the call happens, not that Glance acted
       on it.
+
+      Run 2026-09-20 on `Small_Phone` against the **signed release APK**: a
+      habit completed in the app, then `KEYCODE_HOME` and a dump of this
+      widget's own subtree with nothing touched, showed its mark turned over.
+      The push reaches Glance. What it reaches *beyond* this widget is the
+      box below.
 - [ ] **An empty install says so.** With no active habits the widget reads *"No
       habits yet"*, not a blank box. (Archive every habit rather than using `pm
       clear`, which destroys the log.)
@@ -1109,6 +1115,16 @@ geometry**, which is what decides whether a size gate is reachable at all; and
       placed and working and simply stops following writes.
       `ProjectionRefreshTest` reads the receivers out of the merged manifest,
       which is as far as a JVM test reaches.
+
+      **Failed 2026-09-20 on `Small_Phone`**, and not in the way above: the
+      write reaches both, but the widget bound to `StreakWidgetReceiver` then
+      draws the *Today* body — habit rows, no numerals, no *as of* line — and
+      both host views report the same `views_bitmap_memory`. R8 merges the
+      three `GlanceAppWidget` subclasses into one class, so `updateAll` cannot
+      tell them apart; the shipped dex holds no `Lcom/gawi/widget/StreakWidget;`
+      at all. Release only, so no JVM test can see it. A provider-initiated
+      update draws the right body again, and the next write undoes that.
+      `TODO.md` holds it; this box is owed a re-run against the fix.
 
 **The streak widget** (docs/ux/widget.md §6). Its own provider, so its own
 picker entry, and the first one here carrying API 31 attributes.
@@ -1165,13 +1181,19 @@ or process**.
       minimum. The Pixel launcher's smallest cell is two rows, about 240×132 dp,
       where four rows and the date all fit and dragging the handle further up
       snaps back.
-- [ ] **The unit word appears only when there is room.** At the smallest size a
+- [x] **The unit word appears only when there is room.** At the smallest size a
       weekly habit reads `3w` and a daily one a bare number. Resize to two rows
       and two columns wider: they become `3 weeks` and `12 days`, under a
       *Streaks* header. `StreakUiStateTest` pins the thresholds; only a launcher
       shows whether its cells clear them. Seen on an API 37 emulator on
       2026-08-29: the gate flipped on resize at roughly 240×127 dp, compact to
       full, at density 320.
+
+      Re-run 2026-09-20 on `Small_Phone` against the **signed release APK**:
+      at 242 × 133 dp the drawn text is `12`, `6` and `12w`; dragging the
+      bottom handle to 242 × 203 dp turns them into *13 days*, *7 days* and
+      *12 weeks* under a *Streaks* header. Read the drawn text, never the
+      description, which carries the full wording at either size.
 - [ ] **Days and weeks never look like the same number.** With one daily and one
       weekly habit both on a run, check all three signals at the larger size —
       the unit word and two visibly different inks — and that at the smallest
@@ -1192,6 +1214,12 @@ or process**.
       rollover check below, and worth repeating here because this is the widget
       whose number can go stale *without any event at all* — which is why it
       carries a date in the first place.
+
+      **Not earned 2026-09-20.** Across a real midnight, untouched, this widget
+      did not update itself: the rollover push replaced it with the *Today*
+      body, for the reason recorded against the both-widgets box above. Its
+      footer did reach *as of Sun, Sep 20*, but only after a resize made its
+      own receiver redraw, which is the opposite of what this box asks.
 - [ ] **TalkBack reads each row once, with the unit.** Swipe through the rows:
       each announces as *"read, 12 days"* — the **full** wording even where the
       widget is drawing `3w`, because a spoken "12" cannot say whether it counts
@@ -2589,7 +2617,7 @@ The same mechanism as the reminder (docs/ux/reminder.md §2).
 itself rather than something downstream of it, and it costs a command
 instead of a launcher and a wait.
 
-- [ ] **The widget follows the rollover without being tapped.** With the widget
+- [x] **The widget follows the rollover without being tapped.** With the widget
       on the home screen and a habit ticked, set the **day cutoff** a couple of
       minutes ahead and wait past it without touching anything. The tick clears
       by itself.
@@ -2597,6 +2625,13 @@ instead of a launcher and a wait.
       *Launcher only.* A widget lives in a launcher's process, so this runs with
       **The widget** block rather than here; the half of the mechanism that is
       not the widget is the box below.
+
+      Run 2026-09-20 on `Small_Phone` against the **signed release APK**, on a
+      **real** midnight rather than a moved cutoff — the stronger route, a
+      cutoff moved ahead taking the logical day *backwards*. With two habits
+      ticked and nothing touched, the marks were still set at 00:00:21 and
+      00:01:24 and were clear by 00:03:27: the wake landing, not the boundary
+      itself.
 - [x] **A cutoff edit re-arms it.** Change the cutoff again; the wake moves with
       it. A settings edit writes nothing to the log, so nothing pushes it — the
       scheduler's `SettingsSource` collector is the only thing that can. Read
