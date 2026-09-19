@@ -471,9 +471,10 @@ same `R.string` the composable renders, so a reword cannot fail them, by design.
 - [x] The app launches and `adb logcat -d -s AndroidRuntime:E` is empty. Run
       2026-09-14 on `Small_Phone` against the **signed release APK**, which is
       where this stops being a formality: R8's failures are silent, so an empty
-      log is the first thing that says no serializer and no reflected class was
-      stripped. Necessary and not sufficient — a merged class logs nothing
-      either, and that one took a launcher to see (widget.md §8).
+      log is the first thing that says nothing the launch path reaches was
+      stripped. It says nothing about the rest — the export round-trip below is
+      what carries the serializers — and nothing about a merged class, which
+      logs nothing either and took a launcher to see (widget.md §8).
 - [x] From the empty state, tap **Add a habit**, name it, save — which opens the
       habit's own detail screen, so go back to see the row. It is on Today
       with no restart — one observation covering Hilt building the data
@@ -1135,12 +1136,9 @@ Today and Streaks widgets placed. The older ticks name their own passes.
       **Failed 2026-09-20**, and not in the way above: the write reaches both,
       but the widget bound to `StreakWidgetReceiver` then draws the *Today*
       body — habit rows, no numerals, no *as of* line — and both host views
-      report the same `views_bitmap_memory`. R8 merges the three
-      `GlanceAppWidget` subclasses into one class, so `updateAll` cannot tell
-      them apart; the shipped dex holds no `Lcom/gawi/widget/StreakWidget;` at
-      all. Release only, so no JVM test can see it. A provider-initiated update
-      draws the right body again, and the next write undoes that. widget.md §8
-      holds it; this box is owed a re-run against the fix.
+      report the same `views_bitmap_memory`. Release only, and the cause is
+      R8's rather than this listener's — widget.md §8 holds it. This box is
+      owed a re-run against the fix.
 
 **The streak widget** (docs/ux/widget.md §6). Its own provider, so its own
 picker entry, and the first one here carrying API 31 attributes.
