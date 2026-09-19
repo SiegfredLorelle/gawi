@@ -1729,42 +1729,99 @@ a month query reaching Room and coming back.
 
 Reach it from habit detail: **See full history**, under the five-cell strip.
 
-- [ ] **Done and not-done are obviously different, in both themes.** Tick a few
+**What the ticks below were run against.** `Small_Phone`, the **signed
+release APK** hashed against the build on disk, on `scripts/avd-seed.sh
+baseline`. Three habits carry the conditions: *Read* is completed this month
+and nowhere else, *Sleep log* runs through August into September and is
+un-ticked today, and *Sketching* is made on the spot with nothing logged.
+
+**The cells are in the tree, described.** `uiautomator dump` reads them as
+*"Saturday 19, today, not done yet"*, so which day is which, which are done
+and which one is today are read rather than counted off a screenshot — and
+their bounds are what says the grid moved a column. The screenshot is still
+what answers the two boxes about *looking* right, which is the half no dump
+reaches.
+
+- [x] **Done and not-done are obviously different, in both themes.** Tick a few
       days, open the grid, and look at it from arm's length in light and in
       dark. The pair is measured at 4.41 and 6.94, so this is not really in
       doubt — what is worth confirming by eye is the other half of §8.1's claim:
       that a not-done cell is *quiet* against the page rather than invisible,
       and that you can still read its number.
-- [ ] **Today is findable without hunting.** The ring, not a different fill. Do
+
+      Run 2026-09-19: *Read*'s September, both themes. Dark draws done as a
+      bright teal with dark numerals against a quiet slate not-done; light
+      inverts it to deep teal on pale grey-blue. The not-done numbers stay
+      legible in both, which is the half §8.1 asks the eye for.
+- [x] **Today is findable without hunting.** The ring, not a different fill. Do
       it on a day you have **not** ticked as well as one you have: the not-done
       case is the one that fails if the ring is ever replaced by a
       `secondaryContainer` ground, which measures 1.04 against the cell it would
       sit next to.
-- [ ] **Nothing after today is drawn.** In the current month, the cells past
+
+      Run 2026-09-19: both cases. *Read* is ticked today and *Sleep log* is
+      not, and the un-ticked one keeps the ordinary not-done ground with only
+      the ring to find it by — no second fill.
+- [x] **Nothing after today is drawn.** In the current month, the cells past
       today are empty — no ground, no number. A grid that drew them as not-done
       would read as a month already half lost.
-- [ ] **A tap does nothing at all.** Tap cells: done ones, empty ones, today. No
+
+      Run 2026-09-19: September stops at 19. The tree holds nineteen cells and
+      the screenshot shows nothing drawn past them.
+- [x] **A tap does nothing at all.** Tap cells: done ones, empty ones, today. No
       ripple, no prompt, no tick, no snackbar. Read-only is docs/ux/insights.md
       §3, and the absence of a *refusal* is the check — a message would mean the
       cell is being tapped and turned down.
-- [ ] **The columns line up with the week start.** Change **Week starts on** in
+
+      Run 2026-09-19: a done cell, an empty cell and today, tapped in one
+      pass, added nothing to a five-second burst of dumps — where the same
+      burst on the month stepper beside them added thirty-three nodes.
+- [x] **The columns line up with the week start.** Change **Week starts on** in
       Settings from Monday to Sunday and come back. The header letters rotate
       and the whole grid shifts by a column. It must not need reopening.
-- [ ] **Stepping back reads real months.** Step back past a month you have
+
+      Run 2026-09-19: the header went M T W T F S S to S M T W T F S, and
+      *Tuesday 1* moved one column, 169 px to 264 px, with *Monday 7* behind
+      it. **"Must not need reopening" cannot be read strictly here**: Settings
+      is reachable only from Today, which pops the grid, so what this can show
+      is that the next composition is already right and no restart is wanted.
+- [x] **Stepping back reads real months.** Step back past a month you have
       history in, then back again into one you do not: the second draws an empty
       month rather than repeating the first's cells. Then step forward to the
       current month — the forward arrow disappears there and nowhere else.
-- [ ] **The month follows the day rollover.** With the grid open, set the **day
+
+      Run 2026-09-19: *Sleep log* back through August, 31 done, into July, 31
+      not done — an empty month drawn rather than August repeated. Stepping
+      forward, **Later month** is there in July and August and gone in
+      September, with **Earlier month** present throughout.
+- [x] **The month follows the day rollover.** With the grid open, set the **day
       cutoff** a couple of minutes ahead and wait past it. Today's ring moves a
       day, with nothing tapped. Worth doing at least once near a month end,
       where the whole grid should change month. **Put the cutoff back to
       midnight afterwards.**
-- [ ] **200 % font scale.** Six rows of cells at 200 % overflow the screen: the
+
+      Run 2026-09-19: with a 6:39 PM cutoff the ring sat on *Friday 18* and at
+      6:39 it sat on *Saturday 19*, one column along, with nothing tapped
+      between the reads. The month-end half is **not run and cannot be today**
+      — it needs a cutoff crossing the 1st, so it wants either a month end or
+      the device clock moved. Put back to midnight.
+- [x] **200 % font scale.** Six rows of cells at 200 % overflow the screen: the
       column scrolls, and no cell clips its own number. Two-digit days are where
       this shows first.
-- [ ] **A habit with no history at all.** Create a habit, open its history
+
+      Run 2026-09-19: August on *Sleep log*, six rows, every two-digit day
+      whole inside its cell. **The cells do not scale with the font** — the
+      row pitch is 88 px at both 100 % and 200 %, and only the numeral grows,
+      which is why nothing clips. So it is the page that overflows and
+      scrolls, not the grid: the rate card below it is what goes off-screen.
+- [x] **A habit with no history at all.** Create a habit, open its history
       immediately. A month of not-done cells, no crash, and nothing that reads
       as an error — the habit is new, not failing.
+
+      Run 2026-09-19: *Sketching*, made and opened straight away, drew
+      nineteen not-done cells and no done ones, with no error copy and an
+      empty `AndroidRuntime:E`. Nineteen rather than a whole month, because
+      the box above holds here too.
 
 ---
 
