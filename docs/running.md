@@ -1026,20 +1026,17 @@ geometry**, which is what decides whether a size gate is reachable at all; and
 **TalkBack**, which `adb` cannot drive. Those boxes say so and wait for a phone.
 
 - [x] **It is offered at all.** Long-press the home screen → *Widgets* →
-      **Gawi** → *Today*. If it is missing, the provider did not merge: read
-      `app/build/intermediates/packaged_manifests/debug/.../AndroidManifest.xml`
-      for `com.gawi.widget.TodayWidgetReceiver` (needs `--rerun-tasks`; a stale
-      merged manifest reports the old answer). `WidgetHostTest` covers provider
-      binding and that Glance renders, *not* launcher discovery — so if that
-      test passes and this step fails, suspect the launcher; if it fails too,
-      the problem is below the launcher.
+      **Gawi** → *Today*. If it is missing, the provider did not register:
+      `adb shell dumpsys appwidget` lists every provider the installed build
+      declares, and that is the reading to trust, being against the bytes on
+      the device rather than a build intermediate. `WidgetHostTest` covers
+      provider binding and that Glance renders, *not* launcher discovery — so
+      if that test passes and this step fails, suspect the launcher; if it
+      fails too, the problem is below the launcher.
 
       Run 2026-09-19 on `Small_Phone` (API 37, Pixel launcher) against the
       **signed release APK**: *Browse* lists **Gawi, 3 widgets**, and
-      `dumpsys appwidget` names all three receivers as registered providers.
-      That reading is against the installed bytes, so it is better evidence
-      than the path above, which names the *debug* merged manifest while this
-      pass runs the release build.
+      `dumpsys appwidget` names all three receivers.
 - [ ] **Momo appears only when there is room.** Place the widget at its smallest
       (one row tall): name and checkbox, no face. Resize it to two rows: Momo's
       resting frame appears above the rows, in today's mood, and the rows still
@@ -1177,16 +1174,19 @@ or process**.
       `res/xml-v31` — carries the size alone and no description. That pairing
       inside one group is the contrast, and the preview drew *Reading 12* and
       *Drink water 5* over *as of today* in the system face.
-- [x] **A fresh placement lands three cells by two** on API 31+, from
-      `targetCellWidth/Height`. On 29 and 30 the launcher sizes it off
-      `minWidth` instead, so a narrower first placement there is expected.
+- [x] **A fresh placement lands three cells by two** on API 31+, which is what
+      `res/xml-v31` declares in `targetCellWidth/Height`. On 29 and 30 the
+      launcher sizes it off `minWidth` instead, so a narrower first placement
+      there is expected. Note what a placement cannot tell you: where a
+      launcher's cells make `minWidth` round to the same span, the two routes
+      are indistinguishable, so this measures the span and not which attribute
+      produced it.
 
       Run 2026-09-19 on `Small_Phone` against the **signed release APK**: the
       first placement measured **242 × 133 dp** from its host-view bounds at
-      density 320 — three cells by two rows. What this launcher cannot separate:
-      *Today* declares no `targetCellWidth` and lands on the same 3 × 2, because
-      `minWidth` 180 dp and `minHeight` 110 dp round to it here. The span agrees
-      with the attribute without proving it was the attribute that was read.
+      density 320 — three cells by two rows. *Today*, which declares no
+      `targetCellWidth`, lands on the same span here, `minWidth` 180 dp and
+      `minHeight` 110 dp rounding to it.
 - [x] **It dates its number.** The bottom line reads *as of* and then a weekday,
       a day and a month — no year, no clock time. docs/ux/visual-identity.md
       §7.1 makes this non-negotiable, so it is the one element on this widget
@@ -1205,9 +1205,11 @@ or process**.
       where four rows and the date all fit and dragging the handle further up
       snaps back.
 - [x] **The unit word appears only when there is room.** At the smallest size a
-      weekly habit reads `3w` and a daily one a bare number. Resize to two rows
-      and two columns wider: they become `3 weeks` and `12 days`, under a
-      *Streaks* header. `StreakUiStateTest` pins the thresholds; only a launcher
+      weekly habit reads `3w` and a daily one a bare number. Grow it past
+      **220 dp wide and 150 dp tall** and they become `3 weeks` and `12 days`
+      under a *Streaks* header — both bounds, so on a launcher already clear of
+      one of them only the other has to be crossed.
+      `StreakUiStateTest` pins the thresholds; only a launcher
       shows whether its cells clear them. Seen on an API 37 emulator on
       2026-08-29: the gate flipped on resize at roughly 240×127 dp, compact to
       full, at density 320.
