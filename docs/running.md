@@ -1033,6 +1033,13 @@ geometry**, which is what decides whether a size gate is reachable at all; and
       binding and that Glance renders, *not* launcher discovery — so if that
       test passes and this step fails, suspect the launcher; if it fails too,
       the problem is below the launcher.
+
+      Run 2026-09-19 on `Small_Phone` (API 37, Pixel launcher) against the
+      **signed release APK**: *Browse* lists **Gawi, 3 widgets**, and
+      `dumpsys appwidget` names all three receivers as registered providers.
+      That reading is against the installed bytes, so it is better evidence
+      than the path above, which names the *debug* merged manifest while this
+      pass runs the release build.
 - [ ] **Momo appears only when there is room.** Place the widget at its smallest
       (one row tall): name and checkbox, no face. Resize it to two rows: Momo's
       resting frame appears above the rows, in today's mood, and the rows still
@@ -1040,8 +1047,15 @@ geometry**, which is what decides whether a size gate is reachable at all; and
       "No habits yet". `WidgetMomoTest` proves the tree; it cannot see whether a
       launcher's two-row cell clears **170 dp**, which is the constant this
       check is really measuring.
-- [ ] **It draws today's habits** — each active habit's name with a checkbox,
+- [x] **It draws today's habits** — each active habit's name with a checkbox,
       ticked to match the Today screen. **No streak**, deliberately (PRD OQ-5).
+
+      Run 2026-09-19 on `Small_Phone` against the **signed release APK**: the
+      widget's own subtree, read off its host-view bounds so it is provably the
+      widget and not the app, carries *Read*, *Stretch* and *Meditate*, each
+      with a mark and none with a numeral. Their marks agreed with Today row
+      for row, and the header count moved with them, nine outstanding before
+      the widget's own tap and eight after.
 - [ ] **You can read it, in the theme the device is actually in.** Toggle the
       system dark-mode setting and look at the widget in both, checking the
       **checkbox glyph** and not just the label. This is where a shipped defect
@@ -1056,13 +1070,26 @@ geometry**, which is what decides whether a size gate is reachable at all; and
       sampling the rendered pixels) and found the 2.91:1 glyph, but this block's
       standard is that a widget lives in a launcher's process and an OEM
       launcher's is not the emulator's.
-- [ ] **A tap completes.** Tap an unticked row's *glyph*: it ticks at once. Tap
-      its *name* instead: nothing moves until the write round-trips (a second or
-      so), then the glyph ticks — only the checkbox half flips instantly, so do
-      not tap twice while waiting or the second tap undoes the first. Open the
-      app: Today agrees, and the mascot has reacted if that was the last one.
-- [ ] **A tap again undoes.** Tap the ticked row: it unticks, and Today agrees.
+- [x] **A tap completes.** Tap an unticked row's *glyph*, then another row's
+      *name*: **neither moves under the finger**. Both wait for the write to
+      round-trip (a second or so), and the mark turns over when the widget
+      redraws — it is an `Image` and no Glance `CheckBox` is emitted
+      (`GlyphBitmap.kt`), so no half of the row flips optimistically. Do not tap
+      twice while waiting, or the second tap undoes the first. Open the app:
+      Today agrees, and the mascot has reacted if that was the last one.
+
+      Run 2026-09-19 on `Small_Phone` against the **signed release APK**, both
+      taps recorded at 4 fps: each burst shows the row's pressed highlight with
+      the mark unchanged, then the mark turned over one frame later for the name
+      and two frames later for the glyph. Neither is instant, which is what
+      `GlyphBitmap`'s own KDoc says to expect.
+- [x] **A tap again undoes.** Tap the ticked row: it unticks, and Today agrees.
       This is the half that separates the widget from a complete-only one.
+
+      Run 2026-09-19 on `Small_Phone` against the **signed release APK**: the
+      row a name tap had ticked was unticked by a glyph tap on the same row, and
+      the app then read *8 of 10 left today* with that habit not done — eight
+      rather than seven being the proof the undo landed.
 - [ ] **A write in the app moves the widget.** The only check that exercises
       `ProjectionListener`, and nothing else can: complete a habit *in the app*,
       then go to the home screen **without tapping the widget**. It shows the
@@ -1097,20 +1124,39 @@ lays out and an unattached `AppWidgetHostView` never does (the `ListView` comes
 back present and childless), and anything about a **launcher's own cells, theme
 or process**.
 
-- [ ] **It is offered, and the picker says what it is.** Long-press → *Widgets*
-      → **Gawi**: two entries, *Today* and *Streaks*. On API 31+ the *Streaks*
-      entry shows a description under the name and a preview of the rows; on 29
-      and 30 it shows neither, which is correct rather than broken — those
-      attributes only exist in `res/xml-v31`. The preview is in the **system
-      face, not Outfit**, also correct: a picker inflates real XML and there is
-      no bitmap escape there.
-- [ ] **A fresh placement lands three cells by two** on API 31+, from
+- [x] **It is offered, and the picker says what it is.** Long-press → *Widgets*
+      → **Gawi**: three entries, *Today*, *Streaks* and *Momo*. On API 31+ the
+      *Streaks* entry shows a description under the name and a preview of the
+      rows; on 29 and 30 it shows neither, which is correct rather than broken
+      — those attributes only exist in `res/xml-v31`. The preview is in the
+      **system face, not Outfit**, also correct: a picker inflates real XML and
+      there is no bitmap escape there.
+
+      Run 2026-09-19 on `Small_Phone` against the **signed release APK**:
+      *Streaks* carries `3 × 2` and *Every habit's current run, dated*, and
+      *Momo* `2 × 2` and its own line, while *Today* — which has no
+      `res/xml-v31` — carries the size alone and no description. That pairing
+      inside one group is the contrast, and the preview drew *Reading 12* and
+      *Drink water 5* over *as of today* in the system face.
+- [x] **A fresh placement lands three cells by two** on API 31+, from
       `targetCellWidth/Height`. On 29 and 30 the launcher sizes it off
       `minWidth` instead, so a narrower first placement there is expected.
-- [ ] **It dates its number.** The bottom line reads *as of* and then a weekday,
+
+      Run 2026-09-19 on `Small_Phone` against the **signed release APK**: the
+      first placement measured **242 × 133 dp** from its host-view bounds at
+      density 320 — three cells by two rows. What this launcher cannot separate:
+      *Today* declares no `targetCellWidth` and lands on the same 3 × 2, because
+      `minWidth` 180 dp and `minHeight` 110 dp round to it here. The span agrees
+      with the attribute without proving it was the attribute that was read.
+- [x] **It dates its number.** The bottom line reads *as of* and then a weekday,
       a day and a month — no year, no clock time. docs/ux/visual-identity.md
       §7.1 makes this non-negotiable, so it is the one element on this widget
       that must never be missing or clipped.
+
+      Run 2026-09-19 on `Small_Phone` against the **signed release APK**: *as of
+      Sat, Sep 19* — weekday, day, month, no year, no clock time — read in the
+      dump and seen drawn in full in the screenshot. Both halves are needed: a
+      dump returns the whole string whatever the pixels did with it.
 - [ ] **Three rows and the date at the smallest size.** Place it one row tall
       with four or more active habits: three habit rows, the date pinned beneath
       them, and the rows scroll. Four rows and no date is the failure — 94 dp
