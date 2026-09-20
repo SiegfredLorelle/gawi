@@ -1428,10 +1428,11 @@ phone.
 **The ticks here are a debug build, and predate the rule that a tick names
 one.** Every one was earned before §4 began naming the build and before the
 signed release APK existed; each box carries its own device and day. That
-matters more than it did: R8 merges the three `GlanceAppWidget` subclasses in a
-release build and a debug build merges nothing, so a reading below about one
-write reaching more than one widget is one this build cannot be assumed to
-repeat (widget.md §8). Those are unticked and owed a re-run against the fix.
+matters more than it did: a debug build merges nothing, and the release build
+these were re-run against merged the three `GlanceAppWidget` subclasses into
+one, so a reading below about one write reaching more than one widget held on
+neither (widget.md §8). The keep rule that separates them is in, and those
+boxes are unticked and owed a re-run against a build that carries it.
 
 **The arithmetic for whoever has a third launcher**, and the reason neither
 phone here can show the middle body: the face-above-rows form wants a width of

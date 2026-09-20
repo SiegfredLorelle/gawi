@@ -256,9 +256,10 @@ release. `make release` joins `run` and `itest` as a stack-specific target
 R8 needs two keep rules here, and both took a device to find. The first: R8
 drops the no-arg constructor of a class Glance reaches by name, which takes the
 Today widget's checkbox out silently — no crash, no message, only logcat. The
-second is owed — R8 merges the three `GlanceAppWidget` subclasses into one
-class, so a push draws one body into every widget
-([docs/ux/widget.md](ux/widget.md) §8). Room, Hilt, kotlinx-serialization and
+second: R8 merges the three `GlanceAppWidget` subclasses into one class, so a
+push draws one body into every widget
+([docs/ux/widget.md](ux/widget.md) §8), and `make release` counts the names
+that survive so a toolchain change cannot bring it back unseen. Room, Hilt, kotlinx-serialization and
 both WorkManager workers need nothing of their own, their artifacts' bundled
 rules being enough; Glance's are enough for what it reaches by name and not for
 what R8 merges. The release build also refuses
