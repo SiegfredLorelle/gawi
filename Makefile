@@ -142,14 +142,12 @@ run: ## Build, install and launch the app on a device or emulator
 # `mapping.txt` is printed because PRD §5 requires it to travel with every
 # release, and it is the only way to read a stack trace from a shrunk build.
 #
-# It is also read before it is printed, and that check is here rather than in
-# `lint` because only a shrunk build can fail it: R8 merges the three
-# `GlanceAppWidget` subclasses into one output class, Glance resolves a widget's
-# ids by that class, and the result is one body drawn into every widget with
-# nothing thrown and nothing logged. `app/proguard-rules.pro` holds the rule
-# that stops it and this counts what survived, so a toolchain change cannot
-# bring it back unseen. docs/running.md §6 has the read and why it counts names
-# rather than lines.
+# It is also read before it is printed, and it is read here because only a
+# shrunk build can fail this: `lint` shrinks nothing, so the check would pass
+# on a build that cannot fail it. What is counted and why it counts names
+# rather than lines is docs/running.md §6; what a failure means is
+# docs/ux/widget.md §8. `app/proguard-rules.pro` holds the rule, and an edit
+# here takes away the count rather than the rule.
 release: ## Build a signed, shrunk release APK (needs the GAWI_* vars)
 	@case "$(GAWI_KEYSTORE_PATH)" in \
 	  "") echo "GAWI_KEYSTORE_PATH is unset — see .env.example"; exit 2;; \
@@ -172,8 +170,10 @@ release: ## Build a signed, shrunk release APK (needs the GAWI_* vars)
 	@test -n "$(APKSIGNER)" \
 	  || { echo "apksigner not found — pass APKSIGNER=<path>"; exit 2; }
 	./gradlew :app:assembleRelease
+	@test -f $(RELEASE_MAPPING) \
+	  || { echo "no $(RELEASE_MAPPING) to read — was minification turned off?"; exit 2; }
 	@kept=$$(grep -E '^com\.gawi\.widget\.(Today|Streak|Momo)Widget -> ' \
-	  $(RELEASE_MAPPING) | sed 's/.* -> //' | sort -u | wc -l); \
+	  $(RELEASE_MAPPING) | sed 's/.* -> //' | sort -u | wc -l | tr -d '[:space:]'); \
 	  test "$$kept" = 3 || { \
 	    echo "R8 merged the widget classes: $$kept distinct name(s), not 3."; \
 	    echo "See docs/running.md §6 and app/proguard-rules.pro."; \
