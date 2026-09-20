@@ -723,33 +723,43 @@ a launcher one — docs/running.md §4 has the boxes.
     the whole widget still follows a toggle within about two seconds with no
     render at all, measured on API 37 on 2026-08-28.
 
-- **R8 merges the three `GlanceAppWidget` subclasses into one class unless a
-  keep rule stops it, and one now does.** Release only, and silent while it
-  lasted. `GlanceAppWidgetManager` resolves ids by the `GlanceAppWidget`
+- **Without a keep rule R8 merges the three `GlanceAppWidget` subclasses into
+  one class, so a push draws one body into every widget.** Release only, and
+  silent. `GlanceAppWidgetManager` resolves ids by the `GlanceAppWidget`
   **class**, so once the three are one class `updateAll` cannot tell them apart
-  and one composition reaches every Gawi widget id. What that looked like on a
-  launcher: the Streaks and Momo widgets drew the *Today* body after every write
+  and one composition reaches every Gawi widget id. What that looks like on a
+  launcher: the Streaks and Momo widgets draw the *Today* body after every write
   and every rollover, and a provider-initiated render — the 30-minute update, a
-  resize, a fresh session — put the right body back until the next write undid
-  it. Nothing throws, so `GlanceProjectionListener` logged nothing and the
-  failure had no tell but the picture.
+  resize, a fresh session — puts the right body back until the next write undoes
+  it. Nothing throws, so `GlanceProjectionListener` logs nothing and the failure
+  has no tell but the picture.
+
+  **How a merged build reads, measured before the rule went in.** `mapping.txt`
+  put `TodayWidget.<init>`, `StreakWidget.<init>`, both `getSizeMode`s and
+  `TodayWidget.provideGlance` inside a single output class carrying R8's
+  `$r8$classId` marker, and left no class-level line at all for the two that
+  were swallowed. That is why a fold prints **one** line rather than three
+  repeats, and why the read counts the names on the right and not the lines —
+  running.md §6 states the rule, and this is the reading behind it. The shipped
+  dex held none of `Lcom/gawi/widget/TodayWidget;`, `…StreakWidget;` or
+  `…MomoWidget;` — only the merged one — against a control of all three
+  `*Receiver` descriptors, which were present.
 
   **The rule is in `app/proguard-rules.pro`, written over the supertype**, since
   a fourth subclass would be folded in exactly the same way and nothing about
   the symptom would lead a reader back to that file. It allows obfuscation and
-  shrinking and withholds only optimization, which is what merging is: an
-  unplaced widget can still be shrunk away and all three can still be renamed,
-  and the names on the left of `mapping.txt` are unaffected either way. Measured
-  after it: three separate class-level lines with three different names, no
-  `$r8$classId` on any of them, and three class definitions in the shipped dex
-  extending Glance's, where there had been none.
+  shrinking and withholds only optimization, which is what merging is; each
+  subclass stays reachable through its own receiver, so the shrinking it allows
+  is a freedom R8 has no occasion to take. Measured after it went in: three
+  separate class-level lines with three different names, no `$r8$classId` on
+  any of them, and three class definitions in the shipped dex extending
+  Glance's.
 - **Why nothing in the suite reaches it, and what does.** Both the JVM tests and
   `make itest` run unminified, so neither can see a merge only R8 performs. §5's
   manifest reasoning and `ProjectionRefreshTest`'s coupling are about a provider
-  being **named**, which stayed true throughout and is why they stayed green:
-  the list was right and the class identity underneath it was not. Only a
+  being **named**, which stays true either way and is why they stay green: the
+  list is right and the class identity underneath it is what R8 takes. Only a
   release build can catch this coming back, so `make release` is what does —
   it counts the distinct names the three survive `mapping.txt` under and refuses
-  a build where they are not three. docs/running.md §6 holds the read and why it
-  counts names rather than lines; §4's own re-run is the launcher half, which is
-  a different check and is still owed.
+  a build where they are not three. docs/running.md §6 holds the read; §4's own
+  re-run is the launcher half, which is a different check and is still owed.

@@ -777,15 +777,14 @@ Deviations and notes:
   assemble left on disk from an earlier experiment.
 
   **It reads `mapping.txt` too, and that is the third thing and the only one no
-  other gate could hold.** R8 merges the three `GlanceAppWidget` subclasses into
-  one output class, Glance resolves a widget's ids by that class, and the result
-  is one body drawn into every widget — with nothing thrown and nothing logged,
-  so no test and no log can see it and only a shrunk build produces it at all.
-  `app/proguard-rules.pro` holds the rule that stops it; the target counts the
-  distinct names the three survive under and refuses a build where they are not
-  three. It belongs here and not in `lint` for the same reason the release
-  assemble does not: `lint` shrinks nothing, so the check would pass on a
-  build that cannot fail it. running.md §6 carries the read itself.
+  other gate could hold.** Without a keep rule R8 merges the three
+  `GlanceAppWidget` subclasses into one class, which draws one body into every
+  widget and throws and logs nothing (docs/ux/widget.md §8).
+  `app/proguard-rules.pro` holds the rule; the target counts the distinct names
+  the three survive under and refuses a build where they are not three. It
+  belongs here and not in `lint` for the same reason the release assemble does
+  not: `lint` shrinks nothing, so the check would pass on a build that cannot
+  fail it. running.md §6 carries the read itself.
 - **`make lint` gained a repo-local step**, `scripts/check-citations.sh`. It is a
   step inside an existing target rather than a new one, so `ci.yml` needs no
   change and stays stack-blind — it calls `make lint` and does not have to know

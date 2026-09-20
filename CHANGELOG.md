@@ -12,8 +12,9 @@ says what the next tag will be is [docs/prd.md](docs/prd.md) §5.
 
 The cleanup pass and release signing, on the road to 1.0.0. `make release`
 builds a signed, shrunk APK with its `mapping.txt` beside it; R8 needed a keep
-rule for the class Glance reaches by name, and a second is owed for the widget
-classes it merges (docs/ux/widget.md §8). No artifact is published
+rule for the class Glance reaches by name and a second for the widget classes
+it merges (docs/ux/widget.md §8), and the release build counts the names that
+survive so the second cannot come undone unseen. No artifact is published
 yet — the first one is 1.0.0, and `versionCode` stays 2 until then.
 
 Since then: Momo's gills carry a spare life per seven clean units, and the
