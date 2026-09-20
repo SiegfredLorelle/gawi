@@ -76,8 +76,11 @@ import kotlin.math.roundToInt
  * `internal` is a Kotlin visibility statement only — this class compiles to a
  * public JVM class with a no-arg constructor, and both the receiver and
  * [ToggleHabitAction] construct it directly, so R8 sees that constructor and
- * needs no rule to keep it. The class Glance reaches by name instead is
- * [ToggleHabitAction], and the keep rule belongs to it.
+ * needs no rule to keep it. Its *identity* is the separate question, and that
+ * does need one: Glance resolves a widget's ids by its `GlanceAppWidget` class,
+ * so R8 folding this class together with its two siblings gives all three one
+ * body. `app/proguard-rules.pro` carries the rule that stops it, and
+ * docs/ux/widget.md §8 carries what it costs when it is missing.
  */
 internal class TodayWidget : GlanceAppWidget() {
 

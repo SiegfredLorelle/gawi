@@ -54,7 +54,7 @@ import java.time.LocalDate
  * Kept current the same two ways [TodayWidget] is, and the second one is easy to
  * forget: the content collects `observeToday()` so a live session tracks Room,
  * and [GlanceProjectionListener] starts a session when none is alive. That
- * listener has to name **both** providers — a provider missing from it freezes
+ * listener has to name **every** provider — a provider missing from it freezes
  * for the life of a session, which looks exactly like a widget nobody placed.
  *
  * `SizeMode.Exact` for the reason [TodayWidget] gives, plus one of its own: the
