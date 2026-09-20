@@ -56,9 +56,12 @@
 #
 # The modifiers are the rule. Merging is an optimization, which a keep rule
 # withholds unless it says allowoptimization; allowshrinking and
-# allowobfuscation hand back the two freedoms that cost nothing here, so an
-# unplaced widget can still be shrunk away and all three can still be renamed.
-# `-optimizations` is not the lever — R8 ignores it.
+# allowobfuscation hand back two freedoms R8 has no occasion to take here.
+# Each subclass is constructed by its own manifest-declared receiver, so none
+# of the three is ever unreachable, and a rename is invisible to a lookup that
+# goes by class. `make release` counts on the first of those: a class shrunk
+# away would leave the same gap in mapping.txt as a merged one, and the count
+# could not tell them apart. `-optimizations` is not the lever — R8 ignores it.
 #
 # Written over the supertype for the reason the rule above is: a fourth
 # GlanceAppWidget would be folded in exactly the same way, and nothing about

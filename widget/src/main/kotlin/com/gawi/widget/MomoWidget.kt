@@ -179,9 +179,9 @@ private fun Context.tileSentence(content: WidgetContent): String? = when (conten
  *
  * No R8 keep rule is needed: `actionStartActivity` resolves to a `PendingIntent`
  * at translation time in this process, with no lookup by name. Neither rule in
- * `app/proguard-rules.pro` reaches this one — the first keeps `ActionCallback`'s
- * constructor, which this is not, and the second keeps the widget classes from
- * being merged into each other, which an `Action` is not either.
+ * `app/proguard-rules.pro` reaches this one — one keeps an `ActionCallback`'s
+ * constructor and the other keeps `GlanceAppWidget` identity, and an `Action`
+ * is neither.
  */
 internal fun openAppAction(context: Context): Action {
     val launch = context.packageManager.getLaunchIntentForPackage(context.packageName)
