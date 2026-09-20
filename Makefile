@@ -141,6 +141,15 @@ run: ## Build, install and launch the app on a device or emulator
 #
 # `mapping.txt` is printed because PRD §5 requires it to travel with every
 # release, and it is the only way to read a stack trace from a shrunk build.
+#
+# It is also read before it is printed, and that check is here rather than in
+# `lint` because only a shrunk build can fail it: R8 merges the three
+# `GlanceAppWidget` subclasses into one output class, Glance resolves a widget's
+# ids by that class, and the result is one body drawn into every widget with
+# nothing thrown and nothing logged. `app/proguard-rules.pro` holds the rule
+# that stops it and this counts what survived, so a toolchain change cannot
+# bring it back unseen. docs/running.md §6 has the read and why it counts names
+# rather than lines.
 release: ## Build a signed, shrunk release APK (needs the GAWI_* vars)
 	@case "$(GAWI_KEYSTORE_PATH)" in \
 	  "") echo "GAWI_KEYSTORE_PATH is unset — see .env.example"; exit 2;; \
@@ -163,6 +172,12 @@ release: ## Build a signed, shrunk release APK (needs the GAWI_* vars)
 	@test -n "$(APKSIGNER)" \
 	  || { echo "apksigner not found — pass APKSIGNER=<path>"; exit 2; }
 	./gradlew :app:assembleRelease
+	@kept=$$(grep -E '^com\.gawi\.widget\.(Today|Streak|Momo)Widget -> ' \
+	  $(RELEASE_MAPPING) | sed 's/.* -> //' | sort -u | wc -l); \
+	  test "$$kept" = 3 || { \
+	    echo "R8 merged the widget classes: $$kept distinct name(s), not 3."; \
+	    echo "See docs/running.md §6 and app/proguard-rules.pro."; \
+	    exit 1; }
 	$(APKSIGNER) verify --print-certs --verbose $(RELEASE_APK)
 	@echo "APK:     $(RELEASE_APK)"
 	@echo "mapping: $(RELEASE_MAPPING)"

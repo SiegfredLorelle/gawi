@@ -2828,7 +2828,10 @@ the DN's again: the build succeeds either way. R8's horizontal merger folds
 classes shaped alike into one output class, and Glance resolves a widget's ids
 by its `GlanceAppWidget` class, so three folded into one is one body drawn into
 all three widgets — silently, with nothing thrown and nothing logged
-(docs/ux/widget.md §8). Read the class-level lines after a release build:
+(docs/ux/widget.md §8). **`make release` reads this for you** and refuses a
+build where the three did not survive as three, so a toolchain change cannot
+bring the fold back unseen. What follows is the same read by hand — for when
+that check fires, and for a `mapping.txt` that arrived from somewhere else:
 
 ```console
 $ grep -E '^com\.gawi\.widget\.(Today|Streak|Momo)Widget -> ' \
