@@ -244,6 +244,22 @@ class EventLogCodecTest {
     }
 
     /**
+     * A schedule the domain cannot build is refused like any other corrupt
+     * payload, naming the event, so the file stays repairable by hand. The
+     * throw starts in the wire mapper rather than the JSON decoder, and it is
+     * the codec's wrapping that turns it into a refusal instead of an
+     * exception escaping the reader.
+     */
+    @Test
+    fun `a schedule the domain cannot build is refused by name`() {
+        for (schedule in listOf("""{"kind":"biweekly"}""", """{"kind":"weekly"}""")) {
+            val payload = """{"habit_id":"${uuid(9)}","name":"read","icon":"book","color":"#aabbcc","schedule":$schedule}"""
+            val refusal = refusalFrom(fileWith(payload = payload)) as ExportRejection.Malformed
+            assertTrue(refusal.detail, refusal.detail.startsWith("event 0 (${uuid(1)})"))
+        }
+    }
+
+    /**
      * Nothing reads `tz_offset_min` today, which is why it is checked now
      * rather than later: unvalidated, the first consumer to build a
      * `ZoneOffset` from it would get a `DateTimeException` from inside a
