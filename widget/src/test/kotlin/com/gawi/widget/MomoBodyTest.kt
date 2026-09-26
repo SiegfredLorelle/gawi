@@ -1,6 +1,5 @@
 package com.gawi.widget
 
-import android.content.Intent
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.glance.appwidget.testing.unit.GlanceAppWidgetUnitTest
@@ -15,6 +14,7 @@ import com.gawi.widget.testsupport.anyText
 import com.gawi.widget.testsupport.describedNode
 import com.gawi.widget.testsupport.describedText
 import com.gawi.widget.testsupport.drawnOn
+import com.gawi.widget.testsupport.launchIntent
 import com.gawi.widget.testsupport.silentUntintedImage
 import com.gawi.widget.testsupport.untintedImage
 import org.junit.Assert.assertEquals
@@ -69,7 +69,7 @@ class MomoBodyTest {
     fun `the tile opens the app`() = runGlanceAppWidgetUnitTest(RENDER_TIMEOUT) {
         render(oneOutstanding)
 
-        onNode(drawnOn(WidgetPalette.momoGround)).assert(hasStartActivityClickAction(launchIntent()))
+        onNode(drawnOn(WidgetPalette.momoGround)).assert(hasStartActivityClickAction(launchIntent(app)))
     }
 
     /** With no habits the copy is read and the face is decorative — the Today widget's rule for the same state. */
@@ -106,7 +106,7 @@ class MomoBodyTest {
         onAllNodes(anyText()).assertCountEquals(0)
         onAllNodes(describedNode()).assertCountEquals(0)
         // And not a stop either: focusable with nothing to say is a blank stop.
-        onNode(drawnOn(WidgetPalette.momoGround)).assert(hasStartActivityClickAction(launchIntent()).not())
+        onNode(drawnOn(WidgetPalette.momoGround)).assert(hasStartActivityClickAction(launchIntent(app)).not())
     }
 
     /** Four moods, four words — a mapper that reused one would pass a weaker test. */
@@ -145,15 +145,6 @@ class MomoBodyTest {
         onNode(drawnOn(WidgetPalette.momoGround))
             .assertHasContentDescriptionEqualTo(app.getString(R.string.widget_no_habits))
     }
-
-    /**
-     * What `openAppAction` falls back to here: this module's manifest declares
-     * three receivers and no activity, so the package manager resolves nothing
-     * under Robolectric and the fallback is what the tree actually carries.
-     */
-    private fun launchIntent() = Intent(Intent.ACTION_MAIN)
-        .addCategory(Intent.CATEGORY_LAUNCHER)
-        .setPackage(app.packageName)
 
     private fun GlanceAppWidgetUnitTest.render(content: WidgetContent) {
         setContext(app)

@@ -115,9 +115,9 @@ class WidgetHostBinding private constructor(
      * perfectly.
      *
      * **Every branch reads the description, containers included**, and the
-     * `ViewGroup` one is load-bearing rather than thorough: a Today row and the
-     * whole Momo tile both describe themselves and leave their children
-     * decorative, so a walk that read only leaves would find neither. The
+     * `ViewGroup` one is load-bearing rather than thorough: a Today row and each
+     * body's root describe themselves and leave their children decorative, so a
+     * walk that read only leaves would find none of them. The
      * `TextView` branch reads both for the same reason it always did — a view
      * that is one can arrive with `text == ""` and its words on the description.
      */
