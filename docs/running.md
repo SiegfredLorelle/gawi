@@ -1812,15 +1812,16 @@ posted" for every app on the device including the ones that certainly did post.
       *Read* logged `a quick-complete tap was refused: FutureLogicalDate`, the
       same record kept its three actions and *"3 of 10"*, and with the cutoff
       back at midnight Read was still unticked.
-- [x] **TalkBack reads each button as its habit's name.** With TalkBack on,
+- [ ] **TalkBack reads each button as its habit's name.** With TalkBack on,
       focus a button. It announces the bare name and its role — a notification
       action has no content description, and a `TtsSpan` in the title is not
       spoken, so the name is the design (docs/ux/reminder.md §4). Anything more
       or less than the name is the defect.
 
-      Heard 2026-09-26 on the Nothing A059, TalkBack 17: *"Read. Button"*,
-      *"Water. Button"*, *"Journal. Button"*, on a build still carrying the
-      span, which is why it was removed.
+      **Heard on the previous build only.** 2026-09-26 on the Nothing A059,
+      TalkBack 17: *"Read. Button"*, *"Water. Button"*, *"Journal. Button"*,
+      with the span still in the title, which is why it was removed. Owed: the
+      same hearing of the build without it.
 
 ### Habit detail
 
@@ -2431,8 +2432,8 @@ body holds the weed tips and little else.
       milestone line once, and the mood line once more when it returns two
       seconds later, each followed by the remaining count and one full stop
       between them; the badge announces nothing extra. Tick and untick any
-      other row: each reads the row's state and its new streak and nothing from
-      the panel (momo.md §5).
+      other row: each reads the row's state and its new streak, then the
+      panel's sentence once with the new count (momo.md §5).
 
       *Device only, and the layer no test reaches* — this one belongs with the
       **Accessibility** block below and runs when that does, not with the rest
@@ -2442,7 +2443,8 @@ body holds the weed tips and little else.
       the Accessibility block's keyboard: the milestone line and then the mood
       line, each once, but as *"Momo is dazzled.. 8 of 10 left today"* — a
       doubled stop, from a build that merged the panel's texts — and a plain
-      tick as *"checked"*, then *"streak of 13 days"*, and nothing more.
+      tick as *"checked"*, then *"streak of 13 days"*, with no sentence after
+      it.
 - [x] **Animator duration scale off** (Developer options → *Animator duration
       scale* → *Animation off*), then reopen Today. Momo must be still, at the
       resting frame, the weeds upright and the bubbles frozen, and the mood
@@ -2787,8 +2789,10 @@ the dialog's effect looks silent.
 Today widget's header and the Streaks widget's *as of* line are said from each
 body's root now (widget.md §7), and the panel builds its sentence with one full
 stop where TalkBack's join gave it two; the Momo block, the Streaks TalkBack
-box and the milestone box stay open until they are heard. A plain tick's
-silence is the design (momo.md §5).
+box and the milestone box stay open until they are heard, and so does the
+reminder buttons' box, heard only on the build that carried the span. The
+milestone box now listens for the panel's sentence after a plain tick too
+(momo.md §5).
 
 Not in CI and not automatable: TalkBack cannot be driven from the instrumented
 source set, so §8's line that CI runs unit tests only is unaffected here.

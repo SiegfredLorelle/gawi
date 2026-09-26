@@ -381,13 +381,13 @@ test can measure it.
   does. The milestone line swaps with animations off too, for the same two
   seconds, because a line is text and the gate governs what moves; the row's
   badge takes its pill for the same window, so the row and the line agree.
-  **A plain tick is announced by the row alone**: its new state, then its new
-  streak, and nothing from the panel. TalkBack 17 does not read the region
-  after a tick that leaves the line unchanged, only after the milestone's swap
-  (docs/running.md §4, the milestone box), and that silence is accepted rather
-  than engineered around — the row already says what the tick did, and the
-  remaining count is one swipe away on the panel, the same trade the app-bar
-  chip makes below.
+  **A plain tick is followed by the panel's sentence**, once: the row says its
+  new state and streak, then the region reads the sentence with the new count,
+  because the count is part of the panel's own description and a tick changes
+  it. That is one short sentence per tick, the cost of the count reaching
+  someone who never swipes to the panel. A build that merged the panel's texts
+  instead was heard silent after a plain tick (docs/running.md §4, the
+  milestone box), which is the hearing this one owes.
   **All of that is the panel's, and the panel is not always on screen.** Once
   the chip has taken the bar (today-view §1) the panel is *disposed*, not
   merely scrolled past, so this live region reads nothing at all. The chip
@@ -398,9 +398,9 @@ test can measure it.
 
 ## 6. What this decided, and what it does not
 
-- **The count is not spoken after a plain tick.** Decided: §5 accepts the
-  silence TalkBack 17 leaves there, as the app-bar chip already does, rather
-  than forcing an announcement after every tick.
+- **The count is spoken after a plain tick.** Decided: the panel's sentence
+  follows every tick (§5). The phone hearing is owed in docs/running.md §4's
+  milestone box.
 - **Celebrations.** Finishing the day is celebrated
   (`Celebration.kt`): when the mood the tank was showing gives way to thriving,
   Momo hops 14 dp, fourteen bubbles rush up from under the tail on staggered
