@@ -381,13 +381,11 @@ test can measure it.
   does. The milestone line swaps with animations off too, for the same two
   seconds, because a line is text and the gate governs what moves; the row's
   badge takes its pill for the same window, so the row and the line agree.
-  **A plain tick is followed by the panel's sentence**, once: the row says its
-  new state and streak, then the region reads the sentence with the new count,
-  because the count is part of the panel's own description and a tick changes
-  it. That is one short sentence per tick, the cost of the count reaching
-  someone who never swipes to the panel. A build that merged the panel's texts
-  instead was heard silent after a plain tick (docs/running.md §4, the
-  milestone box), which is the hearing this one owes.
+  **A plain tick is followed by the panel's sentence**, once, with the new
+  count, and by the row's new state, because the count is part of the panel's
+  own description and a tick changes it (docs/running.md §4, the milestone
+  box). That is one short sentence per tick, the cost of the count reaching
+  someone who never swipes to the panel.
   **All of that is the panel's, and the panel is not always on screen.** Once
   the chip has taken the bar (today-view §1) the panel is *disposed*, not
   merely scrolled past, so this live region reads nothing at all. The chip
@@ -399,7 +397,7 @@ test can measure it.
 ## 6. What this decided, and what it does not
 
 - **The count is spoken after a plain tick.** Decided: the panel's sentence
-  follows every tick (§5). The phone hearing is owed in docs/running.md §4's
+  follows every tick (§5), heard on the phone in docs/running.md §4's
   milestone box.
 - **Celebrations.** Finishing the day is celebrated
   (`Celebration.kt`): when the mood the tank was showing gives way to thriving,

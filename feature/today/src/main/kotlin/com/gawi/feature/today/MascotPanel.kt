@@ -85,7 +85,7 @@ internal fun MascotPanel(mascot: MascotUi, motion: TodayMotion, modifier: Modifi
             // announcement (momo.md §5) and without one it would only be read
             // when this node already held focus — never, right after ticking a
             // row. The count is part of the description, so a plain tick
-            // changes it too and the sentence is read once after the row's own
+            // changes it too and the sentence is read once beside the row's own
             // state: the one short sentence per tick momo.md §5 accepts.
             .clearAndSetSemantics {
                 contentDescription = spoken
