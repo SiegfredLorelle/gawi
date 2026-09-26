@@ -384,7 +384,8 @@ test can measure it.
   **A plain tick is followed by the panel's sentence**, once, with the new
   count, and by the row's new state, because the count is part of the panel's
   own description and a tick changes it (docs/running.md §4, the milestone
-  box). That is one short sentence per tick, the cost of the count reaching
+  box). The first tap after TalkBack starts is not spoken at all, TalkBack's
+  own feedback included, which is TalkBack's and not the panel's. That is one short sentence per tick, the cost of the count reaching
   someone who never swipes to the panel.
   **All of that is the panel's, and the panel is not always on screen.** Once
   the chip has taken the bar (today-view §1) the panel is *disposed*, not

@@ -2437,7 +2437,8 @@ body holds the weed tips and little else.
       in a row. Momo is dazzled. 8 of 11 left today"*, then the mood line with
       the same count two seconds later, each once. A tick, an untick and a
       re-tick each read the sentence with its new count and then *"checked"* or
-      *"not checked"*; the session's first tick said nothing at all.
+      *"not checked"*. The one silent tick was the first plain one after
+      TalkBack started, *"checked"* missing too — the preamble's start-up trap.
 - [x] **Animator duration scale off** (Developer options → *Animator duration
       scale* → *Animation off*), then reopen Today. Momo must be still, at the
       resting frame, the weeds upright and the bubbles frozen, and the mood
@@ -2648,7 +2649,7 @@ $ echo '{"id":2,"command":"register","name":"select","vid":6353,"pid":43982,"bus
 $ echo '{"id":2,"command":"inject","events":[1,353,1,0,0,0,1,353,0,0,0,0]}' > kbd
 ```
 
-Four traps, each of which produces a false reading. **Search+Enter is the
+Five traps, each of which produces a false reading. **Search+Enter is the
 system's Home shortcut** and a plain Enter goes to the app's input focus rather
 than the ring, so activate by ringing a control with the keys and then an
 injected `input tap` on it — a tap does not move the ring; on a launcher, key
@@ -2660,7 +2661,9 @@ capture pulled over Wi-Fi per frame misses it. **`uiautomator dump` suspends
 TalkBack** while it runs, and anything said in that gap is lost. **A dialog
 hands the ring back to where it was before the dialog opened**, so ring the
 control that opens it first; opened from elsewhere, the ring lands on *Back* and
-the dialog's effect looks silent.
+the dialog's effect looks silent. **The first tap after TalkBack starts is not
+spoken at all**, its own *"checked"* included, and the next one is (four of
+four, 2026-09-27), so make a throwaway tap before one you are listening to.
 
 - [x] **A TalkBack pass over the three core flows.** Turn TalkBack on, then add
       a habit, complete one from the Today view, and change the day cutoff —
