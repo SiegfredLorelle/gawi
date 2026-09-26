@@ -105,17 +105,11 @@ internal fun MomoBody(content: WidgetContent) {
     // Asking the package manager is a binder call, so it is remembered rather
     // than repeated every pass — the way the mark's bitmap and the ink are.
     val openApp = remember(context) { openAppAction(context) }
-    var modifier = GlanceModifier
+    val modifier = GlanceModifier
         .fillMaxSize()
         .background(WidgetPalette.momoGround)
         .padding(WIDGET_PADDING.dp)
-    // Loading has nothing to say yet, so it gets neither half: a focusable tile
-    // with no description is a stop that announces a blank, which is worse than
-    // not being a stop at all. The two go together — the click is what makes the
-    // tile focusable, so it is also what would make a missing description heard.
-    if (spoken != null) {
-        modifier = modifier.clickable(openApp).semantics { contentDescription = spoken }
-    }
+        .spokenRoot(spoken, openApp)
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
         val ink = rememberOutfitInk(
             tint = WidgetPalette.momoCaption,
@@ -140,7 +134,7 @@ internal fun MomoBody(content: WidgetContent) {
                 val lines = if (empty) EMPTY_COPY_LINES else 1
                 val face = momoFaceHeight(LocalSize.current, BitmapText.textScale(context, BitmapText.CAPTION_SIZE_SP), lines)
                 if (face != null) {
-                    MomoImage(mood, contentDescription = null, heightDp = face)
+                    MomoImage(mood, heightDp = face)
                     Spacer(modifier = GlanceModifier.height(CAPTION_GAP.dp))
                 }
                 OutfitText(text = word, maxWidth = contentWidth(), maxLines = lines, ink = ink)
@@ -190,6 +184,27 @@ internal fun openAppAction(context: Context): Action {
             .setPackage(context.packageName)
     return actionStartActivity(launch)
 }
+
+/**
+ * A body's root as one TalkBack stop that says [spoken] and opens the app on a
+ * tap — or neither, when there is nothing to say.
+ *
+ * Outside a Glance `LazyColumn`, a described view is reached only when it is
+ * focusable itself: TalkBack folds a described unfocusable view into its
+ * nearest focusable ancestor, which in a widget is the launcher's frame, and
+ * the frame's own label hides it (docs/ux/widget.md §7). A click is what makes a
+ * Glance view focusable. The root takes it rather than the line it describes
+ * because a caption-height line would be a touch target far under 48dp, and
+ * everything inside the root is decorative or it would be read twice. The tap
+ * opens the app because a focusable body that did nothing would be a worse lie
+ * than the silence it replaces.
+ *
+ * The two halves go together: the click is what makes the root a stop, so it is
+ * also what would make a missing description heard as a blank. Loading gets
+ * neither.
+ */
+internal fun GlanceModifier.spokenRoot(spoken: String?, openApp: Action): GlanceModifier =
+    if (spoken == null) this else clickable(openApp).semantics { contentDescription = spoken }
 
 /**
  * The one word drawn under the face — the caption the design canvas chose over

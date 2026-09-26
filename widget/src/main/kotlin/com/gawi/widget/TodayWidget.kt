@@ -130,19 +130,24 @@ internal fun repositoryFrom(context: Context): HabitRepository =
  */
 @Composable
 internal fun WidgetBody(content: WidgetContent) {
+    val context = LocalContext.current
+    val body = content.body(LocalSize.current, BitmapText.textScale(context, BitmapText.CAPTION_SIZE_SP))
+    val openApp = remember(context) { openAppAction(context) }
     Column(
-        modifier = GlanceModifier.fillMaxSize().background(WidgetPalette.surface).padding(WIDGET_PADDING.dp),
+        modifier = GlanceModifier
+            .fillMaxSize()
+            .background(WidgetPalette.surface)
+            .padding(WIDGET_PADDING.dp)
+            .spokenRoot(body.spoken(context), openApp),
     ) {
-        val context = LocalContext.current
-        when (val body = content.body(LocalSize.current, BitmapText.textScale(context, BitmapText.CAPTION_SIZE_SP))) {
+        when (body) {
             is WidgetBodyContent.Copy -> {
-                body.mood?.let { MomoImage(it, contentDescription = null) }
-                val copy = context.getString(body.text)
-                OutfitText(text = copy, maxWidth = contentWidth(), maxLines = MAX_COPY_LINES, contentDescription = copy)
+                body.mood?.let { MomoImage(it) }
+                OutfitText(text = context.getString(body.text), maxWidth = contentWidth(), maxLines = MAX_COPY_LINES)
             }
 
             is WidgetBodyContent.Rows -> {
-                body.mood?.let { MomoImage(it, contentDescription = context.getString(it.description())) }
+                body.mood?.let { MomoImage(it) }
                 HabitRows(body.rows)
             }
 
@@ -158,15 +163,24 @@ internal fun WidgetBody(content: WidgetContent) {
 }
 
 /**
+ * The one sentence this body says outside its rows: the copy when there is
+ * copy, the mood when Momo is drawn, and nothing when neither is.
+ */
+private fun WidgetBodyContent.spoken(context: Context): String? = when (this) {
+    is WidgetBodyContent.Copy -> context.getString(text)
+    is WidgetBodyContent.Rows -> mood?.let { context.getString(it.description()) }
+    is WidgetBodyContent.Large -> context.getString(mood.description())
+    WidgetBodyContent.Blank -> null
+}
+
+/**
  * The large body's header (docs/ux/widget.md §7): Momo on her ground, and
  * beside her the mood line over the woven day band.
  *
- * **One reading.** The mood line is the description and everything else here is
- * decorative — the face carries `null`, unlike the face-above-rows body, where
- * she is the only place the mood can be read; the band's segments carry
+ * **Everything here is decorative**, the mood line included: the body's root
+ * carries the sentence ([spokenRoot] has why), and the band's segments carry
  * nothing, because the rows beneath already announce each habit's state
- * (docs/ux/momo.md §5). Describing the face too would read the same sentence
- * twice.
+ * (docs/ux/momo.md §5).
  *
  * **The band is the rows' own flags, in the rows' own order.** One segment per
  * habit, `bandWoven` when today's cell is ticked and `bandOutstanding` when it is
@@ -199,7 +213,7 @@ private fun LargeHeader(mood: Mood, rows: List<WidgetRow>) {
                 .cornerRadius(MOMO_PILL_RADIUS.dp),
             contentAlignment = Alignment.Center,
         ) {
-            MomoImage(mood, contentDescription = null, heightDp = MomoBitmap.PILL_HEIGHT_DP)
+            MomoImage(mood, heightDp = MomoBitmap.PILL_HEIGHT_DP)
         }
         Spacer(modifier = GlanceModifier.width(HEADER_GAP.dp))
         Column(modifier = GlanceModifier.defaultWeight()) {
@@ -208,7 +222,6 @@ private fun LargeHeader(mood: Mood, rows: List<WidgetRow>) {
                 maxWidth = copyWidth,
                 maxLines = HEADER_COPY_LINES,
                 ink = rememberOutfitInk(textSizeSp = BitmapText.CAPTION_SIZE_SP, weight = BitmapText.OUTFIT_WEIGHT_SEMIBOLD),
-                contentDescription = copy,
             )
             Spacer(modifier = GlanceModifier.height(BAND_GAP.dp))
             WovenBand(rows, copyWidth)

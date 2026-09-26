@@ -84,12 +84,11 @@ class WidgetHostTest {
      * mood sentence, or the empty copy on an unseeded device.
      *
      * **What this does not prove, stated because the first version claimed
-     * it.** The mood sentence is the large body's drawn line *and* the
-     * face-above-rows body's content description, and this harness reads
-     * both, so it cannot tell the two tall bodies apart — only that the size
-     * was taken and the height gate passed. The width gate is pinned by
-     * `WidgetBodyTest` and `HeaderCopyTest`, and the header itself is a
-     * launcher check in docs/running.md §4.
+     * it.** The mood sentence is the root's description in both tall
+     * bodies, and this harness reads it, so it cannot tell the two apart —
+     * only that the size was taken and the height gate passed. The width gate
+     * is pinned by `WidgetBodyTest` and `HeaderCopyTest`, and the header
+     * itself is a launcher check in docs/running.md §4.
      */
     @Test
     fun theProviderRecomposesAtTheReportedSizeAndDrawsAMood() {

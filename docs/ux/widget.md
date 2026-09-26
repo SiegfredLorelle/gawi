@@ -30,22 +30,22 @@ was reached through `MainActivity`; a widget is drawn by the launcher, from a
 process that may not be running, and it cannot observe the database. That is
 what §4 is about.
 
-## 2. Minimal: a name and a checkbox. This settles OQ-5
+## 2. Minimal: a name and a mark. This settles OQ-5
 
 **PRD OQ-5** asks: *"Should the widget show streaks or stay minimal (just
 checkboxes)?"* — and **§6.6 answers the other way**, listing *"streak
 visibility everywhere it motivates: Today view, widget, habit detail"*. The two
 have contradicted each other since they were written.
 
-**Decided: minimal.** One row per habit, its name, and a checkbox. No streak, no
-week count, no mascot.
+**Decided: minimal.** One row per habit, its name, and a completion mark. No
+streak, no week count, no mascot.
 
 Why, in the order the reasons mattered:
 
 1. **A streak is the number most likely to be wrong on a widget.** A streak
    reaches zero with no new event — nobody does anything, the day turns, the run
    is gone. So it is the one value whose staleness is not bounded by user
-   inaction, on the one surface with no live query (§4). A wrong checkbox is a
+   inaction, on the one surface with no live query (§4). A wrong mark is a
    redraw behind; a wrong streak is a demotivating lie.
 2. **Width is rows.** A streak column costs horizontal space on the smallest
    widget, which is the size that serves the "one tap" claim best.
@@ -326,10 +326,13 @@ only if the "as of" line goes. It does not go — the rows scroll instead, in a
 weakened its own case for being a widget, and that is the honest cost of the
 direction rather than a defect to hide.
 
-**Read-only, deliberately.** No tap target. A widget that wrote would have to
-re-read the log first for the reason §4 spends itself on, and nothing here needs
-to write, so nothing here takes that on. Adding a tap later means adding an
-`ActionCallback` with the same re-read — not passing the drawn date.
+**Read-only, deliberately.** The one tap is the body's root, which opens the app:
+that is what makes the *as of* line a TalkBack stop at all, the reading fix §7
+gives the Momo tile, and a tap on a row falls through to it. Nothing writes. A
+widget that wrote would have to re-read the log first for the reason §4 spends
+itself on, and nothing here needs to write, so nothing here takes that on. A
+writing tap later means an `ActionCallback` with the same re-read — not passing
+the drawn date.
 
 **Two costs §7.4 did not price**, both found in the building:
 
@@ -382,7 +385,7 @@ was right and only the reading was wrong, which is why every test passed. It now
 takes a `mirrored` flag that `WovenBand` resolves from the app's configuration;
 §8 has the arithmetic, the test that discriminates it, and the one case the flag
 makes worse rather than better. Nothing is counted, sorted or capped, so the band
-cannot say something the checkboxes beneath it do not; with many habits the
+cannot say something the marks beneath it do not; with many habits the
 segments thin rather than fold, which at thirty is a texture and still true.
 **Drawn as two rasterised masks, not as a box per habit** — the first cut was a
 `Box` and a `Spacer` per segment in one `Row`, and Glance caps a container at
@@ -408,10 +411,11 @@ the Nothing launcher on 2026-09-02 it read neither the line nor the face and
 went straight to the rows, each of which was two stops, its name and then its
 checkbox (docs/running.md §4). Both halves of that are closed: the row carries
 name and state (`widget_today_row_description`) and is its only stop, since no
-control is emitted to be a second one (§8). The header is what is left — it has
-no focusable node of its own, and the launcher's frame is described "Today",
-which hides an unfocusable child.
-Whether the Pixel launcher does the same is not known. Her height on the
+control is emitted to be a second one (§8). The header line is not described
+itself: the launcher's frame is described "Today", which hides an unfocusable
+child, so the body's root carries the sentence and opens the app, the Momo
+tile's fix below (`spokenRoot`). The face-above-rows body and the no-habits copy
+take the same root, and one cell tall, with only rows, the root says nothing. Her height on the
 pill is a second constant, `MomoBitmap.PILL_HEIGHT_DP`, for the reason the first
 one is a constant: the bitmap's cost must not follow a host's idea of "large".
 The line gets three lines of caption type, not the canvas's one: at the gate the
@@ -536,7 +540,7 @@ a launcher one — docs/running.md §4 has the boxes.
   edit and the next wake, which is the same best-effort caveat as above.
 - **The band mirrors under an RTL host** (§7, running.md §4). It did not once:
   the rows mirrored and the band kept its left-to-right order, so it read
-  backwards against the checkboxes it repeats.
+  backwards against the marks it repeats.
   `BandBitmap.render` now takes a `mirrored` flag and places a mirrored segment
   at `left = widthPx - index * pitch - segment` — **not** `widthPx - (index + 1)
   * pitch`, which this bullet warned about and which is off by a whole `gap`: it

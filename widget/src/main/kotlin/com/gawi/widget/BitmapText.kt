@@ -269,18 +269,12 @@ internal fun rememberOutfitInk(
  * zero when the host has no info for the id yet, and a widget that draws
  * nothing in that window is worse than one that ellipsises hard.
  *
- * [contentDescription] is `null` by default — decorative — because a row says
- * its own name and state, and nothing inside it is a stop; the copy states pass
- * their text. Blank text emits nothing at all.
+ * Always decorative: a row says its own name and state and a body's root says
+ * the rest (`spokenRoot`), so no string is a stop of its own. Blank text emits
+ * nothing at all.
  */
 @Composable
-internal fun OutfitText(
-    text: String,
-    maxWidth: Dp,
-    ink: OutfitInk = rememberOutfitInk(),
-    maxLines: Int = 1,
-    contentDescription: String? = null,
-) {
+internal fun OutfitText(text: String, maxWidth: Dp, ink: OutfitInk = rememberOutfitInk(), maxLines: Int = 1) {
     val context = LocalContext.current
     val configuration = context.resources.configuration
     val metrics = context.resources.displayMetrics
@@ -291,7 +285,7 @@ internal fun OutfitText(
     } ?: return
     Image(
         provider = ImageProvider(bitmap),
-        contentDescription = contentDescription,
+        contentDescription = null,
         contentScale = ContentScale.Fit,
         colorFilter = ColorFilter.tint(ink.tint),
     )

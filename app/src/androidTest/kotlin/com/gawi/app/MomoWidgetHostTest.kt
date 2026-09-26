@@ -77,7 +77,7 @@ class MomoWidgetHostTest {
 
     /**
      * What this widget's composition can emit and the host's own label cannot:
-     * a mood sentence (the face's description), the no-habits copy, or the
+     * a mood sentence (the tile's description), the no-habits copy, or the
      * failure copy. The label "Momo" is present from `createView` on, so waiting
      * on non-empty would return before Glance ran — the false pass
      * `StreakWidgetHostTest` already had.
