@@ -378,15 +378,17 @@ private fun TodayLine(state: HabitDetailUiState.Detail) {
         )
         state.weekProgress?.let { progress ->
             val spoken = spokenWeekProgress(progress.done, progress.target)
-            Text(
-                text = stringResource(R.string.habits_detail_week_progress, progress.done, progress.target),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                // Same words the Today row speaks, from :core:ui: a reader says
-                // the drawn ratio as its slash. Clearing rather than adding, so
-                // the line is not read twice.
-                modifier = Modifier.clearAndSetSemantics { contentDescription = spoken },
-            )
+            // Same words the Today row speaks, from :core:ui: a reader says
+            // the drawn ratio as its slash. Clearing rather than adding, so the
+            // line is not read twice, and on a wrapper so the drawn ratio stays
+            // in the unmerged tree.
+            Box(modifier = Modifier.clearAndSetSemantics { contentDescription = spoken }) {
+                Text(
+                    text = stringResource(R.string.habits_detail_week_progress, progress.done, progress.target),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }
