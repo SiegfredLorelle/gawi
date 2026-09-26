@@ -84,8 +84,9 @@ internal fun MascotPanel(mascot: MascotUi, motion: TodayMotion, modifier: Modifi
             // one. A polite live region, because the line changing is the whole
             // announcement (momo.md §5) and without one it would only be read
             // when this node already held focus — never, right after ticking a
-            // row. A plain tick leaves the line as it was, and TalkBack stays
-            // silent then.
+            // row. The count is part of the description, so a plain tick
+            // changes it too and the sentence is read once after the row's own
+            // state: the one short sentence per tick momo.md §5 accepts.
             .clearAndSetSemantics {
                 contentDescription = spoken
                 liveRegion = LiveRegionMode.Polite
