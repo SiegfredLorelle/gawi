@@ -21,15 +21,14 @@ week rather than within hours.
 
 | Version | Supported |
 |---|---|
+| `1.0.0`, the latest release | Yes |
 | `main` | Yes |
 | everything else | No |
 
-There is no installable release yet. `main` is at `1.0.0` / `versionCode 3`,
-and the last tag is `v0.2.0` — a tag without an artifact, which is why the
-table has no line for it: a tag marks a source state, not a supported build.
-The version is ahead of the tag because 1.0.0 is verified on the build that
-ships, so the number is set before the tag rather than with it. Pre-1.0 still,
-and fixes land on `main` only.
+`1.0.0` is the first installable release: a signed APK attached to the
+`v1.0.0` GitHub release. Earlier tags are not in the table because they have
+no artifact — a tag marks a source state, not a supported build. Fixes land on
+`main` and ship in the next release; there are no backports to an older one.
 
 ## What the threat model actually is
 

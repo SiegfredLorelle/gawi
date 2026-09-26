@@ -8,12 +8,12 @@ your data never leaves the device. For what and why, read
 
 ## Status
 
-Pre-1.0. Version `1.0.0` (`versionCode 3`) on `main`; the last tag is
-`v0.2.0` —
-a tag and release notes with **no artifact attached**. `make release` builds a
-signed, shrunk APK, so an installable build is one command away; the first one
-actually published is 1.0.0. Not on any store. Build it from source with the
-commands below; [CHANGELOG.md](CHANGELOG.md) records what each tag contained.
+`v1.0.0` (`versionCode 3`) is the latest release and the first with an
+installable build attached: a signed, shrunk APK with its `mapping.txt`, on the
+[GitHub release](https://github.com/SiegfredLorelle/gawi/releases/tag/v1.0.0).
+Not on any store; install the APK by hand, or build it from source with the
+commands below. [CHANGELOG.md](CHANGELOG.md) records what each tag contained,
+and what 1.0.0 leaves unverified on a device.
 
 Phase 0, the MVP, is feature-complete: habits, logging, streaks, the
 home-screen widget, the end-of-day reminder, and export/import all work. Its
@@ -45,9 +45,9 @@ the end-of-day reminder, each completing a habit for the day the notification
 was posted for. The two questions Phase 1 raised and left open — grace
 mechanics, decided as gills, and Momo's real copy — are answered with it.
 
-What comes next, and in what order, is recorded in [PRD §5](docs/prd.md): a
-cleanup pass, then release signing, then the first installable release as
-1.0.0. The open design questions are in §8 of the same file.
+What comes next is 1.x in [PRD §5](docs/prd.md): growth one feature at a
+time, each on the design canvas first, before sync. The open design questions
+are in §8 of the same file.
 
 Single maintainer, so expect unhurried responses.
 
