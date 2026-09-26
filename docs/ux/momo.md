@@ -384,8 +384,7 @@ test can measure it.
   every tick as well, one short sentence. **On TalkBack 17 it does not**: on the
   Nothing A059 a plain tick is followed by the row's own state and new streak
   and nothing from the panel, while the milestone's swap is read
-  (docs/running.md §4, the milestone box). Whether the count should be spoken
-  after a tick is open.
+  (docs/running.md §4, the milestone box); §6 keeps the question open.
   **All of that is the panel's, and the panel is not always on screen.** Once
   the chip has taken the bar (today-view §1) the panel is *disposed*, not
   merely scrolled past, so this live region reads nothing at all. The chip
@@ -396,6 +395,11 @@ test can measure it.
 
 ## 6. What this decided, and what it does not
 
+- **Whether the count is spoken after a tick.** Open. §5 meant the panel to
+  read the mood line and the remaining count after every tick, and TalkBack 17
+  reads only the row's own state and streak. Blocked on a decision: rewording
+  §5 to accept the silence, as the app-bar chip already does, or changing the
+  panel so the count is announced.
 - **Celebrations.** Finishing the day is celebrated
   (`Celebration.kt`): when the mood the tank was showing gives way to thriving,
   Momo hops 14 dp, fourteen bubbles rush up from under the tail on staggered
