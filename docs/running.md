@@ -1056,14 +1056,12 @@ trusting two widgets to agree. The older ticks name their own passes.
       launcher's two-row cell clears **170 dp**, which is the constant this
       check is really measuring.
 
-      **Not earned 2026-09-20**, and the constant is why. The Pixel launcher
-      here floors a placement at two rows and its rows are 65 dp, so the
-      smallest reachable Today widget is 242 × 133 dp: name and mark, no face,
-      which is this box's first clause arriving at the wrong size. The gate
-      itself fires in the Today widget's own host at three rows, 242 × 203 dp:
-      Momo's resting frame above the rows, and above *No habits yet* with every
-      habit archived (run 2026-09-26). Two rows never clear 170 dp here, so the
-      box waits for a launcher whose cells do.
+      **Not earned**, and the constant is why. The Pixel launcher here floors a
+      placement at two rows and its rows are 65 dp, so the smallest reachable
+      Today widget is 242 × 133 dp: name and mark, no face, which is this box's
+      first clause arriving at the wrong size. The gate itself fires at three
+      rows (the Resizing box below, and the no-habits box in the Momo block),
+      so the box waits only for a launcher whose two-row cell clears 170 dp.
 - [x] **It draws today's habits** — each active habit's name with a checkbox,
       ticked to match the Today screen. **No streak**, deliberately (PRD OQ-5).
 
@@ -1123,8 +1121,10 @@ trusting two widgets to agree. The older ticks name their own passes.
       rather than clipping.
 
       Run 2026-09-26: alone on the page, the Today widget grew from two rows to
-      three (242 × 203 dp), and its own host drew Momo's header above the rows.
-      A swipe inside it scrolled Read out and Yoga and Water in.
+      three (242 × 203 dp) with Momo's header drawn above the rows, shrank back
+      to two with the header gone, widened to four cells and narrowed again,
+      stopping at three, the provider's floor. At each size the rows spanned
+      the width and the list scrolled to its last row, Draw, drawn whole.
 - [x] **A write in the app moves *both* widgets.** With the Today widget and the
       streak widget both placed, complete a habit in the app and go to the home
       screen without touching either. Both change. Listed separately from the
@@ -1429,8 +1429,9 @@ phone.
 one.** Each box carries its own device and day. A debug build merges nothing,
 so a reading about more than one widget holds for a release build only when it
 was taken against one carrying the widget keep rule (widget.md §8), each widget
-read from its own host. The three boxes that make such a claim were run that
-way on the widget block's 2026-09-26 setup, with all three widgets placed.
+read from its own host. Every box below that reads more than one widget was
+run that way, on the setup *The widget* block above names, with all three
+widgets placed.
 
 **The arithmetic for whoever has a third launcher**, and the reason neither
 phone here can show the middle body: the face-above-rows form wants a width of
@@ -1543,18 +1544,19 @@ so a home-screen swipe over a static tile would go dead.
 - [x] **The word follows the mood.** Complete everything → *thriving*; leave one
       → *pottering* or *worried* as the day goes; break a streak → *regrowing*,
       with the dimmer face. Same mood as the Today screen at that moment, read
-      on the Today widget's header and on the Momo widget separately. Setting
-      the reminder time behind the clock opens the worried window without
-      moving the hour or the cutoff. **A widget learns of the clock only on the
-      next write or period**: once the hour passes, the Today panel turns
-      worried while both widgets still say *pottering*, until a write or the
-      30-minute `updatePeriodMillis` catches them up (widget.md §4, "shortened,
-      not bounded") — the documented trade, seen on a debug build.
+      on the Today widget's header and on the Momo widget separately. For
+      *worried*, set the reminder a few minutes ahead with a habit outstanding
+      and let it pass, which moves neither the clock nor the cutoff. **A widget
+      learns of the clock only on the next write or period**: once the reminder
+      time passes, the Today panel turns worried while both widgets still say
+      *pottering*, until a write or the 30-minute `updatePeriodMillis` catches
+      them up (widget.md §4, "shortened, not bounded") — the documented trade.
 
-      Run 2026-09-26: *pottering*, *thriving* (the last habit ticked),
-      *worried* (reminder at 12:00 PM, one habit unticked at 12:28) and
-      *regrowing* (the `regenerating` seed) on both hosts, each matching the
-      Today panel, which alone names the habit.
+      Run 2026-09-26: *pottering*, *thriving* and *regrowing* (the
+      `regenerating` seed) each arrived on both hosts with the app's own write.
+      With the reminder at 12:55 PM, at 12:56 the panel read *getting worried
+      about Meditate* while both widgets still said *pottering*; ticking one
+      habit at 12:57 turned both to *worried*. The panel alone names the habit.
 - [x] **With no habits she is still there**, under *No habits yet*. Archive
       every habit through the habit list rather than `pm clear` to see it. She
       keeps her ground and her smiling face with *No habits yet* in the word's
