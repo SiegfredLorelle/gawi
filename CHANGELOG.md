@@ -21,8 +21,9 @@ branch's own notes. 1,312 unit tests green across 134 suites, run fresh with
 **A signed, shrunk APK is attached**, with the `mapping.txt` that de-obfuscates
 its stack traces beside it. The phone checks in running.md §4 ran on a signed
 release build of the same code, on a Nothing A059; the commits since change
-documents and one comment. Not on any store; install it by hand. SHA-256 of
-the APK: `APKSHA`.
+documents and one comment. Not on any store; install it by hand. The APK's
+SHA-256 is
+`cce6b77d48c0a722a60b0d4e14444c420d485e9d9ad8f82e9e71ace331e6364e`.
 
 ### Added
 
