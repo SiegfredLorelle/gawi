@@ -1249,19 +1249,16 @@ or process**.
       body, for the reason recorded against the both-widgets box above. Its
       footer did reach *as of Sun, Sep 20*, but only after a resize made its
       own receiver redraw, which is the opposite of what this box asks.
-- [ ] **TalkBack reads each row once, with the unit.** Swipe through the rows:
+- [x] **TalkBack reads each row once, with the unit.** Swipe through the rows:
       each announces as *"read, 12 days"* — the **full** wording even where the
       widget is drawing `3w`, because a spoken "12" cannot say whether it counts
       days or weeks. The date is announced too. Nothing announces twice.
 
-      **Half earned.** Walked 2026-09-26 on the Nothing A059, release APK, with
-      the Accessibility block's keyboard: each row is one stop in the full
+      Walked 2026-09-26 and again 2026-09-27 on the Nothing A059, release APK,
+      with the Accessibility block's keyboard: the frame *"Streaks"*, then the
+      body's root, *"as of Sun, Sep 27"*, then one stop per row in the full
       wording — *"Read, 12 days. In list"*, *"Yoga, 12 weeks"* where `12w` is
-      drawn, *"Stretch, was 3 days"*, *"Draw, no streak yet"* — and nothing is
-      said twice. **The date is not a stop**: after the last row the next is
-      *"Today. Out of list"*, the next widget's frame, so the *as of* line is
-      never spoken. It is a plain line inside a launcher frame, the same shape
-      as the Today widget's header.
+      drawn, *"Draw, no streak yet"* — and nothing said twice.
 - [x] **You can read it in the theme the device is in.** Both schemes, on
       hardware, sampled the way the API 29/30 pass sampled the Today widget. The
       role to watch is `tertiary` — the week-streak ink, and the only role in
@@ -1534,18 +1531,14 @@ so a home-screen swipe over a static tile would go dead.
       accessibility_display_daltonizer_enabled 1` and `…_daltonizer 0`, which
       need no root on this phone): the two kinds of segment were clear on
       monochrome. Restored after.
-- [ ] **TalkBack reads the large body once.** The mood line, then each row with
+- [x] **TalkBack reads the large body once.** The mood line, then each row with
       its state. Not the face and then the line, and nothing for the band.
 
-      **Half earned.** Walked 2026-09-26 on the Nothing A059, release APK, a 4×3
-      placement, with the Accessibility block's keyboard: the frame *"Today"*,
-      then one stop per row with its state — *"Read, not done. In list"*,
-      *"Stretch, not done"* — the name once, nothing for the band, and the mark
-      a decorative image (widget.md §8). **The header is not a stop**, so the
-      mood line its `ImageView` carries as a description is never spoken: the
-      rule the Momo box below states, and the same shape as the Streaks
-      widget's *as of* line. `WidgetRowTest` pins that nothing inside a row is
-      described.
+      Walked 2026-09-26 and again 2026-09-27 on the Nothing A059, release APK, a
+      4×3 placement, with the Accessibility block's keyboard: the body's root,
+      *"Momo is regrowing a gill. Pick the thread back up."*, once, then one
+      stop per row with its state — *"Read, not done. In list"*, *"Stretch, not
+      done"*, *"Water, done"* — the name once and nothing for the band.
 - [x] **The Momo widget is offered, two by two, and says what it is.** Long-
       press → *Widgets* → **Gawi**: three entries. The *Momo* preview on API 31+
       is her ground and a word with **no face** — deliberate, and widget.md §7
@@ -2427,24 +2420,24 @@ body holds the weed tips and little else.
       and re-ticking played it again. **The weekly rung is not run**: the
       ladders are 7/30/100 and 4/12/52, so a weekly habit has to sit one week
       below its rung and the seeded one is at thirteen.
-- [ ] **TalkBack on a milestone.** With TalkBack on and focus on the row, tick
-      the six-day habit: after "checked", the panel's live region reads the
-      milestone line once, and the mood line once more when it returns two
-      seconds later, each followed by the remaining count and one full stop
-      between them; the badge announces nothing extra. Tick and untick any
-      other row: each reads the row's state and its new streak, then the
-      panel's sentence once with the new count (momo.md §5).
+- [x] **TalkBack on a milestone.** With TalkBack on and focus on the row, tick
+      the six-day habit: the panel's live region reads the milestone line once,
+      and the mood line once more when it returns two seconds later, each
+      followed by the remaining count and one full stop between them; the badge
+      announces nothing extra. Tick and untick any other row: each is followed
+      by the panel's sentence once with the new count, and by the row's new
+      state (momo.md §5).
 
       *Device only, and the layer no test reaches* — this one belongs with the
       **Accessibility** block below and runs when that does, not with the rest
       of this one.
 
-      **Half earned.** Heard 2026-09-26 on the Nothing A059, release APK, with
-      the Accessibility block's keyboard: the milestone line and then the mood
-      line, each once, but as *"Momo is dazzled.. 8 of 10 left today"* — a
-      doubled stop, from a build that merged the panel's texts — and a plain
-      tick as *"checked"*, then *"streak of 13 days"*, with no sentence after
-      it.
+      Heard 2026-09-27 on the Nothing A059, release APK, with the Accessibility
+      block's keyboard, a six-day habit imported for it: *"No gills left. 7 days
+      in a row. Momo is dazzled. 8 of 11 left today"*, then the mood line with
+      the same count two seconds later, each once. A tick, an untick and a
+      re-tick each read the sentence with its new count and then *"checked"* or
+      *"not checked"*; the session's first tick said nothing at all.
 - [x] **Animator duration scale off** (Developer options → *Animator duration
       scale* → *Animation off*), then reopen Today. Momo must be still, at the
       resting frame, the weeds upright and the bubbles frozen, and the mood
@@ -2691,8 +2684,8 @@ the dialog's effect looks silent.
       back to the row, which reads *"Day starts at. 03:00…"*, so the change is
       announced. Its mode toggle names the mode already showing, which is
       material3 1.4.0's inversion and not the app's. Completing a habit is
-      announced by its row, *"checked"* and the new streak; the panel's count
-      is not spoken after it, which the milestone box records and keeps open.
+      announced by its row and followed by the panel's sentence with the new
+      count, which the milestone box records.
 - [x] **A TalkBack pass over the Insights screen.** Two pickers and a list, and
       the thing to listen for is whether a bar row makes sense read aloud: the
       label, the total, and nothing announcing the bar itself. The bars carry no
@@ -2785,14 +2778,9 @@ the dialog's effect looks silent.
       duplicate-description items the debug build raised are gone**, since no
       control is emitted and the mark is a decorative image (widget.md §8).
 
-**Still owed**: a hearing on the phone of the build that answers this pass. The
-Today widget's header and the Streaks widget's *as of* line are said from each
-body's root now (widget.md §7), and the panel builds its sentence with one full
-stop where TalkBack's join gave it two; the Momo block, the Streaks TalkBack
-box and the milestone box stay open until they are heard, and so does the
-reminder buttons' box, heard only on the build that carried the span. The
-milestone box now listens for the panel's sentence after a plain tick too
-(momo.md §5).
+**Still owed**: the reminder buttons' box, heard only on the build that carried
+the span. It needs a fresh logical day with three or fewer outstanding, since
+the day's one reminder is spent by the first post.
 
 Not in CI and not automatable: TalkBack cannot be driven from the instrumented
 source set, so §8's line that CI runs unit tests only is unaffected here.
