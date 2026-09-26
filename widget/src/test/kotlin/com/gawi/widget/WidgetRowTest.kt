@@ -19,12 +19,16 @@ import com.gawi.core.domain.testing.habitId
 import com.gawi.core.testing.todayHabit
 import com.gawi.core.testing.todaySnapshot
 import com.gawi.widget.testsupport.describedNode
+import com.gawi.widget.testsupport.ink
 import com.gawi.widget.testsupport.isDescribed
+import com.gawi.widget.testsupport.mask
 import com.gawi.widget.testsupport.tintedWith
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
+import org.robolectric.annotation.GraphicsMode
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -117,6 +121,22 @@ class WidgetRowTest {
     fun `the mark shows the completion in the widget palette`() = render {
         onAllNodes(tintedWith(WidgetPalette.glyphChecked)).assertCountEquals(1)
         onAllNodes(tintedWith(WidgetPalette.glyphUnchecked)).assertCountEquals(1)
+    }
+
+    /**
+     * The state is in the shape as well as the colour: the done row's mark is the
+     * filled one, so it carries more ink than the outstanding outline. Without
+     * this, a mark drawn from the wrong flag keeps its tint and passes the test
+     * above while done and outstanding differ by colour alone
+     * (docs/ux/widget.md §8). NATIVE because a LEGACY canvas paints nothing and
+     * both masks would weigh zero.
+     */
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun `the done mark is the filled one`() = render {
+        val done = onNode(tintedWith(WidgetPalette.glyphChecked)).mask()
+        val outstanding = onNode(tintedWith(WidgetPalette.glyphUnchecked)).mask()
+        assertTrue(done.ink() > outstanding.ink())
     }
 
     private fun render(block: androidx.glance.appwidget.testing.unit.GlanceAppWidgetUnitTest.() -> Unit) =

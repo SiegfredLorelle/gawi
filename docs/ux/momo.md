@@ -215,8 +215,8 @@ without counting, because the count line directly beneath already counts and the
 gills already show what this habit has left (today-view §6).
 
 **The drawn count is spoken.** A gill count that exists only in pixels is
-information sighted users alone get, so the tank carries it as a description
-ahead of its caption: the picture described, then the line that names the habit.
+information sighted users alone get, so the panel's sentence opens with it
+ahead of the caption: the picture described, then the line that names the habit.
 Not the mood, which the caption already is (§5), so nothing is said twice — and
 silent at three, because a full cluster is Momo having nothing to report rather
 than a count worth speaking.
@@ -307,12 +307,10 @@ before the character was code. With `drawMomo` public, the widget rasterises
 the resting frame the way it already rasterises Outfit (`MomoBitmap.kt` beside
 `BitmapText.kt`): zero assets, no fifth copy of the geometry, and the same
 pixels a viewer with animations off sees on Today. It is gated on the size the
-host reports — one cell tall stays the name-and-checkbox widget
+host reports — one cell tall stays the name-and-mark widget
 [widget.md](widget.md) §2 settled; from 170 dp the face sits above the rows, 72
-dp tall, described once by TalkBack in the Today panel's words. Beside the
-no-habits copy the face is decorative, so the copy is still read once. (What a
-launcher actually lets TalkBack reach is another matter — widget.md §7 records
-the Nothing launcher reading none of it on 2026-09-02.)
+dp tall. She is decorative wherever she is drawn: the body's root reads the
+Today panel's words once, or the no-habits copy beside her (§5).
 
 **The reminder and the launcher use the mark, not the character**, and since
 visual-identity §7.1 the mark has no face at all: one gill cluster, three dots
@@ -339,10 +337,12 @@ test can measure it.
 
 ## 5. Accessibility
 
-- **One node, one reading.** The panel merges its descendants, the drawing
-  carries no description of its own, and the copy line is the description of
-  the face — so TalkBack reads "Momo is getting worried." once, not a nameless
-  image and then a sentence naming it, and not the same sentence twice. That
+- **One node, one reading.** The panel is one node described by one sentence —
+  the gill count, the copy line, the day's count — and nothing inside it is
+  read, so TalkBack reads "Momo is getting worried." once, not a nameless image
+  and then a sentence naming it, and not the same sentence twice. It builds
+  that sentence rather than merging its texts because TalkBack joins merged
+  texts with a full stop of its own, after a line that already ends in one. That
   is the widget's lesson from both sides — the one `TodayWidget.kt`'s
   `HabitRows` KDoc records, first when review caught a row describing its image
   and its checkbox separately, and again when a device showed where a checkbox's
@@ -350,7 +350,8 @@ test can measure it.
   that names the rule's other half: a description is only read if something can
   *focus* the node carrying it, so her tile is clickable and describes itself
   rather than leaving the sentence on a face nothing stops at
-  (widget.md §7).
+  (widget.md §7). The Today and Streaks bodies take the same root for what
+  they say outside their rows — the mood line, the copy, the *as of* line.
 - **Animations off means still.** `rememberAnimationsEnabled` reads the
   system *Animator duration scale* once per composition, and everything that
   loops — Momo, the tank life, a celebration — answers to that one reading, so
@@ -379,12 +380,14 @@ test can measure it.
   when the panel itself held focus, which right after ticking a row it never
   does. The milestone line swaps with animations off too, for the same two
   seconds, because a line is text and the gate governs what moves; the row's
-  badge takes its pill for the same window, so the row and the line agree. The
-  same region was meant to read the mood line and the remaining count after
-  every tick as well, one short sentence. **On TalkBack 17 it does not**: on the
-  Nothing A059 a plain tick is followed by the row's own state and new streak
-  and nothing from the panel, while the milestone's swap is read
-  (docs/running.md §4, the milestone box); §6 keeps the question open.
+  badge takes its pill for the same window, so the row and the line agree.
+  **A plain tick is announced by the row alone**: its new state, then its new
+  streak, and nothing from the panel. TalkBack 17 does not read the region
+  after a tick that leaves the line unchanged, only after the milestone's swap
+  (docs/running.md §4, the milestone box), and that silence is accepted rather
+  than engineered around — the row already says what the tick did, and the
+  remaining count is one swipe away on the panel, the same trade the app-bar
+  chip makes below.
   **All of that is the panel's, and the panel is not always on screen.** Once
   the chip has taken the bar (today-view §1) the panel is *disposed*, not
   merely scrolled past, so this live region reads nothing at all. The chip
@@ -395,11 +398,9 @@ test can measure it.
 
 ## 6. What this decided, and what it does not
 
-- **Whether the count is spoken after a tick.** Open. §5 meant the panel to
-  read the mood line and the remaining count after every tick, and TalkBack 17
-  reads only the row's own state and streak. Blocked on a decision: rewording
-  §5 to accept the silence, as the app-bar chip already does, or changing the
-  panel so the count is announced.
+- **The count is not spoken after a plain tick.** Decided: §5 accepts the
+  silence TalkBack 17 leaves there, as the app-bar chip already does, rather
+  than forcing an announcement after every tick.
 - **Celebrations.** Finishing the day is celebrated
   (`Celebration.kt`): when the mood the tank was showing gives way to thriving,
   Momo hops 14 dp, fourteen bubbles rush up from under the tail on staggered

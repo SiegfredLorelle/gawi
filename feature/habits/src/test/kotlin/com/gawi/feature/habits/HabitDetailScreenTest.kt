@@ -137,9 +137,10 @@ class HabitDetailScreenTest {
      * kept in step, since a detail screen that disagreed with the row that led
      * to it would be its own bug.
      *
-     * Asked of the spoken form rather than the drawn one because the line
-     * clears its own semantics: the drawn ratio is read as its slash, so it
-     * leaves both trees and the description is what is left to find.
+     * Both halves: the description is what a reader hears, and the drawn ratio
+     * is what the eye reads. The line clears a wrapper rather than its own
+     * semantics, so the ratio is still in the unmerged tree to be asked of —
+     * swapping the two format arguments turns this red.
      *
      * Two tests rather than one with two renders: the compose rule's activity
      * takes `setContent` once, and a second call throws rather than redrawing.
@@ -149,6 +150,8 @@ class HabitDetailScreenTest {
         render(detail(weekProgress = HabitWeekProgress(done = 2, target = 3)))
 
         compose.onNodeWithContentDescription(resources.getString(UiR.string.ui_week_progress_spoken, 2, 3))
+            .assertIsDisplayed()
+        compose.onNodeWithText(resources.getString(R.string.habits_detail_week_progress, 2, 3), useUnmergedTree = true)
             .assertIsDisplayed()
     }
 

@@ -91,13 +91,11 @@ internal object MomoBitmap {
  * changes the pixels. Not the font scale: this is not text, and the character has a size
  * rather than growing with the type (momo.md §4).
  *
- * [contentDescription] is the caller's call, because it depends on what sits
- * beside the face: above the rows there is no copy line, so the face is the one
- * place the mood can be read and it is described; beside the no-habits copy
- * the copy is read once and the face is decorative (docs/ux/momo.md §4).
+ * Always decorative: in every body she is drawn in, the body's root carries the
+ * mood or the copy beside her (`spokenRoot`, docs/ux/momo.md §5).
  */
 @Composable
-internal fun MomoImage(mood: Mood, contentDescription: String?, heightDp: Float = MomoBitmap.HEIGHT_DP) {
+internal fun MomoImage(mood: Mood, heightDp: Float = MomoBitmap.HEIGHT_DP) {
     val metrics = LocalContext.current.resources.displayMetrics
     val bitmap = remember(mood, heightDp, metrics.densityDpi) {
         val heightPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, heightDp, metrics)
@@ -105,7 +103,7 @@ internal fun MomoImage(mood: Mood, contentDescription: String?, heightDp: Float 
     } ?: return
     Image(
         provider = ImageProvider(bitmap),
-        contentDescription = contentDescription,
+        contentDescription = null,
         contentScale = ContentScale.Fit,
         modifier = GlanceModifier.height(heightDp.dp),
         // No colorFilter: see MomoBitmap.

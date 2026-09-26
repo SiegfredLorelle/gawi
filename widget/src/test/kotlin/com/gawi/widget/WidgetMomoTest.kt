@@ -7,19 +7,17 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.glance.appwidget.testing.unit.GlanceAppWidgetUnitTest
 import androidx.glance.appwidget.testing.unit.runGlanceAppWidgetUnitTest
-import androidx.glance.testing.GlanceNodeAssertion
 import androidx.glance.testing.GlanceNodeAssertionCollection
 import androidx.glance.testing.GlanceNodeMatcher
 import androidx.glance.testing.unit.MappedNode
-import androidx.glance.testing.unit.assertHasContentDescriptionEqualTo
 import com.gawi.core.domain.testing.habitId
 import com.gawi.core.testing.todayHabit
 import com.gawi.core.testing.todaySnapshot
 import com.gawi.widget.testsupport.anyText
-import com.gawi.widget.testsupport.bitmap
 import com.gawi.widget.testsupport.describedText
 import com.gawi.widget.testsupport.drawnOn
 import com.gawi.widget.testsupport.isDescribed
+import com.gawi.widget.testsupport.mask
 import com.gawi.widget.testsupport.silentUntintedImage
 import com.gawi.widget.testsupport.tintedWith
 import com.gawi.widget.testsupport.untintedImage
@@ -67,13 +65,12 @@ class WidgetMomoTest {
     }
 
     @Test
-    fun `two cells tall and narrow, Momo sits above the rows and says how she is`() = runGlanceAppWidgetUnitTest(RENDER_TIMEOUT) {
+    fun `two cells tall and narrow, Momo sits above the rows`() = runGlanceAppWidgetUnitTest(RENDER_TIMEOUT) {
         render(rows, DpSize(180.dp, 220.dp))
 
         onAllNodes(untintedImage()).assertCountEquals(1)
-        onNode(
-            untintedImage(),
-        ).assertHasContentDescriptionEqualTo(RuntimeEnvironment.getApplication().getString(R.string.widget_mood_content))
+        // Silent: the body's root says how she is (WidgetRootTest).
+        onAllNodes(silentUntintedImage()).assertCountEquals(1)
         // The rows are still there beneath her, one outstanding mark each — the
         // tall layout is otherwise rendered by no other test, which all compose
         // at one cell.
@@ -91,24 +88,22 @@ class WidgetMomoTest {
 
     /**
      * The large body (docs/ux/widget.md §7): Momo on her ground, silent, beside
-     * the mood line, which is the one thing here that is read — the rows are
-     * still drawn beneath, each with its own outstanding mark.
+     * the mood line, which is drawn and not described — the body's root reads
+     * it (WidgetRootTest). The rows are still drawn beneath, each with its own
+     * outstanding mark.
      */
     @Test
-    fun `two cells tall and wide, Momo sits on her ground beside the mood line and the mood line is what is read`() =
-        runGlanceAppWidgetUnitTest(RENDER_TIMEOUT) {
-            render(rows, DpSize(250.dp, 220.dp))
+    fun `two cells tall and wide, Momo sits on her ground beside the mood line`() = runGlanceAppWidgetUnitTest(RENDER_TIMEOUT) {
+        render(rows, DpSize(250.dp, 220.dp))
 
-            onAllNodes(untintedImage()).assertCountEquals(1)
-            onAllNodes(silentUntintedImage()).assertCountEquals(1)
-            onAllNodes(drawnOn(WidgetPalette.momoGround)).assertCountEquals(1)
-            // The mood line plus two names: the header adds exactly one string.
-            onAllNodes(anyText()).assertCountEquals(3)
-            onNode(
-                describedText(),
-            ).assertHasContentDescriptionEqualTo(RuntimeEnvironment.getApplication().getString(R.string.widget_mood_content))
-            onAllNodes(tintedWith(WidgetPalette.glyphUnchecked)).assertCountEquals(2)
-        }
+        onAllNodes(untintedImage()).assertCountEquals(1)
+        onAllNodes(silentUntintedImage()).assertCountEquals(1)
+        onAllNodes(drawnOn(WidgetPalette.momoGround)).assertCountEquals(1)
+        // The mood line plus two names: the header adds exactly one string.
+        onAllNodes(anyText()).assertCountEquals(3)
+        onAllNodes(describedText()).assertCountEquals(0)
+        onAllNodes(tintedWith(WidgetPalette.glyphUnchecked)).assertCountEquals(2)
+    }
 
     /**
      * The band is the rows' flags, one segment each, in the rows' order — which
@@ -232,13 +227,6 @@ private fun GlanceAppWidgetUnitTest.render(content: WidgetContent, size: DpSize)
     setAppWidgetSize(size)
     provideComposable { WidgetBody(content) }
     awaitIdle()
-}
-
-/** The bitmap a matched image node carries. */
-private fun GlanceNodeAssertion<MappedNode, *>.mask(): Bitmap {
-    var found: Bitmap? = null
-    assert(GlanceNodeMatcher("carries a bitmap") { node -> node.value.emittable.bitmap().also { found = it } != null })
-    return checkNotNull(found)
 }
 
 /**

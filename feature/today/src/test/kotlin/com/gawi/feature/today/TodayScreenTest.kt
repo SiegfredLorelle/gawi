@@ -95,9 +95,9 @@ class TodayScreenTest {
             GawiTheme { TodayScreen(TodayUiState.Empty(Mood.CONTENT), NO_ACTIONS, SnackbarHostState()) }
         }
 
-        compose.onNodeWithText(string(R.string.today_mood_empty)).assertIsDisplayed()
+        compose.onNodeWithText(string(R.string.today_mood_empty), useUnmergedTree = true).assertIsDisplayed()
         compose.onNodeWithText(string(R.string.today_empty_title)).assertIsDisplayed()
-        compose.onNodeWithText(string(R.string.today_remaining_none)).assertDoesNotExist()
+        compose.onNodeWithText(string(R.string.today_remaining_none), useUnmergedTree = true).assertDoesNotExist()
     }
 
     /**
@@ -168,7 +168,8 @@ class TodayScreenTest {
      * A weekly row speaks the ratio as a relation, and the drawn form is not in
      * its text. The slash is what a reader says otherwise, so the negative half
      * is the half that matters: it proves the ratio *left* the row's text
-     * rather than being read alongside the words.
+     * rather than being read alongside the words. The last line is the drawn
+     * half, still in the unmerged tree because the row clears a wrapper.
      */
     @Test
     fun weekProgress_speaksTheRatioInWords() {
@@ -180,6 +181,8 @@ class TodayScreenTest {
         compose.onNodeWithText(WALK.name)
             .assert(hasContentDescription(resources.getString(UiR.string.ui_week_progress_spoken, 1, 3)))
             .assert(hasText(resources.getString(R.string.today_week_progress, 1, 3)).not())
+        compose.onNodeWithText(resources.getString(R.string.today_week_progress, 1, 3), useUnmergedTree = true)
+            .assertIsDisplayed()
     }
 
     /** A break is announced as one, with what was lost in its unit — never "0" and then "was 12". */
@@ -251,8 +254,8 @@ class TodayScreenTest {
             GawiTheme { TodayScreen(ALL_DONE, NO_ACTIONS, SnackbarHostState()) }
         }
 
-        compose.onNodeWithText(string(R.string.today_remaining_none)).assertIsDisplayed()
-        compose.onNodeWithText(string(R.string.today_mood_empty)).assertDoesNotExist()
+        compose.onNodeWithText(string(R.string.today_remaining_none), useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithText(string(R.string.today_mood_empty), useUnmergedTree = true).assertDoesNotExist()
         compose.onNodeWithText(string(R.string.today_empty_title)).assertDoesNotExist()
     }
 
@@ -270,7 +273,7 @@ class TodayScreenTest {
         }
 
         compose.onNodeWithText(string(R.string.today_empty_title)).assertDoesNotExist()
-        compose.onNodeWithText(string(R.string.today_mood_empty)).assertDoesNotExist()
+        compose.onNodeWithText(string(R.string.today_mood_empty), useUnmergedTree = true).assertDoesNotExist()
     }
 
     /**
@@ -457,7 +460,7 @@ class TodayScreenTest {
         scrollPastTheTank()
 
         onChipLabel().assertIsDisplayed()
-        compose.onNodeWithText(resources.getString(R.string.today_remaining, LONG.remaining, LONG.rows.size))
+        compose.onNodeWithText(resources.getString(R.string.today_remaining, LONG.remaining, LONG.rows.size), useUnmergedTree = true)
             .assertDoesNotExist()
         // The face itself, which nothing else here looks at: every other chip
         // assertion reads the label, the description or the title swap, so the
@@ -708,8 +711,11 @@ class TodayScreenTest {
             GawiTheme { TodayScreen(REGENERATING, NO_ACTIONS, SnackbarHostState()) }
         }
 
-        compose.onNodeWithText(resources.getString(R.string.today_mood_regenerating_named, WALK.name)).assertIsDisplayed()
-        compose.onNodeWithText(string(R.string.today_mood_regenerating)).assertDoesNotExist()
+        compose.onNodeWithText(
+            resources.getString(R.string.today_mood_regenerating_named, WALK.name),
+            useUnmergedTree = true,
+        ).assertIsDisplayed()
+        compose.onNodeWithText(string(R.string.today_mood_regenerating), useUnmergedTree = true).assertDoesNotExist()
     }
 
     /**
@@ -726,8 +732,11 @@ class TodayScreenTest {
             GawiTheme { TodayScreen(AT_RISK, NO_ACTIONS, SnackbarHostState()) }
         }
 
-        compose.onNodeWithText(resources.getString(R.string.today_mood_worried_named, WALK.name)).assertIsDisplayed()
-        compose.onNodeWithText(string(R.string.today_mood_worried)).assertDoesNotExist()
+        compose.onNodeWithText(
+            resources.getString(R.string.today_mood_worried_named, WALK.name),
+            useUnmergedTree = true,
+        ).assertIsDisplayed()
+        compose.onNodeWithText(string(R.string.today_mood_worried), useUnmergedTree = true).assertDoesNotExist()
     }
 
     /**
@@ -742,7 +751,7 @@ class TodayScreenTest {
         }
 
         val spoken = resources.getQuantityString(R.plurals.today_gills_left, 1, 1)
-        compose.onNodeWithContentDescription(spoken, useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithContentDescription(spoken, substring = true).assertIsDisplayed()
     }
 
     /**
@@ -755,11 +764,31 @@ class TodayScreenTest {
             GawiTheme { TodayScreen(HABITS, NO_ACTIONS, SnackbarHostState()) }
         }
 
-        compose.onNode(hasContentDescription(string(R.string.today_gills_none)), useUnmergedTree = true).assertDoesNotExist()
+        compose.onNode(hasContentDescription(string(R.string.today_gills_none), substring = true)).assertDoesNotExist()
         compose.onNodeWithContentDescription(
             resources.getQuantityString(R.plurals.today_gills_left, 1, 1),
-            useUnmergedTree = true,
+            substring = true,
         ).assertDoesNotExist()
+    }
+
+    /**
+     * The panel says its line and its count as one sentence it builds itself.
+     * Merged, TalkBack joined the two drawn texts with a full stop of its own
+     * after a line that already ends in one — *"Momo is dazzled.. 8 of 10 left
+     * today"* on the phone (docs/running.md §4) — so the panel is described and
+     * its texts are not read.
+     */
+    @Test
+    fun `the panel reads its line and its count as one sentence`() {
+        compose.setContent {
+            GawiTheme { TodayScreen(HABITS, NO_ACTIONS, SnackbarHostState()) }
+        }
+
+        val spoken = string(R.string.today_mood_neutral) +
+            " " + resources.getString(R.string.today_remaining, HABITS.remaining, HABITS.rows.size)
+        compose.onNode(SemanticsMatcher.keyIsDefined(SemanticsProperties.LiveRegion))
+            .assert(hasContentDescription(spoken))
+            .assert(hasText(string(R.string.today_mood_neutral)).not())
     }
 
     /**
@@ -826,14 +855,14 @@ class TodayScreenTest {
         lines.forEach { (next, line) ->
             mood.value = next
             compose.waitForIdle()
-            // Unmerged, because the panel merges its descendants so TalkBack
+            // Unmerged, because the panel clears its descendants so TalkBack
             // reads the line once; the tag lives on the drawing inside it.
             // Displayed, not merely present: a Canvas that measures 0 x 0 still
             // exists in the tree, and one did — the first build shipped an
             // empty tank with this assertion green. assertIsDisplayed needs
             // non-empty bounds, which is the property that was missing.
             compose.onNodeWithTag("momo:$next", useUnmergedTree = true).assertIsDisplayed()
-            compose.onNodeWithText(string(line)).assertIsDisplayed()
+            compose.onNodeWithText(string(line), useUnmergedTree = true).assertIsDisplayed()
         }
     }
 
@@ -924,14 +953,14 @@ class TodayScreenTest {
             GawiTheme { TodayScreen(HABITS.copy(rows = rows.value), NO_ACTIONS, SnackbarHostState()) }
         }
         settle()
-        compose.onNodeWithText(string(R.string.today_mood_neutral)).assertIsDisplayed()
+        compose.onNodeWithText(string(R.string.today_mood_neutral), useUnmergedTree = true).assertIsDisplayed()
         compose.onNodeWithTag("milestone-badge", useUnmergedTree = true).assertDoesNotExist()
 
         rows.value = listOf(READ.copy(streak = StreakUi.Days(7)), WALK)
         settle()
 
-        compose.onNodeWithText(quantity(R.plurals.today_milestone_days, 7)).assertIsDisplayed()
-        compose.onNodeWithText(string(R.string.today_mood_neutral)).assertDoesNotExist()
+        compose.onNodeWithText(quantity(R.plurals.today_milestone_days, 7), useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithText(string(R.string.today_mood_neutral), useUnmergedTree = true).assertDoesNotExist()
         compose.onNodeWithTag("milestone-badge", useUnmergedTree = true).assertIsDisplayed()
         // No motion with animations off: the milestone canvas is never composed.
         compose.onNodeWithTag("milestone", useUnmergedTree = true).assertDoesNotExist()
@@ -939,8 +968,8 @@ class TodayScreenTest {
         compose.mainClock.advanceTimeBy(MilestoneFrame.MILLIS + 100L)
         settle()
 
-        compose.onNodeWithText(string(R.string.today_mood_neutral)).assertIsDisplayed()
-        compose.onNodeWithText(quantity(R.plurals.today_milestone_days, 7)).assertDoesNotExist()
+        compose.onNodeWithText(string(R.string.today_mood_neutral), useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithText(quantity(R.plurals.today_milestone_days, 7), useUnmergedTree = true).assertDoesNotExist()
         compose.onNodeWithTag("milestone-badge", useUnmergedTree = true).assertDoesNotExist()
     }
 
@@ -955,8 +984,8 @@ class TodayScreenTest {
         }
         settle()
 
-        compose.onNodeWithText(string(R.string.today_mood_neutral)).assertIsDisplayed()
-        compose.onNodeWithText(quantity(R.plurals.today_milestone_days, 7)).assertDoesNotExist()
+        compose.onNodeWithText(string(R.string.today_mood_neutral), useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithText(quantity(R.plurals.today_milestone_days, 7), useUnmergedTree = true).assertDoesNotExist()
         compose.onNodeWithTag("milestone-badge", useUnmergedTree = true).assertDoesNotExist()
     }
 
@@ -971,13 +1000,13 @@ class TodayScreenTest {
         settle()
         rows.value = listOf(READ.copy(streak = StreakUi.Days(7)), WALK)
         settle()
-        compose.onNodeWithText(quantity(R.plurals.today_milestone_days, 7)).assertIsDisplayed()
+        compose.onNodeWithText(quantity(R.plurals.today_milestone_days, 7), useUnmergedTree = true).assertIsDisplayed()
 
         rows.value = listOf(READ.copy(streak = StreakUi.Days(6)), WALK)
         settle()
 
-        compose.onNodeWithText(string(R.string.today_mood_neutral)).assertIsDisplayed()
-        compose.onNodeWithText(quantity(R.plurals.today_milestone_days, 7)).assertDoesNotExist()
+        compose.onNodeWithText(string(R.string.today_mood_neutral), useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithText(quantity(R.plurals.today_milestone_days, 7), useUnmergedTree = true).assertDoesNotExist()
         compose.onNodeWithTag("milestone-badge", useUnmergedTree = true).assertDoesNotExist()
     }
 

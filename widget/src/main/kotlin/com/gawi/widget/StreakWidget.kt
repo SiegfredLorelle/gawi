@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.dp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
@@ -90,15 +91,19 @@ internal class StreakWidget : GlanceAppWidget() {
  */
 @Composable
 internal fun StreakBody(content: StreakContent) {
+    val context = LocalContext.current
+    val body = content.body(LocalSize.current, BitmapText.textScale(context))
+    val openApp = remember(context) { openAppAction(context) }
     Column(
-        modifier = GlanceModifier.fillMaxSize().background(WidgetPalette.surface).padding(WIDGET_PADDING.dp),
+        modifier = GlanceModifier
+            .fillMaxSize()
+            .background(WidgetPalette.surface)
+            .padding(WIDGET_PADDING.dp)
+            .spokenRoot(body.spoken(context), openApp),
     ) {
-        val context = LocalContext.current
-        when (val body = content.body(LocalSize.current, BitmapText.textScale(context))) {
-            is StreakBodyContent.Copy -> {
-                val copy = context.getString(body.text)
-                OutfitText(text = copy, maxWidth = contentWidth(), maxLines = MAX_COPY_LINES, contentDescription = copy)
-            }
+        when (body) {
+            is StreakBodyContent.Copy ->
+                OutfitText(text = context.getString(body.text), maxWidth = contentWidth(), maxLines = MAX_COPY_LINES)
 
             is StreakBodyContent.Rows -> {
                 // Decorative: the launcher's own label already says "Streaks", and every row
@@ -181,17 +186,26 @@ private fun StreakRows(rows: List<StreakRow>, layout: StreakLayout, modifier: Gl
     }
 }
 
-/** §7.1's mandatory provenance line, in the caption ink and announced. */
+/**
+ * What the body says outside its rows: the copy, or §7.1's provenance line,
+ * which is announced as well as drawn — from the root, as [spokenRoot] says.
+ */
+private fun StreakBodyContent.spoken(context: Context): String? = when (this) {
+    is StreakBodyContent.Copy -> context.getString(text)
+    is StreakBodyContent.Rows -> asOfLine(context, asOf)
+    StreakBodyContent.Blank -> null
+}
+
+private fun asOfLine(context: Context, asOf: LocalDate): String =
+    context.getString(R.string.widget_streak_as_of, formatAsOf(asOf, context.resources.configuration.locales[0]))
+
+/** §7.1's mandatory provenance line, in the caption ink. */
 @Composable
 private fun AsOfLine(asOf: LocalDate) {
-    val context = LocalContext.current
-    val locale = context.resources.configuration.locales[0]
-    val line = context.getString(R.string.widget_streak_as_of, formatAsOf(asOf, locale))
     OutfitText(
-        text = line,
+        text = asOfLine(LocalContext.current, asOf),
         maxWidth = contentWidth(),
         ink = rememberOutfitInk(tint = WidgetPalette.caption, textSizeSp = BitmapText.CAPTION_SIZE_SP),
-        contentDescription = line,
     )
 }
 

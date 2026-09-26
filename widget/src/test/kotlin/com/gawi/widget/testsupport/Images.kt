@@ -6,6 +6,7 @@ import androidx.glance.BitmapImageProvider
 import androidx.glance.Emittable
 import androidx.glance.EmittableImage
 import androidx.glance.semantics.SemanticsModifier
+import androidx.glance.testing.GlanceNodeAssertion
 import androidx.glance.testing.GlanceNodeMatcher
 import androidx.glance.testing.unit.MappedNode
 import androidx.glance.unit.ColorProvider
@@ -50,3 +51,10 @@ fun Emittable.ground(): ColorProvider? = modifier
 
 /** The bitmap behind an image node, if it is one. */
 fun Emittable.bitmap(): Bitmap? = ((this as? EmittableImage)?.provider as? BitmapImageProvider)?.bitmap
+
+/** The bitmap a matched image node carries. */
+fun GlanceNodeAssertion<MappedNode, *>.mask(): Bitmap {
+    var found: Bitmap? = null
+    assert(GlanceNodeMatcher("carries a bitmap") { node -> node.value.emittable.bitmap().also { found = it } != null })
+    return checkNotNull(found)
+}
