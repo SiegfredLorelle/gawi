@@ -10,19 +10,90 @@ says what the next tag will be is [docs/prd.md](docs/prd.md) §5.
 
 ## [Unreleased]
 
-The cleanup pass and release signing, on the road to 1.0.0. `make release`
-builds a signed, shrunk APK with its `mapping.txt` beside it; R8 needed a keep
-rule for the class Glance reaches by name and a second for the widget classes
-it merges (docs/ux/widget.md §8), and the release build counts the names that
-survive so the second cannot come undone unseen. No artifact is published
-yet — the first one is 1.0.0, and `versionCode` stays 2 until then.
+## [1.0.0] — 2026-09-27
 
-Since then: Momo's gills carry a spare life per seven clean units, and the
-end-of-day reminder grew **quick-complete buttons** — one per outstanding habit
-up to three, none at four or more, each writing a completion for the date the
-notification was posted for rather than for whenever it is tapped. That closes
-PRD §6.1's first criterion on both its halves, the widget having answered only
-one of them ([docs/ux/reminder.md](docs/ux/reminder.md) §4).
+The first installable release. Marks the tip of main once the release branch
+merged: 270 commits of work past `v0.2.0` (12 feat, 26 fix, 2 perf, 45
+refactor, 31 build, 19 test, 1 style, 5 chore, 129 docs), plus the release
+branch's own notes. 1,312 unit tests green across 134 suites, run fresh with
+`--rerun-tasks` (330 tasks, none up-to-date). `versionCode` 3.
+
+**A signed, shrunk APK is attached**, with the `mapping.txt` that de-obfuscates
+its stack traces beside it. The phone checks in running.md §4 ran on a signed
+release build of the same code, on a Nothing A059; the commits since change
+documents and one comment. Not on any store; install it by hand. SHA-256 of
+the APK: `APKSHA`.
+
+### Added
+
+- **Release signing and R8.** `make release` builds the signed, shrunk APK
+  from a key held outside the repository, and prints which key signed it. R8
+  needs two keep rules, one for the class Glance reaches by name and one for
+  the widget classes it would otherwise merge into one. The release build
+  counts the names that survive, so the second cannot come undone unseen
+  ([docs/ux/widget.md](docs/ux/widget.md) §8).
+- **Gills.** Momo's three right gills carry a spare life per seven clean
+  units, so a single miss is forgiven rather than breaking the run. The panel
+  names the weakest outstanding habit and speaks the count
+  ([docs/ux/momo.md](docs/ux/momo.md) §3).
+- **Quick-complete buttons** on the end-of-day reminder: one per outstanding
+  habit up to three, none at four or more. Each writes a completion for the
+  date the notification was posted for rather than for whenever it is tapped.
+  That closes PRD §6.1's first criterion on both its halves
+  ([docs/ux/reminder.md](docs/ux/reminder.md) §4).
+- **An off switch for the reminder** in Settings, under a new *Your day*
+  heading with the three time rows. Switching it off keeps the reminder time,
+  which still tells Momo when to start looking worried
+  ([docs/ux/settings.md](docs/ux/settings.md) §1).
+
+### Changed
+
+- **A habit keeps no icon and no colour.** The pickers are gone, and so is the
+  badge. Both fields stay in the event format, unread, so no log changes
+  ([docs/ux/visual-identity.md](docs/ux/visual-identity.md) §7.3).
+- **The canvas-fidelity pass.** Four type roles are SemiBold, as designed.
+  Content Momo has her eyes open, the stars drift as well as pulse, and the
+  dark tank ends on its own colour so the weeds hold. The launcher mark is one
+  gill cluster in Momo's pink on a dark teal ground, with no face
+  ([docs/ux/visual-identity.md](docs/ux/visual-identity.md) §7.1).
+- **More of it is heard.** The weekly ratio is spoken in words. The widget's
+  32 dp control is an image glyph, a Today widget row is one focus stop, and
+  the Momo widget's tile speaks for itself. Each widget body reads its own
+  line (mood line, copy or *as of*) from its root. The Today panel speaks one
+  sentence after every tick, the same one the app-bar chip says. All of it
+  was heard with TalkBack on the phone ([docs/running.md](docs/running.md) §4).
+- **The cleanup pass.** Five gates in `make lint` hold the rules `AGENTS.md`
+  states: tests assert behaviour and never implementation artefacts, comments
+  carry no history, documents keep one status line per box, citations
+  resolve, and names follow one convention. Each shared test helper has one
+  home: `:core:testing`, or the test fixtures of the module whose types it
+  builds.
+
+### Not in this release
+
+- **12 of the 177 device checks in running.md §4 are unticked.** PRD §5
+  defines 1.0.0 as every box ticked or named here. Nine need something a
+  single phone cannot give:
+  - Three widget sizes need a launcher whose cells land somewhere the Nothing
+    A059's and the Pixel's do not: Momo's size gate, the middle Today body, and
+    three rows with the date at the smallest size.
+  - The launcher icon's colour mark on the home screen and at folder size. The
+    Nothing launcher re-themes every home-screen icon.
+  - Three need the clock carried past a real midnight: the Streaks widget's
+    untouched rollover, a very late reminder wake staying quiet, and a
+    next-morning button tap writing to the night before.
+  - The re-post after a button tap making no second sound. The flags are
+    right; nobody has listened to it.
+
+  Three the phone can run are deferred past the tag, by decision:
+  - The reminder's buttons read by TalkBack on this build. They were heard on
+    the build before the unspoken `TtsSpan` was removed from their title.
+  - The vendor battery optimiser box, not run yet.
+  - The Streaks widget's days and weeks judged in greyscale by eye, not run
+    yet.
+- Insights period labels break mid-word at 200 % font size. The fix waits on a
+  canvas decision.
+- The weekly milestone rung has not been seen on a device.
 
 ## [0.2.0] — 2026-09-04
 
@@ -114,6 +185,7 @@ cutoff, week start and reminder time — all on an append-only event log with
 UUIDv7 ids, no network permission and Auto Backup off. The 30-day personal
 trial that was to close Phase 0 was waived the same day and Phase 1 started.
 
-[Unreleased]: https://github.com/SiegfredLorelle/gawi/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/SiegfredLorelle/gawi/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/SiegfredLorelle/gawi/releases/tag/v1.0.0
 [0.2.0]: https://github.com/SiegfredLorelle/gawi/releases/tag/v0.2.0
 [0.0.1]: https://github.com/SiegfredLorelle/gawi/releases/tag/v0.0.1
