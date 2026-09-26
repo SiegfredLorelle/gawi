@@ -29,7 +29,6 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
@@ -59,18 +58,18 @@ import com.gawi.core.ui.theme.gawiTankFarStop
 @Composable
 internal fun MascotPanel(mascot: MascotUi, motion: TodayMotion, modifier: Modifier = Modifier) {
     // For the length of a milestone run the line is the milestone's, and its
-    // changing is the announcement (momo.md §5): the node below merges the
-    // picture and the caption and is a polite live region, so TalkBack reads
-    // the new line once and the mood line once more when it returns, wherever
-    // focus is. A line is text, not motion, so this swap happens with
-    // animations off too — MilestoneState keeps `current` set for the same two
-    // seconds either way.
+    // changing is the announcement (momo.md §5): the node below is a polite
+    // live region, so TalkBack reads the new line once and the mood line once
+    // more when it returns, wherever focus is. A line is text, not motion, so
+    // this swap happens with animations off too — MilestoneState keeps
+    // `current` set for the same two seconds either way.
     val milestone = motion.milestone.current
     val copy = if (milestone == null) {
         moodLine(mascot)
     } else {
         pluralStringResource(milestoneCopy(milestone), milestone.count, milestone.count)
     }
+    val spoken = spokenSentence(mascot, copy)
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -79,13 +78,18 @@ internal fun MascotPanel(mascot: MascotUi, motion: TodayMotion, modifier: Modifi
             // mood once — the copy is the description of the face, and a
             // description on the tank as well would read it twice, while none
             // at all leaves a nameless image beside a line that names it: the
-            // widget's lesson (docs/ux/widget.md §5) from either side. A polite
-            // live region, because the line changing is the whole announcement
-            // (momo.md §5) and without one it would only be read when this node
-            // already held focus — never, right after ticking a row. The cost is
-            // one short sentence after every tick, the remaining count riding
-            // along with the mood line.
-            .semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite },
+            // widget's lesson (docs/ux/widget.md §5) from either side. Cleared
+            // and described rather than merged, because TalkBack joins merged
+            // texts with a full stop of its own and the copy already ends in
+            // one. A polite live region, because the line changing is the whole
+            // announcement (momo.md §5) and without one it would only be read
+            // when this node already held focus — never, right after ticking a
+            // row. A plain tick leaves the line as it was, and TalkBack stays
+            // silent then.
+            .clearAndSetSemantics {
+                contentDescription = spoken
+                liveRegion = LiveRegionMode.Polite
+            },
         verticalArrangement = Arrangement.spacedBy(GawiSpacing.Gap),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -199,8 +203,7 @@ internal fun TodayChip(mascot: MascotUi, milestone: Milestone?, modifier: Modifi
     // here, not either count's — the drawn label gives up its count for the run
     // because it has room for one string; the description has room for all
     // three, and dropping one from what is spoken is the very defect above.
-    val spoken = listOfNotNull(spokenGills(mascot.spare), milestoneSpoken ?: moodLine(mascot), remainingLine(mascot))
-        .joinToString(" ")
+    val spoken = spokenSentence(mascot, milestoneSpoken ?: moodLine(mascot))
     Row(
         modifier = modifier
             // The tag first: it is semantics too, and clearAndSetSemantics wipes
@@ -315,7 +318,6 @@ private fun Tank(
             seconds,
             spare = mascot.spare,
             modifier = Modifier
-                .then(spokenGills(mascot.spare)?.let { g -> Modifier.semantics { contentDescription = g } } ?: Modifier)
                 .fillMaxSize()
                 .padding(GawiSpacing.Row)
                 .offset {
@@ -353,13 +355,22 @@ private fun chipMilestoneCopy(milestone: Milestone): Int =
     if (milestone.weekly) R.plurals.today_chip_milestone_weeks else R.plurals.today_chip_milestone_days
 
 /**
+ * What the panel and the chip both say: the drawn gill count, then [line] — the
+ * mood line or the milestone's — then the day's count, one sentence in the
+ * order the panel draws them, so the chip cannot say less than the panel it
+ * replaces.
+ */
+@Composable
+private fun spokenSentence(mascot: MascotUi, line: String): String =
+    listOfNotNull(spokenGills(mascot.spare), line, remainingLine(mascot)).joinToString(" ")
+
+/**
  * The drawn gill count, in words, or null when there is nothing to say.
  *
- * A picture described before its caption, which is the order the panel's Column
- * already reads in — and not the mood, which the caption is already the
- * description of (momo.md §5), so nothing is said twice. **Silent at three**,
- * because a full cluster is Momo having nothing to report rather than a count
- * worth speaking (momo.md §3).
+ * A picture described before its caption — and not the mood, which the caption
+ * is already the description of (momo.md §5), so nothing is said twice.
+ * **Silent at three**, because a full cluster is Momo having nothing to report
+ * rather than a count worth speaking (momo.md §3).
  */
 @Composable
 private fun spokenGills(spare: Int): String? = when {

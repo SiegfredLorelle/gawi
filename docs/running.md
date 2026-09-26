@@ -2429,23 +2429,20 @@ body holds the weed tips and little else.
 - [ ] **TalkBack on a milestone.** With TalkBack on and focus on the row, tick
       the six-day habit: after "checked", the panel's live region reads the
       milestone line once, and the mood line once more when it returns two
-      seconds later; the badge announces nothing extra. Tick and untick any
-      other row: each is followed by one sentence — the mood line and the
-      remaining count — and nothing else.
+      seconds later, each followed by the remaining count and one full stop
+      between them; the badge announces nothing extra. Tick and untick any
+      other row: each reads the row's state and its new streak and nothing from
+      the panel (momo.md §5).
 
       *Device only, and the layer no test reaches* — this one belongs with the
       **Accessibility** block below and runs when that does, not with the rest
       of this one.
 
       **Half earned.** Heard 2026-09-26 on the Nothing A059, release APK, with
-      the Accessibility block's keyboard. The milestone holds: ticking the
-      six-day habit read *"7 days in a row. Momo is dazzled.. 8 of 10 left
-      today"*, and two seconds later *"Momo is pottering about.. 8 of 10 left
-      today"*, each once. **A plain tick is not followed by the sentence**:
-      three ticks and unticks of another row, ring on the row, read *"checked"*
-      or *"not checked"* and then the row's new streak — *"streak of 13 days"*
-      — and nothing from the panel, though its count changed each time. The
-      overlay shows a doubled full stop after the mood line.
+      the Accessibility block's keyboard: the milestone line and then the mood
+      line, each once, but as *"Momo is dazzled.. 8 of 10 left today"* — a
+      doubled stop, from a build that merged the panel's texts — and a plain
+      tick as *"checked"*, then *"streak of 13 days"*, and nothing more.
 - [x] **Animator duration scale off** (Developer options → *Animator duration
       scale* → *Animation off*), then reopen Today. Momo must be still, at the
       resting frame, the weeds upright and the bubbles frozen, and the mood
@@ -2786,13 +2783,12 @@ the dialog's effect looks silent.
       duplicate-description items the debug build raised are gone**, since no
       control is emitted and the mark is a decorative image (widget.md §8).
 
-**Still owed**, each with its blocker: the Today widget's header, which is not a
-stop, so the mood line its `ImageView` carries is never spoken (the Momo block
-has the hearing); the Streaks widget's *as of* line, which is not a stop either
-(its TalkBack box); the Today panel's count, which a plain tick does not
-speak although momo.md §5 meant it to (the milestone box); and the doubled full
-stop in the panel's spoken sentence, *"Momo is dazzled.. 8 of 10 left today"*,
-which the overlay and a braille display show — a change to the build.
+**Still owed**: a hearing on the phone of the build that answers this pass. The
+Today widget's header and the Streaks widget's *as of* line are said from each
+body's root now (widget.md §7), and the panel builds its sentence with one full
+stop where TalkBack's join gave it two; the Momo block, the Streaks TalkBack
+box and the milestone box stay open until they are heard. A plain tick's
+silence is the design (momo.md §5).
 
 Not in CI and not automatable: TalkBack cannot be driven from the instrumented
 source set, so §8's line that CI runs unit tests only is unaffected here.
