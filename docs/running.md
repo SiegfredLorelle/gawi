@@ -1026,7 +1026,9 @@ have always been. Three kinds of claim it cannot settle, and the restyle block
 gives the reason for the first: a launcher's **colour translation**, because a
 widget is drawn against a background it does not own; a launcher's **cell
 geometry**, which is what decides whether a size gate is reachable at all; and
-**TalkBack**, which `adb` cannot drive. Those boxes say so and wait for a phone.
+**TalkBack**, because what is a stop on a home screen is the launcher's frame as
+much as the app's tree. Those boxes say so and wait for a phone, driven by the
+keyboard the Accessibility block's preamble describes.
 
 **What the 2026-09-19, 2026-09-20 and 2026-09-26 ticks below were run
 against.** `Small_Phone` on API 37 with the Pixel launcher, the **signed
@@ -1036,6 +1038,11 @@ with the Today and Streaks widgets placed. The 2026-09-26 runs are against the
 rebuild carrying the widget keep rule (widget.md §8), with the Momo widget
 placed too, and read each widget out of its own host's subtree rather than
 trusting two widgets to agree. The older ticks name their own passes.
+
+**Ticks that name the Nothing A059** ran 2026-09-26 on that phone (API 36) with
+the Nothing launcher, against the same signed release APK — its installed bytes
+hashed to the build on disk, `6ee43c92…f38aef` — on the baseline seed written
+through the app's importer, with all three widgets placed on one page.
 
 - [x] **It is offered at all.** Long-press the home screen → *Widgets* →
       **Gawi** → *Today*. If it is missing, the provider did not register:
@@ -1068,7 +1075,7 @@ trusting two widgets to agree. The older ticks name their own passes.
       Run 2026-09-19: the widget's own subtree, anchored on its host-view
       bounds, carries each active habit with a mark and none with a numeral,
       and the marks agree with Today row for row.
-- [ ] **You can read it, in the theme the device is actually in.** Toggle the
+- [x] **You can read it, in the theme the device is actually in.** Toggle the
       system dark-mode setting and look at the widget in both, checking the
       **checkbox glyph** and not just the label. This is where a shipped defect
       lived: Glance's default is not theme-aware, so a dark-themed device drew
@@ -1077,11 +1084,13 @@ trusting two widgets to agree. The older ticks name their own passes.
       `WidgetPalette` and `WidgetPaletteTest` holds both glyph states in both
       themes to the 4.5:1 floor — but no JVM test reads what the tree drew the
       glyph with, and none can see how a real launcher translates a colour,
-      which is where the defect lived. Done on emulators, owed on hardware: the
-      emulator half ran twice on 2026-08-28 (API 29 and 30, by eye and by
-      sampling the rendered pixels) and found the 2.91:1 glyph, but this block's
-      standard is that a widget lives in a launcher's process and an OEM
-      launcher's is not the emulator's.
+      which is where the defect lived.
+
+      Sampled 2026-09-26 on the Nothing A059 and its launcher, from the pixels
+      the launcher drew, each glyph against the surface beside it: in dark, the
+      outstanding glyph 5.31:1 and the done one 10.44:1, its check 10.44:1 on
+      the fill; in light (`cmd uimode night no`), 5.18:1 and 5.56:1, the check
+      5.56:1. Both states clear the floor in both themes on an OEM launcher.
 - [x] **A tap completes.** Tap an unticked row's *glyph*, then another row's
       *name*: **neither moves under the finger**. Both wait for the write to
       round-trip (a second or so), and the mark turns over when the widget
@@ -1244,11 +1253,24 @@ or process**.
       each announces as *"read, 12 days"* — the **full** wording even where the
       widget is drawing `3w`, because a spoken "12" cannot say whether it counts
       days or weeks. The date is announced too. Nothing announces twice.
-- [ ] **You can read it in the theme the device is in.** Both schemes, on
+
+      **Half earned.** Walked 2026-09-26 on the Nothing A059, release APK, with
+      the Accessibility block's keyboard: each row is one stop in the full
+      wording — *"Read, 12 days. In list"*, *"Yoga, 12 weeks"* where `12w` is
+      drawn, *"Stretch, was 3 days"*, *"Draw, no streak yet"* — and nothing is
+      said twice. **The date is not a stop**: after the last row the next is
+      *"Today. Out of list"*, the next widget's frame, so the *as of* line is
+      never spoken. It is a plain line inside a launcher frame, the same shape
+      as the Today widget's header.
+- [x] **You can read it in the theme the device is in.** Both schemes, on
       hardware, sampled the way the API 29/30 pass sampled the Today widget. The
       role to watch is `tertiary` — the week-streak ink, and the only role in
       this module that no other surface draws, so nothing measured it against a
       real launcher before this widget existed.
+
+      Sampled 2026-09-26 on the Nothing A059 and its launcher, from the drawn
+      pixels: the week ink (`12w`) at 7.34:1 in dark and 7.36:1 in light, the
+      day ink at 10.44:1 and 5.56:1, each against the widget's own surface.
 - [x] **200 % font scale.** Rows grow, a long habit name ellipsises inside its
       row rather than under the numeral, and the numeral is never pushed off the
       edge. The name and the streak have fixed slots, so what fails here is the
@@ -1422,8 +1444,9 @@ already-ticked band box below has always been. Three kinds of claim it cannot
 settle: a launcher's **cell geometry**, which is what decides whether the
 four-by-three header gate is reachable at all; a launcher's **colour
 translation**, because a widget is drawn against a background it does not own;
-and **TalkBack**, which `adb` cannot drive. Those boxes say so and wait for a
-phone.
+and **TalkBack**, because what is a stop on a home screen is the launcher's
+frame as much as the app's tree. Those boxes say so and wait for a phone, driven
+by the keyboard the Accessibility block's preamble describes.
 
 **Most ticks here are a debug build, and predate the rule that a tick names
 one.** Each box carries its own device and day. A debug build merges nothing,
@@ -1512,20 +1535,17 @@ so a home-screen swipe over a static tile would go dead.
       need no root on this phone): the two kinds of segment were clear on
       monochrome. Restored after.
 - [ ] **TalkBack reads the large body once.** The mood line, then each row with
-      its state. Not the face and then the line, and nothing for the band. Heard
-      2026-09-03 on the Nothing launcher, a fresh 4×3 placement: the row is one
-      named stop with its state, *"Read. Not done"*, and the name is not read
-      twice. **The second stop is gone**: no control is emitted any more, so a
-      row is the only stop it has and the mark beside the name is a decorative
-      image (widget.md §8). **One half is still owed** — the header is not a
-      stop at all, so the mood line is never spoken even though its `ImageView`
-      carries it as a description. The rows reached 48 dp (`ROW_HEIGHT`) and
-      took the streak widget's pattern, a description of name and state on the
-      row; `WidgetRowTest` pins what the tree asks for, including that nothing
-      inside a row is described. Whether the Pixel launcher behaves the same is
-      unknown: TalkBack runs on an AVD, but its speech overlay is a preference
-      no unrooted shell can set and the Play-store image refuses `adb root`, so
-      an emulator shows what focuses and not what is said.
+      its state. Not the face and then the line, and nothing for the band.
+
+      **Half earned.** Walked 2026-09-26 on the Nothing A059, release APK, a 4×3
+      placement, with the Accessibility block's keyboard: the frame *"Today"*,
+      then one stop per row with its state — *"Read, not done. In list"*,
+      *"Stretch, not done"* — the name once, nothing for the band, and the mark
+      a decorative image (widget.md §8). **The header is not a stop**, so the
+      mood line its `ImageView` carries as a description is never spoken: the
+      rule the Momo box below states, and the same shape as the Streaks
+      widget's *as of* line. `WidgetRowTest` pins that nothing inside a row is
+      described.
 - [x] **The Momo widget is offered, two by two, and says what it is.** Long-
       press → *Widgets* → **Gawi**: three entries. The *Momo* preview on API 31+
       is her ground and a word with **no face** — deliberate, and widget.md §7
@@ -1565,19 +1585,18 @@ so a home-screen swipe over a static tile would go dead.
       Run 2026-09-26: all ten baseline habits archived; the Momo widget, the
       Today widget (face above the copy, at three rows) and the Streaks widget
       (the copy alone) each read *No habits yet* from their own host.
-- [ ] **TalkBack reads the sentence, not the word.** Focus the widget: *"Momo is
+- [x] **TalkBack reads the sentence, not the word.** Focus the widget: *"Momo is
       pottering about."* once, and never *"pottering"* as well. A tap on it
-      opens the app. It failed on the Nothing launcher for a reason the box had
-      not feared: the widget was one stop saying *"Momo"*, the launcher's own
-      label for the frame, because the face carried the sentence on a view
-      nothing could focus and a described container hides its unreachable
-      children. **A description is only read if something can focus the node
-      carrying it** — the half the Streaks rows could not show, since they are
-      reached without a click and so prove only that a list suffices. The body
-      is now a clickable root that describes itself, the cheaper of the two
-      experiments the block above names; the one-item `LazyColumn` stays the
-      fallback. Heard 2026-09-03 in its old shape, and owed again on a phone in
-      this one.
+      opens the app. **A description is only read if something can focus the
+      node carrying it**, and a described container hides its unreachable
+      children, so the sentence sits on the body's clickable root rather than
+      on the face — the cheaper of the two experiments the block above names;
+      the one-item `LazyColumn` stays the fallback.
+
+      Heard 2026-09-26 on the Nothing A059, release APK, with the Accessibility
+      block's keyboard: the frame is a stop saying *"Momo"*, the launcher's own
+      label, and the next stop is the body, *"Momo is pottering about."*, once,
+      with no *"pottering"* after it. Activating the body opens Gawi.
 - [x] **A write in the app moves all three widgets**, on the same commit.
       Place all three and dump each host before and after one write that also
       changes Momo's mood. A write that leaves her mood alone leaves her
@@ -1595,7 +1614,14 @@ docs/ux/reminder.md. PRD §7 makes a **physical device** the primary target for
 this as well as for the widget — OEM battery policies are the whole risk and an
 emulator has none.
 
-- [ ] **The status-bar icon is Momo's mark.** When a reminder posts, the small
+**What the 2026-09-26 ticks below ran against.** The Nothing A059 (API 36) with
+the signed release APK, its installed bytes hashed to the build on disk. The
+journal allows one post per logical day and only a post stamps it, so each check
+that needed a fresh post followed a `pm clear` and the baseline seed through the
+app's importer, then the app's own notification prompt. The screen was left
+unlocked on the home screen rather than locked: the phone's lock is secure.
+
+- [x] **The status-bar icon is Momo's mark.** When a reminder posts, the small
       icon is the gill cluster — three lobes, no face — tinted by the system,
       not a bell and not a blob. `LauncherIconTest` proves the vector has fills
       and cuts nothing out of itself, and the shipped path data rasterised at
@@ -1604,6 +1630,10 @@ emulator has none.
       header is not this icon at all. A small icon is alpha-only, so anything in
       colour there is SystemUI's cached app icon, which survives an AVD reboot
       and will show a build's worth of stale.
+
+      Seen 2026-09-26 on the Nothing A059: in the status bar and in the shade's
+      header the small icon is the three-lobed cluster with no face, tinted
+      white by SystemUI.
 
 Every check below needs the reminder time moved to a couple of minutes ahead, in
 Settings. **Put it back to 21:00 afterwards**, for the reason §4's rollover check
@@ -1633,14 +1663,23 @@ not `dumpsys notification_manager`: the latter exists, exits zero, and contains
 no `NotificationRecord` section at all, so grepping it for one reports "nothing
 posted" for every app on the device including the ones that certainly did post.
 
-- [ ] **It fires.** With at least one habit outstanding, set the reminder a
+- [x] **It fires.** With at least one habit outstanding, set the reminder a
       couple of minutes ahead and lock the screen. A notification arrives saying
       *"N of M left today"*. Tapping it opens the app on Today.
-- [ ] **It is silent when everything is done.** Complete every habit, set the
+
+      Run 2026-09-26: at 14:55:02 it read *"Momo is worried"* and *"3 of 10
+      left today"*; a later post's body, tapped, opened Gawi on Today and the
+      notification cancelled. Left unlocked, for the reason the preamble gives;
+      the doze box below carries the idle case.
+- [x] **It is silent when everything is done.** Complete every habit, set the
       time ahead again. Nothing arrives. This is PRD §6.1.5's second half, and
       the failure it guards against looks identical to success from the outside,
       so check it deliberately rather than assuming.
-- [ ] **One per day, and this is the one only a device can show.** After a
+
+      Run 2026-09-26 with all ten done and the reminder at 14:45: logcat has
+      `ReminderWorker` starting at 14:45:00 and returning SUCCESS, and nothing
+      was posted — a silence with the wake seen to run, not only an absence.
+- [x] **One per day, and this is the one only a device can show.** After a
       reminder has fired, `adb shell am force-stop com.gawi.app`. Then reopen
       the app, set the reminder time a couple of minutes ahead in Settings, and
       wait for it. **No second notification arrives** — the journal already
@@ -1658,49 +1697,76 @@ posted" for every app on the device including the ones that certainly did post.
       thing pending is the *rollover*, so the job you would find and force is
       the wrong one — no second notification appears, the check looks green, and
       nothing about the once-a-day rule was exercised.
-- [ ] **Notifications off is admitted, not hidden.** Turn the app's
+
+      Run 2026-09-26 after the 14:55 post: force-stop, reopen, Read unticked so
+      one habit was outstanding, the reminder moved to 15:15. The wake ran at
+      15:15:06 — `dumpsys jobscheduler`'s history has the job start and stop
+      60 ms apart — and nothing was posted.
+- [x] **Notifications off is admitted, not hidden.** Turn the app's
       notifications off in system settings and come back to Settings. The
       reminder row shows *"Notifications are off, so this reminder will not
       arrive"* with a target that leads somewhere — the permission dialog, or
       the system page if the dialog can no longer appear. The row must update
       **on resume**, without re-navigating.
-- [ ] **The time still edits while notifications are off.** Tapping the row
+
+      Run 2026-09-26: on a fresh install the row shows the notice with *Turn
+      notifications on*, which opened the permission dialog, and *Allow* took
+      the notice away. *All Gawi notifications* off in system settings — which
+      on API 36 revokes the permission too — then Back brought the notice back
+      on resume, and the target opened the dialog again.
+- [x] **The time still edits while notifications are off.** Tapping the row
       itself opens the time picker, not the permission. The time drives Momo's
       worried face whether or not a notification can arrive.
-- [ ] **Survives doze and the vendor's battery optimiser.** With `adb shell
+
+      Run 2026-09-26 with notifications never granted: the row opened the time
+      picker at 21:00, not the permission.
+- [x] **Survives doze and the vendor's battery optimiser.** With `adb shell
       dumpsys deviceidle force-idle`, the reminder still arrives, late. It is
       *expected* to be late: architecture §7 makes delivery deliberately inexact
       and there is **no ceiling to quote**, because WorkManager will not wake a
       device to deliver this. What must not happen is the failure below.
+
+      Run 2026-09-26 with four outstanding and the reminder at 15:40: `dumpsys
+      battery unplug` and `force-idle` at 15:33, deep idle held with nothing
+      posted, and it cut Wi-Fi adb on this phone. After `unforce` and `battery
+      reset` at 15:45:29 the worker ran at 15:45:32 and posted *"4 of 10 left
+      today"*, five minutes late.
 - [ ] **A very late wake stays quiet rather than lying.** Let a deferred
       reminder land after the day cutoff — force-idle through midnight, or move
       the cutoff close. It must post **nothing**. A reminder at 00:30 saying *"5
       of 5 left today"* is the bug: it describes a brand-new day, and it would
       consume that day's one reminder so the real 21:00 one never comes.
-- [ ] **Three outstanding gets three buttons; four gets none.** With three left,
+- [x] **Three outstanding gets three buttons; four gets none.** With three left,
       the notification carries a button per habit, labelled with the name alone.
       Add a fourth and post again: the buttons go entirely and the tap opens
       Today. Four is the case OQ-2 exists for, so check it deliberately — three
       buttons chosen out of four looks like success from the outside.
-      Passed on an emulator (API 37): three drew *Read · Water · Journal*, and
-      four drew none. Unticked because this block's target is a phone.
-- [ ] **A tap writes, and moves the count with it.** Press one button. The habit
+
+      Run 2026-09-26: three outstanding drew *Read · Water · Journal*, the name
+      alone, and the post with four outstanding carried no action at all, its
+      tap opening Today.
+- [x] **A tap writes, and moves the count with it.** Press one button. The habit
       is ticked on Today, the body drops by one, and that button is gone while
       the others remain. `adb shell cmd notification list | grep com.gawi.app`
       shows **one** row, not two — the fixed id is what makes a re-post replace.
-      Passed on an emulator: *"3 of 4"* with three buttons became *"2 of 4"*
-      with two, one row throughout, and Today showed the habit ticked.
+
+      Run 2026-09-26: *"3 of 10"* with three buttons became *"2 of 10"* with
+      *Water · Journal*, one row throughout; the first post carried
+      `AUTO_CANCEL` and the re-post `ONLY_ALERT_ONCE|AUTO_CANCEL`.
 - [ ] **A tap does not make a second sound.** The same press as above, with the
       device unmuted and the shade closed. The first post of the evening sounds;
       the re-post after a tap must not. This is the one a unit test cannot
       reach, and the flag behind it is one a reader would set for every post.
-      Half-answered on an emulator: `dumpsys notification` showed the first post
-      at `flags=AUTO_CANCEL` and the re-post at `ONLY_ALERT_ONCE|AUTO_CANCEL`,
-      which is what the platform reads. Nobody has yet **heard** it.
-- [ ] **The last habit takes the notification away.** Press the remaining
+      Half-answered on an emulator and on the Nothing A059 2026-09-26: the first
+      post carries `flags=AUTO_CANCEL` and the re-post
+      `ONLY_ALERT_ONCE|AUTO_CANCEL`, which is what the platform reads. Nobody
+      has yet **heard** it.
+- [x] **The last habit takes the notification away.** Press the remaining
       buttons. When none is left the notification is gone rather than showing
-      *"0 of N left today"*. Passed on an emulator: the shade emptied and Today
-      read *"Nothing left today"*.
+      *"0 of N left today"*.
+
+      Run 2026-09-26: *Water* left *"1 of 10"* with *Journal* alone, *Journal*
+      took the notification away, and Today read *"Nothing left today"*.
 - [ ] **A tap the next morning writes to the night before.** Post a reminder,
       then let the day cutoff pass without tapping — force-idle through
       midnight, or move the cutoff close as the check above does. Tap a button
@@ -1712,34 +1778,42 @@ posted" for every app on the device including the ones that certainly did post.
       be moved, and raising the cutoff moves the logical day *backwards*, not
       forwards. It needs a `google_apis` AVD that allows root, or a phone
       carried past its own midnight.
-- [ ] **Two taps in quick succession settle on one answer.** With three buttons
+- [x] **Two taps in quick succession settle on one answer.** With three buttons
       up, press two of them back to back — `adb shell "input tap X1 Y1; input
       tap X2 Y2"`, one invocation, no pause. Both habits are ticked in the app
       and the shade shows **one** button with a matching count, never a button
       for a habit just completed. Each button's intent was filled in when the
       notification was posted, so the second one carries a list that predates
       the first tap's write; the tap reading the day back is what settles it.
-      Passed on an emulator (API 37): *"3 of 5"* with three buttons became
-      *"1 of 5"* with one, and Today agreed.
-- [ ] **A refused write leaves the notification alone.** The other side of the
+
+      Run 2026-09-26: with *Read · Water · Journal* up, one invocation tapping
+      Read and Water left one row, *"1 of 10"*, with *Journal* alone, and Today
+      had both ticked.
+- [x] **A refused write leaves the notification alone.** The other side of the
       carried date, and reachable in a minute: with a reminder posted, raise
       **Day starts at** past now, which moves the logical day back so the
       carried date is in the *future*, and tap a button. Nothing is written, the
       notification does not change, and logcat says
       `a quick-complete tap was refused: FutureLogicalDate`. Dropping the button
-      here would report a completion that never happened. Passed on an emulator
-      (API 37) exactly so; put the cutoff back to 12:00 AM afterwards.
+      here would report a completion that never happened. Put the cutoff back
+      to 12:00 AM afterwards.
+
+      Run 2026-09-26 with the cutoff at 16:00 against a 15:04 clock: a tap on
+      *Read* logged `a quick-complete tap was refused: FutureLogicalDate`, the
+      same record kept its three actions and *"3 of 10"*, and with the cutoff
+      back at midnight Read was still unticked.
 - [ ] **TalkBack speaks the verb, not just the name.** With TalkBack on, focus a
       button. It must announce *"Complete Read"*, not *"Read"* — a notification
       action has no content description, so the spoken form rides in the title
       as a `TtsSpan` and only a real screen reader shows whether the platform
       kept it. If it reads the bare name, the span is being stripped: drop to
-      the plain name and say so in docs/ux/reminder.md §4. **This one needs an
-      ear or the speech overlay.** On an emulator TalkBack focused each button
-      and spoke, but it logs no text, `uiautomator` flattens spans out of the
-      dump, and the overlay that would show the words is a TalkBack preference
-      no unrooted shell can set — so nothing was learnt. Either half is safe to
-      ship: a stripped span leaves the bare name, which is the fallback.
+      the plain name and say so in docs/ux/reminder.md §4. Either half is safe
+      to ship: a stripped span leaves the bare name, which is the fallback.
+
+      **Stripped.** Heard 2026-09-26 on the Nothing A059, TalkBack 17, with the
+      Accessibility block's keyboard: *"Read. Button"*, *"Water. Button"*,
+      *"Journal. Button"*. docs/ux/reminder.md §4 records it; open until the
+      span is dropped, which is a change to the build.
 
 ### Habit detail
 
@@ -2355,6 +2429,16 @@ body holds the weed tips and little else.
       *Device only, and the layer no test reaches* — this one belongs with the
       **Accessibility** block below and runs when that does, not with the rest
       of this one.
+
+      **Half earned.** Heard 2026-09-26 on the Nothing A059, release APK, with
+      the Accessibility block's keyboard. The milestone holds: ticking the
+      six-day habit read *"7 days in a row. Momo is dazzled.. 8 of 10 left
+      today"*, and two seconds later *"Momo is pottering about.. 8 of 10 left
+      today"*, each once. **A plain tick is not followed by the sentence**:
+      three ticks and unticks of another row, ring on the row, read *"checked"*
+      or *"not checked"* and then the row's new streak — *"streak of 13 days"*
+      — and nothing from the panel, though its count changed each time. The
+      overlay shows a doubled full stop after the mood line.
 - [x] **Animator duration scale off** (Developer options → *Animator duration
       scale* → *Animation off*), then reopen Today. Momo must be still, at the
       resting frame, the weeds upright and the bubbles frozen, and the mood
@@ -2486,7 +2570,7 @@ Gawi's icon nor the system's own changes, with
 variants and the themed layer are both out of reach there, and the boxes below
 record only what that costs them.
 
-- [ ] **In the app drawer and on the home screen.** One gill cluster — three
+- [x] **In the app drawer and on the home screen.** One gill cluster — three
       frond dots around a paler body circle, no face — on the darkest teal the
       palette holds, under whatever mask the launcher uses (circle, squircle,
       rounded square). Nothing that carries meaning is clipped. The mark reaches
@@ -2496,11 +2580,12 @@ record only what that costs them.
       launcher for; Circle, Square and Arch are the three worth trying, Arch
       being the most aggressive of the five.
 
-      **Not earned 2026-09-20**, with half of it read. In the app drawer: one
-      cluster — three frond-pink lobes around the paler body circle, no face —
-      on the dark teal ground, nothing clipped at the mask's edge. What is
-      missing is the home screen, where Gawi does not sit here, and four of the
-      five masks, for the reason the preamble gives.
+      Seen 2026-09-20 in `Small_Phone`'s drawer and 2026-09-26 on the Nothing
+      A059's launcher, whose one mask is a circle: one cluster — three
+      frond-pink lobes around the paler body circle, no face — on the dark teal
+      ground, nothing clipped at the mask's edge. The Nothing launcher draws
+      every home-screen icon from its themed layer, so there the mark is the
+      themed box's, not this one's colour.
 - [ ] **Small.** Drop it in a folder and look at it at the drawer's smallest
       size: **three lobes still read as three**, not as a pink smudge. That is
       the claim §7.1 makes for this mark where the retired one claimed a
@@ -2511,10 +2596,12 @@ record only what that costs them.
       page instead, and chained `input motionevent` with a dwell does not merge
       at all.
 
-      **Not earned 2026-09-20.** Gawi sits in the drawer and not the dock here,
-      so the short hop this note requires was not available from the shell, and
-      the drawer's own rendering is not the smaller size the box is about.
-- [ ] **Themed, API 33+.** The icon becomes the same cluster in the system
+      **Not earned.** On the Nothing A059 2026-09-26 a folder of two Gawi
+      shortcuts drew the themed mark at 17 × 15 px, about 7 dp, as a trefoil
+      whose three bumps part by one or two pixels. That launcher themes every
+      home-screen icon, so the colour mark the box is about is never drawn
+      that small there, and on `Small_Phone` the drawer is not that size.
+- [x] **Themed, API 33+.** The icon becomes the same cluster in the system
       tint, not a second mark: flattened to one colour the three lobes are still
       three lobes, which is the argument §7.1 makes for one geometry across all
       three layers. The paler body circle merges into the cluster by design.
@@ -2523,8 +2610,10 @@ record only what that costs them.
       style → Home screen → **Icons** → *Style* → **Minimal**, against
       *Default*, and it needs an explicit **Apply**.
 
-      **Not earned 2026-09-20.** Nothing themed was ever drawn, for the reason
-      the preamble gives, so there was nothing to judge.
+      Seen 2026-09-26 on the Nothing A059 (API 36), whose launcher draws every
+      home-screen icon themed: one white cluster on its dark circle, three lobes
+      reading as three, the body merged into them as designed. Not reachable on
+      `Small_Phone`, for the reason the preamble gives.
 
 ### Accessibility — *device only, and the layer no test reaches*
 
@@ -2542,26 +2631,56 @@ together with its `bounds`; a screenshot gives the pixel inside those bounds.
 Pair them and an announced name is checked against the colour actually drawn,
 which is the defect visual-identity §4.3 describes — and it needs no TalkBack.
 
-- [ ] **A TalkBack pass over the three core flows.** Turn TalkBack on, then add
+**How TalkBack is driven from a shell**, measured on the Nothing A059 (API 36,
+TalkBack 17) and the method behind every TalkBack reading in this file dated
+2026-09-26. `adb shell input` is not a TalkBack test: injected taps and swipes
+bypass the gesture layer (a tap toggles the row it lands on), and `input
+keycombination` comes from a virtual device TalkBack ignores. A keyboard
+registered through the platform's own `uinput` tool is treated as hardware — the
+shell user is in the `uhid` group — and **Search+Right / Search+Left is
+TalkBack's next and previous item**, the same linear order a swipe takes:
+
+```console
+$ mkfifo kbd; (cat kbd | adb shell uinput - &); (sleep 3600 > kbd &)
+$ echo '{"id":1,"command":"register","name":"kbd","vid":6353,"pid":43981,"bus":"usb","configuration":[{"type":"UI_SET_EVBIT","data":["EV_KEY"]},{"type":"UI_SET_KEYBIT","data":[105,106,125]}]}' > kbd
+$ echo '{"id":1,"command":"inject","events":[1,125,1,0,0,0,1,106,1,0,0,0,1,106,0,0,0,0,1,125,0,0,0,0]}' > kbd
+```
+
+Four traps, each of which produces a false reading. **Search+Enter is the
+system's Home shortcut** and a plain Enter goes to the app's input focus rather
+than the ring, so activate by ringing a control with the keys and then an
+injected `input tap` on it — a tap does not move the ring; on a launcher, key
+353 (`DPAD_CENTER`) activates the ringed widget. **Read speech from the *Display
+speech output* overlay** with on-device `screencap`s started *before* the key: a
+launcher replaces an item's name with its usage hint within half a second, and a
+capture pulled over Wi-Fi per frame misses it. **`uiautomator dump` suspends
+TalkBack** while it runs, and anything said in that gap is lost. **A dialog
+hands the ring back to where it was before the dialog opened**, so ring the
+control that opens it first; opened from elsewhere, the ring lands on *Back* and
+the dialog's effect looks silent.
+
+- [x] **A TalkBack pass over the three core flows.** Turn TalkBack on, then add
       a habit, complete one from the Today view, and change the day cutoff —
       using **swipe navigation only, never a direct tap**. Direct tapping is
       what hides the failure: focus order and announcement are only observable
       when you are forced through the tree in order. Watch for a control that is
       reachable but unnamed, two targets that say the same thing, and a state
-      change that happens silently (WCAG 2.4.3 and 4.1.3). Re-heard 2026-09-03
-      on the Nothing A059 by D-pad and the speech overlay: a Today row reads
-      *"Read. Streak broken, was 10 days. Check box"* — the name first, no emoji
-      name, the streak in words, the badge last — settings rows read title,
-      value and helper in order, and *Add a habit* was swiped end to end with
-      nothing unnamed or silent. Two things the overlay showed that no test
-      predicted: an unchecked row carries **no state word when landed on**,
-      because this TalkBack says *checked* for a Compose checkbox and nothing
-      for the other state, and the weekly ratio was read **as drawn**, *"1/3
-      this week"*, `today_week_progress` having had no spoken twin. It has one
-      now — `:core:ui`'s `spokenWeekProgress`, *"1 of 3 this week"* — and this
-      box is where it is heard; the icon picker's was retired with the picker
-      (visual-identity §7.3). Open for the day-cutoff **picker** itself, the
-      one part of the three flows no pass has driven.
+      change that happens silently (WCAG 2.4.3 and 4.1.3).
+
+      Heard on the Nothing A059 2026-09-03 and again 2026-09-26, the second time
+      against the signed release APK by the section preamble's keyboard, which
+      is when the picker and the weekly row were heard. A Today row reads
+      *"Read. Streak broken, was 10 days. Check box"*, name first and the streak
+      in words; a weekly row speaks its ratio through `spokenWeekProgress`,
+      *"Yoga. 2 of 3 this week. streak of 12 weeks. Check box"*, not as drawn;
+      an unchecked row carries no state word when landed on, because this
+      TalkBack says *checked* and nothing for the other state. *Add a habit* and
+      the settings rows read end to end with nothing unnamed. The cutoff picker
+      names every control — *"Selected. Select hour. 0 hours. Radio button"*,
+      each tick *"0 hours. 1 of 12"*, *"Set. Button"* — and Set hands the ring
+      back to the row, which reads *"Day starts at. 03:00…"*, so the change is
+      announced. Its mode toggle names the mode already showing, which is
+      material3 1.4.0's inversion and not the app's.
 - [x] **A TalkBack pass over the Insights screen.** Two pickers and a list, and
       the thing to listen for is whether a bar row makes sense read aloud: the
       label, the total, and nothing announcing the bar itself. The bars carry no
@@ -2578,7 +2697,7 @@ which is the defect visual-identity §4.3 describes — and it needs no TalkBack
       nothing after it, once `LabelledColumns` cleared the column it describes
       (`a trend column speaks its month once, not its texts as well`). The rate
       card's undescribed columns are untouched.
-- [ ] **A TalkBack pass over the history grid, swipe-only.** Its own item
+- [x] **A TalkBack pass over the history grid, swipe-only.** Its own item
       because it is the one screen in this app that **hides content from a
       screen reader** — the seven column letters carry `clearAndSetSemantics`,
       since `T` and `S` each name two days and are noise read aloud
@@ -2590,30 +2709,33 @@ which is the defect visual-identity §4.3 describes — and it needs no TalkBack
       done yet* rather than *not done*, and a day after today is not a focus
       stop at all. Thirty-one stops is a lot of swiping and that is the point —
       a calendar is read day by day, and if this is tedious rather than usable
-      it is worth knowing before the trends screen copies the pattern. Re-heard
-      2026-09-03 on the Nothing A059: today's cell reads *"Thursday, 3, today,
-      not done yet"* and nothing after it, so the trailing day number is gone
-      since `DayCell` clears rather than merges. The letters were proven absent
-      from the tree the day before — 31 cell nodes for August, no letter nodes
-      anywhere — and days after today are not nodes at all. Open on the
-      **tedium** of the full month, which is a judgement no pass has made.
-- [ ] **The retro strip, specifically.** The densest thing here: five cells —
+      it is worth knowing before the trends screen copies the pattern.
+
+      Walked 2026-09-26 on the Nothing A059, release APK, stop by stop with the
+      section preamble's keyboard: *History*, *Read*, *Earlier month. Button*,
+      *September 2026*, then one stop per day from *"Tuesday 1, not done"*
+      through *"Monday 14, done"* to *"Saturday 26, today, not done yet"*, then
+      *Completion rate*. No letter anywhere, and days 27 to 30 are not stops.
+      **Judged usable rather than tedious**: 26 short stops of two or three
+      words each, in reading order, with nothing said twice.
+- [x] **The retro strip, specifically.** The densest thing here: five cells —
       four writable and one drawn shut — each carrying a day, a done state, a
       note marker and up to two gestures. Every one of those is in the spoken
       label by design (`RetroStrip`'s `cellAction`), so this is the check that
       the label is *legible as speech* rather than merely complete. A shut day
       is the one to listen to hardest: it must announce as unavailable, not as
       an unchecked box. The modifier order this rests on, and what breaks if it
-      moves, is [habits.md](ux/habits.md) §7's. Re-heard 2026-09-03 on the
-      Nothing A059. An open cell: *"Day 2, not done. Mark done. Check box"*; the
-      done cell adds *"Add or edit note"*. No letter, no number and no *"Check
-      mark"* after either, so the cell's four child texts are gone from what is
-      spoken, and the role and the toggle state survived the clearing. The
-      user's swipe the same day heard the shut day as *"Day 30, too old to
-      change. Disabled"* — unavailable rather than an unchecked box, the hardest
-      thing this box asked to hear. Open because the **note marker** —
-      `cellAction` appends *"has a note"* only when the cell has one — was on
-      neither quoted cell, so a noted day is the one sentence still to hear.
+      moves, is [habits.md](ux/habits.md) §7's.
+
+      Heard on the Nothing A059 2026-09-03 and, for the noted day, 2026-09-26 on
+      the release APK. An open cell reads *"Day 2, not done. Mark done. Check
+      box"*, a done one *"checked. Day 24, done. Mark not done. Add or edit
+      note. Check box"*, and the noted day reads *"checked. Day 23, done. has a
+      note. Mark not done. Add or edit note. Check box"* — no letter, number or
+      *"Check mark"* after any of them, so the child texts are gone and the role
+      and toggle state survived the clearing. The shut day, heard by a human
+      swipe, reads *"Day 30, too old to change. Disabled"*: unavailable, not an
+      unchecked box.
 - [x] **200 % font scale.** Settings → Display → Font size, at maximum. Three
       screens carry reasoning about this in comments — `TodayScreen`,
       `HabitDetailScreen` and `SettingsScreen` all scroll or floor a dimension
@@ -2625,41 +2747,35 @@ which is the defect visual-identity §4.3 describes — and it needs no TalkBack
       strip still on screen. Re-run on 2026-08-24 when the app moved from Roboto
       to Outfit, whose metrics differ; the restyle block has what the second
       pass measured.
-- [ ] **Accessibility Scanner**, as a pre-release sweep rather than routine.
+- [x] **Accessibility Scanner**, as a pre-release sweep rather than routine.
       Install Google's Accessibility Scanner, run it over each screen, and read
       the report the way you would a Lighthouse audit: the touch-target and
       contrast items are already asserted, so what it earns its place for is
       unlabelled controls and text-contrast cases the theme tests do not reach.
       Enable its service over adb — `appops set … SYSTEM_ALERT_WINDOW allow`
       plus the `enabled_accessibility_services` setting — then tap its floating
-      button on each screen.
-      Run 2026-09-02 and re-scanned 2026-09-03 with Scanner 2.5.1. **The habit
-      list and Settings: no suggestions at all**, no unlabelled control anywhere
-      and no touch-target hit in the app itself. The home screen with both
-      widgets returns six, none of them a row: the three 32 dp checkboxes are
-      each a *Touch target*, the first also a duplicate description, and the two
-      widget frames are *Unsupported item type*, the Scanner declining a
-      `LauncherAppWidgetHostView` rather than a finding. **All four app-side
-      items are closed in the code** — no control is emitted and the mark is a
-      decorative image (widget.md §8) — so this sweep is owed again, on the
-      release build, to confirm them gone. Two classes the first
-      scan raised are decided rather than open: the icon badge's *text contrast*
-      went with the badge, which a habit no longer has
-      ([visual-identity.md](ux/visual-identity.md) §7.3); and the repeated
-      Insights row texts are the unmerged-row shape that box records. Today,
-      detail, the editor and Insights are inferred clear from the same badge
-      change, not re-scanned — and the editor has two fewer controls to scan
-      than when that was written.
+      button on each screen. **Every screen of a release build reports one
+      *Unsupported item type* on the whole window**: R8 renames Compose's root
+      view class (`uiautomator dump` shows it as `tv`), and the Scanner declines
+      a class it does not know. It still checks everything beneath, which the
+      Insights items below prove.
 
-**Still owed, and an emulator discharges none of it.** Five open items, each
-with its blocker: the day-cutoff **picker** under TalkBack, undriven; the
-**tedium** of a full month on the history grid, a judgement rather than a
-sentence; a **noted** strip cell, whose *has a note* word no quoted cell
-carried; the Today widget's body, whose header is still not a stop, so the mood
-line its `ImageView` carries is never spoken; and the Momo widget's body, whose
-clickable root is built and owed a hearing on a real launcher.
-The widget's three device checks in its own block are owed against the widget
-as it now stands, palette included (visual-identity.md §7.4).
+      Swept 2026-09-26 with Scanner 2.5.1 on the Nothing A059, release APK.
+      Today, the habit list, Settings and the editor raise nothing but the root.
+      Insights raises four and the history screen one *Item descriptions*,
+      repeated row and rate-card texts: the unmerged-row shape the Insights box
+      records, decided rather than open. Habit detail raises one *Unexposed
+      Text*, "day streak", on the streak panel, whose description *"streak of
+      12 days"* stands in for the drawn number and caption. The home screen with
+      all three widgets raises only the three widget frames, the Scanner
+      declining a `LauncherAppWidgetHostView`: **the 32 dp checkbox and
+      duplicate-description items the debug build raised are gone**, since no
+      control is emitted and the mark is a decorative image (widget.md §8).
+
+**Still owed**, each with its blocker: the Today widget's header, which is not a
+stop, so the mood line its `ImageView` carries is never spoken (the Momo block
+has the hearing); and the Streaks widget's *as of* line, which is not a stop
+either (its TalkBack box).
 
 Not in CI and not automatable: TalkBack cannot be driven from the instrumented
 source set, so §8's line that CI runs unit tests only is unaffected here.

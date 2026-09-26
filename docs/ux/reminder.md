@@ -396,8 +396,9 @@ Today.
 **The button is labelled with the habit's name and nothing else.** The position
 is the verb — an action row under a reminder is not read as a list — and a
 *"Done: "* prefix would only make a long name truncate sooner. What it *speaks*
-cannot be the bare name, though: read alone, *"Read"* is an instruction rather
-than a habit.
+would better not be the bare name — read alone, *"Read"* is an instruction
+rather than a habit — but an action title has no way to say otherwise that
+survives the trip to the shade, which the next paragraph records.
 
 **A notification action has no content description, and that is an API fact
 rather than an oversight.** `NotificationCompat.Action.Builder` offers none —
@@ -405,10 +406,11 @@ the title is both what is drawn and what a screen reader announces — so the
 split the Today row makes with `onClick(label = …)` cannot be made the same way
 here. It is made inside the title instead: the name carries a `TtsSpan` whose
 text is *"Complete Read"*, which is a `ParcelableSpan` and so survives the trip
-to the shade. `ReminderNotifierTest` pins that the span is set; whether the
-platform keeps it on an action title is a device check
-([running.md](../running.md) §4), and the fallback if it does not is the bare
-name.
+to the shade. `ReminderNotifierTest` pins that the span is set. **The platform
+drops it**: TalkBack 17 on the Nothing A059 reads the button as *"Read. Button"*
+([running.md](../running.md) §4), so the bare name is what a screen reader gets.
+That is the fallback this section chose in advance, and it leaves the span with
+nothing to do; it goes with the next change to the notifier.
 
 **The button carries the date; it must never resolve one when tapped.** The
 reminder fires before the day cutoff and the notification survives the night,
@@ -658,11 +660,10 @@ mutation-checked against the code before the fix.
   every decision, `ReminderSchedulerTest` the scheduling, and
   `ReminderNotifierTest` what this app asks the platform for — the buttons, the
   cap, the carried extras and the alert flag. What none of them reaches is the
-  platform's own half: that the row appears, that the small icon holds at 24 dp,
-  that a `TtsSpan` on an action title survives. [running.md](../running.md) §4
-  has those by hand. This is the same gap the widget has for *"a write in the app
-  moves the widget"*, and for the same reason: the framework is the part not
-  under test.
+  platform's own half: that the row appears and that the small icon holds at
+  24 dp. [running.md](../running.md) §4 has those by hand. This is the same gap
+  the widget has for *"a write in the app moves the widget"*, and for the same
+  reason: the framework is the part not under test.
 - **Nor does any test pin which wakes an edit re-arms**, which is the one
   property `replaceWhatMoved` exists for. No test calls its `start()` — the
   only caller is `GawiApplication` — `replaceWhatMoved` is private, and
