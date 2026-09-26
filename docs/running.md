@@ -1722,27 +1722,30 @@ posted" for every app on the device including the ones that certainly did post.
 
       Run 2026-09-26 with notifications never granted: the row opened the time
       picker at 21:00, not the permission.
-- [x] **Survives doze and the vendor's battery optimiser.** With `adb shell
+- [x] **Survives doze.** With `adb shell
       dumpsys deviceidle force-idle`, the reminder still arrives, late. It is
       *expected* to be late: architecture §7 makes delivery deliberately inexact
       and there is **no ceiling to quote**, because WorkManager will not wake a
       device to deliver this. What must not happen is the failure below.
 
-      Run 2026-09-26 with four outstanding and the reminder at 15:40: `dumpsys
-      battery unplug` and `force-idle` at 15:33, deep idle held with nothing
-      posted, and it cut Wi-Fi adb on this phone. Idle was ended by hand —
-      `unforce` and `battery reset` at 15:45:29 — rather than by a maintenance
-      window, and the worker ran 3 s later and posted *"4 of 10 left today"*,
-      five minutes late: the wake survives idle and is not lost. Unforced, the
-      same day: locked and unplugged, the phone reached deep idle by itself
-      and the 16:45 reminder posted at 16:52:52, still locked (the *It fires*
-      box). The app sat in the vendor's default battery mode throughout; no
-      vendor kill was provoked.
+      Run 2026-09-26 on the Nothing A059, locked and unplugged: the phone
+      reached deep idle by itself and the 16:45 reminder posted at 16:52:52,
+      still locked and still idle at the last reading before it (the *It
+      fires* box). Forced the same day, with the reminder at 15:40, nothing
+      posted while `force-idle` held; idle was then ended by hand at 15:45:29
+      and the worker ran 3 s later, so the wake is kept through idle rather
+      than lost. Forced idle also cut Wi-Fi adb on this phone.
 - [ ] **A very late wake stays quiet rather than lying.** Let a deferred
       reminder land after the day cutoff — force-idle through midnight, or move
       the cutoff close. It must post **nothing**. A reminder at 00:30 saying *"5
       of 5 left today"* is the bug: it describes a brand-new day, and it would
       consume that day's one reminder so the real 21:00 one never comes.
+- [ ] **Survives the vendor's battery optimiser**, which PRD §7 calls the whole
+      risk. Set the reminder a few minutes ahead, then set Gawi to the phone's
+      most restrictive battery mode (on the Nothing A059, *Restricted*) and
+      swipe it from recents. The reminder still arrives, late if it must. If it
+      never arrives, the vendor is killing the wake chain, and architecture §7's
+      no-ceiling promise does not cover that.
 - [x] **Three outstanding gets three buttons; four gets none.** With three left,
       the notification carries a button per habit, labelled with the name alone.
       Add a fourth and post again: the buttons go entirely and the tap opens
@@ -2654,13 +2657,16 @@ TalkBack's next and previous item**, the same linear order a swipe takes:
 $ mkfifo kbd; (cat kbd | adb shell uinput - &); (sleep 3600 > kbd &)
 $ echo '{"id":1,"command":"register","name":"kbd","vid":6353,"pid":43981,"bus":"usb","configuration":[{"type":"UI_SET_EVBIT","data":["EV_KEY"]},{"type":"UI_SET_KEYBIT","data":[105,106,125]}]}' > kbd
 $ echo '{"id":1,"command":"inject","events":[1,125,1,0,0,0,1,106,1,0,0,0,1,106,0,0,0,0,1,125,0,0,0,0]}' > kbd
+$ echo '{"id":2,"command":"register","name":"select","vid":6353,"pid":43982,"bus":"usb","configuration":[{"type":"UI_SET_EVBIT","data":["EV_KEY"]},{"type":"UI_SET_KEYBIT","data":[353]}]}' > kbd
+$ echo '{"id":2,"command":"inject","events":[1,353,1,0,0,0,1,353,0,0,0,0]}' > kbd
 ```
 
 Four traps, each of which produces a false reading. **Search+Enter is the
 system's Home shortcut** and a plain Enter goes to the app's input focus rather
 than the ring, so activate by ringing a control with the keys and then an
 injected `input tap` on it — a tap does not move the ring; on a launcher, key
-353 (`DPAD_CENTER`) activates the ringed widget. **Read speech from the *Display
+353 (`DPAD_CENTER`), sent from the second device registered with it above,
+activates the ringed widget. **Read speech from the *Display
 speech output* overlay** with on-device `screencap`s started *before* the key: a
 launcher replaces an item's name with its usage hint within half a second, and a
 capture pulled over Wi-Fi per frame misses it. **`uiautomator dump` suspends
@@ -2777,8 +2783,9 @@ the dialog's effect looks silent.
       Insights raises four and the history screen one *Item descriptions*,
       repeated row and rate-card texts: the unmerged-row shape the Insights box
       records, decided rather than open. Habit detail raises one *Unexposed
-      Text*, "day streak", on the streak panel, whose description *"streak of
-      12 days"* stands in for the drawn number and caption. The home screen with
+      Text*, "day streak", on the streak panel, decided rather than open: the
+      panel is one node speaking *"streak of 12 days"* in place of its drawn
+      number and caption (habits.md §7). The home screen with
       all three widgets raises only the three widget frames, the Scanner
       declining a `LauncherAppWidgetHostView`: **the 32 dp checkbox and
       duplicate-description items the debug build raised are gone**, since no
@@ -2787,8 +2794,10 @@ the dialog's effect looks silent.
 **Still owed**, each with its blocker: the Today widget's header, which is not a
 stop, so the mood line its `ImageView` carries is never spoken (the Momo block
 has the hearing); the Streaks widget's *as of* line, which is not a stop either
-(its TalkBack box); and the Today panel's count, which a plain tick does not
-speak although momo.md §5 meant it to (the milestone box).
+(its TalkBack box); the Today panel's count, which a plain tick does not
+speak although momo.md §5 meant it to (the milestone box); and the doubled full
+stop in the panel's spoken sentence, *"Momo is dazzled.. 8 of 10 left today"*,
+which the overlay and a braille display show — a change to the build.
 
 Not in CI and not automatable: TalkBack cannot be driven from the instrumented
 source set, so §8's line that CI runs unit tests only is unaffected here.

@@ -667,9 +667,10 @@ mutation-checked against the code before the fix.
 - **The `TtsSpan` on each button title is dead weight.** §4 records that it is
   not spoken, yet `ReminderNotifier` still builds it and its comments, with the
   string it reads, still say it is what a screen reader hears. Removing the
-  span, its string and `ReminderNotifierTest`'s assertion on it is the next
-  change to the notifier, and closes the TalkBack box in
-  [running.md](../running.md) §4.
+  span, its string and `ReminderNotifierTest`'s assertion on it closes the
+  TalkBack box in [running.md](../running.md) §4. Blocked only on being a change
+  to the build, which lands with the next fix branch rather than the
+  documentation branch that found it.
 - **Nor does any test pin which wakes an edit re-arms**, which is the one
   property `replaceWhatMoved` exists for. No test calls its `start()` — the
   only caller is `GawiApplication` — `replaceWhatMoved` is private, and
