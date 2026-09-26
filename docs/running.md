@@ -1812,20 +1812,15 @@ posted" for every app on the device including the ones that certainly did post.
       *Read* logged `a quick-complete tap was refused: FutureLogicalDate`, the
       same record kept its three actions and *"3 of 10"*, and with the cutoff
       back at midnight Read was still unticked.
-- [ ] **TalkBack speaks the verb, not just the name.** With TalkBack on, focus a
-      button. It must announce *"Complete Read"*, not *"Read"* — a notification
-      action has no content description, so the spoken form rides in the title
-      as a `TtsSpan` and only a real screen reader shows whether the platform
-      kept it. If it reads the bare name, the span is being stripped: drop to
-      the plain name and say so in docs/ux/reminder.md §4. Either half is safe
-      to ship: a stripped span leaves the bare name, which is the fallback.
+- [x] **TalkBack reads each button as its habit's name.** With TalkBack on,
+      focus a button. It announces the bare name and its role — a notification
+      action has no content description, and a `TtsSpan` in the title is not
+      spoken, so the name is the design (docs/ux/reminder.md §4). Anything more
+      or less than the name is the defect.
 
-      **Not spoken.** Heard 2026-09-26 on the Nothing A059, TalkBack 17, with
-      the Accessibility block's keyboard: *"Read. Button"*, *"Water. Button"*,
-      *"Journal. Button"*. One reading cannot tell the platform stripping the
-      span from TalkBack ignoring it on an action; either way the bare name is
-      what is heard. docs/ux/reminder.md §4 records it and §6 keeps the span's
-      removal open; this box closes with that change to the build.
+      Heard 2026-09-26 on the Nothing A059, TalkBack 17: *"Read. Button"*,
+      *"Water. Button"*, *"Journal. Button"*, on a build still carrying the
+      span, which is why it was removed.
 
 ### Habit detail
 
