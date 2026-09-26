@@ -7,7 +7,6 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.glance.appwidget.testing.unit.GlanceAppWidgetUnitTest
 import androidx.glance.appwidget.testing.unit.runGlanceAppWidgetUnitTest
-import androidx.glance.testing.GlanceNodeAssertion
 import androidx.glance.testing.GlanceNodeAssertionCollection
 import androidx.glance.testing.GlanceNodeMatcher
 import androidx.glance.testing.unit.MappedNode
@@ -16,10 +15,10 @@ import com.gawi.core.domain.testing.habitId
 import com.gawi.core.testing.todayHabit
 import com.gawi.core.testing.todaySnapshot
 import com.gawi.widget.testsupport.anyText
-import com.gawi.widget.testsupport.bitmap
 import com.gawi.widget.testsupport.describedText
 import com.gawi.widget.testsupport.drawnOn
 import com.gawi.widget.testsupport.isDescribed
+import com.gawi.widget.testsupport.mask
 import com.gawi.widget.testsupport.silentUntintedImage
 import com.gawi.widget.testsupport.tintedWith
 import com.gawi.widget.testsupport.untintedImage
@@ -232,13 +231,6 @@ private fun GlanceAppWidgetUnitTest.render(content: WidgetContent, size: DpSize)
     setAppWidgetSize(size)
     provideComposable { WidgetBody(content) }
     awaitIdle()
-}
-
-/** The bitmap a matched image node carries. */
-private fun GlanceNodeAssertion<MappedNode, *>.mask(): Bitmap {
-    var found: Bitmap? = null
-    assert(GlanceNodeMatcher("carries a bitmap") { node -> node.value.emittable.bitmap().also { found = it } != null })
-    return checkNotNull(found)
 }
 
 /**
