@@ -761,5 +761,6 @@ a launcher one — docs/running.md §4 has the boxes.
   list is right and the class identity underneath it is what R8 takes. Only a
   release build can catch this coming back, so `make release` is what does —
   it counts the distinct names the three survive `mapping.txt` under and refuses
-  a build where they are not three. docs/running.md §6 holds the read; §4's own
-  re-run is the launcher half, which is a different check and is still owed.
+  a build where they are not three. docs/running.md §6 holds the read; §4's
+  widget boxes are the launcher half, a different check, and read each widget
+  from its own host against a build carrying the rule.
