@@ -1028,11 +1028,14 @@ widget is drawn against a background it does not own; a launcher's **cell
 geometry**, which is what decides whether a size gate is reachable at all; and
 **TalkBack**, which `adb` cannot drive. Those boxes say so and wait for a phone.
 
-**What the 2026-09-19 and 2026-09-20 ticks below were run against.**
-`Small_Phone` on API 37 with the Pixel launcher, the **signed release APK**,
-its installed bytes hashed against the build on disk rather than read off a
-version number, on the log `scripts/avd-seed.sh baseline` writes, with the
-Today and Streaks widgets placed. The older ticks name their own passes.
+**What the 2026-09-19, 2026-09-20 and 2026-09-26 ticks below were run
+against.** `Small_Phone` on API 37 with the Pixel launcher, the **signed
+release APK**, its installed bytes hashed against the build on disk rather than
+read off a version number, on the log `scripts/avd-seed.sh baseline` writes,
+with the Today and Streaks widgets placed. The 2026-09-26 runs are against the
+rebuild carrying the widget keep rule (widget.md §8), with the Momo widget
+placed too, and read each widget out of its own host's subtree rather than
+trusting two widgets to agree. The older ticks name their own passes.
 
 - [x] **It is offered at all.** Long-press the home screen → *Widgets* →
       **Gawi** → *Today*. If it is missing, the provider did not register:
@@ -1057,11 +1060,10 @@ Today and Streaks widgets placed. The older ticks name their own passes.
       here floors a placement at two rows and its rows are 65 dp, so the
       smallest reachable Today widget is 242 × 133 dp: name and mark, no face,
       which is this box's first clause arriving at the wrong size. The gate
-      itself does fire — at 242 × 203 dp the Today body draws Momo's resting
-      frame above the rows, and above *No habits yet* when every habit is
-      archived — but only in the *other* host, the merge defect below having
-      put it there, and this launcher refused every attempt to grow the Today
-      widget itself past two rows.
+      itself fires in the Today widget's own host at three rows, 242 × 203 dp:
+      Momo's resting frame above the rows, and above *No habits yet* with every
+      habit archived (run 2026-09-26). Two rows never clear 170 dp here, so the
+      box waits for a launcher whose cells do.
 - [x] **It draws today's habits** — each active habit's name with a checkbox,
       ticked to match the Today screen. **No streak**, deliberately (PRD OQ-5).
 
@@ -1115,16 +1117,15 @@ Today and Streaks widgets placed. The older ticks name their own passes.
       Run 2026-09-20: with every habit archived through the habit list — never
       `pm clear` — the widget drew *No habits yet* rather than an empty ground,
       and bringing them back restored the log intact.
-- [ ] **Resizing keeps it usable.** Drag the handles: rows reflow and the list
-      scrolls rather than clipping.
+- [x] **Resizing keeps it usable.** Place the widget with empty rows below it,
+      because the Pixel launcher offers a bottom handle only where the grid has
+      room for it to go. Drag the handles: rows reflow and the list scrolls
+      rather than clipping.
 
-      **Not earned 2026-09-20.** This launcher would not grow the Today widget
-      past its two-row placement, for the reason the Momo box above gives, so
-      the only host that resized was the one bound to `StreakWidgetReceiver` —
-      which the merge defect below means was not drawing its own body either.
-      A reflow and a scrolling list were both seen there; neither is evidence
-      about this widget.
-- [ ] **A write in the app moves *both* widgets.** With the Today widget and the
+      Run 2026-09-26: alone on the page, the Today widget grew from two rows to
+      three (242 × 203 dp), and its own host drew Momo's header above the rows.
+      A swipe inside it scrolled Read out and Yoga and Water in.
+- [x] **A write in the app moves *both* widgets.** With the Today widget and the
       streak widget both placed, complete a habit in the app and go to the home
       screen without touching either. Both change. Listed separately from the
       check above because the failure it catches is different: a provider
@@ -1133,12 +1134,11 @@ Today and Streaks widgets placed. The older ticks name their own passes.
       `ProjectionRefreshTest` reads the receivers out of the merged manifest,
       which is as far as a JVM test reaches.
 
-      **Failed 2026-09-20**, and not in the way above: the write reaches both,
-      but the widget bound to `StreakWidgetReceiver` then draws the *Today*
-      body — habit rows, no numerals, no *as of* line — and both host views
-      report the same `views_bitmap_memory`. Release only, and the cause is
-      R8's rather than this listener's — widget.md §8 holds it. This box is
-      owed a re-run against the fix.
+      Run 2026-09-26: completing Meditate in the app turned its Today row
+      *done* and its Streaks row 6 → 7 days, with each host drawing its own
+      body (marks in one, numerals and the *as of* line in the other) and
+      reporting its own `views_bitmap_memory`. Read on its own, the Streaks
+      host is what catches the merge in widget.md §8.
 
 **The streak widget** (docs/ux/widget.md §6). Its own provider, so its own
 picker entry, and the first one here carrying API 31 attributes.
@@ -1425,14 +1425,12 @@ translation**, because a widget is drawn against a background it does not own;
 and **TalkBack**, which `adb` cannot drive. Those boxes say so and wait for a
 phone.
 
-**The ticks here are a debug build, and predate the rule that a tick names
-one.** Every one was earned before §4 began naming the build and before the
-signed release APK existed; each box carries its own device and day. That
-matters more than it did: a debug build merges nothing, and the release build
-these were re-run against merged the three `GlanceAppWidget` subclasses into
-one, so a reading below about one write reaching more than one widget held on
-neither (widget.md §8). The keep rule that separates them is in, and those
-boxes are unticked and owed a re-run against a build that carries it.
+**Most ticks here are a debug build, and predate the rule that a tick names
+one.** Each box carries its own device and day. A debug build merges nothing,
+so a reading about more than one widget holds for a release build only when it
+was taken against one carrying the widget keep rule (widget.md §8), each widget
+read from its own host. The three boxes that make such a claim were run that
+way on the widget block's 2026-09-26 setup, with all three widgets placed.
 
 **The arithmetic for whoever has a third launcher**, and the reason neither
 phone here can show the middle body: the face-above-rows form wants a width of
@@ -1542,37 +1540,29 @@ so a home-screen swipe over a static tile would go dead.
       the placed 2×2 widget: to the byte in both schemes, over the same 103,983
       pixels each way. `cmd uimode night no` needs no root on this phone, unlike
       the AVD; night mode was put back afterwards.
-- [ ] **The word follows the mood.** Complete everything → *thriving*; leave one
+- [x] **The word follows the mood.** Complete everything → *thriving*; leave one
       → *pottering* or *worried* as the day goes; break a streak → *regrowing*,
-      with the dimmer face. Same face as the Today screen at that moment. Seen
-      2026-09-02 for *regrowing*, *pottering* and *thriving*, each arriving with
-      the app's own write. *Worried* was seen 2026-09-03 by moving the hour
-      rather than waiting for it, and it is the box's real finding: at a minute
-      past the new hour the Today panel already read *Momo is getting worried.*
-      while **both widgets still said *pottering***, because nothing had been
-      written and their only clock is the 30-minute `updatePeriodMillis`
-      (widget.md §4, "shortened, not bounded"). One write in the app and both
-      caught up. So the word follows the mood and the mood follows the clock,
-      but a widget learns of the clock only on the next write or period — the
-      documented trade, now a seen one.
+      with the dimmer face. Same mood as the Today screen at that moment, read
+      on the Today widget's header and on the Momo widget separately. Setting
+      the reminder time behind the clock opens the worried window without
+      moving the hour or the cutoff. **A widget learns of the clock only on the
+      next write or period**: once the hour passes, the Today panel turns
+      worried while both widgets still say *pottering*, until a write or the
+      30-minute `updatePeriodMillis` catches them up (widget.md §4, "shortened,
+      not bounded") — the documented trade, seen on a debug build.
 
-      **Unticked against the release build**: the clock trade above stands, the
-      merge reaching neither the period nor the write that ends it. What it
-      takes away is *both* — two widgets agreeing is what a merged class
-      produces for the wrong reason, so the word is owed a reading on each of
-      them separately.
-- [ ] **With no habits she is still there**, under *No habits yet*. Archive
-      every habit rather than `pm clear` to see it. Seen 2026-09-02 by appending
-      fourteen `HabitArchived` events to the log (the run-as recipe in §5) and
-      rebuilding the projection: she kept her ground and her smiling face with
-      *No habits yet* in the word's place, and the Today and Streaks widgets
-      said the same three words. Deleting the fourteen events brought all
-      fourteen habits back.
+      Run 2026-09-26: *pottering*, *thriving* (the last habit ticked),
+      *worried* (reminder at 12:00 PM, one habit unticked at 12:28) and
+      *regrowing* (the `regenerating` seed) on both hosts, each matching the
+      Today panel, which alone names the habit.
+- [x] **With no habits she is still there**, under *No habits yet*. Archive
+      every habit through the habit list rather than `pm clear` to see it. She
+      keeps her ground and her smiling face with *No habits yet* in the word's
+      place, and the Today and Streaks widgets each say it in their own body.
 
-      **Unticked against the release build**: Momo keeping her ground is hers
-      alone and survives, but "the Today and Streaks widgets said the same three
-      words" is the agreement a merged class manufactures. The three are owed a
-      reading apart.
+      Run 2026-09-26: all ten baseline habits archived; the Momo widget, the
+      Today widget (face above the copy, at three rows) and the Streaks widget
+      (the copy alone) each read *No habits yet* from their own host.
 - [ ] **TalkBack reads the sentence, not the word.** Focus the widget: *"Momo is
       pottering about."* once, and never *"pottering"* as well. A tap on it
       opens the app. It failed on the Nothing launcher for a reason the box had
@@ -1586,16 +1576,16 @@ so a home-screen swipe over a static tile would go dead.
       experiments the block above names; the one-item `LazyColumn` stays the
       fallback. Heard 2026-09-03 in its old shape, and owed again on a phone in
       this one.
-- [ ] **A write in the app moves all three widgets**, on the same commit. Seen
-      on a **debug** build 2026-09-02, all three placed and dumped before and
-      after each write:
-      ticking one habit checked its box on the Today widget and moved its
-      Streaks row 0 → 1 while Momo, still regenerating over another, kept her
-      sentence — as she should; ticking that other one then moved its row and
-      changed Momo's description too. One write, three widgets, all changed by
-      the next dump about five seconds later. **Unticked against the release
-      build**: that is the reading the merge defect takes away, and it is the
-      one this box exists for.
+- [x] **A write in the app moves all three widgets**, on the same commit.
+      Place all three and dump each host before and after one write that also
+      changes Momo's mood. A write that leaves her mood alone leaves her
+      sentence alone, which is the other half.
+
+      Run 2026-09-26: re-ticking Read as the last open habit turned it *done*
+      on the Today widget, moved its Streaks row 12 → 13 days, and turned the
+      Momo widget and the Today header from *pottering* to *All done. Momo is
+      thriving.* in the same dump. Meditate, ticked with others still open,
+      moved the first two and left her sentence alone.
 
 ### The reminder
 
