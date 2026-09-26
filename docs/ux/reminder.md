@@ -397,20 +397,20 @@ Today.
 is the verb — an action row under a reminder is not read as a list — and a
 *"Done: "* prefix would only make a long name truncate sooner. What it *speaks*
 would better not be the bare name — read alone, *"Read"* is an instruction
-rather than a habit — but an action title has no way to say otherwise that
-survives the trip to the shade, which the next paragraph records.
+rather than a habit — but nothing on an action title makes a screen reader say
+otherwise, which the next paragraph records.
 
 **A notification action has no content description, and that is an API fact
 rather than an oversight.** `NotificationCompat.Action.Builder` offers none —
 the title is both what is drawn and what a screen reader announces — so the
 split the Today row makes with `onClick(label = …)` cannot be made the same way
-here. It is made inside the title instead: the name carries a `TtsSpan` whose
-text is *"Complete Read"*, which is a `ParcelableSpan` and so survives the trip
-to the shade. `ReminderNotifierTest` pins that the span is set. **The platform
-drops it**: TalkBack 17 on the Nothing A059 reads the button as *"Read. Button"*
-([running.md](../running.md) §4), so the bare name is what a screen reader gets.
-That is the fallback this section chose in advance, and it leaves the span with
-nothing to do; it goes with the next change to the notifier.
+here. The attempt was a `TtsSpan` inside the title, whose text is *"Complete
+Read"* and which `ReminderNotifierTest` pins as set. **It is not spoken**:
+TalkBack 17 on the Nothing A059 reads the button as *"Read. Button"*
+([running.md](../running.md) §4). One reading cannot say whether the platform
+strips the span or TalkBack ignores it on an action, and the answer does not
+matter here: the bare name is what a screen reader gets, which is the fallback
+this section chose in advance. §6 keeps the span's removal open.
 
 **The button carries the date; it must never resolve one when tapped.** The
 reminder fires before the day cutoff and the notification survives the night,
@@ -664,6 +664,12 @@ mutation-checked against the code before the fix.
   24 dp. [running.md](../running.md) §4 has those by hand. This is the same gap
   the widget has for *"a write in the app moves the widget"*, and for the same
   reason: the framework is the part not under test.
+- **The `TtsSpan` on each button title is dead weight.** §4 records that it is
+  not spoken, yet `ReminderNotifier` still builds it and its comments, with the
+  string it reads, still say it is what a screen reader hears. Removing the
+  span, its string and `ReminderNotifierTest`'s assertion on it is the next
+  change to the notifier, and closes the TalkBack box in
+  [running.md](../running.md) §4.
 - **Nor does any test pin which wakes an edit re-arms**, which is the one
   property `replaceWhatMoved` exists for. No test calls its `start()` — the
   only caller is `GawiApplication` — `replaceWhatMoved` is private, and

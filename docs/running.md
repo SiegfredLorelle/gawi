@@ -1619,7 +1619,8 @@ the signed release APK, its installed bytes hashed to the build on disk. The
 journal allows one post per logical day and only a post stamps it, so each check
 that needed a fresh post followed a `pm clear` and the baseline seed through the
 app's importer, then the app's own notification prompt. The screen was left
-unlocked on the home screen rather than locked: the phone's lock is secure.
+unlocked on the home screen for every check but *It fires*, which needs its
+owner to unlock it: the phone's lock is secure.
 
 - [x] **The status-bar icon is Momo's mark.** When a reminder posts, the small
       icon is the gill cluster — three lobes, no face — tinted by the system,
@@ -1667,10 +1668,11 @@ posted" for every app on the device including the ones that certainly did post.
       couple of minutes ahead and lock the screen. A notification arrives saying
       *"N of M left today"*. Tapping it opens the app on Today.
 
-      Run 2026-09-26: at 14:55:02 it read *"Momo is worried"* and *"3 of 10
-      left today"*; a later post's body, tapped, opened Gawi on Today and the
-      notification cancelled. Left unlocked, for the reason the preamble gives;
-      the doze box below carries the idle case.
+      Run 2026-09-26, locked, screen off and unplugged, reminder at 16:45: the
+      phone went into deep idle on its own and the notification posted at
+      16:52:52 with the lock still up — *"Momo is worried"*, *"9 of 10 left
+      today"*. Tapped on the lock screen and unlocked by its owner, it opened
+      Gawi on Today and cancelled.
 - [x] **It is silent when everything is done.** Complete every habit, set the
       time ahead again. Nothing arrives. This is PRD §6.1.5's second half, and
       the failure it guards against looks identical to success from the outside,
@@ -1728,9 +1730,14 @@ posted" for every app on the device including the ones that certainly did post.
 
       Run 2026-09-26 with four outstanding and the reminder at 15:40: `dumpsys
       battery unplug` and `force-idle` at 15:33, deep idle held with nothing
-      posted, and it cut Wi-Fi adb on this phone. After `unforce` and `battery
-      reset` at 15:45:29 the worker ran at 15:45:32 and posted *"4 of 10 left
-      today"*, five minutes late.
+      posted, and it cut Wi-Fi adb on this phone. Idle was ended by hand —
+      `unforce` and `battery reset` at 15:45:29 — rather than by a maintenance
+      window, and the worker ran 3 s later and posted *"4 of 10 left today"*,
+      five minutes late: the wake survives idle and is not lost. Unforced, the
+      same day: locked and unplugged, the phone reached deep idle by itself
+      and the 16:45 reminder posted at 16:52:52, still locked (the *It fires*
+      box). The app sat in the vendor's default battery mode throughout; no
+      vendor kill was provoked.
 - [ ] **A very late wake stays quiet rather than lying.** Let a deferred
       reminder land after the day cutoff — force-idle through midnight, or move
       the cutoff close. It must post **nothing**. A reminder at 00:30 saying *"5
@@ -1810,10 +1817,12 @@ posted" for every app on the device including the ones that certainly did post.
       the plain name and say so in docs/ux/reminder.md §4. Either half is safe
       to ship: a stripped span leaves the bare name, which is the fallback.
 
-      **Stripped.** Heard 2026-09-26 on the Nothing A059, TalkBack 17, with the
-      Accessibility block's keyboard: *"Read. Button"*, *"Water. Button"*,
-      *"Journal. Button"*. docs/ux/reminder.md §4 records it; open until the
-      span is dropped, which is a change to the build.
+      **Not spoken.** Heard 2026-09-26 on the Nothing A059, TalkBack 17, with
+      the Accessibility block's keyboard: *"Read. Button"*, *"Water. Button"*,
+      *"Journal. Button"*. One reading cannot tell the platform stripping the
+      span from TalkBack ignoring it on an action; either way the bare name is
+      what is heard. docs/ux/reminder.md §4 records it and §6 keeps the span's
+      removal open; this box closes with that change to the build.
 
 ### Habit detail
 
@@ -2570,7 +2579,7 @@ Gawi's icon nor the system's own changes, with
 variants and the themed layer are both out of reach there, and the boxes below
 record only what that costs them.
 
-- [x] **In the app drawer and on the home screen.** One gill cluster — three
+- [ ] **In the app drawer and on the home screen.** One gill cluster — three
       frond dots around a paler body circle, no face — on the darkest teal the
       palette holds, under whatever mask the launcher uses (circle, squircle,
       rounded square). Nothing that carries meaning is clipped. The mark reaches
@@ -2580,12 +2589,13 @@ record only what that costs them.
       launcher for; Circle, Square and Arch are the three worth trying, Arch
       being the most aggressive of the five.
 
-      Seen 2026-09-20 in `Small_Phone`'s drawer and 2026-09-26 on the Nothing
-      A059's launcher, whose one mask is a circle: one cluster — three
-      frond-pink lobes around the paler body circle, no face — on the dark teal
-      ground, nothing clipped at the mask's edge. The Nothing launcher draws
-      every home-screen icon from its themed layer, so there the mark is the
-      themed box's, not this one's colour.
+      **Half earned.** In the drawer, on `Small_Phone` 2026-09-20 and on the
+      Nothing A059's launcher 2026-09-26, whose one mask is a circle: one
+      cluster — three frond-pink lobes around the paler body circle, no face —
+      on the dark teal ground, nothing clipped at the mask's edge. The home
+      screen's colour mark is still unseen: `Small_Phone` never placed it, and
+      the Nothing launcher draws every home-screen icon from its themed layer,
+      which is the themed box's subject.
 - [ ] **Small.** Drop it in a folder and look at it at the drawer's smallest
       size: **three lobes still read as three**, not as a pink smudge. That is
       the claim §7.1 makes for this mark where the retired one claimed a
@@ -2680,7 +2690,9 @@ the dialog's effect looks silent.
       each tick *"0 hours. 1 of 12"*, *"Set. Button"* — and Set hands the ring
       back to the row, which reads *"Day starts at. 03:00…"*, so the change is
       announced. Its mode toggle names the mode already showing, which is
-      material3 1.4.0's inversion and not the app's.
+      material3 1.4.0's inversion and not the app's. Completing a habit is
+      announced by its row, *"checked"* and the new streak; the panel's count
+      is not spoken after it, which the milestone box records and keeps open.
 - [x] **A TalkBack pass over the Insights screen.** Two pickers and a list, and
       the thing to listen for is whether a bar row makes sense read aloud: the
       label, the total, and nothing announcing the bar itself. The bars carry no
@@ -2774,8 +2786,9 @@ the dialog's effect looks silent.
 
 **Still owed**, each with its blocker: the Today widget's header, which is not a
 stop, so the mood line its `ImageView` carries is never spoken (the Momo block
-has the hearing); and the Streaks widget's *as of* line, which is not a stop
-either (its TalkBack box).
+has the hearing); the Streaks widget's *as of* line, which is not a stop either
+(its TalkBack box); and the Today panel's count, which a plain tick does not
+speak although momo.md §5 meant it to (the milestone box).
 
 Not in CI and not automatable: TalkBack cannot be driven from the instrumented
 source set, so §8's line that CI runs unit tests only is unaffected here.

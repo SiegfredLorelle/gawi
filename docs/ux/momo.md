@@ -377,10 +377,15 @@ test can measure it.
   the only one. Since 2026-08-29 the panel is a polite live region, so the
   change is read wherever TalkBack's focus is; without that it was read only
   when the panel itself held focus, which right after ticking a row it never
-  does. The same region reads the mood line and the remaining count when they
-  change, one short sentence after each tick. It happens with animations off too, for the same two seconds,
-  because a line is text and the gate governs what moves; the row's badge
-  takes its pill for the same window, so the row and the line agree.
+  does. The milestone line swaps with animations off too, for the same two
+  seconds, because a line is text and the gate governs what moves; the row's
+  badge takes its pill for the same window, so the row and the line agree. The
+  same region was meant to read the mood line and the remaining count after
+  every tick as well, one short sentence. **On TalkBack 17 it does not**: on the
+  Nothing A059 a plain tick is followed by the row's own state and new streak
+  and nothing from the panel, while the milestone's swap is read
+  (docs/running.md §4, the milestone box). Whether the count should be spoken
+  after a tick is open.
   **All of that is the panel's, and the panel is not always on screen.** Once
   the chip has taken the bar (today-view §1) the panel is *disposed*, not
   merely scrolled past, so this live region reads nothing at all. The chip
