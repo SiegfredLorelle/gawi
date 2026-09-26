@@ -74,15 +74,18 @@ private fun RowScope.HabitTitles(row: HabitRowUi, modifier: Modifier = Modifier)
         Text(text = row.name, style = MaterialTheme.typography.bodyLarge)
         row.weekProgress?.let { progress ->
             val spoken = spokenWeekProgress(progress.done, progress.target)
-            Text(
-                text = stringResource(R.string.today_week_progress, progress.done, progress.target),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                // The drawn ratio is read as its slash, so the row speaks the
-                // relation instead. Clearing rather than adding, because a leaf
-                // carrying both a text and a description is read twice.
-                modifier = Modifier.clearAndSetSemantics { contentDescription = spoken },
-            )
+            // The drawn ratio is read as its slash, so the row speaks the
+            // relation instead. Clearing rather than adding, because a leaf
+            // carrying both a text and a description is read twice — and
+            // clearing a wrapper rather than the Text, which keeps the drawn
+            // ratio in the unmerged tree where a test can still read it.
+            Box(modifier = Modifier.clearAndSetSemantics { contentDescription = spoken }) {
+                Text(
+                    text = stringResource(R.string.today_week_progress, progress.done, progress.target),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }

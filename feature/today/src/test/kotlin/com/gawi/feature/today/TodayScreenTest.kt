@@ -168,7 +168,8 @@ class TodayScreenTest {
      * A weekly row speaks the ratio as a relation, and the drawn form is not in
      * its text. The slash is what a reader says otherwise, so the negative half
      * is the half that matters: it proves the ratio *left* the row's text
-     * rather than being read alongside the words.
+     * rather than being read alongside the words. The last line is the drawn
+     * half, still in the unmerged tree because the row clears a wrapper.
      */
     @Test
     fun weekProgress_speaksTheRatioInWords() {
@@ -180,6 +181,8 @@ class TodayScreenTest {
         compose.onNodeWithText(WALK.name)
             .assert(hasContentDescription(resources.getString(UiR.string.ui_week_progress_spoken, 1, 3)))
             .assert(hasText(resources.getString(R.string.today_week_progress, 1, 3)).not())
+        compose.onNodeWithText(resources.getString(R.string.today_week_progress, 1, 3), useUnmergedTree = true)
+            .assertIsDisplayed()
     }
 
     /** A break is announced as one, with what was lost in its unit — never "0" and then "was 12". */
