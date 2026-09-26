@@ -6,8 +6,6 @@ import android.app.Notification
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
-import android.text.Spanned
-import android.text.style.TtsSpan
 import com.gawi.app.R
 import com.gawi.core.data.reminder.OutstandingHabit
 import com.gawi.core.data.reminder.ReminderDecision
@@ -96,27 +94,6 @@ class ReminderNotifierTest {
         notifier.post(remind(1))
 
         assertEquals("habit 1", posted()?.actions?.single()?.title.toString())
-    }
-
-    /**
-     * Read alone, a habit name is an instruction rather than a habit. A
-     * notification action has no content description, so the spoken form travels
-     * inside the title as a [TtsSpan].
-     *
-     * This proves the span is *set*. Whether the shade keeps it is the device
-     * check in docs/running.md §4 — nothing on the JVM can answer that.
-     */
-    @Test
-    fun `the button speaks what pressing it does`() {
-        notifier.post(remind(1))
-
-        val title = posted()?.actions?.single()?.title as Spanned
-        val span = title.getSpans(0, title.length, TtsSpan::class.java).single()
-
-        assertEquals(
-            context.getString(R.string.reminder_action_complete, "habit 1"),
-            span.args.getString(TtsSpan.ARG_TEXT),
-        )
     }
 
     /**

@@ -8,9 +8,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
-import android.text.SpannableString
-import android.text.Spanned
-import android.text.style.TtsSpan
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -180,32 +177,13 @@ internal class ReminderNotifier @Inject constructor(@ApplicationContext private 
         remind.outstanding.map { habit ->
             // Icon 0, meaning none: since API 24 the phone's notification
             // template does not draw action icons at all, and inventing one
-            // would be a drawable nothing renders.
-            NotificationCompat.Action.Builder(0, spoken(habit.name), complete(habit, remind)).build()
+            // would be a drawable nothing renders. The title is the name alone
+            // — its position is the verb, and a prefix would only truncate a
+            // long name sooner — and it is also what a screen reader says: an
+            // action has no content description, and a span in the title is
+            // not spoken either (docs/ux/reminder.md §4).
+            NotificationCompat.Action.Builder(0, habit.name, complete(habit, remind)).build()
         }
-    }
-
-    /**
-     * The habit's name to read, and what pressing the button does to hear.
-     *
-     * **The button is labelled with the name and nothing else.** Its position is
-     * the verb — an action row under a reminder is not read as a list — and a
-     * *"Done: "* prefix would only make a long name truncate sooner.
-     *
-     * What it *speaks* cannot be the bare name, though: read alone, *"Read"* is
-     * an instruction rather than a habit. A notification action has no content
-     * description — `NotificationCompat.Action.Builder` exposes none, and the
-     * title is both what is drawn and what a screen reader announces — so the
-     * split is made inside the title itself with a [TtsSpan], which is a
-     * `ParcelableSpan` and survives the trip to the shade.
-     */
-    private fun spoken(name: String): CharSequence = SpannableString(name).apply {
-        setSpan(
-            TtsSpan.TextBuilder(context.getString(R.string.reminder_action_complete, name)).build(),
-            0,
-            length,
-            Spanned.SPAN_INCLUSIVE_EXCLUSIVE,
-        )
     }
 
     /**
