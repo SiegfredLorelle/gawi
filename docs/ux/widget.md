@@ -328,7 +328,7 @@ direction rather than a defect to hide.
 
 **Read-only, deliberately.** The one tap is the body's root, which opens the app:
 that is what makes the *as of* line a TalkBack stop at all, the reading fix §7
-gives the Momo tile, and a tap on a row falls through to it. Nothing writes. A
+gives the Momo tile. The rows take no tap, as before. Nothing writes. A
 widget that wrote would have to re-read the log first for the reason §4 spends
 itself on, and nothing here needs to write, so nothing here takes that on. A
 writing tap later means an `ActionCallback` with the same re-read — not passing
@@ -415,9 +415,10 @@ control is emitted to be a second one (§8). The header line is not described
 itself: the launcher's frame is described "Today", which hides an unfocusable
 child, so the body's root carries the sentence and opens the app, the Momo
 tile's fix below (`spokenRoot`). The face-above-rows body and the no-habits copy
-take the same root, and one cell tall, with only rows, the root says nothing. Her height on the
-pill is a second constant, `MomoBitmap.PILL_HEIGHT_DP`, for the reason the first
-one is a constant: the bitmap's cost must not follow a host's idea of "large".
+take the same root, and one cell tall, with only rows, the root says nothing.
+Her height on the pill is a second constant, `MomoBitmap.PILL_HEIGHT_DP`, for
+the reason the first one is a constant: the bitmap's cost must not follow a
+host's idea of "large".
 The line gets three lines of caption type, not the canvas's one: at the gate the
 copy has 128dp and the regenerating sentence needs three of them even at the
 default scale — review measured it after the first cut allowed two — and the
