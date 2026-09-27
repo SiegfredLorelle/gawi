@@ -21,7 +21,7 @@ week rather than within hours.
 
 | Version | Supported |
 |---|---|
-| `1.0.0`, the latest release | Yes |
+| The latest release (`1.0.0`) | Yes |
 | `main` | Yes |
 | everything else | No |
 

@@ -23,12 +23,13 @@ consecutive days of real daily use without reverting to the old method.
 and Phase 1 started in its place. PRD §5 records what waiving it cost, and §9
 records the risk it leaves uncovered.
 
-Phase 1 is all but done, taken in a different order from the one PRD §5 first
-assessed: the visual identity came first, because the app was on stock Material 3
-by an explicit deferral (PRD §8, OQ-4) and the screens Phase 1 adds would
-otherwise have been styled twice. All of it has landed — a designed light and dark
-scheme, eight habit hues, Outfit on every type role, a vendored Lucide icon set,
-and Momo as the launcher mark
+Phase 1 is done, and closes with 1.0.0. It was taken in a different order
+from the one PRD §5 first assessed: the visual identity came first, because the
+app was on stock Material 3 by an explicit deferral (PRD §8, OQ-4) and the
+screens Phase 1 adds would otherwise have been styled twice. All of it has
+landed — a designed light and dark scheme, Outfit on every type role, a
+vendored Lucide icon set, a habit that carries only its name, and a launcher
+mark of one gill cluster in Momo's pink
 ([docs/ux/visual-identity.md](docs/ux/visual-identity.md)). Momo lives in the
 Today view's tank in four moods, celebrates finished days and streak milestones,
 and speaks through an app-bar chip ([docs/ux/momo.md](docs/ux/momo.md)). Three
@@ -43,7 +44,8 @@ a real device ([docs/running.md](docs/running.md) §4). Phase 1's last open
 bullet, the reminder's quick-complete action, is built: up to three buttons on
 the end-of-day reminder, each completing a habit for the day the notification
 was posted for. The two questions Phase 1 raised and left open — grace
-mechanics, decided as gills, and Momo's real copy — are answered with it.
+mechanics, decided and built as gills, and Momo's real copy — are answered
+with it.
 
 What comes next is 1.x in [PRD §5](docs/prd.md): growth one feature at a
 time, each on the design canvas first, before sync. The open design questions
