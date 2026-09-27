@@ -225,9 +225,8 @@ what it waits on, in the 1.0.0 entry of [CHANGELOG.md](../CHANGELOG.md). Most
 of the named ones need something one phone cannot give — a launcher with
 other cell sizes, a real midnight, a listener. Three the phone could run are
 deferred past the tag by the maintainer's decision, and the entry says which.
-The target user is
-still §3's "me"; no store, so OQ-6 stays parked on "closer to launch". No tag
-lands between 0.2.0 and 1.0.0. `versionCode 3`.
+The target user is still §3's "me"; no store, so OQ-6 stays parked on "closer
+to launch". No tag lands between 0.2.0 and 1.0.0. `versionCode 3`.
 
 **Step 0 — the cleanup pass.** First, because everything after it should be
 verified against a smaller, truer repo. Three rules, each written into
@@ -366,14 +365,17 @@ and says so.
 release APK: the widget and Momo-widget blocks on a real launcher, the
 accessibility block, the reminder, the launcher icon's three checks and the
 reminder's small icon that step 4 left owed, and the Accessibility Scanner
-sweep that document already calls pre-release. This is the step that closes
-1.0.0's definition above. **It is closed** at 165 of §4's 177 boxes: nine of
-the twelve left wait on something the phone cannot give, and three are
-deferred.
+sweep that document already calls pre-release. This step closes the
+device-box half of 1.0.0's definition above, and **that half is closed** at 165
+of §4's 177 boxes: nine of the twelve left wait on something the phone cannot
+give, and three are deferred. The other half, the APK installed from the
+release, can only follow the tag.
 
 **Step 6 — tag, and it closes the road.** `v1.0.0`, its CHANGELOG entry as the
 tag and release body, the APK and `mapping.txt` on the release; this document,
-the README and SECURITY.md no longer describe a release still to come.
+the README and SECURITY.md no longer describe a release still to come. Its
+last act is the definition's other half: the maintainer installs the attached
+APK on the phone and checks its SHA-256 against the one the entry records.
 
 #### 1.x — after 1.0.0, before sync
 
