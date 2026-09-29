@@ -390,7 +390,10 @@ tag-identity-on-write question is settled; the per-tag trend that waits on it;
 export of a review as an image; the Today-row long-press
 ([docs/ux/habits.md](ux/habits.md) §8); and dimming the Today rows that owe
 nothing today ([docs/ux/today-view.md](ux/today-view.md) §5), decided on the
-fidelity pass and unscheduled because step 2 never asked for it.
+fidelity pass and unscheduled because step 2 never asked for it. And one with
+a date on it: **developer verification (OQ-7) before its global enforcement in
+2027**, after which an unregistered APK no longer installs the ordinary way on
+any certified phone, the maintainer's included.
 
 #### Phase 2 becomes 2.0.0
 
@@ -404,7 +407,9 @@ claim changes shape, not because the feature is large.
 
 F-Droid and/or Play is its own milestone with no version yet, gated on OQ-6
 and on widening §3's target user. That is the point where onboarding and a
-privacy policy stop being polish and become requirements.
+privacy policy stop being polish and become requirements. A Play listing is
+also the other way Google comes to know the signing key, which is what Play
+Protect's first-install warning is about (the README's *Installing* section).
 
 ### Phase 2 — LAN Sync (committed)
 - Device discovery on same network via mDNS; pairing with confirmation code (LocalSend-style trust model).
@@ -451,6 +456,7 @@ privacy policy stop being polish and become requirements.
   **Both halves are built, and nothing OQ-4 asked is open.** The colour scheme and the eight habit hues are in the code and `GawiTheme` is no longer stock; [docs/ux/visual-identity.md](ux/visual-identity.md) is the record — §7.2 for the scheme, §3 for the role values including the two that failed measurement and were replaced, §6 for the hues — and building it also fixed the glyph-contrast defect §4.2 of that document describes. Typography is **Outfit**, one bundled variable font over §5's ten type roles; the experiment that gated the typeface ran and a Glance widget cannot be handed a bundled font, so the widget draws its names as bitmaps instead (visual-identity.md §2, §5). Momo is flat, the canvas's character, animated in Compose, with all four moods drawn ([docs/ux/momo.md](ux/momo.md)); the launcher and reminder marks are hers (§5, Mascot); the Momo widget and the large Today body carry the character ([docs/ux/widget.md](ux/widget.md) §6–§7); and the widget derives its palette from the app's (widget.md §6). This question no longer blocks Insights either, which was the whole point of splitting it — the first half landing is what discharged that. The last visual question it left, **whether a habit keeps an icon and a colour at all**, was raised in 1.0.0 step 2 and answered there: **neither**, on the ground that picking a colour was a decision the app asked on every habit for a payoff the list did not deliver ([docs/ux/visual-identity.md](ux/visual-identity.md) §7.3). Nothing OQ-4 asked is open now, and step 2's list is closed with it — the launcher mark was the last of it.
 - **OQ-5, settled: minimal.** *Should the widget show streaks or stay minimal?* A streak is the one number that reaches zero with no new event, so it is the value whose staleness is not bounded by user inaction — on the one surface with no live query. It also costs the width that rows need. §6.6 is narrowed accordingly rather than contradicted; see [docs/ux/widget.md](ux/widget.md) §2.
 - **OQ-6:** Final name call between Gawi / Hinabi / Araw; verify availability (Play Store, domain, trademark) closer to launch. ("Habi" rejected — existing habit tracker at habi.app.)
+- **OQ-7, open, due before 2027: developer verification.** *Register Gawi's package and signing key with Google, and under which account?* From 2027 an APK whose developer is not verified stops installing the ordinary way on certified Android devices everywhere; a user is left with a one-time advanced flow that includes a 24-hour wait, or adb (the first countries, not including the Philippines, start 2026-09-30). The two accounts: **limited distribution**, free, no government ID, up to 20 devices — enough for §3's "me"; **full distribution**, $25 once, with a government ID and no device cap — what a store launch or any wider audience needs. Decide it with OQ-6 and the store milestone (§5), since the second option is the first half of that. What registering does to Play Protect's first-install warning is **not documented** and gets measured on the phone after registering rather than promised in the README. [Google's page on the requirement](https://support.google.com/android-developer-console/answer/16561738).
 
 ## 9. Risks
 
@@ -460,6 +466,7 @@ privacy policy stop being polish and become requirements.
 - **Mascot becomes an art project.** Mitigation: emotive indicator at MVP; static expressions before animation; Rive state machine keeps engineering simple.
 - **Notification quick-complete complexity.** Mitigation: explicitly allowed to slip to Phase 1; documented so it isn't lost. **Closed** — it slipped as designed and was built in 1.0.0's step 3.
 - **Emulator friction on Arch.** Mitigation: KVM setup notes above; physical device as primary target; macOS fallback.
+- **Sideloading closes to unverified developers (2027).** Gawi ships only as a sideloaded APK, and from 2027 an unverified one needs the advanced flow or adb on every certified phone. Mitigation: OQ-7, decided before then; adb stays the maintainer's own fallback.
 - **Monetization vs privacy tension.** Mitigation: E2E-encrypted cloud; local/LAN always free.
 
 ## 10. Competitive Landscape (brief)
