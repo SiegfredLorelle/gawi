@@ -11,9 +11,9 @@ your data never leaves the device. For what and why, read
 `v1.0.0` (`versionCode 3`) is the latest release and the first with an
 installable build attached: a signed, shrunk APK with its `mapping.txt`, on the
 [GitHub release](https://github.com/SiegfredLorelle/gawi/releases/tag/v1.0.0).
-Not on any store; install the APK by hand, or build it from source with the
-commands below. [CHANGELOG.md](CHANGELOG.md) records what each tag contained,
-and what 1.0.0 leaves unverified on a device.
+Not on any store; [install the APK by hand](#installing), or build it from
+source with the commands below. [CHANGELOG.md](CHANGELOG.md) records what each
+tag contained, and what 1.0.0 leaves unverified on a device.
 
 Phase 0, the MVP, is feature-complete: habits, logging, streaks, the
 home-screen widget, the end-of-day reminder, and export/import all work. Its
@@ -52,6 +52,31 @@ time, each on the design canvas first, before sync. The open design questions
 are in §8 of the same file.
 
 Single maintainer, so expect unhurried responses.
+
+## Installing
+
+1. Download the APK attached to the
+   [latest release](https://github.com/SiegfredLorelle/gawi/releases/latest)
+   and check its SHA-256 against the one in that release's notes —
+   `sha256sum` on a computer, or any hash app on the phone.
+2. Open it. Android asks once whether the browser or file manager may install
+   unknown apps; allow it.
+3. **Play Protect blocks the first install.** It says *App blocked to protect
+   your device* and *Play Protect hasn't seen an app from this developer
+   before. It may be unsafe.* Tap **More details**, then **Install anyway**.
+   That wording was seen on a Nothing A059 on 2026-09-29; other phones and
+   Android versions word it differently.
+
+The warning is about the signing key, not the app. Gawi is not on Google Play
+and its key is not registered with Google, so Play Protect has no record of
+who signed it. The checks that do say something about the app are the hash
+above and the permissions it asks for — none of them network, as
+[SECURITY.md](SECURITY.md) sets out. Registering the
+key is on the roadmap as OQ-7 in [PRD §8](docs/prd.md).
+
+Every release is signed with the same key, so a newer one installs over an
+older one and keeps your habits. Uninstalling deletes them: Auto Backup is off, so export
+from Settings first.
 
 ## Requirements
 
