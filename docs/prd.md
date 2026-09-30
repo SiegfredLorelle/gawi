@@ -408,8 +408,9 @@ claim changes shape, not because the feature is large.
 F-Droid and/or Play is its own milestone with no version yet, gated on OQ-6
 and on widening §3's target user. That is the point where onboarding and a
 privacy policy stop being polish and become requirements. A Play listing is
-also the other way Google comes to know the signing key, which is what Play
-Protect's first-install warning is about (the README's *Installing* section).
+also the other way Google comes to know the signing key; whether that, or
+OQ-7's registration, clears Play Protect's first-install warning (the README's
+*Installing* section) is measured, not assumed.
 
 ### Phase 2 — LAN Sync (committed)
 - Device discovery on same network via mDNS; pairing with confirmation code (LocalSend-style trust model).
