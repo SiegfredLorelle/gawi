@@ -57,8 +57,10 @@ Single maintainer, so expect unhurried responses.
 
 1. Download the APK attached to the
    [latest release](https://github.com/SiegfredLorelle/gawi/releases/latest)
-   and check its SHA-256 against the one in that release's notes —
-   `sha256sum` on a computer, or any hash app on the phone.
+   and check its SHA-256 — `sha256sum` on a computer, or any hash app on the
+   phone — against the one in that release's notes. The same value is in that
+   version's [CHANGELOG.md](CHANGELOG.md) entry, which lives in git history
+   rather than on the release page.
 2. Open it. Android asks once whether the browser or file manager may install
    unknown apps; allow it.
 3. **Play Protect blocks the first install.** It says *App blocked to protect
@@ -67,16 +69,27 @@ Single maintainer, so expect unhurried responses.
    That wording was seen on a Nothing A059 on 2026-09-29; other phones and
    Android versions word it differently.
 
-The warning is about the signing key, not the app. Gawi is not on Google Play
-and its key is not registered with Google, so Play Protect has no record of
-who signed it. The checks that do say something about the app are the hash
-above and the permissions it asks for — none of them network, as
-[SECURITY.md](SECURITY.md) sets out. Registering the
-key is on the roadmap as OQ-7 in [PRD §8](docs/prd.md).
+These steps are for that dialog only. If Play Protect says it found a harmful
+app, do not install.
 
-Every release is signed with the same key, so a newer one installs over an
-older one and keeps your habits. Uninstalling deletes them: Auto Backup is off, so export
-from Settings first.
+The warning is about who signed the APK, not what is in it: Gawi is not on
+Google Play, so Play Protect has not seen an app from this developer. Whether
+registering the key with Google clears the warning is not documented; that is
+OQ-7 in [PRD §8](docs/prd.md), and it gets measured after registering. The
+checks that do say something about the app are the hash above and the
+permissions it asks for, none of them network, as [SECURITY.md](SECURITY.md)
+sets out.
+
+Every release is signed with one certificate, whose SHA-256 is
+
+```
+786135f69a3be45b1350dc2d00c834731d8f35fe155b44d3fda408eba0a62c6a
+```
+
+`apksigner verify --print-certs gawi-*.apk` prints it on a computer with the
+Android SDK. Android refuses to install an update signed by any other key over
+this one, so a newer release installs over an older one and keeps your habits.
+Uninstalling deletes them: Auto Backup is off, so export from Settings first.
 
 ## Requirements
 
